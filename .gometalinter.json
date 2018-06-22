@@ -1,0 +1,24 @@
+{
+    "Enable": [
+        "golint",
+        "gofmt",
+        "gotype",
+        "vet",
+        "vetshadow",
+        "deadcode",
+        "megacheck",
+        "varcheck",
+        "structcheck",
+        "unconvert",
+        "gas",
+        "errcheck",
+        "staticcheck"
+    ],
+    "Vendor": true,
+    "Concurrency": 2,
+    "Skip": [
+        "go",
+        "generated"
+    ],
+    "Deadline": "3m"
+}
