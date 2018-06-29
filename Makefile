@@ -42,7 +42,7 @@ setup: check-go-env install-dep install-linter install-cover ## Sets up the tool
 
 .PHONY: build
 build: ## Builds the code.
-	$(GOBUILD) -o ./build/crawler cmd/crawler/main.go
+	$(GOBUILD) ./...
 
 .PHONY: test
 test: ## Runs unit tests and tests code coverage.
