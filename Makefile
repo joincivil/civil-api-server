@@ -40,6 +40,11 @@ install-cover: check-go-env ## Installs code coverage tool
 .PHONY: setup
 setup: check-go-env install-dep install-linter install-cover ## Sets up the tooling.
 
+## gometalinter config in .gometalinter.json
+.PHONY: lint
+lint: ## Runs linting.
+	@gometalinter ./...
+
 .PHONY: build
 build: ## Builds the code.
 	$(GOBUILD) ./...
