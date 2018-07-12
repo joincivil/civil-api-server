@@ -2,18 +2,209 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/aristanetworks/goarista"
+  packages = ["monotime"]
+  revision = "2c5933638c5ef1bc320b01486100788c81d57b99"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/btcsuite/btcd"
+  packages = ["btcec"]
+  revision = "fdfc19097e7ac6b57035062056f5b7b4638b8898"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/edsrzf/mmap-go"
+  packages = ["."]
+  revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
+
+[[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = [
+    ".",
+    "accounts",
+    "accounts/abi",
+    "accounts/abi/bind",
+    "accounts/abi/bind/backends",
+    "accounts/keystore",
     "common",
+    "common/bitutil",
     "common/hexutil",
-    "crypto/sha3"
+    "common/math",
+    "common/mclock",
+    "consensus",
+    "consensus/ethash",
+    "consensus/misc",
+    "core",
+    "core/bloombits",
+    "core/rawdb",
+    "core/state",
+    "core/types",
+    "core/vm",
+    "crypto",
+    "crypto/bn256",
+    "crypto/bn256/cloudflare",
+    "crypto/bn256/google",
+    "crypto/randentropy",
+    "crypto/secp256k1",
+    "crypto/sha3",
+    "eth/filters",
+    "ethclient",
+    "ethdb",
+    "event",
+    "log",
+    "metrics",
+    "p2p/netutil",
+    "params",
+    "rlp",
+    "rpc",
+    "trie"
   ]
   revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
   version = "v1.8.11"
 
+[[projects]]
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
+  version = "v1.0"
+
+[[projects]]
+  name = "github.com/go-stack/stack"
+  packages = ["."]
+  revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
+  version = "v1.7.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/glog"
+  packages = ["."]
+  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru"
+  ]
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/joincivil/civil-events-crawler"
+  packages = [
+    "pkg/contractutils",
+    "pkg/generated/contract",
+    "pkg/generated/filterer",
+    "pkg/model",
+    "pkg/utils"
+  ]
+  revision = "19673924d549e27d286c4f9b23c28338f3afe797"
+
+[[projects]]
+  name = "github.com/kelseyhightower/envconfig"
+  packages = ["."]
+  revision = "f611eb38b3875cc3bd991ca91c51d06446afa14c"
+  version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/rjeczalik/notify"
+  packages = ["."]
+  revision = "52ae50d8490436622a8941bd70c3dbe0acdd4bbf"
+  version = "v0.9.0"
+
+[[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/syndtr/goleveldb"
+  packages = [
+    "leveldb",
+    "leveldb/cache",
+    "leveldb/comparer",
+    "leveldb/errors",
+    "leveldb/filter",
+    "leveldb/iterator",
+    "leveldb/journal",
+    "leveldb/memdb",
+    "leveldb/opt",
+    "leveldb/storage",
+    "leveldb/table",
+    "leveldb/util"
+  ]
+  revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  packages = [
+    "pbkdf2",
+    "ripemd160",
+    "scrypt"
+  ]
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["websocket"]
+  revision = "039a4258aec0ad3c79b905677cceeab13b296a77"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "imports",
+    "internal/fastwalk"
+  ]
+  revision = "d600f31f815368e57b551e524b0169bd175f7edb"
+
+[[projects]]
+  name = "gopkg.in/fatih/set.v0"
+  packages = ["."]
+  revision = "57907de300222151a123d29255ed17f5ed43fad3"
+  version = "v0.1.0"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/karalabe/cookiejar.v2"
+  packages = ["collections/prque"]
+  revision = "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/natefinch/npipe.v2"
+  packages = ["."]
+  revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "522cc0a69e4293035acaa7fbb12de3c625035953cb5217ada7eedf148c2ffc5b"
+  inputs-digest = "1183ccd7ed628f0d95bd2e3baf58aeac78c174757ae1e889df1e0a422d807b57"
   solver-name = "gps-cdcl"
   solver-version = 1
