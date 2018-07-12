@@ -1,3 +1,10 @@
+POSTGRES_DATA_DIR=postgresdata
+POSTGRES_DOCKER_IMAGE=circleci/postgres:9.6-alpine
+POSTGRES_PORT=5432
+POSTGRES_DB_NAME=civil_crawler
+POSTGRES_USER=docker
+POSTGRES_PSWD=docker
+
 GOCMD=go
 GOGEN=$(GOCMD) generate
 GORUN=$(GOCMD) run
@@ -8,6 +15,7 @@ GOGET=$(GOCMD) get
 GOCOVER=$(GOCMD) tool cover
 
 GO:=$(shell command -v go 2> /dev/null)
+DOCKER:=$(shell command -v docker 2> /dev/null)
 APT:=$(shell command -v apt-get 2> /dev/null)
 
 ## Reliant on go and $GOPATH being set.
@@ -18,6 +26,14 @@ ifndef GO
 endif
 ifndef GOPATH
 	$(error GOPATH is not set)
+endif
+
+## NOTE: If installing on a Mac, use Docker for Mac, not Docker toolkit
+## https://www.docker.com/docker-mac
+.PHONY: check-docker-env
+check-docker-env:
+ifndef DOCKER
+	$(error docker command is not installed or in PATH)
 endif
 
 .PHONY: install-dep
@@ -39,6 +55,36 @@ install-cover: check-go-env ## Installs code coverage tool
 
 .PHONY: setup
 setup: check-go-env install-dep install-linter install-cover ## Sets up the tooling.
+
+.PHONY: postgres-setup-launch
+postgres-setup-launch:
+ifeq ("$(wildcard $(POSTGRES_DATA_DIR))", "")
+	mkdir -p $(POSTGRES_DATA_DIR)
+	docker run \
+		-v $$PWD/$(POSTGRES_DATA_DIR):/tmp/$(POSTGRES_DATA_DIR) -i -t $(POSTGRES_DOCKER_IMAGE) \
+		/bin/bash -c "cp -rp /var/lib/postgresql /tmp/$(POSTGRES_DATA_DIR)"
+endif
+	docker run -e "POSTGRES_USER="$(POSTGRES_USER) -e "POSTGRES_PASSWORD"=$(POSTGRES_PSWD) -e "POSTGRES_DB"=$(POSTGRES_DB_NAME) \
+	    -v $$PWD/$(POSTGRES_DATA_DIR)/postgresql:/var/lib/postgresql -d -p $(POSTGRES_PORT):$(POSTGRES_PORT) \
+		$(POSTGRES_DOCKER_IMAGE);
+
+.PHONY: postgres-check-available
+postgres-check-available:
+	@for i in `seq 1 10`; \
+	do \
+		nc -z localhost 5432 2> /dev/null && exit 0; \
+		sleep 3; \
+	done; \
+	exit 1;
+
+.PHONY: postgres-start
+postgres-start: check-docker-env postgres-setup-launch postgres-check-available ## Starts up a development PostgreSQL server
+	@echo "Postgresql launched and available"
+
+.PHONY: postgres-stop
+postgres-stop: check-docker-env ## Stops the development PostgreSQL server
+	@docker stop `docker ps -q`
+	@echo 'Postgres stopped'
 
 ## gometalinter config in .gometalinter.json
 .PHONY: lint
