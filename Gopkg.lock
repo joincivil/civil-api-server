@@ -3,21 +3,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/alecthomas/template"
-  packages = [
-    ".",
-    "parse"
-  ]
-  revision = "a0175ee3bccc567396460bf5acd36800cb10c49c"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/alecthomas/units"
-  packages = ["."]
-  revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
-
-[[projects]]
-  branch = "master"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
   revision = "2c5933638c5ef1bc320b01486100788c81d57b99"
@@ -118,10 +103,11 @@
   packages = [
     "pkg/contractutils",
     "pkg/generated/contract",
+    "pkg/generated/filterer",
     "pkg/model",
     "pkg/utils"
   ]
-  revision = "050bee21348f32cd9d8d339ae491a226b6d21d05"
+  revision = "19673924d549e27d286c4f9b23c28338f3afe797"
 
 [[projects]]
   name = "github.com/kelseyhightower/envconfig"
@@ -199,12 +185,6 @@
   revision = "d600f31f815368e57b551e524b0169bd175f7edb"
 
 [[projects]]
-  name = "gopkg.in/alecthomas/kingpin.v2"
-  packages = ["."]
-  revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
-  version = "v2.2.6"
-
-[[projects]]
   name = "gopkg.in/fatih/set.v0"
   packages = ["."]
   revision = "57907de300222151a123d29255ed17f5ed43fad3"
@@ -225,6 +205,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "67d6c13b017a2c3b06c8608bd81e37491b67cc1dc9395737e539298e170dadfc"
+  inputs-digest = "1183ccd7ed628f0d95bd2e3baf58aeac78c174757ae1e889df1e0a422d807b57"
   solver-name = "gps-cdcl"
   solver-version = 1
