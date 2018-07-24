@@ -107,7 +107,7 @@
     "pkg/model",
     "pkg/utils"
   ]
-  revision = "5de36d844bf2f82bd2c60d78caea4d6c7642e844"
+  revision = "403a7fea81eb51be94564eec76c72efd0da5bd33"
 
 [[projects]]
   name = "github.com/kelseyhightower/envconfig"
