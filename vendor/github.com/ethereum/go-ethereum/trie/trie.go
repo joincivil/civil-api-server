@@ -433,10 +433,12 @@ func (t *Trie) resolveHash(n hashNode, prefix []byte) (node, error) {
 	cacheMissCounter.Inc(1)
 
 	hash := common.BytesToHash(n)
-	if node := t.db.node(hash, t.cachegen); node != nil {
-		return node, nil
+
+	enc, err := t.db.Node(hash)
+	if err != nil || enc == nil {
+		return nil, &MissingNodeError{NodeHash: hash, Path: prefix}
 	}
-	return nil, &MissingNodeError{NodeHash: hash, Path: prefix}
+	return mustDecodeNode(n, enc, t.cachegen), nil
 }
 
 // Root returns the root hash of the trie.

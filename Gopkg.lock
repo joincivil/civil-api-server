@@ -5,19 +5,13 @@
   branch = "master"
   name = "github.com/aristanetworks/goarista"
   packages = ["monotime"]
-  revision = "12d26871e3c44933da47b09cd3730a49422bc1fe"
+  revision = "2c5933638c5ef1bc320b01486100788c81d57b99"
 
 [[projects]]
   branch = "master"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
-  revision = "9a2f9524024889e129a5422aca2cff73cb3eabf6"
-
-[[projects]]
-  name = "github.com/deckarep/golang-set"
-  packages = ["."]
-  revision = "1d4478f51bed434f1dadf96dcd9b43aabac66795"
-  version = "v1.7"
+  revision = "fdfc19097e7ac6b57035062056f5b7b4638b8898"
 
 [[projects]]
   branch = "master"
@@ -52,6 +46,7 @@
     "crypto/bn256",
     "crypto/bn256/cloudflare",
     "crypto/bn256/google",
+    "crypto/randentropy",
     "crypto/secp256k1",
     "crypto/sha3",
     "eth/filters",
@@ -66,8 +61,8 @@
     "rpc",
     "trie"
   ]
-  revision = "225171a4bfcc16bd12a1906b1e0d43d0b18c353b"
-  version = "v1.8.13"
+  revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
+  version = "v1.8.11"
 
 [[projects]]
   name = "github.com/fatih/structs"
@@ -111,6 +106,7 @@
   revision = "0dae4fefe7c0e190f7b5a78dac28a1c82cc8d849"
 
 [[projects]]
+  branch = "master"
   name = "github.com/joincivil/civil-events-crawler"
   packages = [
     "pkg/contractutils",
@@ -151,8 +147,8 @@
 [[projects]]
   name = "github.com/rs/cors"
   packages = ["."]
-  revision = "3fb1b69b103a84de38a19c3c6ec073dd6caa4d3f"
-  version = "v1.5.0"
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
 
 [[projects]]
   branch = "master"
@@ -181,19 +177,19 @@
     "ripemd160",
     "scrypt"
   ]
-  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["websocket"]
-  revision = "a0f8a16cb08c06df97cbdf9c47f4731ba548c33c"
+  revision = "039a4258aec0ad3c79b905677cceeab13b296a77"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "bd9dbc187b6e1dacfdd2722a87e83093c2d7bd6e"
+  revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
 [[projects]]
   branch = "master"
@@ -203,7 +199,13 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "0700b576e4d8bfc20051cc93cfb041e6e52ce8ed"
+  revision = "d600f31f815368e57b551e524b0169bd175f7edb"
+
+[[projects]]
+  name = "gopkg.in/fatih/set.v0"
+  packages = ["."]
+  revision = "57907de300222151a123d29255ed17f5ed43fad3"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "v2"
@@ -220,6 +222,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "15494609692ad67a2a403c5bd91529982746a8ea647e31f8c28aad1971c25fac"
+  inputs-digest = "9da19136fab858f945880010567c5492663f91e96b02d3f3294b3fc292e077c0"
   solver-name = "gps-cdcl"
   solver-version = 1
