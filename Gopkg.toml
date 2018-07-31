@@ -41,5 +41,5 @@
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/joincivil/civil-events-crawler"
+  revision = "403a7fea81eb51be94564eec76c72efd0da5bd33"

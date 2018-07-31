@@ -157,7 +157,7 @@ func (api *PrivateAdminAPI) StartRPC(host *string, port *int, cors *string, apis
 		}
 	}
 
-	if err := api.node.startHTTP(fmt.Sprintf("%s:%d", *host, *port), api.node.rpcAPIs, modules, allowedOrigins, allowedVHosts); err != nil {
+	if err := api.node.startHTTP(fmt.Sprintf("%s:%d", *host, *port), api.node.rpcAPIs, modules, allowedOrigins, allowedVHosts, api.node.config.HTTPTimeouts); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -343,13 +343,13 @@ func (api *PublicDebugAPI) Metrics(raw bool) (map[string]interface{}, error) {
 				ps := t.Percentiles([]float64{5, 20, 50, 80, 95})
 				root[name] = map[string]interface{}{
 					"Measurements": len(t.Values()),
-					"Mean":         time.Duration(t.Mean()).String(),
+					"Mean":         t.Mean(),
 					"Percentiles": map[string]interface{}{
-						"5":  time.Duration(ps[0]).String(),
-						"20": time.Duration(ps[1]).String(),
-						"50": time.Duration(ps[2]).String(),
-						"80": time.Duration(ps[3]).String(),
-						"95": time.Duration(ps[4]).String(),
+						"5":  ps[0],
+						"20": ps[1],
+						"50": ps[2],
+						"80": ps[3],
+						"95": ps[4],
 					},
 				}
 
