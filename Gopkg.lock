@@ -98,6 +98,14 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
+  name = "github.com/jmoiron/sqlx"
+  packages = [
+    ".",
+    "reflectx"
+  ]
+  revision = "0dae4fefe7c0e190f7b5a78dac28a1c82cc8d849"
+
+[[projects]]
   branch = "master"
   name = "github.com/joincivil/civil-events-crawler"
   packages = [
@@ -105,6 +113,7 @@
     "pkg/generated/contract",
     "pkg/generated/filterer",
     "pkg/model",
+    "pkg/persistence/postgres",
     "pkg/utils"
   ]
   revision = "403a7fea81eb51be94564eec76c72efd0da5bd33"
@@ -114,6 +123,14 @@
   packages = ["."]
   revision = "f611eb38b3875cc3bd991ca91c51d06446afa14c"
   version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "oid"
+  ]
+  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
   name = "github.com/pborman/uuid"
@@ -205,6 +222,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b387a1487928be74cb0bf4a39e0435fdbc2f9c2ff88f2f81334f7d06b79d3e88"
+  inputs-digest = "9da19136fab858f945880010567c5492663f91e96b02d3f3294b3fc292e077c0"
   solver-name = "gps-cdcl"
   solver-version = 1
