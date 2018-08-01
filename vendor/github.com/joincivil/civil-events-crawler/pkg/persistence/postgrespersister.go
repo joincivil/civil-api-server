@@ -171,7 +171,6 @@ func (p *PostgresPersister) retrieveDbEvents(tableName string, criteria *model.R
 	if criteria.Count > 0 {
 		queryBuf.WriteString(" LIMIT :count") // nolint: gosec
 	}
-
 	dbEvent := []postgres.Event{}
 	nstmt, err := p.db.PrepareNamed(queryBuf.String())
 	if err != nil {
