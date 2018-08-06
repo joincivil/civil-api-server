@@ -93,7 +93,7 @@ lint: ## Runs linting.
 
 .PHONY: build
 build: ## Builds the code.
-	$(GOBUILD) ./...
+	$(GOBUILD) -o ./build/processorcron cmd/processorcron/main.go
 
 .PHONY: test
 test: ## Runs unit tests and tests code coverage.
@@ -102,7 +102,7 @@ test: ## Runs unit tests and tests code coverage.
 .PHONY: test-integration
 test-integration: ## Runs tagged integration tests
 	@echo 'mode: atomic' > coverage.txt && $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -timeout=30s -tags=integration ./...
-		
+
 .PHONY: cover
 cover: test ## Runs unit tests, code coverage, and runs HTML coverage tool.
 	@$(GOCOVER) -html=coverage.txt
@@ -111,6 +111,7 @@ cover: test ## Runs unit tests, code coverage, and runs HTML coverage tool.
 clean: ## go clean and clean up of artifacts.
 	@$(GOCLEAN) ./... || true
 	@rm coverage.txt || true
+	@rm build || true
 
 ## Some magic from http://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 .PHONY: help
