@@ -30,7 +30,7 @@ jobs:
           docker_layer_caching: true # (3)
       - run:
            name: Setting up tools
-           command: make setup
+           command: make check-go-env
       - run:
           name: Waiting for Postgres to be ready
           command: |
@@ -43,11 +43,16 @@ jobs:
             echo Failed waiting for Postgres && exit 1
       - run:
           name: Building code
-          command: echo $GOPATH && cat $GOPATH/src/github.com/joincivil/civil-events-processor/vendor/github.com/joincivil/civil-events-crawler/pkg/model/persistinterfaces.go && make build
+          command: make build
       - persist_to_workspace:
           root: ./
           paths:
             - build
+            - pkg
+            - Makefile
+            - vendor
+            - cmd
+            - .gometalinter.json
 
   lint:
     <<: *defaults
@@ -56,6 +61,9 @@ jobs:
     steps:
         - attach_workspace:
             at: ./
+        - run:
+           name: Setting up tools
+           command: make install-linter
         - run:
             name: Run linter
             command: make lint
