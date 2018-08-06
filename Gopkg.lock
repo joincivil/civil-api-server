@@ -117,7 +117,7 @@
     "pkg/persistence/postgres",
     "pkg/utils"
   ]
-  revision = "d04875dd7a71c0fe21f5d4b0e27c6f3983ae057b"
+  revision = "a841750da6ba42e17fa2b48a0e7cb819e7230233"
 
 [[projects]]
   name = "github.com/kelseyhightower/envconfig"
