@@ -113,10 +113,11 @@
     "pkg/generated/contract",
     "pkg/generated/filterer",
     "pkg/model",
+    "pkg/persistence",
     "pkg/persistence/postgres",
     "pkg/utils"
   ]
-  revision = "403a7fea81eb51be94564eec76c72efd0da5bd33"
+  revision = "a841750da6ba42e17fa2b48a0e7cb819e7230233"
 
 [[projects]]
   name = "github.com/kelseyhightower/envconfig"
@@ -143,6 +144,12 @@
   packages = ["."]
   revision = "52ae50d8490436622a8941bd70c3dbe0acdd4bbf"
   version = "v0.9.0"
+
+[[projects]]
+  name = "github.com/robfig/cron"
+  packages = ["."]
+  revision = "b41be1df696709bb6395fe435af20370037c0b4c"
+  version = "v1.1"
 
 [[projects]]
   name = "github.com/rs/cors"
@@ -222,6 +229,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9da19136fab858f945880010567c5492663f91e96b02d3f3294b3fc292e077c0"
+  inputs-digest = "451b1b0b89ac1787e1a5a877ed9a699b8fd18cb57f9f66b5b9d28cfb18b1aef0"
   solver-name = "gps-cdcl"
   solver-version = 1
