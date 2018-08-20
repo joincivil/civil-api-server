@@ -1,0 +1,9 @@
+/vendor
+/docs/public
+/example/chat/node_modules
+/integration/node_modules
+/integration/schema-fetched.graphql
+/example/chat/package-lock.json
+/codegen/tests/gen
+
+.idea/
