@@ -6,8 +6,13 @@ schema {
 type Query {
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
-  goveranceEvents(addr: String!): [GovernanceEvent!]!
+  goveranceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
+}
+
+input DateRange {
+  gt: Time
+  lt: Time
 }
 
 # A type that reflects values in model.Listing

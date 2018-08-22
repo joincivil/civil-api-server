@@ -70,7 +70,7 @@ type ListingResolver interface {
 type QueryResolver interface {
 	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
-	GoveranceEvents(ctx context.Context, addr string) ([]model.GovernanceEvent, error)
+	GoveranceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
 }
 
@@ -1182,16 +1182,66 @@ func (ec *executionContext) _Query_listing(ctx context.Context, field graphql.Co
 func (ec *executionContext) _Query_goveranceEvents(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["addr"]; ok {
 		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
 		if err != nil {
 			ec.Error(ctx, err)
 			return graphql.Null
 		}
 	}
 	args["addr"] = arg0
+	var arg1 *DateRange
+	if tmp, ok := rawArgs["creationDate"]; ok {
+		var err error
+		var ptr1 DateRange
+		if tmp != nil {
+			ptr1, err = UnmarshalDateRange(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["creationDate"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["after"] = arg3
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Query",
 		Args:   args,
@@ -1207,7 +1257,7 @@ func (ec *executionContext) _Query_goveranceEvents(ctx context.Context, field gr
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().GoveranceEvents(ctx, args["addr"].(string))
+			return ec.resolvers.Query().GoveranceEvents(ctx, args["addr"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["after"].(*string))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -2232,6 +2282,40 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.___Type(ctx, field.Selections, res)
 }
 
+func UnmarshalDateRange(v interface{}) (DateRange, error) {
+	var it DateRange
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "gt":
+			var err error
+			var ptr1 time.Time
+			if v != nil {
+				ptr1, err = graphql.UnmarshalTime(v)
+				it.Gt = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "lt":
+			var err error
+			var ptr1 time.Time
+			if v != nil {
+				ptr1, err = graphql.UnmarshalTime(v)
+				it.Lt = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Resolver) interface{} {
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
@@ -2258,8 +2342,13 @@ var parsedSchema = gqlparser.MustLoadSchema(
 type Query {
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
-  goveranceEvents(addr: String!): [GovernanceEvent!]!
+  goveranceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
+}
+
+input DateRange {
+  gt: Time
+  lt: Time
 }
 
 # A type that reflects values in model.Listing

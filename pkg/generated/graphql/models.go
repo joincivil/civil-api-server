@@ -3,12 +3,18 @@
 package graphql
 
 import (
+	time "time"
+
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 )
 
 type ArticlePayload struct {
 	Key   string                    `json:"key"`
 	Value model.ArticlePayloadValue `json:"value"`
+}
+type DateRange struct {
+	Gt *time.Time `json:"gt"`
+	Lt *time.Time `json:"lt"`
 }
 type Metadata struct {
 	Key   string `json:"key"`

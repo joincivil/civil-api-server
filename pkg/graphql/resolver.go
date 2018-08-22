@@ -83,7 +83,7 @@ func (r *contentRevisionResolver) ContractRevisionID(ctx context.Context, obj *m
 	return int(bigInt.Int64()), nil
 }
 func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.ContentRevision) (time.Time, error) {
-	return utils.NanoSecsToTime(obj.RevisionDateTs()), nil
+	return utils.NanoSecsFromEpochToTime(obj.RevisionDateTs()), nil
 }
 
 type governanceEventResolver struct{ *Resolver }
@@ -122,10 +122,10 @@ func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.Gover
 	return data, nil
 }
 func (r *governanceEventResolver) CreationDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
-	return utils.NanoSecsToTime(obj.CreationDateTs()), nil
+	return utils.NanoSecsFromEpochToTime(obj.CreationDateTs()), nil
 }
 func (r *governanceEventResolver) LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
-	return utils.NanoSecsToTime(obj.LastUpdatedDateTs()), nil
+	return utils.NanoSecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
 }
 
 type listingResolver struct{ *Resolver }
@@ -153,29 +153,30 @@ func (r *listingResolver) ContributorAddresses(ctx context.Context, obj *model.L
 	return ownerAddrs, nil
 }
 func (r *listingResolver) CreatedDate(ctx context.Context, obj *model.Listing) (time.Time, error) {
-	return utils.NanoSecsToTime(obj.CreatedDateTs()), nil
+	return utils.NanoSecsFromEpochToTime(obj.CreatedDateTs()), nil
 }
 func (r *listingResolver) ApplicationDate(ctx context.Context, obj *model.Listing) (*time.Time, error) {
 	if obj.ApplicationDateTs() == 0 {
 		return nil, nil
 	}
-	timeObj := utils.NanoSecsToTime(obj.ApplicationDateTs())
+	timeObj := utils.NanoSecsFromEpochToTime(obj.ApplicationDateTs())
 	return &timeObj, nil
 }
 func (r *listingResolver) ApprovalDate(ctx context.Context, obj *model.Listing) (*time.Time, error) {
 	if obj.ApprovalDateTs() == 0 {
 		return nil, nil
 	}
-	timeObj := utils.NanoSecsToTime(obj.ApprovalDateTs())
+	timeObj := utils.NanoSecsFromEpochToTime(obj.ApprovalDateTs())
 	return &timeObj, nil
 }
 func (r *listingResolver) LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error) {
-	return utils.NanoSecsToTime(obj.LastUpdatedDateTs()), nil
+	return utils.NanoSecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
 }
 
 type queryResolver struct{ *Resolver }
 
-func (r *queryResolver) Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error) {
+func (r *queryResolver) Listings(ctx context.Context, whitelistedOnly *bool, first *int,
+	after *string) ([]model.Listing, error) {
 	criteria := &model.ListingCriteria{}
 
 	if after != nil && *after != "" {
@@ -211,10 +212,36 @@ func (r *queryResolver) Listing(ctx context.Context, addr string) (*model.Listin
 	}
 	return listing, nil
 }
-func (r *queryResolver) GoveranceEvents(ctx context.Context, addr string) (
-	[]model.GovernanceEvent, error) {
-	address := common.HexToAddress(addr)
-	events, err := r.govEventPersister.GovernanceEventsByListingAddress(address)
+func (r *queryResolver) GoveranceEvents(ctx context.Context, addr *string, creationDate *graphql.DateRange,
+	first *int, after *string) ([]model.GovernanceEvent, error) {
+	criteria := &model.GovernanceEventCriteria{}
+
+	if addr != nil && *addr != "" {
+		criteria.ListingAddress = *addr
+	}
+	if creationDate != nil {
+		if creationDate.Gt != nil {
+			// Since we store in nsecs, add one second in nsecs so we ensure that
+			// this is compares > by secs.
+			oneSecInNano := int64(1000000000)
+			criteria.CreatedFromTs = utils.TimeToNanoSecsFromEpoch(creationDate.Gt) + oneSecInNano
+		}
+		if creationDate.Lt != nil {
+			criteria.CreatedBeforeTs = utils.TimeToNanoSecsFromEpoch(creationDate.Lt)
+		}
+	}
+	if after != nil && *after != "" {
+		afterInt, err := strconv.Atoi(*after)
+		if err != nil {
+			return nil, err
+		}
+		criteria.Offset = afterInt
+	}
+	if first != nil {
+		criteria.Count = *first
+	}
+
+	events, err := r.govEventPersister.GovernanceEventsByCriteria(criteria)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +257,9 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 	criteria := &model.ContentRevisionCriteria{
 		LatestOnly: true,
 	}
-
+	if addr != nil && *addr != "" {
+		criteria.ListingAddress = *addr
+	}
 	if after != nil && *after != "" {
 		afterInt, err := strconv.Atoi(*after)
 		if err != nil {
