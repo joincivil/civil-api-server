@@ -1,0 +1,71 @@
+schema {
+  query: Query
+}
+
+# The query type, represents all of the entry points into our object graph
+type Query {
+  listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
+  listing(addr: String!): Listing
+  goveranceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
+  articles(addr: String, first: Int, after: String): [ContentRevision!]!
+}
+
+input DateRange {
+  gt: Time
+  lt: Time
+}
+
+# A type that reflects values in model.Listing
+type Listing {
+  name: String!
+  contractAddress: String!
+  whitelisted: Boolean!
+  lastGovState: String!
+  url: String!
+  charterUri: String!
+  ownerAddresses: [String!]!
+  contributorAddresses: [String!]!
+  createdDate: Time!
+  applicationDate: Time
+  approvalDate: Time
+  lastUpdatedDate: Time!
+}
+
+# A type that reflects values in model.Metadata
+type Metadata {
+  key: String!
+  value: String!
+}
+
+# A type that reflects values in model.GovernanceEvent
+type GovernanceEvent {
+  listingAddress: String!
+  senderAddress: String!
+  metadata: [Metadata!]!
+  governanceEventType: String!
+  creationDate: Time!
+  lastUpdatedDate: Time!
+  eventHash: String!
+}
+
+# A type that reflects values in model.ArticlePayload
+type ArticlePayload {
+  key: String!
+  value: ArticlePayloadValue!
+}
+
+# A type that reflects values in model.ContentRevision
+type ContentRevision {
+  listingAddress: String!
+  payload: [ArticlePayload!]!
+  payloadHash: String!
+  editorAddress: String!
+  contractContentId: Int!
+  contractRevisionId: Int!
+  revisionUri: String!
+  revisionDate: Time!
+}
+
+scalar Time
+scalar ArticlePayloadValue
+

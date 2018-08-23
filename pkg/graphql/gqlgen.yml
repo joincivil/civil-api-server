@@ -1,0 +1,28 @@
+# .gqlgen.yml example
+#
+# Refer to https://gqlgen.com/config/
+# for detailed .gqlgen.yml documentation.
+schema: schema.graphql
+
+exec:
+  filename: ../generated/graphql/exec.go
+  package: graphql
+
+model:
+  filename: ../generated/graphql/models.go
+  package: graphql
+
+resolver:
+  filename: resolver.go
+  package: graphql
+  type: Resolver
+
+models:
+  Listing:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Listing
+  GovernanceEvent:
+    model: github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
+  ContentRevision:
+    model: github.com/joincivil/civil-events-processor/pkg/model.ContentRevision
+  ArticlePayloadValue:
+    model: github.com/joincivil/civil-events-processor/pkg/model.ArticlePayloadValue
