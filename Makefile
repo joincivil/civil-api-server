@@ -18,7 +18,7 @@ GO:=$(shell command -v go 2> /dev/null)
 DOCKER:=$(shell command -v docker 2> /dev/null)
 APT:=$(shell command -v apt-get 2> /dev/null)
 
-## Reliant on go and $GOPATH being set.
+## Reliant on go and $GOPATH being set
 .PHONY: check-go-env
 check-go-env:
 ifndef GO
@@ -99,12 +99,19 @@ postgres-stop: check-docker-env ## Stops the development PostgreSQL server
 lint: ## Runs linting.
 	@gometalinter ./...
 
-.PHONY: build
-build: ## Builds the code.
+.PHONY: build-processor
+build-processor: ## Builds the processor cron
 	$(GOBUILD) -o ./build/processorcron cmd/processorcron/main.go
 
+.PHONY: build-graphql
+build-graphql: ## Builds the graphql server
+	$(GOBUILD) -o ./build/graphqlserver cmd/graphqlserver/main.go
+
+.PHONY: build
+build: build-processor build-graphql ## Builds all the code
+
 .PHONY: test
-test: ## Runs unit tests and tests code coverage.
+test: ## Runs unit tests and tests code coverage
 	@echo 'mode: atomic' > coverage.txt && $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -timeout=30s ./...
 
 .PHONY: test-integration
@@ -116,7 +123,7 @@ cover: test ## Runs unit tests, code coverage, and runs HTML coverage tool.
 	@$(GOCOVER) -html=coverage.txt
 
 .PHONY: clean
-clean: ## go clean and clean up of artifacts.
+clean: ## go clean and clean up of artifacts
 	@$(GOCLEAN) ./... || true
 	@rm coverage.txt || true
 	@rm build || true
