@@ -107,7 +107,7 @@ jobs:
             - .kubernetes_ns
             - .kube
 
-  push-container:
+  push-container-processor:
     docker:
       - image: civilmedia/gcloud-node:latest
     working_directory: /go/src/github.com/joincivil/civil-events-processor
@@ -122,6 +122,7 @@ jobs:
             TAG=`echo $CIRCLE_BRANCH | sed 's/\\//_/g'`
 
             mv /root/build ./build
+            cp /root/cmd/processorcron/Dockerfile ./Dockerfile
 
             docker build . \
               -t gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME:$TAG \
@@ -133,7 +134,7 @@ jobs:
            echo "pushing $GOOGLE_PROJECT_ID"
            docker push gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME
 
-  deploy-staging:
+  deploy-staging-processor:
     docker:
       - image: civilmedia/gcloud-node:latest
     working_directory: ~/repo
@@ -145,7 +146,7 @@ jobs:
           command: |
             kubectl set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME:development-$CIRCLE_SHA1 --namespace staging
 
-  deploy-production:
+  deploy-production-processor:
     docker:
       - image: civilmedia/gcloud-node:latest
     working_directory: ~/repo
@@ -157,6 +158,66 @@ jobs:
           command: |
             echo "intentionally turned off - uncomment to enable"
             # kubectl set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME:master-$CIRCLE_SHA1 --namespace production
+            #
+            #
+
+  push-container-graphql:
+    docker:
+      - image: civilmedia/gcloud-node:latest
+    working_directory: /go/src/github.com/joincivil/civil-events-processor
+    steps:
+      - attach_workspace:
+          at: /root
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Container
+          command: |
+            TAG=`echo $CIRCLE_BRANCH | sed 's/\\//_/g'`
+            GRAPHQL_REPONAME="$CIRCLE_PROJECT_REPONAME-graphql"
+            echo $GRAPHQL_REPONAME
+
+            mv /root/build ./build
+            cp /root/cmd/graphqlserver/Dockerfile ./Dockerfile
+
+            docker build . \
+              -t gcr.io/$GOOGLE_PROJECT_ID/$GRAPHQL_REPONAME:$TAG \
+              -t gcr.io/$GOOGLE_PROJECT_ID/$GRAPHQL_REPONAME:$TAG-$CIRCLE_SHA1
+      - deploy:
+          name: Push Containers to Registry
+          command: |
+           gcloud config list
+           GRAPHQL_REPONAME="$CIRCLE_PROJECT_REPONAME-graphql"
+           echo "pushing $GOOGLE_PROJECT_ID"
+           docker push gcr.io/$GOOGLE_PROJECT_ID/$GRAPHQL_REPONAME
+
+  deploy-staging-graphql:
+    docker:
+      - image: civilmedia/gcloud-node:latest
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+              at: /root
+      - deploy:
+          name: Update Kubernetes Deployment on STAGING
+          command: |
+            GRAPHQL_REPONAME="$CIRCLE_PROJECT_REPONAME-graphql"
+            kubectl set image deployment/$GRAPHQL_REPONAME $GRAPHQL_REPONAME=gcr.io/$GOOGLE_PROJECT_ID/$GRAPHQL_REPONAME:development-$CIRCLE_SHA1 --namespace staging
+
+  deploy-production-graphql:
+    docker:
+      - image: civilmedia/gcloud-node:latest
+    working_directory: ~/repo
+    steps:
+      - attach_workspace:
+          at: /root
+      - deploy:
+          name: Update Kubernetes Deployment on PRODUCTION
+          command: |
+            echo "intentionally turned off - uncomment to enable"
+            # GRAPHQL_REPONAME="$CIRCLE_PROJECT_REPONAME-graphql"
+            # kubectl set image deployment/$GRAPHQL_REPONAME $GRAPHQL_REPONAME=gcr.io/$GOOGLE_PROJECT_ID/$GRAPHQL_REPONAME:master-$CIRCLE_SHA1 --namespace production
+            #
             #
 workflows:
   version: 2
@@ -182,7 +243,7 @@ workflows:
                 - master
                 - png/1322/ci
                 - /container-.*/
-      - push-container:
+      - push-container-processor:
           context: gcp-common
           requires:
             - setup-gcp
@@ -193,19 +254,47 @@ workflows:
                 - master
                 - png/1322/ci
                 - /container-.*/
-      - deploy-staging:
+      - deploy-staging-processor:
           context: gcp-common
           requires:
-            - push-container
+            - push-container-processor
           filters:
             branches:
               only:
                 - development
                 - png/1322/ci
-      - deploy-production:
+      - deploy-production-processor:
           context: gcp-common
           requires:
-            - push-container
+            - push-container-processor
+          filters:
+            branches:
+              only:
+                - master
+      - push-container-graphql:
+          context: gcp-common
+          requires:
+            - setup-gcp
+          filters:
+            branches:
+              only:
+                - development
+                - master
+                - png/1322/ci
+                - /container-.*/
+      - deploy-staging-graphql:
+          context: gcp-common
+          requires:
+            - push-container-graphql
+          filters:
+            branches:
+              only:
+                - development
+                - png/1322/ci
+      - deploy-production-graphql:
+          context: gcp-common
+          requires:
+            - push-container-graphql
           filters:
             branches:
               only:
