@@ -83,7 +83,7 @@ func (r *contentRevisionResolver) ContractRevisionID(ctx context.Context, obj *m
 	return int(bigInt.Int64()), nil
 }
 func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.ContentRevision) (time.Time, error) {
-	return utils.NanoSecsFromEpochToTime(obj.RevisionDateTs()), nil
+	return utils.SecsFromEpochToTime(obj.RevisionDateTs()), nil
 }
 
 type governanceEventResolver struct{ *Resolver }
@@ -122,10 +122,10 @@ func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.Gover
 	return data, nil
 }
 func (r *governanceEventResolver) CreationDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
-	return utils.NanoSecsFromEpochToTime(obj.CreationDateTs()), nil
+	return utils.SecsFromEpochToTime(obj.CreationDateTs()), nil
 }
 func (r *governanceEventResolver) LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
-	return utils.NanoSecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
+	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
 }
 
 type listingResolver struct{ *Resolver }
@@ -153,24 +153,24 @@ func (r *listingResolver) ContributorAddresses(ctx context.Context, obj *model.L
 	return ownerAddrs, nil
 }
 func (r *listingResolver) CreatedDate(ctx context.Context, obj *model.Listing) (time.Time, error) {
-	return utils.NanoSecsFromEpochToTime(obj.CreatedDateTs()), nil
+	return utils.SecsFromEpochToTime(obj.CreatedDateTs()), nil
 }
 func (r *listingResolver) ApplicationDate(ctx context.Context, obj *model.Listing) (*time.Time, error) {
 	if obj.ApplicationDateTs() == 0 {
 		return nil, nil
 	}
-	timeObj := utils.NanoSecsFromEpochToTime(obj.ApplicationDateTs())
+	timeObj := utils.SecsFromEpochToTime(obj.ApplicationDateTs())
 	return &timeObj, nil
 }
 func (r *listingResolver) ApprovalDate(ctx context.Context, obj *model.Listing) (*time.Time, error) {
 	if obj.ApprovalDateTs() == 0 {
 		return nil, nil
 	}
-	timeObj := utils.NanoSecsFromEpochToTime(obj.ApprovalDateTs())
+	timeObj := utils.SecsFromEpochToTime(obj.ApprovalDateTs())
 	return &timeObj, nil
 }
 func (r *listingResolver) LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error) {
-	return utils.NanoSecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
+	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
 }
 
 type queryResolver struct{ *Resolver }
@@ -221,13 +221,10 @@ func (r *queryResolver) GoveranceEvents(ctx context.Context, addr *string, creat
 	}
 	if creationDate != nil {
 		if creationDate.Gt != nil {
-			// Since we store in nsecs, add one second in nsecs so we ensure that
-			// this is compares > by secs.
-			oneSecInNano := int64(1000000000)
-			criteria.CreatedFromTs = utils.TimeToNanoSecsFromEpoch(creationDate.Gt) + oneSecInNano
+			criteria.CreatedFromTs = utils.TimeToSecsFromEpoch(creationDate.Gt)
 		}
 		if creationDate.Lt != nil {
-			criteria.CreatedBeforeTs = utils.TimeToNanoSecsFromEpoch(creationDate.Lt)
+			criteria.CreatedBeforeTs = utils.TimeToSecsFromEpoch(creationDate.Lt)
 		}
 	}
 	if after != nil && *after != "" {
