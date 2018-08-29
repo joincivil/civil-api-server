@@ -99,16 +99,9 @@ postgres-stop: check-docker-env ## Stops the development PostgreSQL server
 lint: ## Runs linting.
 	@gometalinter ./...
 
-.PHONY: build-processor
-build-processor: ## Builds the processor cron
-	$(GOBUILD) -o ./build/processorcron cmd/processorcron/main.go
-
-.PHONY: build-graphql
-build-graphql: ## Builds the graphql server
-	$(GOBUILD) -o ./build/graphqlserver cmd/graphqlserver/main.go
-
 .PHONY: build
-build: build-processor build-graphql ## Builds all the code
+build: ## Builds the graphql server
+	$(GOBUILD) -o ./build/graphqlserver cmd/graphqlserver/main.go
 
 .PHONY: test
 test: ## Runs unit tests and tests code coverage

@@ -11,10 +11,11 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
-	graphqlgen "github.com/joincivil/civil-events-processor/pkg/generated/graphql"
-	graphql "github.com/joincivil/civil-events-processor/pkg/graphql"
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
+
+	graphqlgen "github.com/joincivil/civil-graphql-server/pkg/generated/graphql"
+	graphql "github.com/joincivil/civil-graphql-server/pkg/graphql"
 )
 
 const (

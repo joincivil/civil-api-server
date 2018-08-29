@@ -34,51 +34,28 @@
   revision = "fdfc19097e7ac6b57035062056f5b7b4638b8898"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/edsrzf/mmap-go"
-  packages = ["."]
-  revision = "0bce6a6887123b67a60366d2c9fe2dfb74289d2e"
-
-[[projects]]
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
     "accounts",
     "accounts/abi",
     "accounts/abi/bind",
-    "accounts/abi/bind/backends",
     "accounts/keystore",
     "common",
-    "common/bitutil",
     "common/hexutil",
     "common/math",
     "common/mclock",
-    "consensus",
-    "consensus/ethash",
-    "consensus/misc",
-    "core",
-    "core/bloombits",
-    "core/rawdb",
-    "core/state",
     "core/types",
-    "core/vm",
     "crypto",
-    "crypto/bn256",
-    "crypto/bn256/cloudflare",
-    "crypto/bn256/google",
     "crypto/randentropy",
     "crypto/secp256k1",
     "crypto/sha3",
-    "eth/filters",
-    "ethclient",
     "ethdb",
     "event",
     "log",
     "metrics",
-    "p2p/netutil",
     "params",
     "rlp",
-    "rpc",
     "trie"
   ]
   revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
@@ -124,15 +101,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/golang-lru"
-  packages = [
-    ".",
-    "simplelru"
-  ]
-  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
-
-[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -150,15 +118,26 @@
   branch = "master"
   name = "github.com/joincivil/civil-events-crawler"
   packages = [
-    "pkg/contractutils",
     "pkg/generated/contract",
-    "pkg/generated/filterer",
     "pkg/model",
     "pkg/persistence",
     "pkg/persistence/postgres",
     "pkg/utils"
   ]
   revision = "6b752b402a318e5f1fbaf8171fec919e61e15108"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/joincivil/civil-events-processor"
+  packages = [
+    "pkg/helpers",
+    "pkg/model",
+    "pkg/persistence",
+    "pkg/persistence/postgres",
+    "pkg/scraper",
+    "pkg/utils"
+  ]
+  revision = "241a91824ff1ebfec793b9e80264f9570213e5da"
 
 [[projects]]
   name = "github.com/kelseyhightower/envconfig"
@@ -197,12 +176,6 @@
   packages = ["."]
   revision = "b41be1df696709bb6395fe435af20370037c0b4c"
   version = "v1.1"
-
-[[projects]]
-  name = "github.com/rs/cors"
-  packages = ["."]
-  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
-  version = "v1.4.0"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -254,16 +227,9 @@
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
-    "ripemd160",
     "scrypt"
   ]
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/net"
-  packages = ["websocket"]
-  revision = "039a4258aec0ad3c79b905677cceeab13b296a77"
 
 [[projects]]
   branch = "master"
@@ -296,12 +262,6 @@
   revision = "8dcd6a7f4951f6ff3ee9cbb919a06d8925822e57"
 
 [[projects]]
-  branch = "v2"
-  name = "gopkg.in/natefinch/npipe.v2"
-  packages = ["."]
-  revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
-
-[[projects]]
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
@@ -310,6 +270,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "328cb9833cd3d5982e6f02f6ebf75654c5c7e58a87b2aec40ebd6384e9ca28ca"
+  inputs-digest = "74921736f41e58bbeb51be4eb801656bec06c9bbec21d09cb2340f6cc7a054a1"
   solver-name = "gps-cdcl"
   solver-version = 1
