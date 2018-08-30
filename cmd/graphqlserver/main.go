@@ -14,8 +14,8 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
 
-	graphqlgen "github.com/joincivil/civil-graphql-server/pkg/generated/graphql"
-	graphql "github.com/joincivil/civil-graphql-server/pkg/graphql"
+	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 )
 
 const (
