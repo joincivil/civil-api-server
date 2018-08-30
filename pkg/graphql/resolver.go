@@ -16,7 +16,7 @@ import (
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
 
-	graphql "github.com/joincivil/civil-graphql-server/pkg/generated/graphql"
+	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )
 
 // NewResolver is a convenience function to init a Resolver struct
