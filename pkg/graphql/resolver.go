@@ -138,6 +138,15 @@ func (r *governanceEventResolver) CreationDate(ctx context.Context, obj *model.G
 func (r *governanceEventResolver) LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
 	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
 }
+func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.GovernanceEvent) (model.Listing, error) {
+	listingAddress := obj.ListingAddress()
+	listing, err := r.listingPersister.ListingByAddress(listingAddress)
+	if err != nil {
+		return model.Listing{}, err
+	}
+	return *listing, nil
+
+}
 
 type listingResolver struct{ *Resolver }
 
