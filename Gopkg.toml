@@ -34,3 +34,6 @@ required = ["github.com/99designs/gqlgen"]
     name = "github.com/ethereum/go-ethereum"
     unused-packages = false
 
+[[constraint]]
+  name = "github.com/joincivil/civil-events-processor"
+  revision = "cd4168dc981412f6b2b635f3b05ac2fbf3efac92"
