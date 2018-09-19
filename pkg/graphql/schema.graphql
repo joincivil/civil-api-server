@@ -6,7 +6,8 @@ schema {
 type Query {
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
-  goveranceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
+  governanceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
+  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 }
 
@@ -37,6 +38,15 @@ type Metadata {
   value: String!
 }
 
+# A type that reflects block data in model.BlockData
+type BlockData {
+  blockNumber: Int!
+  txHash:      String!
+  txIndex:     Int!
+  blockHash:   String!
+  index:       Int!
+}
+
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {
   listingAddress: String!
@@ -46,6 +56,7 @@ type GovernanceEvent {
   creationDate: Time!
   lastUpdatedDate: Time!
   eventHash: String!
+  blockData: BlockData!
 }
 
 # A type that reflects values in model.ArticlePayload

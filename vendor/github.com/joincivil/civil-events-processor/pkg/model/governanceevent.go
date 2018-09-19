@@ -8,20 +8,62 @@ import (
 // Metadata represents any metadata associated with a governance event
 type Metadata map[string]interface{}
 
+// BlockData is block data from the block. NOTE: filled in by node, not secured by consensus
+type BlockData struct {
+	blockNumber uint64
+	txHash      string
+	txIndex     uint
+	blockHash   string
+	index       uint
+}
+
+// BlockNumber is the block number in which the transaction was included
+func (bd *BlockData) BlockNumber() uint64 {
+	return bd.blockNumber
+}
+
+// TxHash is the hash of the transaction
+func (bd *BlockData) TxHash() string {
+	return bd.txHash
+}
+
+// TxIndex is the index of the transaction in the block
+func (bd *BlockData) TxIndex() uint {
+	return bd.txIndex
+}
+
+// BlockHash is the hash of the block in which the transaction was included
+func (bd *BlockData) BlockHash() string {
+	return bd.blockHash
+}
+
+// Index is the index of the log in the receipt
+func (bd *BlockData) Index() uint {
+	return bd.index
+}
+
 // NewGovernanceEvent is a convenience function to init a new GovernanceEvent
 // struct
 func NewGovernanceEvent(listingAddr common.Address, senderAddr common.Address,
 	metadata Metadata, eventType string, creationDateTs int64,
-	lastUpdatedDateTs int64, eventHash string) *GovernanceEvent {
-	return &GovernanceEvent{
-		listingAddress:      listingAddr,
-		senderAddress:       senderAddr,
-		metadata:            metadata,
-		governanceEventType: eventType,
-		creationDateTs:      creationDateTs,
-		lastUpdatedDateTs:   lastUpdatedDateTs,
-		eventHash:           eventHash,
+	lastUpdatedDateTs int64, eventHash string, blockNumber uint64,
+	txHash common.Hash, txIndex uint, blockHash common.Hash, index uint) *GovernanceEvent {
+	ge := &GovernanceEvent{}
+	ge.listingAddress = listingAddr
+	ge.senderAddress = senderAddr
+	ge.metadata = metadata
+	ge.governanceEventType = eventType
+	ge.creationDateTs = creationDateTs
+	ge.lastUpdatedDateTs = lastUpdatedDateTs
+	ge.eventHash = eventHash
+	ge.blockData = BlockData{
+		blockNumber: blockNumber,
+		txHash:      txHash.Hex(),
+		txIndex:     txIndex,
+		blockHash:   blockHash.Hex(),
+		index:       index,
 	}
+	return ge
 }
 
 // GovernanceEvent represents a single governance event made to a listing.  Meant
@@ -40,6 +82,8 @@ type GovernanceEvent struct {
 	lastUpdatedDateTs int64
 
 	eventHash string
+
+	blockData BlockData
 }
 
 // ListingAddress returns the listing address associated with this event
@@ -53,8 +97,8 @@ func (g *GovernanceEvent) SenderAddress() common.Address {
 	return g.senderAddress
 }
 
-// Metadata returns the Metadata associated with the event. It might anything
-// returned in the raw log
+// Metadata returns the Metadata associated with the event. It might be anything
+// returned in the event payload
 func (g *GovernanceEvent) Metadata() Metadata {
 	return g.metadata
 }
@@ -82,4 +126,10 @@ func (g *GovernanceEvent) SetLastUpdatedDateTs(date int64) {
 // EventHash is the hash from the event
 func (g *GovernanceEvent) EventHash() string {
 	return g.eventHash
+}
+
+// BlockData has all the block data from the block associated with this event.
+// NOTE: This is not secured by consensus.
+func (g *GovernanceEvent) BlockData() BlockData {
+	return g.blockData
 }
