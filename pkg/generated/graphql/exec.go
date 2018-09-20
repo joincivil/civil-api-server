@@ -59,6 +59,7 @@ type GovernanceEventResolver interface {
 	LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error)
 
 	BlockData(ctx context.Context, obj *model.GovernanceEvent) (BlockData, error)
+	Listing(ctx context.Context, obj *model.GovernanceEvent) (model.Listing, error)
 }
 type JsonbResolver interface {
 	JSON(ctx context.Context, obj *jsonstore.JSONb) ([]jsonstore.JSONField, error)
@@ -580,6 +581,8 @@ func (ec *executionContext) _GovernanceEvent(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._GovernanceEvent_eventHash(ctx, field, obj)
 		case "blockData":
 			out.Values[i] = ec._GovernanceEvent_blockData(ctx, field, obj)
+		case "listing":
+			out.Values[i] = ec._GovernanceEvent_listing(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -784,6 +787,32 @@ func (ec *executionContext) _GovernanceEvent_blockData(ctx context.Context, fiel
 		}
 		res := resTmp.(BlockData)
 		return ec._BlockData(ctx, field.Selections, &res)
+	})
+}
+
+func (ec *executionContext) _GovernanceEvent_listing(ctx context.Context, field graphql.CollectedField, obj *model.GovernanceEvent) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "GovernanceEvent",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.GovernanceEvent().Listing(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(model.Listing)
+		return ec._Listing(ctx, field.Selections, &res)
 	})
 }
 
@@ -2981,6 +3010,7 @@ type GovernanceEvent {
   lastUpdatedDate: Time!
   eventHash: String!
   blockData: BlockData!
+  listing: Listing!
 }
 
 # A type that reflects values in model.ArticlePayload
