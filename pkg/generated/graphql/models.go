@@ -12,6 +12,13 @@ type ArticlePayload struct {
 	Key   *string                   `json:"key"`
 	Value model.ArticlePayloadValue `json:"value"`
 }
+type BlockData struct {
+	BlockNumber int    `json:"blockNumber"`
+	TxHash      string `json:"txHash"`
+	TxIndex     int    `json:"txIndex"`
+	BlockHash   string `json:"blockHash"`
+	Index       int    `json:"index"`
+}
 type DateRange struct {
 	Gt *time.Time `json:"gt"`
 	Lt *time.Time `json:"lt"`

@@ -135,6 +135,16 @@ func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.Gover
 	}
 	return data, nil
 }
+func (r *governanceEventResolver) BlockData(ctx context.Context, obj *model.GovernanceEvent) (graphql.BlockData, error) {
+	modelBlockData := obj.BlockData()
+	blockData := graphql.BlockData{}
+	blockData.BlockNumber = int(modelBlockData.BlockNumber())
+	blockData.TxHash = modelBlockData.TxHash()
+	blockData.TxIndex = int(modelBlockData.TxIndex())
+	blockData.BlockHash = modelBlockData.BlockHash()
+	blockData.Index = int(modelBlockData.Index())
+	return blockData, nil
+}
 func (r *governanceEventResolver) CreationDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
 	return utils.SecsFromEpochToTime(obj.CreationDateTs()), nil
 }
@@ -263,7 +273,7 @@ func (r *queryResolver) Listing(ctx context.Context, addr string) (*model.Listin
 	}
 	return listing, nil
 }
-func (r *queryResolver) GoveranceEvents(ctx context.Context, addr *string, creationDate *graphql.DateRange,
+func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, creationDate *graphql.DateRange,
 	first *int, after *string) ([]model.GovernanceEvent, error) {
 	criteria := &model.GovernanceEventCriteria{}
 
@@ -294,6 +304,18 @@ func (r *queryResolver) GoveranceEvents(ctx context.Context, addr *string, creat
 		return nil, err
 	}
 
+	modelEvents := make([]model.GovernanceEvent, len(events))
+	for index, event := range events {
+		modelEvents[index] = *event
+	}
+	return modelEvents, err
+}
+func (r *queryResolver) GovernanceEventsTxHash(ctx context.Context, txString string) ([]model.GovernanceEvent, error) {
+	txHash := common.HexToHash(txString)
+	events, err := r.govEventPersister.GovernanceEventsByTxHash(txHash)
+	if err != nil {
+		return nil, err
+	}
 	modelEvents := make([]model.GovernanceEvent, len(events))
 	for index, event := range events {
 		modelEvents[index] = *event

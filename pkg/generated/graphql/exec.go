@@ -57,6 +57,8 @@ type GovernanceEventResolver interface {
 
 	CreationDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error)
 	LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error)
+
+	BlockData(ctx context.Context, obj *model.GovernanceEvent) (BlockData, error)
 }
 type JsonbResolver interface {
 	JSON(ctx context.Context, obj *jsonstore.JSONb) ([]jsonstore.JSONField, error)
@@ -79,7 +81,8 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
-	GoveranceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
+	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
+	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
 	Jsonb(ctx context.Context, id *string, hash *string) ([]*jsonstore.JSONb, error)
 }
@@ -194,6 +197,122 @@ func (ec *executionContext) _ArticlePayload_value(ctx context.Context, field gra
 	}
 	res := resTmp.(model.ArticlePayloadValue)
 	return res
+}
+
+var blockDataImplementors = []string{"BlockData"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _BlockData(ctx context.Context, sel ast.SelectionSet, obj *BlockData) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, blockDataImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BlockData")
+		case "blockNumber":
+			out.Values[i] = ec._BlockData_blockNumber(ctx, field, obj)
+		case "txHash":
+			out.Values[i] = ec._BlockData_txHash(ctx, field, obj)
+		case "txIndex":
+			out.Values[i] = ec._BlockData_txIndex(ctx, field, obj)
+		case "blockHash":
+			out.Values[i] = ec._BlockData_blockHash(ctx, field, obj)
+		case "index":
+			out.Values[i] = ec._BlockData_index(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _BlockData_blockNumber(ctx context.Context, field graphql.CollectedField, obj *BlockData) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "BlockData"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.BlockNumber, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	return graphql.MarshalInt(res)
+}
+
+func (ec *executionContext) _BlockData_txHash(ctx context.Context, field graphql.CollectedField, obj *BlockData) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "BlockData"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.TxHash, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _BlockData_txIndex(ctx context.Context, field graphql.CollectedField, obj *BlockData) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "BlockData"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.TxIndex, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	return graphql.MarshalInt(res)
+}
+
+func (ec *executionContext) _BlockData_blockHash(ctx context.Context, field graphql.CollectedField, obj *BlockData) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "BlockData"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.BlockHash, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _BlockData_index(ctx context.Context, field graphql.CollectedField, obj *BlockData) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "BlockData"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Index, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	return graphql.MarshalInt(res)
 }
 
 var contentRevisionImplementors = []string{"ContentRevision"}
@@ -459,6 +578,8 @@ func (ec *executionContext) _GovernanceEvent(ctx context.Context, sel ast.Select
 			out.Values[i] = ec._GovernanceEvent_lastUpdatedDate(ctx, field, obj)
 		case "eventHash":
 			out.Values[i] = ec._GovernanceEvent_eventHash(ctx, field, obj)
+		case "blockData":
+			out.Values[i] = ec._GovernanceEvent_blockData(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -638,6 +759,32 @@ func (ec *executionContext) _GovernanceEvent_eventHash(ctx context.Context, fiel
 	}
 	res := resTmp.(string)
 	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _GovernanceEvent_blockData(ctx context.Context, field graphql.CollectedField, obj *model.GovernanceEvent) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "GovernanceEvent",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.GovernanceEvent().BlockData(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(BlockData)
+		return ec._BlockData(ctx, field.Selections, &res)
+	})
 }
 
 var jsonFieldImplementors = []string{"JsonField"}
@@ -1317,8 +1464,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query_listings(ctx, field)
 		case "listing":
 			out.Values[i] = ec._Query_listing(ctx, field)
-		case "goveranceEvents":
-			out.Values[i] = ec._Query_goveranceEvents(ctx, field)
+		case "governanceEvents":
+			out.Values[i] = ec._Query_governanceEvents(ctx, field)
+		case "governanceEventsTxHash":
+			out.Values[i] = ec._Query_governanceEventsTxHash(ctx, field)
 		case "articles":
 			out.Values[i] = ec._Query_articles(ctx, field)
 		case "jsonb":
@@ -1458,7 +1607,7 @@ func (ec *executionContext) _Query_listing(ctx context.Context, field graphql.Co
 	})
 }
 
-func (ec *executionContext) _Query_goveranceEvents(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_governanceEvents(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -1536,7 +1685,54 @@ func (ec *executionContext) _Query_goveranceEvents(ctx context.Context, field gr
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().GoveranceEvents(ctx, args["addr"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["after"].(*string))
+			return ec.resolvers.Query().GovernanceEvents(ctx, args["addr"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["after"].(*string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]model.GovernanceEvent)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_governanceEventsTxHash(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txHash"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["txHash"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().GovernanceEventsTxHash(ctx, args["txHash"].(string))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -2717,7 +2913,8 @@ type Query {
   ## Crawler
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
-  goveranceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
+  governanceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
+  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 
   ## USD->CVL
@@ -2765,6 +2962,15 @@ type Metadata {
   value: String!
 }
 
+# A type that reflects block data in model.BlockData
+type BlockData {
+  blockNumber: Int!
+  txHash:      String!
+  txIndex:     Int!
+  blockHash:   String!
+  index:       Int!
+}
+
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {
   listingAddress: String!
@@ -2774,6 +2980,7 @@ type GovernanceEvent {
   creationDate: Time!
   lastUpdatedDate: Time!
   eventHash: String!
+  blockData: BlockData!
 }
 
 # A type that reflects values in model.ArticlePayload

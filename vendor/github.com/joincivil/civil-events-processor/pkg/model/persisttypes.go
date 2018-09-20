@@ -90,6 +90,8 @@ type GovernanceEventCriteria struct {
 // and the aggregated data from the events.  Potentially to be used to service
 // the APIs to pull data.
 type GovernanceEventPersister interface {
+	//GovernanceEventsByTxHash gets governance events based on txhash
+	GovernanceEventsByTxHash(txHash common.Hash) ([]*GovernanceEvent, error)
 	// GovernanceEventsByCriteria retrieves governance events based on criteria
 	GovernanceEventsByCriteria(criteria *GovernanceEventCriteria) ([]*GovernanceEvent, error)
 	// GovernanceEventsByListingAddress retrieves governance events based on listing address
@@ -98,8 +100,8 @@ type GovernanceEventPersister interface {
 	CreateGovernanceEvent(govEvent *GovernanceEvent) error
 	// UpdateGovernanceEvent updates fields on an existing governance event
 	UpdateGovernanceEvent(govEvent *GovernanceEvent, updatedFields []string) error
-	// DeleteGovenanceEvent removes a governance event
-	DeleteGovenanceEvent(govEvent *GovernanceEvent) error
+	// DeleteGovernanceEvent removes a governance event
+	DeleteGovernanceEvent(govEvent *GovernanceEvent) error
 }
 
 // CronPersister persists information needed for the cron to run

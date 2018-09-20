@@ -126,6 +126,11 @@ func (p *PostgresPersister) GovernanceEventsByListingAddress(address common.Addr
 	return p.governanceEventsByListingAddressFromTable(address, govEventTableName)
 }
 
+// GovernanceEventsByTxHash retrieves governance events based on TxHash
+func (p *PostgresPersister) GovernanceEventsByTxHash(txHash common.Hash) ([]*model.GovernanceEvent, error) {
+	return p.governanceEventsByTxHashFromTable(txHash, govEventTableName)
+}
+
 // CreateGovernanceEvent creates a new governance event
 func (p *PostgresPersister) CreateGovernanceEvent(govEvent *model.GovernanceEvent) error {
 	return p.createGovernanceEventInTable(govEvent, govEventTableName)
@@ -136,9 +141,9 @@ func (p *PostgresPersister) UpdateGovernanceEvent(govEvent *model.GovernanceEven
 	return p.updateGovernanceEventInTable(govEvent, updatedFields, govEventTableName)
 }
 
-// DeleteGovenanceEvent removes a governance event
-func (p *PostgresPersister) DeleteGovenanceEvent(govEvent *model.GovernanceEvent) error {
-	return p.deleteGovenanceEventFromTable(govEvent, govEventTableName)
+// DeleteGovernanceEvent removes a governance event
+func (p *PostgresPersister) DeleteGovernanceEvent(govEvent *model.GovernanceEvent) error {
+	return p.deleteGovernanceEventFromTable(govEvent, govEventTableName)
 }
 
 // TimestampOfLastEventForCron returns the last timestamp from cron
@@ -495,10 +500,39 @@ func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address co
 		}
 		return govEvents, fmt.Errorf("Error retrieving governance events from table: %v", err)
 	}
+	// retrieved correctly
 	for _, dbGovEvent := range dbGovEvents {
 		govEvents = append(govEvents, dbGovEvent.DbToGovernanceData())
 	}
 	return govEvents, nil
+}
+
+func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash, tableName string) ([]*model.GovernanceEvent, error) {
+	queryString := p.governanceEventsByTxHashQuery(txHash, tableName)
+	govEvents := []*model.GovernanceEvent{}
+	govEvent := postgres.GovernanceEvent{}
+	rows, err := p.db.Queryx(queryString)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = model.ErrPersisterNoResults
+		}
+		return govEvents, fmt.Errorf("Error retrieving governance events from table: %v", err)
+	}
+	for rows.Next() {
+		err := rows.StructScan(&govEvent)
+		govEvents = append(govEvents, govEvent.DbToGovernanceData())
+		if err != nil {
+			return govEvents, fmt.Errorf("Error scanning results from governance event query: %v", err)
+		}
+	}
+	return govEvents, nil
+}
+
+func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, tableName string) string {
+	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false)
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }'", fieldNames,
+		tableName, txHash.Hex())
+	return queryString
 }
 
 func (p *PostgresPersister) govEventsQuery(tableName string) string {
@@ -521,7 +555,6 @@ func (p *PostgresPersister) governanceEventsByCriteriaFromTable(criteria *model.
 	tableName string) ([]*model.GovernanceEvent, error) {
 	dbGovEvents := []postgres.GovernanceEvent{}
 	queryString := p.governanceEventsByCriteriaQuery(criteria, tableName)
-
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
 		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
@@ -593,7 +626,7 @@ func (p *PostgresPersister) updateGovEventsQuery(updatedFields []string, tableNa
 	return queryString.String(), nil
 }
 
-func (p *PostgresPersister) deleteGovenanceEventFromTable(govEvent *model.GovernanceEvent, tableName string) error {
+func (p *PostgresPersister) deleteGovernanceEventFromTable(govEvent *model.GovernanceEvent, tableName string) error {
 	dbGovEvent := postgres.NewGovernanceEvent(govEvent)
 	queryString := p.deleteGovEventQuery(tableName)
 	_, err := p.db.NamedExec(queryString, dbGovEvent)

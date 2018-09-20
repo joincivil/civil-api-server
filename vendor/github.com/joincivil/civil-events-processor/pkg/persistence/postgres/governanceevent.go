@@ -22,7 +22,8 @@ func CreateGovernanceEventTableQueryString(tableName string) string {
             gov_event_type TEXT,
             creation_date BIGINT,
             last_updated BIGINT,
-            event_hash TEXT
+            event_hash TEXT,
+            block_data JSONB
         );
     `, tableName)
 	return queryString
@@ -30,22 +31,20 @@ func CreateGovernanceEventTableQueryString(tableName string) string {
 
 // NewGovernanceEvent creates a new postgres GovernanceEvent
 func NewGovernanceEvent(governanceEvent *model.GovernanceEvent) *GovernanceEvent {
-	listingAddress := governanceEvent.ListingAddress().Hex()
-	senderAddress := governanceEvent.SenderAddress().Hex()
-	metadata := crawlerpostgres.JsonbPayload(governanceEvent.Metadata())
-	return &GovernanceEvent{
-		ListingAddress:      listingAddress,
-		SenderAddress:       senderAddress,
-		Metadata:            metadata,
-		GovernanceEventType: governanceEvent.GovernanceEventType(),
-		CreationDateTs:      governanceEvent.CreationDateTs(),
-		LastUpdatedDateTs:   governanceEvent.LastUpdatedDateTs(),
-		EventHash:           governanceEvent.EventHash(),
-	}
+	govEvent := &GovernanceEvent{}
+	govEvent.ListingAddress = governanceEvent.ListingAddress().Hex()
+	govEvent.SenderAddress = governanceEvent.SenderAddress().Hex()
+	govEvent.Metadata = crawlerpostgres.JsonbPayload(governanceEvent.Metadata())
+	govEvent.GovernanceEventType = governanceEvent.GovernanceEventType()
+	govEvent.CreationDateTs = governanceEvent.CreationDateTs()
+	govEvent.LastUpdatedDateTs = governanceEvent.LastUpdatedDateTs()
+	govEvent.EventHash = governanceEvent.EventHash()
+	govEvent.BlockData = make(crawlerpostgres.JsonbPayload)
+	govEvent.fillBlockData(governanceEvent.BlockData())
+	return govEvent
 }
 
 // GovernanceEvent is postgres definition of model.GovernanceEvent
-/// TODO (IS) : update with metadata params that are newly defined in processor
 type GovernanceEvent struct {
 	ListingAddress string `db:"listing_address"`
 
@@ -60,13 +59,32 @@ type GovernanceEvent struct {
 	LastUpdatedDateTs int64 `db:"last_updated"`
 
 	EventHash string `db:"event_hash"`
+
+	BlockData crawlerpostgres.JsonbPayload `db:"block_data"`
 }
 
 // DbToGovernanceData creates a model.GovernanceEvent from postgres.GovernanceEvent
+// NOTE: jsonb payloads are stored in DB as map[string]interface{}, Postgres converts some fields, see notes in function.
 func (ge *GovernanceEvent) DbToGovernanceData() *model.GovernanceEvent {
 	listingAddress := common.HexToAddress(ge.ListingAddress)
 	senderAddress := common.HexToAddress(ge.SenderAddress)
 	metadata := model.Metadata(ge.Metadata)
+	// NOTE: BlockNumber is stored in DB as float64
+	blockNumber := uint64(ge.BlockData["blockNumber"].(float64))
+	txHash := common.HexToHash(ge.BlockData["txHash"].(string))
+	// NOTE: TxIndex is stored in DB as float64
+	txIndex := uint(ge.BlockData["txIndex"].(float64))
+	blockHash := common.HexToHash(ge.BlockData["blockHash"].(string))
+	// NOTE: Index is stored in DB as float64
+	index := uint(ge.BlockData["index"].(float64))
 	return model.NewGovernanceEvent(listingAddress, senderAddress, metadata, ge.GovernanceEventType,
-		ge.CreationDateTs, ge.LastUpdatedDateTs, ge.EventHash)
+		ge.CreationDateTs, ge.LastUpdatedDateTs, ge.EventHash, blockNumber, txHash, txIndex, blockHash, index)
+}
+
+func (ge *GovernanceEvent) fillBlockData(blockData model.BlockData) {
+	ge.BlockData["blockNumber"] = blockData.BlockNumber()
+	ge.BlockData["txHash"] = blockData.TxHash()
+	ge.BlockData["txIndex"] = blockData.TxIndex()
+	ge.BlockData["blockHash"] = blockData.BlockHash()
+	ge.BlockData["index"] = blockData.Index()
 }
