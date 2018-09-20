@@ -22,6 +22,8 @@ const (
 	maxOpenConns    = 20
 	maxIdleConns    = 5
 	connMaxLifetime = time.Nanosecond
+
+	defaultJsonbTableName = "jsonb"
 )
 
 // NewPostgresPersister creates a new postgres persister instance
@@ -55,17 +57,17 @@ type PostgresPersister struct {
 // RetrieveJsonb retrieves a populated Jsonb object or
 // an error.  If no results, returns ErrNoJsonbFound.
 func (p *PostgresPersister) RetrieveJsonb(id string, hash string) ([]*JSONb, error) {
-	return p.jsonbFromTable(id, hash, "jsonb")
+	return p.jsonbFromTable(id, hash, defaultJsonbTableName)
 }
 
 // SaveJsonb saves a populated Jsonb object or an error
 func (p *PostgresPersister) SaveJsonb(jsonb *JSONb) error {
-	return p.createJsonbForTable(jsonb, "jsonb")
+	return p.createJsonbForTable(jsonb, defaultJsonbTableName)
 }
 
 // CreateTables creates the tables if they don't exist
 func (p *PostgresPersister) CreateTables() error {
-	jsonbTableQuery := CreateJsonbTableQuery("jsonb")
+	jsonbTableQuery := CreateJsonbTableQuery(defaultJsonbTableName)
 	_, err := p.db.Exec(jsonbTableQuery)
 	if err != nil {
 		return fmt.Errorf("Error creating jsonb table in postgres: %v", err)
@@ -75,7 +77,7 @@ func (p *PostgresPersister) CreateTables() error {
 
 // CreateIndices creates the indices for DB if they don't exist
 func (p *PostgresPersister) CreateIndices() error {
-	return p.createJsonbIndicesForTable("jsonb")
+	return p.createJsonbIndicesForTable(defaultJsonbTableName)
 }
 
 func (p *PostgresPersister) jsonbFromTable(id string, hash string, tableName string) (
