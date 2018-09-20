@@ -17,15 +17,17 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/utils"
 
 	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 )
 
 // NewResolver is a convenience function to init a Resolver struct
 func NewResolver(listingPersister model.ListingPersister, revisionPersister model.ContentRevisionPersister,
-	govEventPersister model.GovernanceEventPersister) *Resolver {
+	govEventPersister model.GovernanceEventPersister, jsonbPersister jsonstore.JsonbPersister) *Resolver {
 	return &Resolver{
 		listingPersister:  listingPersister,
 		revisionPersister: revisionPersister,
 		govEventPersister: govEventPersister,
+		jsonbPersister:    jsonbPersister,
 	}
 }
 
@@ -34,6 +36,7 @@ type Resolver struct {
 	listingPersister  model.ListingPersister
 	revisionPersister model.ContentRevisionPersister
 	govEventPersister model.GovernanceEventPersister
+	jsonbPersister    jsonstore.JsonbPersister
 }
 
 // ContentRevision is the resolver for the ContentRevision type
@@ -46,9 +49,19 @@ func (r *Resolver) GovernanceEvent() graphql.GovernanceEventResolver {
 	return &governanceEventResolver{r}
 }
 
+// Jsonb is the resolver for the Jsonb type
+func (r *Resolver) Jsonb() graphql.JsonbResolver {
+	return &jsonbResolver{r}
+}
+
 // Listing is the resolver for the listingtype
 func (r *Resolver) Listing() graphql.ListingResolver {
 	return &listingResolver{r}
+}
+
+// Mutation is the resolver for the Mutation type
+func (r *Resolver) Mutation() graphql.MutationResolver {
+	return &mutationResolver{r}
 }
 
 // Query is the resolver for the Query type
@@ -65,7 +78,7 @@ func (r *contentRevisionResolver) Payload(ctx context.Context, obj *model.Conten
 	data := []graphql.ArticlePayload{}
 	for key, val := range obj.Payload() {
 		meta := graphql.ArticlePayload{
-			Key:   key,
+			Key:   &key,
 			Value: model.ArticlePayloadValue{Value: val},
 		}
 		data = append(data, meta)
@@ -193,6 +206,43 @@ func (r *listingResolver) LastUpdatedDate(ctx context.Context, obj *model.Listin
 	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
 }
 
+type jsonbResolver struct{ *Resolver }
+
+func (r *jsonbResolver) JSON(ctx context.Context, obj *jsonstore.JSONb) ([]jsonstore.JSONField, error) {
+	results := []jsonstore.JSONField{}
+	for _, val := range obj.JSON {
+		results = append(results, *val)
+	}
+	return results, nil
+}
+
+func (r *jsonbResolver) Hash(ctx context.Context, obj *jsonstore.JSONb) (string, error) {
+	return obj.Hash, nil
+}
+
+type mutationResolver struct{ *Resolver }
+
+func (r *mutationResolver) CreateJsonb(ctx context.Context, input graphql.JsonbInput) (jsonstore.JSONb, error) {
+	jsonb := jsonstore.JSONb{}
+	jsonb.ID = input.ID
+	jsonb.CreatedDate = time.Now().UTC()
+	jsonb.RawJSON = input.JSONStr
+	err := jsonb.ValidateRawJSON()
+	if err != nil {
+		return jsonb, err
+	}
+	err = jsonb.HashIDRawJSON()
+	if err != nil {
+		return jsonb, err
+	}
+	err = jsonb.RawJSONToFields()
+	if err != nil {
+		return jsonb, err
+	}
+	err = r.jsonbPersister.SaveJsonb(&jsonb)
+	return jsonb, err
+}
+
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Listings(ctx context.Context, whitelistedOnly *bool, first *int,
@@ -310,4 +360,20 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 		modelRevisions[index] = *revision
 	}
 	return modelRevisions, nil
+}
+
+func (r *queryResolver) Jsonb(ctx context.Context, id *string, hash *string) ([]*jsonstore.JSONb, error) {
+	idVal := ""
+	hashVal := ""
+	if id != nil {
+		idVal = *id
+	}
+	if hash != nil {
+		hashVal = *hash
+	}
+	jsonb, err := r.jsonbPersister.RetrieveJsonb(idVal, hashVal)
+	if err != nil {
+		return nil, err
+	}
+	return jsonb, nil
 }

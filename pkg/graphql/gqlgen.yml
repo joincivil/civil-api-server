@@ -26,3 +26,9 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.ContentRevision
   ArticlePayloadValue:
     model: github.com/joincivil/civil-events-processor/pkg/model.ArticlePayloadValue
+  JsonFieldValue:
+    model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONFieldValue
+  JsonField:
+    model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONField
+  Jsonb:
+    model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb

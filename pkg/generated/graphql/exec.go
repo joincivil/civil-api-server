@@ -10,6 +10,7 @@ import (
 
 	graphql "github.com/99designs/gqlgen/graphql"
 	introspection "github.com/99designs/gqlgen/graphql/introspection"
+	jsonstore "github.com/joincivil/civil-api-server/pkg/jsonstore"
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	gqlparser "github.com/vektah/gqlparser"
 	ast "github.com/vektah/gqlparser/ast"
@@ -31,7 +32,9 @@ type Config struct {
 type ResolverRoot interface {
 	ContentRevision() ContentRevisionResolver
 	GovernanceEvent() GovernanceEventResolver
+	Jsonb() JsonbResolver
 	Listing() ListingResolver
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -58,6 +61,9 @@ type GovernanceEventResolver interface {
 	BlockData(ctx context.Context, obj *model.GovernanceEvent) (BlockData, error)
 	Listing(ctx context.Context, obj *model.GovernanceEvent) (model.Listing, error)
 }
+type JsonbResolver interface {
+	JSON(ctx context.Context, obj *jsonstore.JSONb) ([]jsonstore.JSONField, error)
+}
 type ListingResolver interface {
 	ContractAddress(ctx context.Context, obj *model.Listing) (string, error)
 
@@ -70,12 +76,16 @@ type ListingResolver interface {
 	ApprovalDate(ctx context.Context, obj *model.Listing) (*time.Time, error)
 	LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error)
 }
+type MutationResolver interface {
+	CreateJsonb(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
+}
 type QueryResolver interface {
 	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
 	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
+	Jsonb(ctx context.Context, id *string, hash *string) ([]*jsonstore.JSONb, error)
 }
 
 type executableSchema struct {
@@ -104,7 +114,19 @@ func (e *executableSchema) Query(ctx context.Context, op *ast.OperationDefinitio
 }
 
 func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefinition) *graphql.Response {
-	return graphql.ErrorResponse(ctx, "mutations are not supported")
+	ec := executionContext{graphql.GetRequestContext(ctx), e}
+
+	buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+		data := ec._Mutation(ctx, op.SelectionSet)
+		var buf bytes.Buffer
+		data.MarshalGQL(&buf)
+		return buf.Bytes()
+	})
+
+	return &graphql.Response{
+		Data:   buf,
+		Errors: ec.Errors,
+	}
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDefinition) func() *graphql.Response {
@@ -154,8 +176,11 @@ func (ec *executionContext) _ArticlePayload_key(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
-	return graphql.MarshalString(res)
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 func (ec *executionContext) _ArticlePayload_value(ctx context.Context, field graphql.CollectedField, obj *ArticlePayload) graphql.Marshaler {
@@ -791,6 +816,202 @@ func (ec *executionContext) _GovernanceEvent_listing(ctx context.Context, field 
 	})
 }
 
+var jsonFieldImplementors = []string{"JsonField"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _JsonField(ctx context.Context, sel ast.SelectionSet, obj *jsonstore.JSONField) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, jsonFieldImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JsonField")
+		case "key":
+			out.Values[i] = ec._JsonField_key(ctx, field, obj)
+		case "value":
+			out.Values[i] = ec._JsonField_value(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _JsonField_key(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONField) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "JsonField"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Key, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _JsonField_value(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONField) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "JsonField"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Value, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*jsonstore.JSONFieldValue)
+	if res == nil {
+		return graphql.Null
+	}
+	return *res
+}
+
+var jsonbImplementors = []string{"Jsonb"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Jsonb(ctx context.Context, sel ast.SelectionSet, obj *jsonstore.JSONb) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, jsonbImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Jsonb")
+		case "id":
+			out.Values[i] = ec._Jsonb_id(ctx, field, obj)
+		case "hash":
+			out.Values[i] = ec._Jsonb_hash(ctx, field, obj)
+		case "createdDate":
+			out.Values[i] = ec._Jsonb_createdDate(ctx, field, obj)
+		case "rawJson":
+			out.Values[i] = ec._Jsonb_rawJson(ctx, field, obj)
+		case "json":
+			out.Values[i] = ec._Jsonb_json(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Jsonb_id(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Jsonb"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Jsonb_hash(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Jsonb"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Hash, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Jsonb_createdDate(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Jsonb"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.CreatedDate, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	return graphql.MarshalTime(res)
+}
+
+func (ec *executionContext) _Jsonb_rawJson(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Jsonb"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.RawJSON, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Jsonb_json(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Jsonb",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Jsonb().JSON(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]jsonstore.JSONField)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._JsonField(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
 var listingImplementors = []string{"Listing"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -1195,6 +1416,62 @@ func (ec *executionContext) _Metadata_value(ctx context.Context, field graphql.C
 	return graphql.MarshalString(res)
 }
 
+var mutationImplementors = []string{"Mutation"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, mutationImplementors)
+
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createJsonb":
+			out.Values[i] = ec._Mutation_createJsonb(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Mutation_createJsonb(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 JsonbInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalJsonbInput(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["input"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().CreateJsonb(ctx, args["input"].(JsonbInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(jsonstore.JSONb)
+	return ec._Jsonb(ctx, field.Selections, &res)
+}
+
 var queryImplementors = []string{"Query"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -1222,6 +1499,8 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query_governanceEventsTxHash(ctx, field)
 		case "articles":
 			out.Values[i] = ec._Query_articles(ctx, field)
+		case "jsonb":
+			out.Values[i] = ec._Query_jsonb(ctx, field)
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -1577,6 +1856,76 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 				rctx.PushIndex(idx1)
 				defer rctx.Pop()
 				return ec._ContentRevision(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_jsonb(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["hash"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["hash"] = arg1
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().Jsonb(ctx, args["id"].(*string), args["hash"].(*string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]*jsonstore.JSONb)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+				return ec._Jsonb(ctx, field.Selections, res[idx1])
 			}())
 		}
 		return arr1
@@ -2541,6 +2890,30 @@ func UnmarshalDateRange(v interface{}) (DateRange, error) {
 	return it, nil
 }
 
+func UnmarshalJsonbInput(v interface{}) (JsonbInput, error) {
+	var it JsonbInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "jsonStr":
+			var err error
+			it.JSONStr, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Resolver) interface{} {
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
@@ -2561,16 +2934,35 @@ func (ec *executionContext) introspectType(name string) *introspection.Type {
 var parsedSchema = gqlparser.MustLoadSchema(
 	&ast.Source{Name: "schema.graphql", Input: `schema {
   query: Query
+  mutation: Mutation
 }
 
 # The query type, represents all of the entry points into our object graph
 type Query {
+  ## Crawler
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
   governanceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
+
+  ## USD->CVL
+  jsonb(id: String, hash: String): [Jsonb]!
 }
+
+input JsonbInput {
+  id: String!
+  jsonStr: String!
+}
+
+# The mutation type, represents all of the creation/update points into our object graph
+type Mutation {
+
+  ## USD->CVL
+  createJsonb(input: JsonbInput!): Jsonb!
+}
+
+### Crawler related GraphQL schema
 
 input DateRange {
   gt: Time
@@ -2623,7 +3015,7 @@ type GovernanceEvent {
 
 # A type that reflects values in model.ArticlePayload
 type ArticlePayload {
-  key: String!
+  key: String
   value: ArticlePayloadValue!
 }
 
@@ -2639,8 +3031,26 @@ type ContentRevision {
   revisionDate: Time!
 }
 
-scalar Time
 scalar ArticlePayloadValue
 
+### USD->CVL related GraphQL schema
+
+type JsonField {
+  key: String!
+  value: JsonFieldValue!
+}
+
+type Jsonb {
+  id: String!
+  hash: String!
+  createdDate: Time!
+  rawJson: String!
+  json: [JsonField!]!
+}
+
+scalar JsonFieldValue
+
+### Common scalars
+scalar Time
 `},
 )

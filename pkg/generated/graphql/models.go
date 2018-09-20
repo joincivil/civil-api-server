@@ -9,7 +9,7 @@ import (
 )
 
 type ArticlePayload struct {
-	Key   string                    `json:"key"`
+	Key   *string                   `json:"key"`
 	Value model.ArticlePayloadValue `json:"value"`
 }
 type BlockData struct {
@@ -22,6 +22,10 @@ type BlockData struct {
 type DateRange struct {
 	Gt *time.Time `json:"gt"`
 	Lt *time.Time `json:"lt"`
+}
+type JsonbInput struct {
+	ID      string `json:"id"`
+	JSONStr string `json:"jsonStr"`
 }
 type Metadata struct {
 	Key   string `json:"key"`
