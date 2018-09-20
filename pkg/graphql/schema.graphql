@@ -57,6 +57,7 @@ type GovernanceEvent {
   lastUpdatedDate: Time!
   eventHash: String!
   blockData: BlockData!
+  listing: Listing!
 }
 
 # A type that reflects values in model.ArticlePayload
