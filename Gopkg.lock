@@ -91,6 +91,14 @@
   version = "v3.3.2"
 
 [[projects]]
+  digest = "1:54d7b4b9ab2bb2bae35b55eea900bc8fe15cba05a95fc78bf7fd7b82a9a07afa"
+  name = "github.com/go-chi/render"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3215478343fbc559bd3fc08f7031bb134d6bdad5"
+  version = "v1.0.1"
+
+[[projects]]
   digest = "1:c4a2528ccbcabf90f9f3c464a5fc9e302d592861bbfd0b7135a7de8a943d0406"
   name = "github.com/go-stack/stack"
   packages = ["."]
@@ -358,10 +366,12 @@
     "github.com/ethereum/go-ethereum/common",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
+    "github.com/go-chi/render",
     "github.com/golang/glog",
     "github.com/joincivil/civil-events-processor/pkg/helpers",
     "github.com/joincivil/civil-events-processor/pkg/model",
     "github.com/joincivil/civil-events-processor/pkg/utils",
+    "github.com/kelseyhightower/envconfig",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
   ]
