@@ -218,7 +218,8 @@ func CreateInvoiceTableQuery(tableName string) string {
             check_status TEXT,
             date_created BIGINT,
             date_updated BIGINT,
-            stop_poll bool
+            stop_poll bool,
+            is_checkbook bool
         );
     `, tableName)
 	return queryString
@@ -232,7 +233,8 @@ func CreateInvoiceTableIndicesString(tableName string) string {
 		CREATE INDEX IF NOT EXISTS invoice_status_idx ON %s (invoice_status);
 		CREATE INDEX IF NOT EXISTS check_id_idx ON %s (check_id);
 		CREATE INDEX IF NOT EXISTS invoice_id_idx ON %s (invoice_id);
-	`, tableName, tableName, tableName, tableName)
+		CREATE INDEX IF NOT EXISTS is_checkbook_idx ON %s (is_checkbook);
+	`, tableName, tableName, tableName, tableName, tableName)
 	return queryString
 }
 
@@ -250,6 +252,7 @@ type PostgresInvoice struct {
 	DateCreated   int64   `db:"date_created"`
 	DateUpdated   int64   `db:"date_updated"`
 	StopPoll      bool    `db:"stop_poll"`
+	IsCheckbook   bool    `db:"is_checkbook"`
 }
 
 // GenerateHash sets the Hash field with a hash of email, amount, and date created.
