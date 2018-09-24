@@ -91,6 +91,14 @@
   version = "v3.3.2"
 
 [[projects]]
+  digest = "1:dfa416a1bb8139f30832543340f972f65c0db9932034cb6a1b42c5ac615a3fb8"
+  name = "github.com/go-chi/cors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "dba6525398619dead495962a916728e7ee2ca322"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:54d7b4b9ab2bb2bae35b55eea900bc8fe15cba05a95fc78bf7fd7b82a9a07afa"
   name = "github.com/go-chi/render"
   packages = ["."]
@@ -366,12 +374,18 @@
     "github.com/ethereum/go-ethereum/common",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
+    "github.com/go-chi/cors",
     "github.com/go-chi/render",
     "github.com/golang/glog",
+    "github.com/jmoiron/sqlx",
+    "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres",
+    "github.com/joincivil/civil-events-crawler/pkg/utils",
     "github.com/joincivil/civil-events-processor/pkg/helpers",
     "github.com/joincivil/civil-events-processor/pkg/model",
+    "github.com/joincivil/civil-events-processor/pkg/persistence/postgres",
     "github.com/joincivil/civil-events-processor/pkg/utils",
     "github.com/kelseyhightower/envconfig",
+    "github.com/lib/pq",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
   ]
