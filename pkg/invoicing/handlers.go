@@ -28,6 +28,7 @@ type Request struct {
 	Phone       string  `json:"phone"`
 	Amount      float64 `json:"amount"`
 	InvoiceDesc string  `json:"invoice_desc"`
+	IsCheckbook bool    `json:"is_checkbook"`
 }
 
 // Bind implements the render.Binder interface
@@ -105,6 +106,12 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			return
 		}
 
+		// If not checkbook and wire transfer, set these values to empty
+		if !request.IsCheckbook {
+			request.Amount = 0.0
+			request.InvoiceDesc = ""
+		}
+
 		existingInvoice := false
 		if enableEmailCheck {
 			// Check to see if the email address has already been used.
@@ -139,10 +146,11 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 
 		// Save the user to the store with no invoice id yet
 		postgresInvoice := &PostgresInvoice{
-			Email:    request.Email,
-			Name:     fullName,
-			Amount:   request.Amount,
-			StopPoll: false,
+			Email:       request.Email,
+			Name:        fullName,
+			Amount:      request.Amount,
+			StopPoll:    false,
+			IsCheckbook: request.IsCheckbook,
 		}
 		if !existingInvoice {
 			err = config.InvoicePersister.SaveInvoice(postgresInvoice)
@@ -156,47 +164,49 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			}
 		}
 
-		// Make request for invoice to checkbook.io
-		invoiceRequest := &RequestInvoiceParams{
-			Recipient:   request.Email,
-			Name:        fullName,
-			Amount:      request.Amount,
-			Description: request.InvoiceDesc,
-		}
-		invoiceResponse, err := config.CheckbookIOClient.RequestInvoice(invoiceRequest)
-		if err != nil {
-			log.Errorf("Error calling checkbookIO: %v", err)
-			err = render.Render(w, r, ErrCheckbookIOInvoicing)
-			if err != nil {
-				log.Errorf("Error rendering checkbook io error: err: %v", err)
+		if request.IsCheckbook {
+			// Make request for invoice to checkbook.io
+			invoiceRequest := &RequestInvoiceParams{
+				Recipient:   request.Email,
+				Name:        fullName,
+				Amount:      request.Amount,
+				Description: request.InvoiceDesc,
 			}
-			return
-		}
-
-		postgresInvoice.Amount = invoiceResponse.Amount
-		postgresInvoice.InvoiceID = invoiceResponse.ID
-		postgresInvoice.InvoiceStatus = invoiceResponse.Status
-		postgresInvoice.CheckID = invoiceResponse.CheckID
-		postgresInvoice.InvoiceNum = invoiceResponse.Number
-		updatedFields := []string{
-			"Amount",
-			"InvoiceID",
-			"InvoiceNum",
-			"InvoiceStatus",
-			"CheckID",
-		}
-
-		// If invoice looks good, store the checkbookIO invoice ID and invoice status
-		// If fails here, issues might arise from sending invoice, but not having
-		// the invoice ids saved.
-		err = config.InvoicePersister.UpdateInvoice(postgresInvoice, updatedFields)
-		if err != nil {
-			log.Errorf("Error saving invoice: %v", err)
-			err = render.Render(w, r, ErrSomethingBroke)
-			if err != nil {
-				log.Errorf("Error rendering error response: err: %v", err)
+			invoiceResponse, ierr := config.CheckbookIOClient.RequestInvoice(invoiceRequest)
+			if ierr != nil {
+				log.Errorf("Error calling checkbookIO: %v", ierr)
+				ierr = render.Render(w, r, ErrCheckbookIOInvoicing)
+				if ierr != nil {
+					log.Errorf("Error rendering checkbook io error: err: %v", ierr)
+				}
+				return
 			}
-			return
+
+			postgresInvoice.Amount = invoiceResponse.Amount
+			postgresInvoice.InvoiceID = invoiceResponse.ID
+			postgresInvoice.InvoiceStatus = invoiceResponse.Status
+			postgresInvoice.CheckID = invoiceResponse.CheckID
+			postgresInvoice.InvoiceNum = invoiceResponse.Number
+			updatedFields := []string{
+				"Amount",
+				"InvoiceID",
+				"InvoiceNum",
+				"InvoiceStatus",
+				"CheckID",
+			}
+
+			// If invoice looks good, store the checkbookIO invoice ID and invoice status
+			// If fails here, issues might arise from sending invoice, but not having
+			// the invoice ids saved.
+			err = config.InvoicePersister.UpdateInvoice(postgresInvoice, updatedFields)
+			if err != nil {
+				log.Errorf("Error saving invoice: %v", err)
+				err = render.Render(w, r, ErrSomethingBroke)
+				if err != nil {
+					log.Errorf("Error rendering error response: err: %v", err)
+				}
+				return
+			}
 		}
 
 		// Return the response
