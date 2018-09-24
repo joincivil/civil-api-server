@@ -12,6 +12,7 @@ import (
 	"github.com/99designs/gqlgen/handler"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 
@@ -29,6 +30,12 @@ const (
 
 	// checkbookUpdaterRunFreqSecs = 60 * 5
 	checkbookUpdaterRunFreqSecs = 30
+)
+
+var (
+	validCorsOrigins = []string{
+		"*",
+	}
 )
 
 func initResolver(config *utils.GraphQLConfig) (*graphql.Resolver, error) {
@@ -164,6 +171,16 @@ func main() {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+
+	cors := cors.New(cors.Options{
+		AllowedOrigins:   validCorsOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
+		Debug:            true,
+	})
+	router.Use(cors.Handler)
 
 	// TODO(PN): Here is where we can add our own auth middleware
 	//router.Use(//Authentication)
