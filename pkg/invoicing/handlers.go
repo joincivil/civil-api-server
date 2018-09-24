@@ -67,13 +67,6 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.New("Invalid Request")
 	}
-	if e.Amount == 0.0 {
-		err = render.Render(w, r, ErrInvalidRequest("amount"))
-		if err != nil {
-			return err
-		}
-		return errors.New("Invalid Request")
-	}
 	return nil
 }
 
