@@ -15,6 +15,11 @@ import (
 	"github.com/go-chi/render"
 )
 
+const (
+	// Feature flag to enable/disable the email check
+	enableEmailCheck = false
+)
+
 // Request represents the incoming request for invoicing
 type Request struct {
 	FirstName   string  `json:"first_name"`
@@ -100,31 +105,33 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		// Check to see if the email address has already been used.
-		invoices, err := config.InvoicePersister.Invoices("", request.Email, "", "")
-		if err != nil {
-			log.Errorf("Error checking for existing invoices: err: %v", err)
-			err = render.Render(w, r, ErrSomethingBroke)
-			if err != nil {
-				log.Errorf("Error rendering error response: err: %v", err)
-			}
-			return
-		}
-
-		userRowExists := false
-		if len(invoices) > 0 {
-			// If there is an invoice and already has an ID and number, then
-			// we already have an invoice for it. If no invoice number, then
-			// we might have failed to complete with invoice provider.
-			invoice := invoices[0]
-			if invoice.InvoiceID != "" {
-				err = render.Render(w, r, ErrInvoiceExists)
-				if err != nil {
-					log.Errorf("Error rendering error response: err: %v", err)
+		existingInvoice := false
+		if enableEmailCheck {
+			// Check to see if the email address has already been used.
+			invoices, ierr := config.InvoicePersister.Invoices("", request.Email, "", "")
+			if ierr != nil {
+				log.Errorf("Error checking for existing invoices: err: %v", ierr)
+				ierr = render.Render(w, r, ErrSomethingBroke)
+				if ierr != nil {
+					log.Errorf("Error rendering error response: err: %v", ierr)
 				}
 				return
 			}
-			userRowExists = true
+
+			if len(invoices) > 0 {
+				// If there is an invoice and already has an ID and number, then
+				// we already have an invoice for it. If no invoice number, then
+				// we might have failed to complete with invoice provider.
+				invoice := invoices[0]
+				if invoice.InvoiceID != "" {
+					err = render.Render(w, r, ErrInvoiceExists)
+					if err != nil {
+						log.Errorf("Error rendering error response: err: %v", err)
+					}
+					return
+				}
+				existingInvoice = true
+			}
 		}
 
 		// Make the request to CheckbookIO for the invoice
@@ -137,7 +144,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			Amount:   request.Amount,
 			StopPoll: false,
 		}
-		if !userRowExists {
+		if !existingInvoice {
 			err = config.InvoicePersister.SaveInvoice(postgresInvoice)
 			if err != nil {
 				log.Errorf("Error saving invoice: %v", err)
