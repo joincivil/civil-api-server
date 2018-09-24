@@ -4,7 +4,9 @@ package invoicing
 // go-chi routing framework
 
 import (
+	// "bytes"
 	"errors"
+	"net/http/httputil"
 	"strings"
 	// "context"
 	"fmt"
@@ -81,8 +83,13 @@ type SendInvoiceHandlerConfig struct {
 // TODO(PN): Refactor this into smaller pieces
 func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		b, err := httputil.DumpRequest(r, true)
+		if err == nil {
+			log.Infof("DEBUG: Request Body: %v", string(b))
+		}
+
 		request := &Request{}
-		err := render.Bind(r, request)
+		err = render.Bind(r, request)
 		if err != nil {
 			log.Errorf("Error binding params to Request: err: %v", err)
 			err = render.Render(w, r, ErrInvalidRequest(""))
