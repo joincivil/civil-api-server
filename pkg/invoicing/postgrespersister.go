@@ -211,10 +211,10 @@ func CreateInvoiceTableQuery(tableName string) string {
             email TEXT,
             name TEXT,
             amount DECIMAL,
-            invoice_id TEXT UNIQUE,
+            invoice_id TEXT,
             invoice_num TEXT,
             invoice_status TEXT,
-            check_id TEXT UNIQUE,
+            check_id TEXT,
             check_status TEXT,
             date_created BIGINT,
             date_updated BIGINT,
@@ -230,7 +230,9 @@ func CreateInvoiceTableIndicesString(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS email_idx ON %s (email);
 		CREATE INDEX IF NOT EXISTS invoice_status_idx ON %s (invoice_status);
-	`, tableName, tableName)
+		CREATE INDEX IF NOT EXISTS check_id_idx ON %s (check_id);
+		CREATE INDEX IF NOT EXISTS invoice_id_idx ON %s (invoice_id);
+	`, tableName, tableName, tableName, tableName)
 	return queryString
 }
 
