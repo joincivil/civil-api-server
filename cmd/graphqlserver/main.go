@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"flag"
+	"fmt"
 	log "github.com/golang/glog"
 	"net/http"
 	"os"
@@ -12,14 +14,21 @@ import (
 	"github.com/go-chi/chi/middleware"
 
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
-	"github.com/joincivil/civil-events-processor/pkg/utils"
 
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
+	"github.com/joincivil/civil-api-server/pkg/invoicing"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
 	defaultPort = "8080"
+
+	graphQLVersion   = "v1"
+	invoicingVersion = "v1"
+
+	// checkbookUpdaterRunFreqSecs = 60 * 5
+	checkbookUpdaterRunFreqSecs = 30
 )
 
 func initResolver(config *utils.GraphQLConfig) (*graphql.Resolver, error) {
@@ -43,6 +52,89 @@ func initResolver(config *utils.GraphQLConfig) (*graphql.Resolver, error) {
 		contentRevisionPersister,
 		governanceEventPersister,
 	), nil
+}
+
+func debugGraphQLRouting(router chi.Router) {
+	router.Handle("/", handler.Playground("GraphQL playground",
+		fmt.Sprintf("/%v/query", graphQLVersion)))
+}
+
+func graphQLRouting(router chi.Router, config *utils.GraphQLConfig) error {
+	resolver, rErr := initResolver(config)
+	if rErr != nil {
+		log.Fatalf("Error retrieving resolver: err: %v", rErr)
+		return rErr
+	}
+
+	router.Handle(
+		fmt.Sprintf("/%v/query", graphQLVersion),
+		handler.GraphQL(
+			graphqlgen.NewExecutableSchema(
+				graphqlgen.Config{Resolvers: resolver},
+			),
+		),
+	)
+	return nil
+}
+
+func invoicePersister(config *utils.GraphQLConfig) (*invoicing.PostgresPersister, error) {
+	persister, err := invoicing.NewPostgresPersister(
+		config.PostgresAddress(),
+		config.PostgresPort(),
+		config.PostgresUser(),
+		config.PostgresPw(),
+		config.PostgresDbname(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = persister.CreateTables()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating tables: err: %v", err)
+	}
+	err = persister.CreateIndices()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating indices: err: %v", err)
+	}
+	return persister, nil
+}
+
+func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, error) {
+	key := config.CheckbookKey
+	secret := config.CheckbookSecret
+	test := config.CheckbookTest
+
+	if key == "" || secret == "" {
+		return nil, errors.New("Checkbook key and secret required")
+	}
+
+	checkbookBaseURL := invoicing.ProdCheckbookIOBaseURL
+	if test {
+		checkbookBaseURL = invoicing.SandboxCheckbookIOBaseURL
+	}
+
+	checkbookIOClient := invoicing.NewCheckbookIO(
+		checkbookBaseURL,
+		key,
+		secret,
+	)
+	return checkbookIOClient, nil
+}
+
+func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
+	persister *invoicing.PostgresPersister) error {
+	invoicingConfig := &invoicing.SendInvoiceHandlerConfig{
+		CheckbookIOClient: client,
+		InvoicePersister:  persister,
+	}
+	whConfig := &invoicing.CheckbookIOWebhookConfig{
+		InvoicePersister: persister,
+	}
+	router.Route(fmt.Sprintf("/%v/invoicing", invoicingVersion), func(r chi.Router) {
+		r.Post("/send", invoicing.SendInvoiceHandler(invoicingConfig))
+		r.Post("/cb", invoicing.CheckbookIOWebhookHandler(whConfig))
+	})
+	return nil
 }
 
 func main() {
@@ -76,29 +168,59 @@ func main() {
 	// TODO(PN): Here is where we can add our own auth middleware
 	//router.Use(//Authentication)
 
+	// GraphQL Debug Console
 	if config.Debug {
-		router.Handle("/", handler.Playground("GraphQL playground", "/query"))
+		debugGraphQLRouting(router)
 		log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
 	}
 
-	resolver, err := initResolver(config)
-	if err != nil {
-		log.Fatalf("Error retrieving resolver: err: %v", err)
+	// GraphQL Query Endpoint
+	if config.EnableGraphQL {
+		err = graphQLRouting(router, config)
+		if err != nil {
+			log.Fatalf("Error setting up graphql routing: err: %v", err)
+		}
+		log.Infof(
+			"Connect to http://localhost:%v/%v/query for Civil GraphQL\n",
+			port,
+			graphQLVersion,
+		)
 	}
 
-	router.Handle(
-		"/query",
-		handler.GraphQL(
-			graphqlgen.NewExecutableSchema(
-				graphqlgen.Config{Resolvers: resolver},
-			),
-		),
-	)
-	log.Infof("Connect to http://localhost:%v/query for Civil GraphQL\n", port)
+	// REST invoicing endpoint
+	if config.EnableInvoicing {
+		persister, perr := invoicePersister(config)
+		if perr != nil {
+			log.Fatalf("Error setting up invoicing persister: err: %v", perr)
+		}
+
+		checkbookIOClient, cerr := invoiceCheckbookIO(config)
+		if cerr != nil {
+			log.Fatalf("Error setting up invoicing client: err: %v", cerr)
+		}
+
+		err = invoicingRouting(router, checkbookIOClient, persister)
+		if err != nil {
+			log.Fatalf("Error setting up invoicing routing: err: %v", err)
+		}
+		log.Infof(
+			"Connect to http://localhost:%v/%v/invoicing/send for invoicing\n",
+			port,
+			invoicingVersion,
+		)
+		log.Infof(
+			"Connect to http://localhost:%v/%v/invoicing/cb for checkbook webhook\n",
+			port,
+			invoicingVersion,
+		)
+
+		updater := invoicing.NewCheckoutIOUpdater(checkbookIOClient, persister, checkbookUpdaterRunFreqSecs)
+		go updater.Run()
+	}
 
 	err = http.ListenAndServe(":"+port, router)
 	if err != nil {
-		log.Fatalf("Error starting graphql service: err: %v", err)
+		log.Fatalf("Error starting api service: err: %v", err)
 	}
 
 }
