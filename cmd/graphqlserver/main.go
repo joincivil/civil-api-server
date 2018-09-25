@@ -28,8 +28,7 @@ const (
 	graphQLVersion   = "v1"
 	invoicingVersion = "v1"
 
-	// checkbookUpdaterRunFreqSecs = 60 * 5
-	checkbookUpdaterRunFreqSecs = 30
+	checkbookUpdaterRunFreqSecs = 60 * 5 // 5 mins
 )
 
 var (
