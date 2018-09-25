@@ -20,17 +20,19 @@ import (
 const (
 	// Feature flag to enable/disable the email check
 	enableEmailCheck = false
+
+	defaultInvoiceDescription = "Complete Your CVL Token Purchase"
 )
 
 // Request represents the incoming request for invoicing
 type Request struct {
-	FirstName   string  `json:"first_name"`
-	LastName    string  `json:"last_name"`
-	Email       string  `json:"email"`
-	Phone       string  `json:"phone"`
-	Amount      float64 `json:"amount"`
-	InvoiceDesc string  `json:"invoice_desc"`
-	IsCheckbook bool    `json:"is_checkbook"`
+	FirstName string  `json:"first_name"`
+	LastName  string  `json:"last_name"`
+	Email     string  `json:"email"`
+	Phone     string  `json:"phone"`
+	Amount    float64 `json:"amount"`
+	// InvoiceDesc string  `json:"invoice_desc"`
+	IsCheckbook bool `json:"is_checkbook"`
 }
 
 // Bind implements the render.Binder interface
@@ -64,6 +66,14 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 	}
 	if e.Phone == "" {
 		err = render.Render(w, r, ErrInvalidRequest("phone"))
+		if err != nil {
+			return err
+		}
+		return errors.New("Invalid Request")
+	}
+	// Restrict amount to less than 10k
+	if e.Amount > 10000 {
+		err = render.Render(w, r, ErrInvalidRequest("amount"))
 		if err != nil {
 			return err
 		}
@@ -109,7 +119,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 		// If not checkbook and wire transfer, set these values to empty
 		if !request.IsCheckbook {
 			request.Amount = 0.0
-			request.InvoiceDesc = ""
+			// request.InvoiceDesc = ""
 		}
 
 		existingInvoice := false
@@ -167,10 +177,11 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 		if request.IsCheckbook {
 			// Make request for invoice to checkbook.io
 			invoiceRequest := &RequestInvoiceParams{
-				Recipient:   request.Email,
-				Name:        fullName,
-				Amount:      request.Amount,
-				Description: request.InvoiceDesc,
+				Recipient: request.Email,
+				Name:      fullName,
+				Amount:    request.Amount,
+				// Description: request.InvoiceDesc,
+				Description: defaultInvoiceDescription,
 			}
 			invoiceResponse, ierr := config.CheckbookIOClient.RequestInvoice(invoiceRequest)
 			if ierr != nil {

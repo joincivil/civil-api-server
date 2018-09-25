@@ -1,12 +1,12 @@
 # Invoicing
 
-Provides REST services to deliver invoices and billing via [checkbook.io](http://checkbook.io).  
+Provides REST services to deliver invoices and billing via [checkbook.io](http://checkbook.io).
 
 # API
 
 ## `POST /v1/invoicing/send`
 
-Sends an invoice to the recipient email specified in the payload.  
+Sends an invoice to the recipient email specified in the payload.
 
 ### Content-Type
 `application/json`
@@ -19,9 +19,8 @@ Sends an invoice to the recipient email specified in the payload.
 	"email": <string>,
 	"phone": <string>,
 	"amount": <float>,
-	"invoice_desc": <string>,
 	// true if using checkbook.io, false for wire. If false,
- 	// ignores amount and invoice_desc fields and only stores user 
+ 	// ignores amount and invoice_desc fields and only stores user
  	// data. defaults to false
 	"is_checkbook": <bool>
 }
