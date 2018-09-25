@@ -71,6 +71,14 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.New("Invalid Request")
 	}
+	// Restrict amount to less than 10k
+	if e.Amount > 10000 {
+		err = render.Render(w, r, ErrInvalidRequest("amount"))
+		if err != nil {
+			return err
+		}
+		return errors.New("Invalid Request")
+	}
 	return nil
 }
 
