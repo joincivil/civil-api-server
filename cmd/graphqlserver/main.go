@@ -10,6 +10,8 @@ import (
 	"strconv"
 
 	"github.com/99designs/gqlgen/handler"
+	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth_chi"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -137,9 +139,26 @@ func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
 	whConfig := &invoicing.CheckbookIOWebhookConfig{
 		InvoicePersister: persister,
 	}
+
+	// Set some rate limiters for the invoice handlers
+	limiter := tollbooth.NewLimiter(2, nil) // 2 req/sec max
+	limiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
+	limiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	cblimiter := tollbooth.NewLimiter(10, nil) // 10 req/sec max
+	cblimiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
+	cblimiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
 	router.Route(fmt.Sprintf("/%v/invoicing", invoicingVersion), func(r chi.Router) {
-		r.Post("/send", invoicing.SendInvoiceHandler(invoicingConfig))
-		r.Post("/cb", invoicing.CheckbookIOWebhookHandler(whConfig))
+		r.Route("/send", func(r chi.Router) {
+			r.Use(tollbooth_chi.LimitHandler(limiter))
+			r.Post("/", invoicing.SendInvoiceHandler(invoicingConfig))
+		})
+
+		r.Route("/cb", func(r chi.Router) {
+			r.Use(tollbooth_chi.LimitHandler(cblimiter))
+			r.Post("/", invoicing.CheckbookIOWebhookHandler(whConfig))
+		})
 	})
 	return nil
 }

@@ -42,6 +42,27 @@
   revision = "fdfc19097e7ac6b57035062056f5b7b4638b8898"
 
 [[projects]]
+  digest = "1:82c6357bc57f8417f993d490f6c07a9f0b5682ac68b1a64b93a189dece7c5bf5"
+  name = "github.com/didip/tollbooth"
+  packages = [
+    ".",
+    "errors",
+    "libstring",
+    "limiter",
+  ]
+  pruneopts = "UT"
+  revision = "c95eaa3ddc98f635a91e218b48727fb2e06613ea"
+  version = "v4.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:60fb125752a234a0a43bfc281bfdd9726fd1071a13f66bb35ec4b8e7ed1ef642"
+  name = "github.com/didip/tollbooth_chi"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "6ab5f3083f3d925e1944d58cdaebf43bbbff9238"
+
+[[projects]]
   digest = "1:3238a0c355a81640974751f7d3bab21bf91035165f75c2c457959425c0422a4b"
   name = "github.com/ethereum/go-ethereum"
   packages = [
@@ -202,6 +223,14 @@
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
+  digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
+  name = "github.com/patrickmn/go-cache"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a3647f8e31d79543b2d0f0ae2fe5c379d72cedc0"
+  version = "v2.1.0"
+
+[[projects]]
   digest = "1:361de06aa7ae272616cbe71c3994a654cc6316324e30998e650f7765b20c5b33"
   name = "github.com/pborman/uuid"
   packages = ["."]
@@ -319,11 +348,27 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  pruneopts = "UT"
+  revision = "f04abc6bdfa7a0171a8a0c9fd2ada9391044d056"
+
+[[projects]]
+  branch = "master"
   digest = "1:d773e525476aefa22ea944a5425a9bfb99819b2e67eeb9b1966454fd57522bbf"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
   revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:c9e7a4b4d47c0ed205d257648b0e5b0440880cb728506e318f8ac7cd36270bc4"
+  name = "golang.org/x/time"
+  packages = ["rate"]
+  pruneopts = "UT"
+  revision = "fbb02b2291d28baffd63558aa44b4b56f178d650"
 
 [[projects]]
   branch = "master"
@@ -371,6 +416,8 @@
     "github.com/99designs/gqlgen/graphql",
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",
+    "github.com/didip/tollbooth",
+    "github.com/didip/tollbooth_chi",
     "github.com/ethereum/go-ethereum/common",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
