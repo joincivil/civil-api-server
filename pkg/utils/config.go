@@ -44,7 +44,7 @@ type PersisterConfig interface {
 type GraphQLConfig struct {
 	Port            int  `required:"true" desc:"Sets the GraphQL service port"`
 	Debug           bool `default:"false" desc:"If true, enables the GraphQL playground"`
-	EnableGraphQL   bool `split_words:"true" default:"true" desc:"If true, enables the GraphQL endpoint"`
+	EnableGraphQL   bool `envconfig:"enable_graphql" split_words:"true" default:"true" desc:"If true, enables the GraphQL endpoint"`
 	EnableInvoicing bool `split_words:"true" default:"false" desc:"If true, enables the invoicing endpoint"`
 
 	CheckbookKey    string `split_words:"true" desc:"The checkbook.io api key"`

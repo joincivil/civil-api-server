@@ -52,19 +52,13 @@ const (
 )
 
 // NewCheckbookIO is a convenience function to create a new CheckbookIO struct
-func NewCheckbookIO(baseURL string, key string, secret string) *CheckbookIO {
+func NewCheckbookIO(baseURL string, key string, secret string, test bool) *CheckbookIO {
 	return &CheckbookIO{
 		key:     key,
 		secret:  secret,
 		baseURL: baseURL,
+		test:    test,
 	}
-}
-
-// CheckbookIO is a wrapper around the CheckbookIO API
-type CheckbookIO struct {
-	key     string
-	secret  string
-	baseURL string
 }
 
 // InvoicesResponse is the response from checkbook.io on lists of
@@ -89,6 +83,14 @@ type InvoiceResponse struct {
 	Recipient   string      `json:"recipient"`
 	Status      string      `json:"status"`
 	CheckID     string      `json:"check_id"`
+}
+
+// CheckbookIO is a wrapper around the CheckbookIO API
+type CheckbookIO struct {
+	key     string
+	secret  string
+	baseURL string
+	test    bool
 }
 
 func (i *InvoiceResponse) normalizeData() {
@@ -167,9 +169,33 @@ type RequestInvoiceParams struct {
 	Attachment  string  `json:"attachment,omitempty"`
 }
 
+// Used for testing purposes so it doesn't hit the checkbook.io services
+// and actually deliver an invoice. Helps us get around the "no account" issue
+// in the checkbook.io sandbox.
+// XXX(PN): Temporary, remove later
+func testInvoiceResponse(r *RequestInvoiceParams) *InvoiceResponse {
+	return &InvoiceResponse{
+		Amount:      r.Amount,
+		Date:        "",
+		Description: r.Description,
+		ID:          "",
+		Name:        r.Name,
+		Number:      "",
+		NumberInf:   "",
+		Recipient:   r.Recipient,
+		Status:      "UNPAID",
+		CheckID:     "",
+	}
+
+}
+
 // RequestInvoice sends an invoice to the recipient as given in the params.  Returns
 // data on the new invoice from checkbook.io
 func (c *CheckbookIO) RequestInvoice(params *RequestInvoiceParams) (*InvoiceResponse, error) {
+	if c.test {
+		log.Infof("Returning test request response")
+		return testInvoiceResponse(params), nil
+	}
 	endpoint := "invoice"
 
 	returnStr, err := c.sendRequest(endpoint, http.MethodPost, nil, params)

@@ -124,6 +124,7 @@ func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, er
 		checkbookBaseURL,
 		key,
 		secret,
+		test,
 	)
 	return checkbookIOClient, nil
 }
