@@ -311,8 +311,6 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 		}
 
 		nowPaid := false
-		log.Infof("checkstatus = %v", invoice.CheckStatus)
-		log.Infof("incoming checkstatus = %v", update.Status)
 		if invoice.CheckStatus == CheckStatusUnpaid ||
 			invoice.CheckStatus == CheckStatusInProcess {
 			if update.Status == CheckStatusPaid {

@@ -15,8 +15,8 @@ const (
 )
 
 func TestCheckbookIOGetInvoices(t *testing.T) {
-	cbio := invoicing.NewCheckbookIO(invoicing.SandboxCheckbookIOBaseURL, testKey, testSecret)
-	// cbio := invoicing.NewCheckbookIO(invoicing.ProdCheckbookIOBaseURL, testKey, testSecret)
+	cbio := invoicing.NewCheckbookIO(invoicing.SandboxCheckbookIOBaseURL, testKey, testSecret, true)
+	// cbio := invoicing.NewCheckbookIO(invoicing.ProdCheckbookIOBaseURL, testKey, testSecret, false)
 	invoices, err := cbio.GetInvoices("", 0)
 	if err != nil {
 		t.Errorf("Should not have failed when getting invoices: err: %v", err)
