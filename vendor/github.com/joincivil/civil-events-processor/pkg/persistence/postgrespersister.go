@@ -228,32 +228,37 @@ func (p *PostgresPersister) listingsByCriteriaFromTable(criteria *model.ListingC
 }
 
 func (p *PostgresPersister) listingsByAddressesFromTable(addresses []common.Address, tableName string) ([]*model.Listing, error) {
+	stringAddresses := postgres.ListCommonAddressToListString(addresses)
+	queryString := p.listingByAddressesQuery(tableName)
+	query, args, err := sqlx.In(queryString, stringAddresses)
+	if err != nil {
+		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+	}
+	query = p.db.Rebind(query)
+	rows, err := p.db.Queryx(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
+	}
+
 	listings := []*model.Listing{}
-	for _, address := range addresses {
-		listing, err := p.listingByAddressFromTable(address, tableName)
+	for rows.Next() {
+		var dbListing postgres.Listing
+		err = rows.StructScan(&dbListing)
 		if err != nil {
-			if err == sql.ErrNoRows {
-				return listings, model.ErrPersisterNoResults
-			}
-			return listings, err
+			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
 		}
-		listings = append(listings, listing)
+		listings = append(listings, dbListing.DbToListingData())
 	}
 	return listings, nil
 }
 
 func (p *PostgresPersister) listingByAddressFromTable(address common.Address, tableName string) (*model.Listing, error) {
-	dbListing := postgres.Listing{}
-	queryString := p.listingByAddressQuery(tableName)
-	err := p.db.Get(&dbListing, queryString, address.Hex())
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, model.ErrPersisterNoResults
-		}
-		return nil, fmt.Errorf("Wasn't able to get listing from postgres table: %v", err)
+	listings, err := p.listingsByAddressesFromTable([]common.Address{address}, tableName)
+	if len(listings) > 0 {
+		return listings[0], err
 	}
-	listing := dbListing.DbToListingData()
-	return listing, err
+	return nil, err
+
 }
 
 func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCriteria,
@@ -283,9 +288,9 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 	return queryBuf.String()
 }
 
-func (p *PostgresPersister) listingByAddressQuery(tableName string) string {
+func (p *PostgresPersister) listingByAddressesQuery(tableName string) string {
 	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Listing{}, false)
-	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE contract_address=$1;", fieldNames, tableName) // nolint: gosec
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE contract_address IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
 
