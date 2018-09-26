@@ -33,3 +33,7 @@ required = ["github.com/99designs/gqlgen"]
   [[prune.project]]
     name = "github.com/ethereum/go-ethereum"
     unused-packages = false
+
+[[constraint]]
+  name = "github.com/sendgrid/sendgrid-go"
+  revision = "8cb43f4ca4f5a26bb75861eaf5ee58c3302eacb1"

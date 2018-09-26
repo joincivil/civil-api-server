@@ -126,10 +126,12 @@ func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, er
 }
 
 func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
-	persister *invoicing.PostgresPersister) error {
+	persister *invoicing.PostgresPersister, emailer *utils.Emailer, testMode bool) error {
 	invoicingConfig := &invoicing.SendInvoiceHandlerConfig{
 		CheckbookIOClient: client,
 		InvoicePersister:  persister,
+		Emailer:           emailer,
+		TestMode:          testMode,
 	}
 	whConfig := &invoicing.CheckbookIOWebhookConfig{
 		InvoicePersister: persister,
@@ -230,7 +232,8 @@ func main() {
 			log.Fatalf("Error setting up invoicing client: err: %v", cerr)
 		}
 
-		err = invoicingRouting(router, checkbookIOClient, persister)
+		emailer := utils.NewEmailer(config.SendgridKey)
+		err = invoicingRouting(router, checkbookIOClient, persister, emailer, config.CheckbookTest)
 		if err != nil {
 			log.Fatalf("Error setting up invoicing routing: err: %v", err)
 		}

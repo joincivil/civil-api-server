@@ -47,6 +47,8 @@ type GraphQLConfig struct {
 	EnableGraphQL   bool `envconfig:"enable_graphql" split_words:"true" default:"true" desc:"If true, enables the GraphQL endpoint"`
 	EnableInvoicing bool `split_words:"true" default:"false" desc:"If true, enables the invoicing endpoint"`
 
+	SendgridKey string `split_words:"true" desc:"The sendgrid API key"`
+
 	CheckbookKey    string `split_words:"true" desc:"The checkbook.io api key"`
 	CheckbookSecret string `split_words:"true" desc:"The checkbook.io api secret"`
 	CheckbookTest   bool   `split_words:"true" default:"false" desc:"If true, enables uses the checkbook sandbox"`
