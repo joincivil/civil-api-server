@@ -71,7 +71,7 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.New("Invalid Request")
 	}
-	// Restrict amount to less than 10k
+	// Restrict amount to less than/equal to 10k
 	if e.Amount > 10000 {
 		err = render.Render(w, r, ErrInvalidRequest("amount"))
 		if err != nil {
@@ -158,6 +158,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 		postgresInvoice := &PostgresInvoice{
 			Email:       request.Email,
 			Name:        fullName,
+			Phone:       request.Phone,
 			Amount:      request.Amount,
 			StopPoll:    false,
 			IsCheckbook: request.IsCheckbook,
