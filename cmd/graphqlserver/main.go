@@ -73,15 +73,10 @@ func graphQLRouting(router chi.Router, config *utils.GraphQLConfig) error {
 		log.Fatalf("Error retrieving resolver: err: %v", rErr)
 		return rErr
 	}
-
+	queryHandler := handler.GraphQL(graphqlgen.NewExecutableSchema(graphqlgen.Config{Resolvers: resolver}))
 	router.Handle(
 		fmt.Sprintf("/%v/query", graphQLVersion),
-		handler.GraphQL(
-			graphqlgen.NewExecutableSchema(
-				graphqlgen.Config{Resolvers: resolver},
-			),
-		),
-	)
+		graphql.DataloaderMiddleware(resolver, queryHandler))
 	return nil
 }
 
