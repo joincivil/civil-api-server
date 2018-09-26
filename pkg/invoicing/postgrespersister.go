@@ -209,6 +209,7 @@ func CreateInvoiceTableQuery(tableName string) string {
         CREATE TABLE IF NOT EXISTS %s(
             hash TEXT PRIMARY KEY,
             email TEXT,
+            phone TEXT,
             name TEXT,
             amount DECIMAL,
             invoice_id TEXT,
@@ -242,6 +243,7 @@ func CreateInvoiceTableIndicesString(tableName string) string {
 type PostgresInvoice struct {
 	Hash          string  `db:"hash"` // key off this
 	Email         string  `db:"email"`
+	Phone         string  `db:"phone"`
 	Name          string  `db:"name"`
 	Amount        float64 `db:"amount"`
 	InvoiceID     string  `db:"invoice_id"`
