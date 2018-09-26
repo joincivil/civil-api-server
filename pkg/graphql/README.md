@@ -43,4 +43,12 @@ The options here are:
 
 Run `make test` and/or `make lint` and check for errors and if things are not matching up.
 
-
+## `dataloaden`
+reference: https://gqlgen.com/reference/dataloaders/ and https://github.com/vektah/dataloaden
+ 
+To generate a dataloader file (i.e. for a model.Listing that creates listingloader_gen.go):
+```
+go get -u github.com/vektah/dataloaden
+cd pkg/graphql
+dataloaden -keys string github.com/joincivil/civil-events-processor/pkg/model.Listing
+```

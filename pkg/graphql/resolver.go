@@ -8,6 +8,7 @@ package graphql
 
 import (
 	context "context"
+	// "fmt"
 	"strconv"
 	time "time"
 
@@ -139,10 +140,14 @@ func (r *governanceEventResolver) LastUpdatedDate(ctx context.Context, obj *mode
 	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
 }
 func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.GovernanceEvent) (model.Listing, error) {
-	listingAddress := obj.ListingAddress()
-	listing, err := r.listingPersister.ListingByAddress(listingAddress)
+	listingLoader := getListingLoader(ctx)
+	listingAddress := obj.ListingAddress().Hex()
+	listing, err := listingLoader.Load(listingAddress)
 	if err != nil {
 		return model.Listing{}, err
+	}
+	if listing == nil {
+		return model.Listing{}, nil
 	}
 	return *listing, nil
 
