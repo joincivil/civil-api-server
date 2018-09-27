@@ -13,6 +13,7 @@ import (
 	log "github.com/golang/glog"
 	"net/http"
 
+	uuid "github.com/satori/go.uuid"
 	// "github.com/go-chi/chi"
 	"github.com/go-chi/render"
 
@@ -45,7 +46,8 @@ type Request struct {
 	Phone     string  `json:"phone"`
 	Amount    float64 `json:"amount"`
 	// InvoiceDesc string  `json:"invoice_desc"`
-	IsCheckbook bool `json:"is_checkbook"`
+	IsCheckbook bool   `json:"is_checkbook"`
+	ReferredBy  string `json:"referred_by"`
 }
 
 // Bind implements the render.Binder interface
@@ -166,17 +168,35 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			}
 		}
 
+		// Generate a new referral code for this invoice.
+		// If a user has multiple invoices, we will just figure out
+		// overall total referrals via that user's email.
+		referralCode, err := generateReferralCode()
+		if err != nil {
+			log.Errorf("Error generating new referrer code: %v", err)
+		}
+
+		// If there is referred by code, validate it
+		referredBy := ""
+		if request.ReferredBy != "" && validReferralCode(request.ReferredBy) {
+			referredBy = request.ReferredBy
+		} else {
+			log.Errorf("Invalid referred by code: %v", request.ReferredBy)
+		}
+
 		// Make the request to CheckbookIO for the invoice
 		fullName := fmt.Sprintf("%v %v", request.FirstName, request.LastName)
 
 		// Save the user to the store with no invoice id yet
 		postgresInvoice := &PostgresInvoice{
-			Email:       request.Email,
-			Name:        fullName,
-			Phone:       request.Phone,
-			Amount:      request.Amount,
-			StopPoll:    false,
-			IsCheckbook: request.IsCheckbook,
+			Email:        request.Email,
+			Name:         fullName,
+			Phone:        request.Phone,
+			Amount:       request.Amount,
+			StopPoll:     false,
+			IsCheckbook:  request.IsCheckbook,
+			ReferralCode: referralCode,
+			ReferredBy:   referredBy,
 		}
 		if !existingInvoice {
 			err = config.InvoicePersister.SaveInvoice(postgresInvoice)
@@ -496,4 +516,21 @@ func ErrInvalidRequest(missingField string) render.Renderer {
 		HTTPStatusCode: 400,
 		StatusText:     msg,
 	}
+}
+
+func generateReferralCode() (string, error) {
+	code, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	return code.String(), nil
+}
+
+func validReferralCode(code string) bool {
+	_, err := uuid.FromString(code)
+	if err != nil {
+		log.Errorf("err = %v", err)
+		return false
+	}
+	return true
 }
