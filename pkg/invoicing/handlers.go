@@ -4,6 +4,7 @@ package invoicing
 // go-chi routing framework
 
 import (
+	"net/url"
 	// "bytes"
 	"errors"
 	"net/http/httputil"
@@ -25,6 +26,7 @@ const (
 	enableEmailCheck = false
 
 	defaultInvoiceDescription = "Complete Your CVL Token Purchase"
+	referralEmailTemplateID   = "d-33fbe062ad2d44bdbb4c584f75b9a576"
 )
 
 var (
@@ -178,10 +180,12 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 
 		// If there is referred by code, validate it
 		referredBy := ""
-		if request.ReferredBy != "" && validReferralCode(request.ReferredBy) {
-			referredBy = request.ReferredBy
-		} else {
-			log.Errorf("Invalid referred by code: %v", request.ReferredBy)
+		if request.ReferredBy != "" {
+			if validReferralCode(request.ReferredBy) {
+				referredBy = request.ReferredBy
+			} else {
+				log.Errorf("Invalid referred by code: %v", request.ReferredBy)
+			}
 		}
 
 		// Make the request to CheckbookIO for the invoice
@@ -264,6 +268,9 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			sendWireTransferAlertEmail(config.Emailer, request, recipients)
 		}
 
+		// Send the referral email
+		sendReferralProgramEmail(config.Emailer, request, referralCode)
+
 		// Return the response
 		err = render.Render(w, r, OkResponseNormal)
 		if err != nil {
@@ -309,6 +316,76 @@ func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientE
 			}
 		}
 	}()
+}
+
+func sendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode string) {
+	go func() {
+		fullName := fmt.Sprintf("%v %v", req.FirstName, req.LastName)
+
+		templateData := utils.TemplateData{}
+		templateData["first_name"] = req.FirstName
+		templateData["referral_link"] = referralLinkHTML(referralCode)
+		templateData["referral_email"] = referralEmailHTML(referralCode)
+		templateData["referral_twitter"] = referralTwitterHTML(referralCode)
+		templateData["referral_fb"] = referralFacebookHTML(referralCode)
+
+		emailReq := &utils.SendTemplateEmailRequest{
+			ToName:       fullName,
+			ToEmail:      req.Email,
+			FromName:     "The Civil Media Company",
+			FromEmail:    "support@civil.co",
+			TemplateID:   referralEmailTemplateID,
+			TemplateData: templateData,
+		}
+		err := emailer.SendTemplateEmail(emailReq)
+		if err != nil {
+			log.Errorf("Error sending referral email: err: %v", err)
+		}
+	}()
+}
+
+func referralLinkHTML(referralCode string) string {
+	link := referralLink(referralCode)
+	return fmt.Sprintf("<a href=\"%v\">%v</a>", link, link)
+}
+
+func referralLink(referralCode string) string {
+	return fmt.Sprintf("http://civil.co/?referred_by=%v", referralCode)
+}
+
+func referralEmailHTML(referralCode string) string {
+	return fmt.Sprintf("<a href=\"%v\">Email</a>", referralEmail(referralCode))
+}
+
+func referralEmail(referralCode string) string {
+	referralLink := referralLink(referralCode)
+	subject := "Share Civil, Earn CVL"
+	body := fmt.Sprintf("%v", referralLink)
+	return fmt.Sprintf("mailto:?body=%v&subject=%v", body, subject)
+}
+
+func referralTwitterHTML(referralCode string) string {
+	return fmt.Sprintf("<a href=\"%v\">Twitter</a>", referralTwitter(referralCode))
+}
+
+func referralTwitter(referralCode string) string {
+	referralLink := referralLink(referralCode)
+	twitterMsg := fmt.Sprintf(
+		"I support #journalism on @Join_Civil -- and so can you. If you contribute $100 to the Civil token sale, "+
+			"you'll get $100 of CVL with my referral code until 10/15: %v",
+		referralLink,
+	)
+	escapedTwitterMsg := url.QueryEscape(twitterMsg)
+	return fmt.Sprintf("https://twitter.com/home?status=%v", escapedTwitterMsg)
+}
+
+func referralFacebookHTML(referralCode string) string {
+	return fmt.Sprintf("<a href=\"%v\">Facebook</a>", referralFacebook(referralCode))
+}
+
+func referralFacebook(referralCode string) string {
+	referralLink := referralLink(referralCode)
+	return fmt.Sprintf("https://www.facebook.com/sharer/sharer.php?u=%v", referralLink)
 }
 
 // CheckUpdate is the request body received from the checkbook.io webhook

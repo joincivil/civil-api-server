@@ -221,8 +221,8 @@ func CreateInvoiceTableQuery(tableName string) string {
             date_updated BIGINT,
             stop_poll bool,
             is_checkbook bool,
-			referral_code TEXT,
-			referred_by TEXT
+            referral_code TEXT,
+            referred_by TEXT
         );
     `, tableName)
 	return queryString
