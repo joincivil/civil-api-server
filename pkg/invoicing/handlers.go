@@ -15,6 +15,8 @@ import (
 
 	// "github.com/go-chi/chi"
 	"github.com/go-chi/render"
+
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -22,6 +24,17 @@ const (
 	enableEmailCheck = false
 
 	defaultInvoiceDescription = "Complete Your CVL Token Purchase"
+)
+
+var (
+	wireTransferAlertRecipientEmails = []string{
+		"cvl@civil.co",
+		"civil@pipedrivemail.com",
+		"peter@civil.co",
+	}
+	testWireTransferAlertRecipientEmails = []string{
+		"peter@civil.co",
+	}
 )
 
 // Request represents the incoming request for invoicing
@@ -86,6 +99,8 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 type SendInvoiceHandlerConfig struct {
 	CheckbookIOClient *CheckbookIO
 	InvoicePersister  *PostgresPersister
+	Emailer           *utils.Emailer
+	TestMode          bool
 }
 
 // SendInvoiceHandler returns the HTTP handler for the logic for sending an CVL invoice to a user
@@ -219,14 +234,61 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 				}
 				return
 			}
+
+		} else {
+			// This is a wire transfer request, so email ourselves
+			recipients := testWireTransferAlertRecipientEmails
+			if !config.TestMode {
+				recipients = wireTransferAlertRecipientEmails
+			}
+			sendWireTransferAlertEmail(config.Emailer, request, recipients)
 		}
 
 		// Return the response
 		err = render.Render(w, r, OkResponseNormal)
 		if err != nil {
-			log.Errorf("Error rendering the normal response: err: %v", err)
+			log.Errorf("Should have rendered response: err: %v", err)
 		}
 	}
+}
+
+func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientEmails []string) {
+	go func() {
+		text := fmt.Sprintf(
+			"First: %v\nLast:%v\nEmail: %v\nPhone: %v",
+			req.FirstName,
+			req.LastName,
+			req.Email,
+			req.Phone,
+		)
+		html := fmt.Sprintf(
+			`<p>First: %v</p>
+			<p>Last: %v</p>
+			<p>Email: %v</p>
+			<p>Phone: %v</p>`,
+			req.FirstName,
+			req.LastName,
+			req.Email,
+			req.Phone,
+		)
+		subject := fmt.Sprintf("Wire Transfer Inquiry: %v %v", req.FirstName, req.LastName)
+
+		emailReq := &utils.SendEmailRequest{
+			ToName:    "The Civil Media Company",
+			FromName:  "The Civil Media Company",
+			FromEmail: "support@civil.co",
+			Subject:   subject,
+			Text:      text,
+			HTML:      html,
+		}
+		for _, email := range recipientEmails {
+			emailReq.ToEmail = email
+			err := emailer.SendEmail(emailReq)
+			if err != nil {
+				log.Errorf("Error sending wire transfer email: err: %v", err)
+			}
+		}
+	}()
 }
 
 // CheckUpdate is the request body received from the checkbook.io webhook
