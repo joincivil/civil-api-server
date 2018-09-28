@@ -60,9 +60,10 @@ func (p *PostgresPersister) ListingsByCriteria(criteria *model.ListingCriteria) 
 	return p.listingsByCriteriaFromTable(criteria, listingTableName)
 }
 
-// ListingsByAddresses returns a slice of Listings based on addresses
+// ListingsByAddresses returns a slice of Listings in order based on addresses
+// NOTE(IS): If one of these listings is not found, empty *model.Listing will be returned in the list
 func (p *PostgresPersister) ListingsByAddresses(addresses []common.Address) ([]*model.Listing, error) {
-	return p.listingsByAddressesFromTable(addresses, listingTableName)
+	return p.listingsByAddressesFromTableInOrder(addresses, listingTableName)
 }
 
 // ListingByAddress retrieves listings based on addresses
@@ -249,6 +250,46 @@ func (p *PostgresPersister) listingsByAddressesFromTable(addresses []common.Addr
 		}
 		listings = append(listings, dbListing.DbToListingData())
 	}
+	return listings, nil
+}
+
+func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []common.Address, tableName string) ([]*model.Listing, error) {
+	stringAddresses := postgres.ListCommonAddressToListString(addresses)
+	queryString := p.listingByAddressesQuery(tableName)
+	query, args, err := sqlx.In(queryString, stringAddresses)
+	if err != nil {
+		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+	}
+	query = p.db.Rebind(query)
+	rows, err := p.db.Queryx(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
+	}
+
+	listingsMap := map[common.Address]*model.Listing{}
+	for rows.Next() {
+		var dbListing postgres.Listing
+		err = rows.StructScan(&dbListing)
+		if err != nil {
+			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+		}
+		modelListing := dbListing.DbToListingData()
+		listingsMap[modelListing.ContractAddress()] = modelListing
+	}
+	// TODO(IS): we can change query instead -- but if we have listings that aren't found, we'll still have to loop through.
+	// NOTE(IS): This is not ideal, but we should return the listings in same order as addresses (also needed for dataloader in api-server)
+	// so looping through listings again.
+	listings := make([]*model.Listing, len(addresses))
+	for i, address := range addresses {
+		retrievedListing, ok := listingsMap[address]
+		if ok {
+			listings[i] = retrievedListing
+		} else {
+			listings[i] = &model.Listing{}
+		}
+
+	}
+
 	return listings, nil
 }
 
