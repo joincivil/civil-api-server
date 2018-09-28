@@ -160,6 +160,14 @@
   version = "v1.2.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:89cd2208bdeb192cc83ee287216af3c987fc87a90b9087718ad6631b636cefcf"
+  name = "github.com/iancoleman/strcase"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3605ed457bf7f8caa1371b4fafadadc026673479"
+
+[[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
@@ -443,6 +451,7 @@
     "github.com/go-chi/cors",
     "github.com/go-chi/render",
     "github.com/golang/glog",
+    "github.com/iancoleman/strcase",
     "github.com/jmoiron/sqlx",
     "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres",
     "github.com/joincivil/civil-events-crawler/pkg/utils",

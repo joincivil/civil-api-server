@@ -13,6 +13,7 @@ import (
 	time "time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/iancoleman/strcase"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
@@ -66,7 +67,8 @@ func (r *contentRevisionResolver) Payload(ctx context.Context, obj *model.Conten
 	data := []graphql.ArticlePayload{}
 	for key, val := range obj.Payload() {
 		meta := graphql.ArticlePayload{
-			Key:   key,
+			// Make the key lower camel case for consistency with GraphQL field names
+			Key:   strcase.ToLowerCamel(key),
 			Value: model.ArticlePayloadValue{Value: val},
 		}
 		data = append(data, meta)
@@ -103,7 +105,9 @@ func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.Gover
 	index := 0
 	for key, val := range obj.Metadata() {
 		meta := graphql.Metadata{}
-		meta.Key = key
+
+		// Make the key lower camel case for consistency with GraphQL field names
+		meta.Key = strcase.ToLowerCamel(key)
 
 		switch v := val.(type) {
 		case int:
