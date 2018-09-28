@@ -22,7 +22,9 @@ Sends an invoice to the recipient email specified in the payload.
 	// true if using checkbook.io, false for wire. If false,
  	// ignores amount and invoice_desc fields and only stores user
  	// data. defaults to false
-	"is_checkbook": <bool>
+	"is_checkbook": <bool>,
+	// referred by code, none if not referred
+	"referred_by": <string>
 }
 ```
 

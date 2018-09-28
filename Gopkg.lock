@@ -272,6 +272,13 @@
   version = "v1.1"
 
 [[projects]]
+  digest = "1:ff6b0586c0621a76832cf783eee58cbb9d9795d2ce8acbc199a4131db11c42a9"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
+
+[[projects]]
   digest = "1:043a68c728982a54355d57e347dd4b52ba5ab3fec50e7a57894b1baa80aa7a9e"
   name = "github.com/sendgrid/rest"
   packages = ["."]
@@ -461,6 +468,7 @@
     "github.com/joincivil/civil-events-processor/pkg/utils",
     "github.com/kelseyhightower/envconfig",
     "github.com/lib/pq",
+    "github.com/satori/go.uuid",
     "github.com/sendgrid/sendgrid-go",
     "github.com/sendgrid/sendgrid-go/helpers/mail",
     "github.com/vektah/gqlparser",

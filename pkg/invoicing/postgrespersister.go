@@ -220,7 +220,9 @@ func CreateInvoiceTableQuery(tableName string) string {
             date_created BIGINT,
             date_updated BIGINT,
             stop_poll bool,
-            is_checkbook bool
+            is_checkbook bool,
+            referral_code TEXT,
+            referred_by TEXT
         );
     `, tableName)
 	return queryString
@@ -255,6 +257,8 @@ type PostgresInvoice struct {
 	DateUpdated   int64   `db:"date_updated"`
 	StopPoll      bool    `db:"stop_poll"`
 	IsCheckbook   bool    `db:"is_checkbook"`
+	ReferralCode  string  `db:"referral_code"` // Their own referral code
+	ReferredBy    string  `db:"referred_by"`   // Who referred them
 }
 
 // GenerateHash sets the Hash field with a hash of email, amount, and date created.

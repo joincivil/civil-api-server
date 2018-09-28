@@ -4,6 +4,7 @@ package invoicing
 // go-chi routing framework
 
 import (
+	"net/url"
 	// "bytes"
 	"errors"
 	"net/http/httputil"
@@ -13,6 +14,7 @@ import (
 	log "github.com/golang/glog"
 	"net/http"
 
+	uuid "github.com/satori/go.uuid"
 	// "github.com/go-chi/chi"
 	"github.com/go-chi/render"
 
@@ -24,6 +26,7 @@ const (
 	enableEmailCheck = false
 
 	defaultInvoiceDescription = "Complete Your CVL Token Purchase"
+	referralEmailTemplateID   = "d-33fbe062ad2d44bdbb4c584f75b9a576"
 )
 
 var (
@@ -45,7 +48,8 @@ type Request struct {
 	Phone     string  `json:"phone"`
 	Amount    float64 `json:"amount"`
 	// InvoiceDesc string  `json:"invoice_desc"`
-	IsCheckbook bool `json:"is_checkbook"`
+	IsCheckbook bool   `json:"is_checkbook"`
+	ReferredBy  string `json:"referred_by"`
 }
 
 // Bind implements the render.Binder interface
@@ -166,17 +170,37 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			}
 		}
 
+		// Generate a new referral code for this invoice.
+		// If a user has multiple invoices, we will just figure out
+		// overall total referrals via that user's email.
+		referralCode, err := generateReferralCode()
+		if err != nil {
+			log.Errorf("Error generating new referrer code: %v", err)
+		}
+
+		// If there is referred by code, validate it
+		referredBy := ""
+		if request.ReferredBy != "" {
+			if validReferralCode(request.ReferredBy) {
+				referredBy = request.ReferredBy
+			} else {
+				log.Errorf("Invalid referred by code: %v", request.ReferredBy)
+			}
+		}
+
 		// Make the request to CheckbookIO for the invoice
 		fullName := fmt.Sprintf("%v %v", request.FirstName, request.LastName)
 
 		// Save the user to the store with no invoice id yet
 		postgresInvoice := &PostgresInvoice{
-			Email:       request.Email,
-			Name:        fullName,
-			Phone:       request.Phone,
-			Amount:      request.Amount,
-			StopPoll:    false,
-			IsCheckbook: request.IsCheckbook,
+			Email:        request.Email,
+			Name:         fullName,
+			Phone:        request.Phone,
+			Amount:       request.Amount,
+			StopPoll:     false,
+			IsCheckbook:  request.IsCheckbook,
+			ReferralCode: referralCode,
+			ReferredBy:   referredBy,
 		}
 		if !existingInvoice {
 			err = config.InvoicePersister.SaveInvoice(postgresInvoice)
@@ -244,6 +268,9 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			sendWireTransferAlertEmail(config.Emailer, request, recipients)
 		}
 
+		// Send the referral email
+		sendReferralProgramEmail(config.Emailer, request, referralCode)
+
 		// Return the response
 		err = render.Render(w, r, OkResponseNormal)
 		if err != nil {
@@ -289,6 +316,76 @@ func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientE
 			}
 		}
 	}()
+}
+
+func sendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode string) {
+	go func() {
+		fullName := fmt.Sprintf("%v %v", req.FirstName, req.LastName)
+
+		templateData := utils.TemplateData{}
+		templateData["first_name"] = req.FirstName
+		templateData["referral_link"] = referralLinkHTML(referralCode)
+		templateData["referral_email"] = referralEmailHTML(referralCode)
+		templateData["referral_twitter"] = referralTwitterHTML(referralCode)
+		templateData["referral_fb"] = referralFacebookHTML(referralCode)
+
+		emailReq := &utils.SendTemplateEmailRequest{
+			ToName:       fullName,
+			ToEmail:      req.Email,
+			FromName:     "The Civil Media Company",
+			FromEmail:    "support@civil.co",
+			TemplateID:   referralEmailTemplateID,
+			TemplateData: templateData,
+		}
+		err := emailer.SendTemplateEmail(emailReq)
+		if err != nil {
+			log.Errorf("Error sending referral email: err: %v", err)
+		}
+	}()
+}
+
+func referralLinkHTML(referralCode string) string {
+	link := referralLink(referralCode)
+	return fmt.Sprintf("<a href=\"%v\">%v</a>", link, link)
+}
+
+func referralLink(referralCode string) string {
+	return fmt.Sprintf("http://civil.co/?referred_by=%v", referralCode)
+}
+
+func referralEmailHTML(referralCode string) string {
+	return fmt.Sprintf("<a href=\"%v\">Email</a>", referralEmail(referralCode))
+}
+
+func referralEmail(referralCode string) string {
+	referralLink := referralLink(referralCode)
+	subject := "Share Civil, Earn CVL"
+	body := fmt.Sprintf("%v", referralLink)
+	return fmt.Sprintf("mailto:?body=%v&subject=%v", body, subject)
+}
+
+func referralTwitterHTML(referralCode string) string {
+	return fmt.Sprintf("<a href=\"%v\">Twitter</a>", referralTwitter(referralCode))
+}
+
+func referralTwitter(referralCode string) string {
+	referralLink := referralLink(referralCode)
+	twitterMsg := fmt.Sprintf(
+		"I support #journalism on @Join_Civil -- and so can you. If you contribute $100 to the Civil token sale, "+
+			"you'll get $100 of CVL with my referral code until 10/15: %v",
+		referralLink,
+	)
+	escapedTwitterMsg := url.QueryEscape(twitterMsg)
+	return fmt.Sprintf("https://twitter.com/home?status=%v", escapedTwitterMsg)
+}
+
+func referralFacebookHTML(referralCode string) string {
+	return fmt.Sprintf("<a href=\"%v\">Facebook</a>", referralFacebook(referralCode))
+}
+
+func referralFacebook(referralCode string) string {
+	referralLink := referralLink(referralCode)
+	return fmt.Sprintf("https://www.facebook.com/sharer/sharer.php?u=%v", referralLink)
 }
 
 // CheckUpdate is the request body received from the checkbook.io webhook
@@ -496,4 +593,21 @@ func ErrInvalidRequest(missingField string) render.Renderer {
 		HTTPStatusCode: 400,
 		StatusText:     msg,
 	}
+}
+
+func generateReferralCode() (string, error) {
+	code, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	return code.String(), nil
+}
+
+func validReferralCode(code string) bool {
+	_, err := uuid.FromString(code)
+	if err != nil {
+		log.Errorf("err = %v", err)
+		return false
+	}
+	return true
 }
