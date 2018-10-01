@@ -221,6 +221,7 @@ func CreateInvoiceTableQuery(tableName string) string {
             date_updated BIGINT,
             stop_poll bool,
             is_checkbook bool,
+            is_third_party bool,
             referral_code TEXT,
             referred_by TEXT
         );
@@ -257,6 +258,7 @@ type PostgresInvoice struct {
 	DateUpdated   int64   `db:"date_updated"`
 	StopPoll      bool    `db:"stop_poll"`
 	IsCheckbook   bool    `db:"is_checkbook"`
+	IsThirdParty  bool    `db:"is_third_party"`
 	ReferralCode  string  `db:"referral_code"` // Their own referral code
 	ReferredBy    string  `db:"referred_by"`   // Who referred them
 }

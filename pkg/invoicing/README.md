@@ -19,10 +19,18 @@ Sends an invoice to the recipient email specified in the payload.
 	"email": <string>,
 	"phone": <string>,
 	"amount": <float>,
+
 	// true if using checkbook.io, false for wire. If false,
  	// ignores amount and invoice_desc fields and only stores user
  	// data. defaults to false
 	"is_checkbook": <bool>,
+
+	// true if payment occurred with third party (i.e. Token Foundry)
+	// If true, no invoices sent to checkbook.io and no wire transfer email
+	// is sent internally, but user data is recorded and referral email is sent.
+	// Mainly used to send referral emails from third party ETH or USD payers.
+	"is_third_party": <bool>,
+
 	// referred by code, none if not referred
 	"referred_by": <string>
 }
