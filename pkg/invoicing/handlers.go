@@ -173,7 +173,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 		// Generate a new referral code for this invoice.
 		// If a user has multiple invoices, we will just figure out
 		// overall total referrals via that user's email.
-		referralCode, err := generateReferralCode()
+		referralCode, err := GenerateReferralCode()
 		if err != nil {
 			log.Errorf("Error generating new referrer code: %v", err)
 		}
@@ -265,11 +265,11 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			if !config.TestMode {
 				recipients = wireTransferAlertRecipientEmails
 			}
-			sendWireTransferAlertEmail(config.Emailer, request, recipients)
+			go sendWireTransferAlertEmail(config.Emailer, request, recipients)
 		}
 
 		// Send the referral email
-		sendReferralProgramEmail(config.Emailer, request, referralCode)
+		go SendReferralProgramEmail(config.Emailer, request, referralCode)
 
 		// Return the response
 		err = render.Render(w, r, OkResponseNormal)
@@ -280,68 +280,67 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 }
 
 func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientEmails []string) {
-	go func() {
-		text := fmt.Sprintf(
-			"First: %v\nLast:%v\nEmail: %v\nPhone: %v",
-			req.FirstName,
-			req.LastName,
-			req.Email,
-			req.Phone,
-		)
-		html := fmt.Sprintf(
-			`<p>First: %v</p>
-			<p>Last: %v</p>
-			<p>Email: %v</p>
-			<p>Phone: %v</p>`,
-			req.FirstName,
-			req.LastName,
-			req.Email,
-			req.Phone,
-		)
-		subject := fmt.Sprintf("Wire Transfer Inquiry: %v %v", req.FirstName, req.LastName)
+	text := fmt.Sprintf(
+		"First: %v\nLast:%v\nEmail: %v\nPhone: %v",
+		req.FirstName,
+		req.LastName,
+		req.Email,
+		req.Phone,
+	)
+	html := fmt.Sprintf(
+		`<p>First: %v</p>
+		<p>Last: %v</p>
+		<p>Email: %v</p>
+		<p>Phone: %v</p>`,
+		req.FirstName,
+		req.LastName,
+		req.Email,
+		req.Phone,
+	)
+	subject := fmt.Sprintf("Wire Transfer Inquiry: %v %v", req.FirstName, req.LastName)
 
-		emailReq := &utils.SendEmailRequest{
-			ToName:    "The Civil Media Company",
-			FromName:  "The Civil Media Company",
-			FromEmail: "support@civil.co",
-			Subject:   subject,
-			Text:      text,
-			HTML:      html,
+	emailReq := &utils.SendEmailRequest{
+		ToName:    "The Civil Media Company",
+		FromName:  "The Civil Media Company",
+		FromEmail: "support@civil.co",
+		Subject:   subject,
+		Text:      text,
+		HTML:      html,
+	}
+	for _, email := range recipientEmails {
+		emailReq.ToEmail = email
+		err := emailer.SendEmail(emailReq)
+		if err != nil {
+			log.Errorf("Error sending wire transfer email: err: %v", err)
 		}
-		for _, email := range recipientEmails {
-			emailReq.ToEmail = email
-			err := emailer.SendEmail(emailReq)
-			if err != nil {
-				log.Errorf("Error sending wire transfer email: err: %v", err)
-			}
-		}
-	}()
+	}
 }
 
-func sendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode string) {
-	go func() {
-		fullName := fmt.Sprintf("%v %v", req.FirstName, req.LastName)
+// SendReferralProgramEmail sends the referrer email with the given referral code to the
+// recipient specified in the request
+func SendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode string) {
+	fullName := fmt.Sprintf("%v %v", req.FirstName, req.LastName)
 
-		templateData := utils.TemplateData{}
-		templateData["first_name"] = req.FirstName
-		templateData["referral_link"] = referralLinkHTML(referralCode)
-		templateData["referral_email"] = referralEmailHTML(referralCode)
-		templateData["referral_twitter"] = referralTwitterHTML(referralCode)
-		templateData["referral_fb"] = referralFacebookHTML(referralCode)
+	templateData := utils.TemplateData{}
+	templateData["first_name"] = req.FirstName
+	templateData["referral_link"] = referralLinkHTML(referralCode)
+	templateData["referral_email"] = referralEmailHTML(referralCode)
+	templateData["referral_twitter"] = referralTwitterHTML(referralCode)
+	templateData["referral_fb"] = referralFacebookHTML(referralCode)
 
-		emailReq := &utils.SendTemplateEmailRequest{
-			ToName:       fullName,
-			ToEmail:      req.Email,
-			FromName:     "The Civil Media Company",
-			FromEmail:    "support@civil.co",
-			TemplateID:   referralEmailTemplateID,
-			TemplateData: templateData,
-		}
-		err := emailer.SendTemplateEmail(emailReq)
-		if err != nil {
-			log.Errorf("Error sending referral email: err: %v", err)
-		}
-	}()
+	emailReq := &utils.SendTemplateEmailRequest{
+		ToName:       fullName,
+		ToEmail:      req.Email,
+		FromName:     "The Civil Media Company",
+		FromEmail:    "support@civil.co",
+		TemplateID:   referralEmailTemplateID,
+		TemplateData: templateData,
+	}
+	err := emailer.SendTemplateEmail(emailReq)
+	if err != nil {
+		log.Errorf("Error sending referral email: err: %v", err)
+	}
+	log.Infof("Sent referral email to %v", req.Email)
 }
 
 func referralLinkHTML(referralCode string) string {
@@ -595,7 +594,8 @@ func ErrInvalidRequest(missingField string) render.Renderer {
 	}
 }
 
-func generateReferralCode() (string, error) {
+// GenerateReferralCode generates a new referral code
+func GenerateReferralCode() (string, error) {
 	code, err := uuid.NewV4()
 	if err != nil {
 		return "", err
