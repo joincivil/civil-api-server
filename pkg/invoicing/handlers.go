@@ -347,6 +347,7 @@ func sendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode
 			FromEmail:    "support@civil.co",
 			TemplateID:   referralEmailTemplateID,
 			TemplateData: templateData,
+			AsmGroupID:   7395,
 		}
 		err := emailer.SendTemplateEmail(emailReq)
 		if err != nil {
