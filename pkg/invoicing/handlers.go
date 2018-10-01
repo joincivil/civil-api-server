@@ -41,6 +41,12 @@ var (
 )
 
 // Request represents the incoming request for invoicing
+// If IsCheckbook flag is true, will send checkbook io invoice to user.  If
+// false, will consider it a wire transfer.
+// If IsThirdParty flag is true, will not send to checkbook io or consider it a
+// wire transfer.  It will just record the user info and generate a referral code and
+// send a referral email.  Use if user was billed via Token Foundry or other third party
+// source.
 type Request struct {
 	FirstName string  `json:"first_name"`
 	LastName  string  `json:"last_name"`
@@ -48,8 +54,9 @@ type Request struct {
 	Phone     string  `json:"phone"`
 	Amount    float64 `json:"amount"`
 	// InvoiceDesc string  `json:"invoice_desc"`
-	IsCheckbook bool   `json:"is_checkbook"`
-	ReferredBy  string `json:"referred_by"`
+	IsCheckbook  bool   `json:"is_checkbook"`
+	IsThirdParty bool   `json:"is_third_party"`
+	ReferredBy   string `json:"referred_by"`
 }
 
 // Bind implements the render.Binder interface
@@ -199,6 +206,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			Amount:       request.Amount,
 			StopPoll:     false,
 			IsCheckbook:  request.IsCheckbook,
+			IsThirdParty: request.IsThirdParty,
 			ReferralCode: referralCode,
 			ReferredBy:   referredBy,
 		}
@@ -214,58 +222,61 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			}
 		}
 
-		if request.IsCheckbook {
-			// Make request for invoice to checkbook.io
-			invoiceRequest := &RequestInvoiceParams{
-				Recipient: request.Email,
-				Name:      fullName,
-				Amount:    request.Amount,
-				// Description: request.InvoiceDesc,
-				Description: defaultInvoiceDescription,
-			}
-			invoiceResponse, ierr := config.CheckbookIOClient.RequestInvoice(invoiceRequest)
-			if ierr != nil {
-				log.Errorf("Error calling checkbookIO: %v", ierr)
-				ierr = render.Render(w, r, ErrCheckbookIOInvoicing)
+		if !request.IsThirdParty {
+			if request.IsCheckbook {
+				// Make request for invoice to checkbook.io
+				invoiceRequest := &RequestInvoiceParams{
+					Recipient: request.Email,
+					Name:      fullName,
+					Amount:    request.Amount,
+					// Description: request.InvoiceDesc,
+					Description: defaultInvoiceDescription,
+				}
+				invoiceResponse, ierr := config.CheckbookIOClient.RequestInvoice(invoiceRequest)
 				if ierr != nil {
-					log.Errorf("Error rendering checkbook io error: err: %v", ierr)
+					log.Errorf("Error calling checkbookIO: %v", ierr)
+					ierr = render.Render(w, r, ErrCheckbookIOInvoicing)
+					if ierr != nil {
+						log.Errorf("Error rendering checkbook io error: err: %v", ierr)
+					}
+					return
 				}
-				return
-			}
 
-			postgresInvoice.Amount = invoiceResponse.Amount
-			postgresInvoice.InvoiceID = invoiceResponse.ID
-			postgresInvoice.InvoiceStatus = invoiceResponse.Status
-			postgresInvoice.CheckID = invoiceResponse.CheckID
-			postgresInvoice.InvoiceNum = invoiceResponse.Number
-			updatedFields := []string{
-				"Amount",
-				"InvoiceID",
-				"InvoiceNum",
-				"InvoiceStatus",
-				"CheckID",
-			}
+				postgresInvoice.Amount = invoiceResponse.Amount
+				postgresInvoice.InvoiceID = invoiceResponse.ID
+				postgresInvoice.InvoiceStatus = invoiceResponse.Status
+				postgresInvoice.CheckID = invoiceResponse.CheckID
+				postgresInvoice.InvoiceNum = invoiceResponse.Number
+				updatedFields := []string{
+					"Amount",
+					"InvoiceID",
+					"InvoiceNum",
+					"InvoiceStatus",
+					"CheckID",
+				}
 
-			// If invoice looks good, store the checkbookIO invoice ID and invoice status
-			// If fails here, issues might arise from sending invoice, but not having
-			// the invoice ids saved.
-			err = config.InvoicePersister.UpdateInvoice(postgresInvoice, updatedFields)
-			if err != nil {
-				log.Errorf("Error saving invoice: %v", err)
-				err = render.Render(w, r, ErrSomethingBroke)
+				// If invoice looks good, store the checkbookIO invoice ID and invoice status
+				// If fails here, issues might arise from sending invoice, but not having
+				// the invoice ids saved.
+				err = config.InvoicePersister.UpdateInvoice(postgresInvoice, updatedFields)
 				if err != nil {
-					log.Errorf("Error rendering error response: err: %v", err)
+					log.Errorf("Error saving invoice: %v", err)
+					err = render.Render(w, r, ErrSomethingBroke)
+					if err != nil {
+						log.Errorf("Error rendering error response: err: %v", err)
+					}
+					return
 				}
-				return
-			}
 
-		} else {
-			// This is a wire transfer request, so email ourselves
-			recipients := testWireTransferAlertRecipientEmails
-			if !config.TestMode {
-				recipients = wireTransferAlertRecipientEmails
+			} else {
+				// This is a wire transfer request, so email ourselves
+				recipients := testWireTransferAlertRecipientEmails
+				if !config.TestMode {
+					recipients = wireTransferAlertRecipientEmails
+				}
+				sendWireTransferAlertEmail(config.Emailer, request, recipients)
+				log.Infof("send a wire transfer email")
 			}
-			sendWireTransferAlertEmail(config.Emailer, request, recipients)
 		}
 
 		// Send the referral email
