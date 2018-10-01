@@ -383,7 +383,7 @@ func referralTwitter(referralCode string) string {
 	referralLink := referralLink(referralCode)
 	twitterMsg := fmt.Sprintf(
 		"I support #journalism on @Join_Civil -- and so can you. If you contribute $100 to the Civil token sale, "+
-			"you'll get $100 of CVL with my referral code until 10/15: %v",
+			"you'll get an extra $100 of CVL with my referral code until 10/15: %v",
 		referralLink,
 	)
 	escapedTwitterMsg := url.QueryEscape(twitterMsg)
