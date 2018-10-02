@@ -33,10 +33,10 @@ type CheckoutIOUpdater struct {
 func (c *CheckoutIOUpdater) Run() {
 	log.Infof("Running check and update")
 	err := c.checkAndUpdate()
+	log.Infof("Check and update complete")
 	if err != nil {
 		log.Error(err.Error())
 	}
-	log.Infof("Check and update complete")
 
 Loop:
 	for {
@@ -77,6 +77,7 @@ func (c *CheckoutIOUpdater) checkAndUpdate() error {
 	}
 	allInvoices = append(allInvoices, invoices...)
 
+	log.Infof("Checking %v invoices", len(allInvoices))
 	c.updateInvoices(allInvoices)
 
 	return nil
@@ -104,16 +105,20 @@ func (c *CheckoutIOUpdater) updateInvoices(invoices []*PostgresInvoice) {
 			continue
 		}
 
+		updatedFields := []string{}
+
 		nowPaid := false
 		if invoice.InvoiceStatus == InvoiceStatusUnpaid ||
 			invoice.InvoiceStatus == InvoiceStatusInProcess {
 			if checkbookInvoice.Status == InvoiceStatusPaid {
 				nowPaid = true
+				invoice.CheckStatus = CheckStatusPaid
+				updatedFields = append(updatedFields, "CheckStatus")
 			}
 		}
 
 		invoice.InvoiceStatus = checkbookInvoice.Status
-		updatedFields := []string{"InvoiceStatus"}
+		updatedFields = append(updatedFields, "InvoiceStatus")
 
 		// Update an empty CheckID
 		if checkbookInvoice.CheckID != "" && invoice.CheckID == "" {
