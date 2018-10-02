@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	callDelayPerInvoiceMillis = 250
+)
+
 // NewCheckoutIOUpdater is a convenience func to create a new CheckoutIOUpdater
 func NewCheckoutIOUpdater(client *CheckbookIO, persister *PostgresPersister,
 	runEverySecs time.Duration) *CheckoutIOUpdater {
@@ -51,6 +55,9 @@ Loop:
 }
 
 func (c *CheckoutIOUpdater) checkAndUpdate() error {
+
+	allInvoices := []*PostgresInvoice{}
+
 	// Check all UNPAID invoices
 	// Once they go to another state, should have a check id, so the webhook will work.
 	invoices, err := c.invoicePersister.Invoices("", "", InvoiceStatusUnpaid, "")
@@ -58,9 +65,29 @@ func (c *CheckoutIOUpdater) checkAndUpdate() error {
 		log.Errorf("Error retrieving invoices from store: err: %v", err)
 		return err
 	}
+	allInvoices = append(allInvoices, invoices...)
 
+	// Check all IN_PROCESS invoices
+	// XXX(PN): Added this bc the webhook from checkbook.io doesn't seem to be working
+	// so putting this in for now.
+	invoices, err = c.invoicePersister.Invoices("", "", InvoiceStatusInProcess, "")
+	if err != nil {
+		log.Errorf("Error retrieving invoices from store: err: %v", err)
+		return err
+	}
+	allInvoices = append(allInvoices, invoices...)
+
+	c.updateInvoices(allInvoices)
+
+	return nil
+}
+
+func (c *CheckoutIOUpdater) updateInvoices(invoices []*PostgresInvoice) {
 	for _, invoice := range invoices {
 		if invoice.StopPoll {
+			continue
+		}
+		if invoice.InvoiceID == "" {
 			continue
 		}
 
@@ -105,7 +132,8 @@ func (c *CheckoutIOUpdater) checkAndUpdate() error {
 		}
 
 		log.Infof("Updated invoice %v, %v to status %v", invoice.InvoiceID, invoice.Email, checkbookInvoice.Status)
-	}
 
-	return nil
+		// Sleep hack so we don't pound the checkbook API
+		time.Sleep(callDelayPerInvoiceMillis * time.Millisecond)
+	}
 }
