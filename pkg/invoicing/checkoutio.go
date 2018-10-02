@@ -263,7 +263,7 @@ func (c *CheckbookIO) buildPostPutRequest(method string, url string,
 			return nil, err
 		}
 		reqBody = bytes.NewBufferString(string(payloadData))
-		log.Infof("reqBody = %v", reqBody.String())
+		// log.Infof("reqBody = %v", reqBody.String())
 	}
 
 	// Build a new request
@@ -275,7 +275,7 @@ func (c *CheckbookIO) buildPostPutRequest(method string, url string,
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("%v", req.URL.String())
+	// log.Infof("%v", req.URL.String())
 	return req, nil
 }
 
@@ -292,6 +292,6 @@ func (c *CheckbookIO) buildGetDeleteRequest(method string, url string,
 	if params != nil {
 		req.URL.RawQuery = params.Encode()
 	}
-	log.Infof("%v", req.URL.String())
+	// log.Infof("%v", req.URL.String())
 	return req, nil
 }
