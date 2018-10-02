@@ -142,8 +142,9 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		// If not checkbook and wire transfer, set these values to empty
-		if !request.IsCheckbook {
+		// If not checkbook and is wire transfer, set these values to empty
+		// If third party, save the amount
+		if !request.IsCheckbook && !request.IsThirdParty {
 			request.Amount = 0.0
 			// request.InvoiceDesc = ""
 		}
