@@ -41,6 +41,12 @@ var (
 )
 
 // Request represents the incoming request for invoicing
+// If IsCheckbook flag is true, will send checkbook io invoice to user.  If
+// false, will consider it a wire transfer.
+// If IsThirdParty flag is true, will not send to checkbook io or consider it a
+// wire transfer.  It will just record the user info and generate a referral code and
+// send a referral email.  Use if user was billed via Token Foundry or other third party
+// source.
 type Request struct {
 	FirstName string  `json:"first_name"`
 	LastName  string  `json:"last_name"`
@@ -48,8 +54,9 @@ type Request struct {
 	Phone     string  `json:"phone"`
 	Amount    float64 `json:"amount"`
 	// InvoiceDesc string  `json:"invoice_desc"`
-	IsCheckbook bool   `json:"is_checkbook"`
-	ReferredBy  string `json:"referred_by"`
+	IsCheckbook  bool   `json:"is_checkbook"`
+	IsThirdParty bool   `json:"is_third_party"`
+	ReferredBy   string `json:"referred_by"`
 }
 
 // Bind implements the render.Binder interface
@@ -88,8 +95,8 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.New("Invalid Request")
 	}
-	// Restrict amount to less than/equal to 10k
-	if e.Amount > 10000 {
+	// Restrict amount to less than/equal to 10k for checkbook transactions
+	if e.IsCheckbook && e.Amount > 10000 {
 		err = render.Render(w, r, ErrInvalidRequest("amount"))
 		if err != nil {
 			return err
@@ -135,8 +142,9 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		// If not checkbook and wire transfer, set these values to empty
-		if !request.IsCheckbook {
+		// If not checkbook and is wire transfer, set these values to empty
+		// If third party, save the amount
+		if !request.IsCheckbook && !request.IsThirdParty {
 			request.Amount = 0.0
 			// request.InvoiceDesc = ""
 		}
@@ -199,6 +207,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			Amount:       request.Amount,
 			StopPoll:     false,
 			IsCheckbook:  request.IsCheckbook,
+			IsThirdParty: request.IsThirdParty,
 			ReferralCode: referralCode,
 			ReferredBy:   referredBy,
 		}
@@ -214,58 +223,61 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			}
 		}
 
-		if request.IsCheckbook {
-			// Make request for invoice to checkbook.io
-			invoiceRequest := &RequestInvoiceParams{
-				Recipient: request.Email,
-				Name:      fullName,
-				Amount:    request.Amount,
-				// Description: request.InvoiceDesc,
-				Description: defaultInvoiceDescription,
-			}
-			invoiceResponse, ierr := config.CheckbookIOClient.RequestInvoice(invoiceRequest)
-			if ierr != nil {
-				log.Errorf("Error calling checkbookIO: %v", ierr)
-				ierr = render.Render(w, r, ErrCheckbookIOInvoicing)
+		if !request.IsThirdParty {
+			if request.IsCheckbook {
+				// Make request for invoice to checkbook.io
+				invoiceRequest := &RequestInvoiceParams{
+					Recipient: request.Email,
+					Name:      fullName,
+					Amount:    request.Amount,
+					// Description: request.InvoiceDesc,
+					Description: defaultInvoiceDescription,
+				}
+				invoiceResponse, ierr := config.CheckbookIOClient.RequestInvoice(invoiceRequest)
 				if ierr != nil {
-					log.Errorf("Error rendering checkbook io error: err: %v", ierr)
+					log.Errorf("Error calling checkbookIO: %v", ierr)
+					ierr = render.Render(w, r, ErrCheckbookIOInvoicing)
+					if ierr != nil {
+						log.Errorf("Error rendering checkbook io error: err: %v", ierr)
+					}
+					return
 				}
-				return
-			}
 
-			postgresInvoice.Amount = invoiceResponse.Amount
-			postgresInvoice.InvoiceID = invoiceResponse.ID
-			postgresInvoice.InvoiceStatus = invoiceResponse.Status
-			postgresInvoice.CheckID = invoiceResponse.CheckID
-			postgresInvoice.InvoiceNum = invoiceResponse.Number
-			updatedFields := []string{
-				"Amount",
-				"InvoiceID",
-				"InvoiceNum",
-				"InvoiceStatus",
-				"CheckID",
-			}
+				postgresInvoice.Amount = invoiceResponse.Amount
+				postgresInvoice.InvoiceID = invoiceResponse.ID
+				postgresInvoice.InvoiceStatus = invoiceResponse.Status
+				postgresInvoice.CheckID = invoiceResponse.CheckID
+				postgresInvoice.InvoiceNum = invoiceResponse.Number
+				updatedFields := []string{
+					"Amount",
+					"InvoiceID",
+					"InvoiceNum",
+					"InvoiceStatus",
+					"CheckID",
+				}
 
-			// If invoice looks good, store the checkbookIO invoice ID and invoice status
-			// If fails here, issues might arise from sending invoice, but not having
-			// the invoice ids saved.
-			err = config.InvoicePersister.UpdateInvoice(postgresInvoice, updatedFields)
-			if err != nil {
-				log.Errorf("Error saving invoice: %v", err)
-				err = render.Render(w, r, ErrSomethingBroke)
+				// If invoice looks good, store the checkbookIO invoice ID and invoice status
+				// If fails here, issues might arise from sending invoice, but not having
+				// the invoice ids saved.
+				err = config.InvoicePersister.UpdateInvoice(postgresInvoice, updatedFields)
 				if err != nil {
-					log.Errorf("Error rendering error response: err: %v", err)
+					log.Errorf("Error saving invoice: %v", err)
+					err = render.Render(w, r, ErrSomethingBroke)
+					if err != nil {
+						log.Errorf("Error rendering error response: err: %v", err)
+					}
+					return
 				}
-				return
-			}
 
-		} else {
-			// This is a wire transfer request, so email ourselves
-			recipients := testWireTransferAlertRecipientEmails
-			if !config.TestMode {
-				recipients = wireTransferAlertRecipientEmails
+			} else {
+				// This is a wire transfer request, so email ourselves
+				recipients := testWireTransferAlertRecipientEmails
+				if !config.TestMode {
+					recipients = wireTransferAlertRecipientEmails
+				}
+				go sendWireTransferAlertEmail(config.Emailer, request, recipients)
+				log.Infof("send a wire transfer email")
 			}
-			go sendWireTransferAlertEmail(config.Emailer, request, recipients)
 		}
 
 		// Send the referral email
@@ -335,12 +347,12 @@ func SendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode
 		FromEmail:    "support@civil.co",
 		TemplateID:   referralEmailTemplateID,
 		TemplateData: templateData,
+		AsmGroupID:   7395,
 	}
 	err := emailer.SendTemplateEmail(emailReq)
 	if err != nil {
 		log.Errorf("Error sending referral email: err: %v", err)
 	}
-	log.Infof("Sent referral email to %v", req.Email)
 }
 
 func referralLinkHTML(referralCode string) string {
@@ -371,7 +383,7 @@ func referralTwitter(referralCode string) string {
 	referralLink := referralLink(referralCode)
 	twitterMsg := fmt.Sprintf(
 		"I support #journalism on @Join_Civil -- and so can you. If you contribute $100 to the Civil token sale, "+
-			"you'll get $100 of CVL with my referral code until 10/15: %v",
+			"you'll get an extra $100 of CVL with my referral code until 10/15: %v",
 		referralLink,
 	)
 	escapedTwitterMsg := url.QueryEscape(twitterMsg)
