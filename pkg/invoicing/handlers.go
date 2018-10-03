@@ -88,13 +88,6 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 		}
 		return errors.New("Invalid Request")
 	}
-	if e.Phone == "" {
-		err = render.Render(w, r, ErrInvalidRequest("phone"))
-		if err != nil {
-			return err
-		}
-		return errors.New("Invalid Request")
-	}
 	// Restrict amount to less than/equal to 10k for checkbook transactions
 	if e.IsCheckbook && e.Amount > 10000 {
 		err = render.Render(w, r, ErrInvalidRequest("amount"))
