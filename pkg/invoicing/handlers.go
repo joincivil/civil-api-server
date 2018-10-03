@@ -25,8 +25,9 @@ const (
 	// Feature flag to enable/disable the email check
 	enableEmailCheck = false
 
-	defaultInvoiceDescription = "Complete Your CVL Token Purchase"
-	referralEmailTemplateID   = "d-33fbe062ad2d44bdbb4c584f75b9a576"
+	defaultInvoiceDescription  = "Complete Your CVL Token Purchase"
+	referralEmailTemplateID    = "d-33fbe062ad2d44bdbb4c584f75b9a576"
+	postPaymentEmailTemplateID = "d-fc18db3e7e394aad92c0774858f0a1d7"
 )
 
 var (
@@ -39,6 +40,24 @@ var (
 		"peter@civil.co",
 	}
 )
+
+// GenerateReferralCode generates a new referral code
+func GenerateReferralCode() (string, error) {
+	code, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	return code.String(), nil
+}
+
+func validReferralCode(code string) bool {
+	_, err := uuid.FromString(code)
+	if err != nil {
+		log.Errorf("err = %v", err)
+		return false
+	}
+	return true
+}
 
 // Request represents the incoming request for invoicing
 // If IsCheckbook flag is true, will send checkbook io invoice to user.  If
@@ -435,6 +454,7 @@ func (c *CheckUpdate) Bind(r *http.Request) error {
 // CheckbookIOWebhookConfig configures the CheckbookIOWebhook
 type CheckbookIOWebhookConfig struct {
 	InvoicePersister *PostgresPersister
+	Emailer          *utils.Emailer
 }
 
 // CheckbookIOWebhookHandler is the handler for the Checkbook.io webhook handler.
@@ -463,6 +483,7 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 		update.Status = strings.ToLower(update.Status)
 		update.Status = strings.Replace(update.Status, " ", "_", -1)
 
+		// Find the invoice in out DB from the ID
 		invoices, err := config.InvoicePersister.Invoices("", "", "", update.ID)
 		if err != nil {
 			log.Errorf("Error checking for existing invoices: err: %v", err)
@@ -492,11 +513,11 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 			return
 		}
 
+		// Has the status changed from unpaid to paid?
 		nowPaid := false
-		if invoice.CheckStatus == CheckStatusUnpaid ||
-			invoice.CheckStatus == CheckStatusInProcess {
+		if invoice.InvoiceStatus == InvoiceStatusUnpaid ||
+			invoice.InvoiceStatus == InvoiceStatusInProcess {
 			if update.Status == CheckStatusPaid {
-				log.Infof("setting nowpaid to true")
 				nowPaid = true
 			}
 		}
@@ -514,6 +535,7 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 			updatedFields = append(updatedFields, "InvoiceStatus")
 		}
 
+		// Update the invoice and check status
 		err = config.InvoicePersister.UpdateInvoice(invoice, updatedFields)
 		if err != nil {
 			log.Errorf("Error saving invoice: %v", err)
@@ -524,15 +546,36 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 			return
 		}
 
+		// If the it was an unpaid to paid status, send email
 		if nowPaid {
-			// Push a message to pubsub
-			log.Infof("Check was just paid, so push message to pubsub")
+			SendPostPaymentEmail(config.Emailer, invoice.Email, invoice.Name)
+			log.Infof("Post payment email sent to %v", invoice.Email)
 		}
 
 		err = render.Render(w, r, OkResponseNormal)
 		if err != nil {
 			log.Errorf("Error rendering response: err: %v", err)
 		}
+	}
+}
+
+// SendPostPaymentEmail sends the post payment instruction email
+func SendPostPaymentEmail(emailer *utils.Emailer, email string, name string) {
+	templateData := utils.TemplateData{}
+	templateData["name"] = name
+
+	emailReq := &utils.SendTemplateEmailRequest{
+		ToName:       name,
+		ToEmail:      email,
+		FromName:     "The Civil Media Company",
+		FromEmail:    "support@civil.co",
+		TemplateID:   postPaymentEmailTemplateID,
+		TemplateData: templateData,
+		AsmGroupID:   7395,
+	}
+	err := emailer.SendTemplateEmail(emailReq)
+	if err != nil {
+		log.Errorf("Error sending post payment email: err: %v", err)
 	}
 }
 
@@ -604,22 +647,4 @@ func ErrInvalidRequest(missingField string) render.Renderer {
 		HTTPStatusCode: 400,
 		StatusText:     msg,
 	}
-}
-
-// GenerateReferralCode generates a new referral code
-func GenerateReferralCode() (string, error) {
-	code, err := uuid.NewV4()
-	if err != nil {
-		return "", err
-	}
-	return code.String(), nil
-}
-
-func validReferralCode(code string) bool {
-	_, err := uuid.FromString(code)
-	if err != nil {
-		log.Errorf("err = %v", err)
-		return false
-	}
-	return true
 }

@@ -135,6 +135,7 @@ func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
 	}
 	whConfig := &invoicing.CheckbookIOWebhookConfig{
 		InvoicePersister: persister,
+		Emailer:          emailer,
 	}
 
 	// Set some rate limiters for the invoice handlers
@@ -248,7 +249,12 @@ func main() {
 			invoicingVersion,
 		)
 
-		updater := invoicing.NewCheckoutIOUpdater(checkbookIOClient, persister, checkbookUpdaterRunFreqSecs)
+		updater := invoicing.NewCheckoutIOUpdater(
+			checkbookIOClient,
+			persister,
+			emailer,
+			checkbookUpdaterRunFreqSecs,
+		)
 		go updater.Run()
 	}
 
