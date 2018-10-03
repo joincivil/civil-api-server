@@ -30,6 +30,18 @@ const (
 	postPaymentEmailTemplateID = "d-fc18db3e7e394aad92c0774858f0a1d7"
 )
 
+// Email states, these are in order of occurrence.  Order should be maintained.
+// 1. Referral email sent with invoice
+// 2. Nudge email if they haven't paid yet
+// 3. Next steps email sent if they have paid.
+const (
+	EmailStateStart         = iota // Default start state
+	EmailStateSentReferral         // Referral email was sent for invoice
+	EmailStateSentNudge            // Nudge was sent for invoice
+	EmailStateSentNextSteps        // Next steps was sent for invoice
+	EmailStateSentCompleted        // Completed email was sent for invoice
+)
+
 var (
 	wireTransferAlertRecipientEmails = []string{
 		"cvl@civil.co",
@@ -229,6 +241,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			IsThirdParty: request.IsThirdParty,
 			ReferralCode: referralCode,
 			ReferredBy:   referredBy,
+			EmailState:   EmailStateSentReferral,
 		}
 		if !existingInvoice {
 			err = config.InvoicePersister.SaveInvoice(postgresInvoice)
@@ -535,6 +548,16 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 			updatedFields = append(updatedFields, "InvoiceStatus")
 		}
 
+		// If the it was an unpaid to paid status, send email and update
+		// the email state
+		if nowPaid {
+			SendPostPaymentEmail(config.Emailer, invoice.Email, invoice.Name)
+			log.Infof("Post payment email sent to %v", invoice.Email)
+
+			invoice.EmailState = EmailStateSentNextSteps
+			updatedFields = append(updatedFields, "EmailState")
+		}
+
 		// Update the invoice and check status
 		err = config.InvoicePersister.UpdateInvoice(invoice, updatedFields)
 		if err != nil {
@@ -544,12 +567,6 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 				log.Errorf("Error rendering error response: err: %v", err)
 			}
 			return
-		}
-
-		// If the it was an unpaid to paid status, send email
-		if nowPaid {
-			SendPostPaymentEmail(config.Emailer, invoice.Email, invoice.Name)
-			log.Infof("Post payment email sent to %v", invoice.Email)
 		}
 
 		err = render.Render(w, r, OkResponseNormal)

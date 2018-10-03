@@ -137,9 +137,25 @@ func main() {
 	}
 
 	for _, invoice := range emailToInvoice {
+		// This is checked here to ensure only the most recent invoice for an email
+		// gets checked for state
+		if invoice.EmailState >= invoicing.EmailStateSentNudge {
+			fmt.Printf("invoice does not need nudge, skipping: %v\n", invoice.Email)
+			continue
+		}
 		// Send the nudge email
 		sendNudgeEmail(emailer, invoice.Email, invoice.Name, invoice.InvoiceID)
 		fmt.Printf("Nudge sent to %v, %v, %v, %v\n", invoice.InvoiceID, invoice.Name, invoice.Email, invoice.Amount)
+
+		// Update the email state
+		invoice.EmailState = invoicing.EmailStateSentNudge
+		updatedFields := []string{"EmailState"}
+
+		err = persister.UpdateInvoice(invoice, updatedFields)
+		if err != nil {
+			fmt.Printf("error updating with referral data: err: %v", err)
+		}
+
 		time.Sleep(1 * time.Second)
 	}
 }
