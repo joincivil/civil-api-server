@@ -276,7 +276,6 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 		modelListing := dbListing.DbToListingData()
 		listingsMap[modelListing.ContractAddress()] = modelListing
 	}
-	// TODO(IS): we can change query instead -- but if we have listings that aren't found, we'll still have to loop through.
 	// NOTE(IS): This is not ideal, but we should return the listings in same order as addresses (also needed for dataloader in api-server)
 	// so looping through listings again.
 	listings := make([]*model.Listing, len(addresses))
@@ -287,9 +286,7 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 		} else {
 			listings[i] = &model.Listing{}
 		}
-
 	}
-
 	return listings, nil
 }
 

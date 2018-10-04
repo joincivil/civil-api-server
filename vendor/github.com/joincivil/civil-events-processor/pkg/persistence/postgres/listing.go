@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-events-processor/pkg/model"
+	"math/big"
+	"strconv"
 )
 
 // CreateListingTableQuery returns the query to create the listing table
@@ -22,19 +24,21 @@ func CreateListingTableQueryString(tableName string) string {
             url TEXT,
             charter_uri TEXT,
             owner_addresses TEXT,
+            owner TEXT,
             contributor_addresses TEXT,
-            creation_timestamp BIGINT,
-            application_timestamp BIGINT,
-            approval_timestamp BIGINT,
-            last_updated_timestamp BIGINT
+            creation_timestamp INT,
+            application_timestamp INT,
+            approval_timestamp INT,
+            last_updated_timestamp INT,
+            app_expiry INT,
+            challenge_id INT,
+            unstaked_deposit NUMERIC
         );
     `, tableName)
 	return queryString
 }
 
 // Listing is the model definition for listing table in crawler db
-// NOTE: bigint in postgres: -9223372036854775808 to +9223372036854775807
-// uint64 in golang: 0 to 18446744073709551615
 // NOTE(IS) : golang<->postgres doesn't support list of strings. for now, OwnerAddresses and ContributorAddresses
 // will be strings
 type Listing struct {
@@ -53,6 +57,8 @@ type Listing struct {
 	// OwnerAddresses is a comma delimited string
 	OwnerAddresses string `db:"owner_addresses"`
 
+	Owner string `db:"owner"`
+
 	ContributorAddresses string `db:"contributor_addresses"`
 
 	CreatedDateTs int64 `db:"creation_timestamp"`
@@ -62,6 +68,12 @@ type Listing struct {
 	ApprovalDateTs int64 `db:"approval_timestamp"`
 
 	LastUpdatedDateTs int64 `db:"last_updated_timestamp"`
+
+	AppExpiry int64 `db:"app_expiry"`
+
+	UnstakedDeposit float64 `db:"unstaked_deposit"`
+
+	ChallengeID int64 `db:"challenge_id"`
 }
 
 // NewListing constructs a listing for DB from a model.Listing
@@ -69,6 +81,11 @@ func NewListing(listing *model.Listing) *Listing {
 	ownerAddresses := ListCommonAddressesToString(listing.OwnerAddresses())
 	contributorAddresses := ListCommonAddressesToString(listing.ContributorAddresses())
 	lastGovernanceState := int(listing.LastGovernanceState())
+	owner := listing.Owner().Hex()
+	appExpiry := listing.AppExpiry().Int64()
+	f := new(big.Float).SetInt(listing.UnstakedDeposit())
+	unstakedDeposit, _ := f.Float64()
+	challengeID := listing.ChallengeID().Int64()
 	return &Listing{
 		Name:                 listing.Name(),
 		ContractAddress:      listing.ContractAddress().Hex(),
@@ -77,11 +94,15 @@ func NewListing(listing *model.Listing) *Listing {
 		URL:                  listing.URL(),
 		CharterURI:           listing.CharterURI(),
 		OwnerAddresses:       ownerAddresses,
+		Owner:                owner,
 		ContributorAddresses: contributorAddresses,
 		CreatedDateTs:        listing.CreatedDateTs(),
 		ApplicationDateTs:    listing.ApplicationDateTs(),
 		ApprovalDateTs:       listing.ApprovalDateTs(),
 		LastUpdatedDateTs:    listing.LastUpdatedDateTs(),
+		AppExpiry:            appExpiry,
+		UnstakedDeposit:      unstakedDeposit,
+		ChallengeID:          challengeID,
 	}
 }
 
@@ -91,6 +112,12 @@ func (l *Listing) DbToListingData() *model.Listing {
 	governanceState := model.GovernanceState(l.LastGovernanceState)
 	ownerAddresses := StringToCommonAddressesList(l.OwnerAddresses)
 	contributorAddresses := StringToCommonAddressesList(l.ContributorAddresses)
-	return model.NewListing(l.Name, contractAddress, l.Whitelisted, governanceState, l.URL, l.CharterURI,
-		ownerAddresses, contributorAddresses, l.CreatedDateTs, l.ApplicationDateTs, l.ApprovalDateTs, l.LastUpdatedDateTs)
+	ownerAddress := common.HexToAddress(l.Owner)
+	appExpiry := big.NewInt(l.AppExpiry)
+	unstakedDeposit := new(big.Int)
+	unstakedDeposit.SetString(strconv.FormatFloat(l.UnstakedDeposit, 'f', -1, 64), 10)
+	challengeID := big.NewInt(l.ChallengeID)
+	return model.NewListing(l.Name, contractAddress, l.Whitelisted, governanceState, l.URL, l.CharterURI, ownerAddress,
+		ownerAddresses, contributorAddresses, l.CreatedDateTs, l.ApplicationDateTs, l.ApprovalDateTs, l.LastUpdatedDateTs,
+		appExpiry, unstakedDeposit, challengeID)
 }

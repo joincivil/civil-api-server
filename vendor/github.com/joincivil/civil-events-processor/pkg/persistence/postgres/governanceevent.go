@@ -20,8 +20,8 @@ func CreateGovernanceEventTableQueryString(tableName string) string {
             sender_address TEXT,
             metadata JSONB,
             gov_event_type TEXT,
-            creation_date BIGINT,
-            last_updated BIGINT,
+            creation_date INT,
+            last_updated INT,
             event_hash TEXT,
             block_data JSONB
         );

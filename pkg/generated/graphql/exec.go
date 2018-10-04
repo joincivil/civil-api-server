@@ -64,11 +64,15 @@ type ListingResolver interface {
 	LastGovState(ctx context.Context, obj *model.Listing) (string, error)
 
 	OwnerAddresses(ctx context.Context, obj *model.Listing) ([]string, error)
+	Owner(ctx context.Context, obj *model.Listing) (string, error)
 	ContributorAddresses(ctx context.Context, obj *model.Listing) ([]string, error)
 	CreatedDate(ctx context.Context, obj *model.Listing) (time.Time, error)
 	ApplicationDate(ctx context.Context, obj *model.Listing) (*time.Time, error)
 	ApprovalDate(ctx context.Context, obj *model.Listing) (*time.Time, error)
 	LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error)
+	AppExpiry(ctx context.Context, obj *model.Listing) (time.Time, error)
+	UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error)
+	ChallengeID(ctx context.Context, obj *model.Listing) (int, error)
 }
 type QueryResolver interface {
 	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error)
@@ -818,6 +822,8 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Listing_charterUri(ctx, field, obj)
 		case "ownerAddresses":
 			out.Values[i] = ec._Listing_ownerAddresses(ctx, field, obj)
+		case "owner":
+			out.Values[i] = ec._Listing_owner(ctx, field, obj)
 		case "contributorAddresses":
 			out.Values[i] = ec._Listing_contributorAddresses(ctx, field, obj)
 		case "createdDate":
@@ -828,6 +834,12 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Listing_approvalDate(ctx, field, obj)
 		case "lastUpdatedDate":
 			out.Values[i] = ec._Listing_lastUpdatedDate(ctx, field, obj)
+		case "appExpiry":
+			out.Values[i] = ec._Listing_appExpiry(ctx, field, obj)
+		case "unstakedDeposit":
+			out.Values[i] = ec._Listing_unstakedDeposit(ctx, field, obj)
+		case "challengeID":
+			out.Values[i] = ec._Listing_challengeID(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -991,6 +1003,32 @@ func (ec *executionContext) _Listing_ownerAddresses(ctx context.Context, field g
 	})
 }
 
+func (ec *executionContext) _Listing_owner(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Listing",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Listing().Owner(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
 func (ec *executionContext) _Listing_contributorAddresses(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Listing",
@@ -1133,6 +1171,84 @@ func (ec *executionContext) _Listing_lastUpdatedDate(ctx context.Context, field 
 		}
 		res := resTmp.(time.Time)
 		return graphql.MarshalTime(res)
+	})
+}
+
+func (ec *executionContext) _Listing_appExpiry(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Listing",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Listing().AppExpiry(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(time.Time)
+		return graphql.MarshalTime(res)
+	})
+}
+
+func (ec *executionContext) _Listing_unstakedDeposit(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Listing",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Listing().UnstakedDeposit(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Listing_challengeID(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Listing",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Listing().ChallengeID(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -2586,11 +2702,15 @@ type Listing {
   url: String!
   charterUri: String!
   ownerAddresses: [String!]!
+  owner: String!
   contributorAddresses: [String!]!
   createdDate: Time!
   applicationDate: Time
   approvalDate: Time
   lastUpdatedDate: Time!
+  appExpiry: Time!
+  unstakedDeposit: String!
+  challengeID: Int!
 }
 
 # A type that reflects values in model.Metadata
