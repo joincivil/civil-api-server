@@ -25,7 +25,7 @@ func CreateContentRevisionTableQueryString(tableName string) string {
             contract_content_id BIGINT,
             contract_revision_id BIGINT,
             revision_uri TEXT,
-            revision_timestamp BIGINT
+            revision_timestamp INT
         );
     `, tableName)
 	return queryString

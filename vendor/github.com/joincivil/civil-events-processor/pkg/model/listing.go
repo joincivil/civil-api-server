@@ -3,13 +3,21 @@ package model // import "github.com/joincivil/civil-events-processor/pkg/model"
 
 import (
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 )
+
+// ResetChallengeIDEvents is the list of governance events that reset challengeID to 0
+var ResetChallengeIDEvents = []GovernanceState{
+	GovernanceStateAppWhitelisted,
+	GovernanceStateRemoved,
+	GovernanceStateAppRemoved}
 
 // NewListing is a convenience function to initialize a new Listing struct
 func NewListing(name string, contractAddress common.Address, whitelisted bool,
-	lastState GovernanceState, url string, charterURI string, ownerAddresses []common.Address,
+	lastState GovernanceState, url string, charterURI string, owner common.Address, ownerAddresses []common.Address,
 	contributorAddresses []common.Address, createdDateTs int64, applicationDateTs int64,
-	approvalDateTs int64, lastUpdatedDateTs int64) *Listing {
+	approvalDateTs int64, lastUpdatedDateTs int64, appExpiry *big.Int, unstakedDeposit *big.Int,
+	challengeID *big.Int) *Listing {
 	return &Listing{
 		name:                 name,
 		contractAddress:      contractAddress,
@@ -17,12 +25,16 @@ func NewListing(name string, contractAddress common.Address, whitelisted bool,
 		lastGovernanceState:  lastState,
 		url:                  url,
 		charterURI:           charterURI,
+		owner:                owner,
 		ownerAddresses:       ownerAddresses,
 		contributorAddresses: contributorAddresses,
 		createdDateTs:        createdDateTs,
 		applicationDateTs:    applicationDateTs,
 		approvalDateTs:       approvalDateTs,
 		lastUpdatedDateTs:    lastUpdatedDateTs,
+		appExpiry:            appExpiry,
+		unstakedDeposit:      unstakedDeposit,
+		challengeID:          challengeID,
 	}
 }
 
@@ -40,6 +52,8 @@ type Listing struct {
 
 	charterURI string // Updated to reflect how we are storing the charter
 
+	owner common.Address
+
 	ownerAddresses []common.Address
 
 	contributorAddresses []common.Address
@@ -51,6 +65,12 @@ type Listing struct {
 	approvalDateTs int64
 
 	lastUpdatedDateTs int64
+
+	appExpiry *big.Int
+
+	unstakedDeposit *big.Int
+
+	challengeID *big.Int
 }
 
 // Name returns the newsroom name
@@ -104,9 +124,14 @@ func (l *Listing) CharterURI() string {
 	return l.charterURI
 }
 
-// OwnerAddresses is the addresses of the owners of the newsroom
+// OwnerAddresses is the addresses of the owners of the newsroom - all members of multisig
 func (l *Listing) OwnerAddresses() []common.Address {
 	return l.ownerAddresses
+}
+
+// Owner is the address of the multisig owner of the newsroom
+func (l *Listing) Owner() common.Address {
+	return l.owner
 }
 
 // AddOwnerAddress adds another address to the list of owner addresses
@@ -183,4 +208,24 @@ func (l *Listing) SetLastUpdatedDateTs(date int64) {
 // CreatedDateTs returns the timestamp of listing creation
 func (l *Listing) CreatedDateTs() int64 {
 	return l.createdDateTs
+}
+
+// AppExpiry returns the expiration date of the application to this newsroom
+func (l *Listing) AppExpiry() *big.Int {
+	return l.appExpiry
+}
+
+// UnstakedDeposit returns the unstaked deposit of the newsroom
+func (l *Listing) UnstakedDeposit() *big.Int {
+	return l.unstakedDeposit
+}
+
+// SetChallengeID sets the challenge ID of the listing.
+func (l *Listing) SetChallengeID(id *big.Int) {
+	l.challengeID = id
+}
+
+// ChallengeID returns the most recent challengeID of the listing
+func (l *Listing) ChallengeID() *big.Int {
+	return l.challengeID
 }

@@ -173,6 +173,9 @@ func (r *listingResolver) OwnerAddresses(ctx context.Context, obj *model.Listing
 	}
 	return ownerAddrs, nil
 }
+func (r *listingResolver) Owner(ctx context.Context, obj *model.Listing) (string, error) {
+	return obj.Owner().Hex(), nil
+}
 func (r *listingResolver) ContributorAddresses(ctx context.Context, obj *model.Listing) ([]string, error) {
 	addrs := obj.ContributorAddresses()
 	ownerAddrs := make([]string, len(addrs))
@@ -200,6 +203,15 @@ func (r *listingResolver) ApprovalDate(ctx context.Context, obj *model.Listing) 
 }
 func (r *listingResolver) LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error) {
 	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
+}
+func (r *listingResolver) AppExpiry(ctx context.Context, obj *model.Listing) (time.Time, error) {
+	return utils.SecsFromEpochToTime(obj.AppExpiry().Int64()), nil
+}
+func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error) {
+	return obj.UnstakedDeposit().String(), nil
+}
+func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (int, error) {
+	return int(obj.ChallengeID().Int64()), nil
 }
 
 type queryResolver struct{ *Resolver }

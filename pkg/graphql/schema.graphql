@@ -25,11 +25,15 @@ type Listing {
   url: String!
   charterUri: String!
   ownerAddresses: [String!]!
+  owner: String!
   contributorAddresses: [String!]!
   createdDate: Time!
   applicationDate: Time
   approvalDate: Time
   lastUpdatedDate: Time!
+  appExpiry: Time!
+  unstakedDeposit: String!
+  challengeID: Int!
 }
 
 # A type that reflects values in model.Metadata
