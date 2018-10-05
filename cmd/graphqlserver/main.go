@@ -21,6 +21,7 @@ import (
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
+	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
@@ -160,6 +161,43 @@ func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
 	return nil
 }
 
+func kycRouting(router chi.Router, onfido *kyc.OnfidoAPI, emailer *utils.Emailer) error {
+	initConfig := &kyc.InitHandlerConfig{
+		OnfidoAPI: onfido,
+		Emailer:   emailer,
+	}
+	finishConfig := &kyc.FinishHandlerConfig{
+		OnfidoAPI: onfido,
+		Emailer:   emailer,
+	}
+	ofConfig := &kyc.OnfidoWebhookHandlerConfig{}
+
+	// Set some rate limiters for the KYC handlers
+	limiter := tollbooth.NewLimiter(2, nil) // 2 req/sec max
+	limiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
+	limiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	cblimiter := tollbooth.NewLimiter(10, nil) // 10 req/sec max
+	cblimiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
+	cblimiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	router.Route(fmt.Sprintf("/%v/kyc", invoicingVersion), func(r chi.Router) {
+		r.Route("/init", func(r chi.Router) {
+			r.Use(tollbooth_chi.LimitHandler(limiter))
+			r.Post("/", kyc.InitHandler(initConfig))
+		})
+		r.Route("/finish", func(r chi.Router) {
+			r.Use(tollbooth_chi.LimitHandler(limiter))
+			r.Post("/", kyc.FinishHandler(finishConfig))
+		})
+		r.Route("/cb", func(r chi.Router) {
+			r.Use(tollbooth_chi.LimitHandler(cblimiter))
+			r.Post("/", kyc.OnfidoWebhookHandler(ofConfig))
+		})
+	})
+	return nil
+}
+
 func main() {
 	config := &utils.GraphQLConfig{}
 	flag.Usage = func() {
@@ -250,6 +288,35 @@ func main() {
 
 		updater := invoicing.NewCheckoutIOUpdater(checkbookIOClient, persister, checkbookUpdaterRunFreqSecs)
 		go updater.Run()
+	}
+
+	// REST KYC endpoint
+	if config.EnableKYC {
+		onfido := kyc.NewOnfidoAPI(
+			kyc.ProdAPIURL,
+			config.OnfidoKey,
+		)
+
+		emailer := utils.NewEmailer(config.SendgridKey)
+		err = kycRouting(router, onfido, emailer)
+		if err != nil {
+			log.Fatalf("Error setting up KYC routing: err: %v", err)
+		}
+		log.Infof(
+			"Connect to http://localhost:%v/%v/kyc/init for kyc init\n",
+			port,
+			invoicingVersion,
+		)
+		log.Infof(
+			"Connect to http://localhost:%v/%v/kyc/finish for kyc finish\n",
+			port,
+			invoicingVersion,
+		)
+		log.Infof(
+			"Connect to http://localhost:%v/%v/kyc/cb for onfido webhook\n",
+			port,
+			invoicingVersion,
+		)
 	}
 
 	err = http.ListenAndServe(":"+port, router)

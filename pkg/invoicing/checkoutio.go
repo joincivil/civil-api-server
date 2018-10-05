@@ -123,13 +123,13 @@ func (c *CheckbookIO) GetInvoices(status string, pageNum int) (*InvoicesResponse
 	}
 
 	endpoint := "invoice"
-	returnStr, err := c.sendRequest(endpoint, http.MethodGet, vals, nil)
+	bys, err := c.sendRequest(endpoint, http.MethodGet, vals, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	invoicesResp := &InvoicesResponse{}
-	err = json.Unmarshal(returnStr, invoicesResp)
+	err = json.Unmarshal(bys, invoicesResp)
 	if err != nil {
 		return nil, err
 	}
@@ -144,13 +144,13 @@ func (c *CheckbookIO) GetInvoices(status string, pageNum int) (*InvoicesResponse
 // GetInvoice returns the invoice by id
 func (c *CheckbookIO) GetInvoice(id string) (*InvoiceResponse, error) {
 	endpoint := fmt.Sprintf("invoice/%v", id)
-	returnStr, err := c.sendRequest(endpoint, http.MethodGet, nil, nil)
+	bys, err := c.sendRequest(endpoint, http.MethodGet, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	invoiceResp := &InvoiceResponse{}
-	err = json.Unmarshal(returnStr, invoiceResp)
+	err = json.Unmarshal(bys, invoiceResp)
 	if err != nil {
 		return nil, err
 	}
@@ -198,13 +198,13 @@ func (c *CheckbookIO) RequestInvoice(params *RequestInvoiceParams) (*InvoiceResp
 	}
 	endpoint := "invoice"
 
-	returnStr, err := c.sendRequest(endpoint, http.MethodPost, nil, params)
+	bys, err := c.sendRequest(endpoint, http.MethodPost, nil, params)
 	if err != nil {
 		return nil, err
 	}
 
 	invoiceResp := &InvoiceResponse{}
-	err = json.Unmarshal(returnStr, invoiceResp)
+	err = json.Unmarshal(bys, invoiceResp)
 	if err != nil {
 		return nil, err
 	}

@@ -4,19 +4,16 @@ package invoicing
 // go-chi routing framework
 
 import (
-	"net/url"
-	// "bytes"
 	"errors"
-	"net/http/httputil"
-	"strings"
-	// "context"
 	"fmt"
 	log "github.com/golang/glog"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"strings"
 
-	uuid "github.com/satori/go.uuid"
-	// "github.com/go-chi/chi"
 	"github.com/go-chi/render"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
@@ -556,6 +553,14 @@ type ErrResponse struct {
 	ErrorText  string `json:"error,omitempty"` // application-level error message, for debugging
 }
 
+// Render implements the Render func on render.Renderer interface.
+// Stolen from the go-chi packages examples.
+func (e *ErrResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	render.SetContentType(render.ContentTypeJSON)
+	render.Status(r, e.HTTPStatusCode)
+	return nil
+}
+
 // ErrSomethingBroke is the error in response to any errors from checkbook.io
 var ErrSomethingBroke = &ErrResponse{
 	HTTPStatusCode: 500,
@@ -577,14 +582,6 @@ var ErrInvoiceExists = &ErrResponse{
 	HTTPStatusCode: 400,
 	StatusText:     "Invoice with this email already exists",
 	AppCode:        802,
-}
-
-// Render implements the Render func on render.Renderer interface.
-// Stolen from the go-chi packages examples.
-func (e *ErrResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	render.SetContentType(render.ContentTypeJSON)
-	render.Status(r, e.HTTPStatusCode)
-	return nil
 }
 
 // ErrInvalidRequest represents an error response for this handler.

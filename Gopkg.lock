@@ -152,6 +152,14 @@
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
 
 [[projects]]
+  digest = "1:a63cff6b5d8b95638bfe300385d93b2a6d9d687734b863da8e09dc834510a690"
+  name = "github.com/google/go-querystring"
+  packages = ["query"]
+  pruneopts = "UT"
+  revision = "44c6ddd0a2342c386950e880b658017258da92fc"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:43dd08a10854b2056e615d1b1d22ac94559d822e1f8b6fcc92c1a1057e85188e"
   name = "github.com/gorilla/websocket"
   packages = ["."]
@@ -458,6 +466,7 @@
     "github.com/go-chi/cors",
     "github.com/go-chi/render",
     "github.com/golang/glog",
+    "github.com/google/go-querystring/query",
     "github.com/iancoleman/strcase",
     "github.com/jmoiron/sqlx",
     "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres",
