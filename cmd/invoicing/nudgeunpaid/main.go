@@ -59,9 +59,8 @@ func sendNudgeEmail(emailer *utils.Emailer, email string, name string, invoiceID
 	templateData["invoice_link"] = invoiceLink(invoiceID)
 
 	emailReq := &utils.SendTemplateEmailRequest{
-		ToName:  name,
-		ToEmail: email,
-		// FromName:     "The Civil Media Company",
+		ToName:       name,
+		ToEmail:      email,
 		FromName:     "Christine from Civil",
 		FromEmail:    "support@civil.co",
 		TemplateID:   nudgeEmailTemplateID,

@@ -551,11 +551,13 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 		// If the it was an unpaid to paid status, send email and update
 		// the email state
 		if nowPaid {
-			SendPostPaymentEmail(config.Emailer, invoice.Email, invoice.Name)
-			log.Infof("Post payment email sent to %v", invoice.Email)
+			log.Infof("Post payment email would be pushed")
+			// TODO(PN): Commenting out for now
+			// SendPostPaymentEmail(config.Emailer, invoice.Email, invoice.Name)
+			// log.Infof("Post payment email sent to %v", invoice.Email)
 
-			invoice.EmailState = EmailStateSentNextSteps
-			updatedFields = append(updatedFields, "EmailState")
+			// invoice.EmailState = EmailStateSentNextSteps
+			// updatedFields = append(updatedFields, "EmailState")
 		}
 
 		// Update the invoice and check status

@@ -131,11 +131,13 @@ func (c *CheckoutIOUpdater) updateInvoices(invoices []*PostgresInvoice) {
 		}
 
 		if nowPaid {
-			SendPostPaymentEmail(c.emailer, invoice.Email, invoice.Name)
-			log.Infof("Post payment email sent to %v", invoice.Email)
+			log.Info("Post payment email would be pushed")
+			// TODO(PN): Commenting out for now
+			// SendPostPaymentEmail(c.emailer, invoice.Email, invoice.Name)
+			// log.Infof("Post payment email sent to %v", invoice.Email)
 
-			invoice.EmailState = EmailStateSentNextSteps
-			updatedFields = append(updatedFields, "EmailState")
+			// invoice.EmailState = EmailStateSentNextSteps
+			// updatedFields = append(updatedFields, "EmailState")
 		}
 
 		err = c.invoicePersister.UpdateInvoice(invoice, updatedFields)
