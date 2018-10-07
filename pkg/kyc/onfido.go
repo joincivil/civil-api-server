@@ -1,13 +1,13 @@
 package kyc
 
 import (
-	"bytes"
+	// "bytes"
 	"encoding/json"
 	"fmt"
 	log "github.com/golang/glog"
-	"io/ioutil"
 	"net/http"
-	"net/url"
+
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -15,8 +15,8 @@ const (
 	// Might also be the same for the sandbox URL?
 	ProdAPIURL = "https://api.onfido.com"
 
-	contentTypeJSON = "application/json"
-	contentTypeForm = "application/x-www-form-urlencoded"
+	// DefaultTokenReferrer is the default token referrer to use
+	DefaultTokenReferrer = "*://*.civil.co/*" //nolint: gosec
 )
 
 const (
@@ -52,6 +52,11 @@ const (
 	// ReportNameWatchlist represents a watchlist report type
 	ReportNameWatchlist = "watchlist"
 
+	// ReportVariantFacialSimilarityStandard represents the standard facial sim variant
+	ReportVariantFacialSimilarityStandard = "standard"
+	// ReportVariantFacialSimilarityVideo represents the video facial sim variant
+	ReportVariantFacialSimilarityVideo = "video"
+
 	// WebhookActionReportCompleted indicates that a report has been completed
 	WebhookActionReportCompleted = "report.completed"
 	// WebhookActionReportWithdrawn indicates that a report has been withdrawn
@@ -73,9 +78,11 @@ const (
 
 // NewOnfidoAPI is a convenience function to create a new OnfidoAPI struct
 func NewOnfidoAPI(baseAPIURL string, apiKey string) *OnfidoAPI {
+	authHeader := fmt.Sprintf("Token token=%v", apiKey)
 	return &OnfidoAPI{
 		apiKey:     apiKey,
 		baseAPIURL: baseAPIURL,
+		rest:       utils.NewRestHelper(baseAPIURL, authHeader),
 	}
 }
 
@@ -83,6 +90,7 @@ func NewOnfidoAPI(baseAPIURL string, apiKey string) *OnfidoAPI {
 type OnfidoAPI struct {
 	baseAPIURL string
 	apiKey     string
+	rest       *utils.RestHelper
 }
 
 // Hash represents a map of values
@@ -111,14 +119,14 @@ var DocumentReport = &Report{
 // with the standard variation
 var FacialSimilarityStandardReport = &Report{
 	Name:    ReportNameFacialSimilarity,
-	Variant: "standard",
+	Variant: ReportVariantFacialSimilarityStandard,
 }
 
 // FacialSimilarityVideoReport presents a facial_similiarity report type
 // with the video variation
 var FacialSimilarityVideoReport = &Report{
 	Name:    ReportNameFacialSimilarity,
-	Variant: "video",
+	Variant: ReportVariantFacialSimilarityVideo,
 }
 
 // WatchlistKycReport presents a watchlist report type of KYC
@@ -197,15 +205,6 @@ type Applicant struct {
 	Sandbox        bool       `json:"sandbox,omitempty"`
 }
 
-// EncodeToJSON encodes the params into bytes.Buffer with the JSON data
-func (a *Applicant) EncodeToJSON() (*bytes.Buffer, error) {
-	jsonData, err := json.Marshal(a)
-	if err != nil {
-		return nil, err
-	}
-	return bytes.NewBufferString(string(jsonData)), nil
-}
-
 // Check presents a check. Used as a request and response struct.
 type Check struct {
 	ID                           string   `json:"id,omitempty"`
@@ -224,15 +223,6 @@ type Check struct {
 	SuppressFormEmails           bool     `json:"suppress_form_emails,omitempty"`
 	Async                        bool     `json:"async,omitempty"`
 	Consider                     []string `json:"consider,omitempty"`
-}
-
-// EncodeToJSON encodes the params into bytes.Buffer with the JSON data
-func (c *Check) EncodeToJSON() (*bytes.Buffer, error) {
-	jsonData, err := json.Marshal(c)
-	if err != nil {
-		return nil, err
-	}
-	return bytes.NewBufferString(string(jsonData)), nil
 }
 
 // Event is the request body received from Onfido via their webhook
@@ -284,15 +274,12 @@ func (e *EventPayloadObject) Bind(r *http.Request) error {
 // step of the KYC process.
 func (o *OnfidoAPI) CreateApplicant(applicant *Applicant) (*Applicant, error) {
 	endpointURI := "v2/applicants"
-	jsonPayload, err := applicant.EncodeToJSON()
+
+	bys, err := o.rest.SendRequest(endpointURI, http.MethodPost, nil, applicant)
 	if err != nil {
 		return nil, err
 	}
 
-	bys, err := o.post(endpointURI, jsonPayload, contentTypeJSON)
-	if err != nil {
-		return nil, err
-	}
 	applicantResp := &Applicant{}
 	err = json.Unmarshal(bys, applicantResp)
 	if err != nil {
@@ -311,12 +298,15 @@ type Token struct {
 func (o *OnfidoAPI) GenerateSDKToken(applicantID string, referrer string) (string, error) {
 	endpointURI := "v2/sdk_token"
 
-	formData := &url.Values{}
-	formData.Add("applicant_id", applicantID)
-	formData.Add("referrer", referrer)
-	formPayload := bytes.NewBufferString(formData.Encode())
+	tokenRequestInput := struct {
+		ApplicantID string `json:"applicant_id"`
+		Referrer    string `json:"referrer"`
+	}{
+		ApplicantID: applicantID,
+		Referrer:    referrer,
+	}
 
-	bys, err := o.post(endpointURI, formPayload, contentTypeForm)
+	bys, err := o.rest.SendRequest(endpointURI, http.MethodPost, nil, tokenRequestInput)
 	if err != nil {
 		return "", err
 	}
@@ -334,12 +324,7 @@ func (o *OnfidoAPI) GenerateSDKToken(applicantID string, referrer string) (strin
 func (o *OnfidoAPI) CreateCheck(applicantID string, check *Check) (*Check, error) {
 	endpointURI := fmt.Sprintf("v2/applicants/%v/checks", applicantID)
 
-	jsonPayload, err := check.EncodeToJSON()
-	if err != nil {
-		return nil, err
-	}
-
-	bys, err := o.post(endpointURI, jsonPayload, contentTypeJSON)
+	bys, err := o.rest.SendRequest(endpointURI, http.MethodPost, nil, check)
 	if err != nil {
 		return nil, err
 	}
@@ -350,54 +335,4 @@ func (o *OnfidoAPI) CreateCheck(applicantID string, check *Check) (*Check, error
 		return nil, err
 	}
 	return checkResp, nil
-}
-
-func (o *OnfidoAPI) post(endpointURI string, requestPayload *bytes.Buffer,
-	contentType string) ([]byte, error) {
-	client := &http.Client{}
-	var req *http.Request
-	var err error
-
-	// Full API url
-	url := fmt.Sprintf("%v/%v", o.baseAPIURL, endpointURI)
-
-	// Build a new request
-	req, err = http.NewRequest(
-		http.MethodPost,
-		url,
-		requestPayload,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Add the authorization header
-	auth := fmt.Sprintf("Token token=%v", o.apiKey)
-	req.Header.Add("Authorization", auth)
-
-	// Set content type of request
-	req.Header.Add("Content-Type", contentType)
-
-	log.Infof("%v", req.URL.String())
-
-	// Make the request
-	rsp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rsp.Body.Close() // nolint: errcheck
-	rspBodyData, err := ioutil.ReadAll(rsp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if rsp.StatusCode != 200 && rsp.StatusCode != 201 {
-		return nil, fmt.Errorf(
-			"Request failed: %v, %v",
-			rsp.StatusCode,
-			string(rspBodyData),
-		)
-	}
-
-	return rspBodyData, nil
 }

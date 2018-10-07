@@ -48,8 +48,9 @@ type GraphQLConfig struct {
 	EnableInvoicing bool `split_words:"true" default:"false" desc:"If true, enables the invoicing endpoint"`
 	EnableKYC       bool `split_words:"true" default:"false" desc:"If true, enables the KYC endpoint"`
 
-	SendgridKey string `split_words:"true" desc:"The SendGrid API key"`
-	OnfidoKey   string `split_words:"true" desc:"The Onfido API key"`
+	SendgridKey    string `split_words:"true" desc:"The SendGrid API key"`
+	OnfidoKey      string `split_words:"true" desc:"The Onfido API key"`
+	OnfidoReferrer string `split_words:"true" desc:"The Onfido token referrer"`
 
 	CheckbookKey    string `split_words:"true" desc:"The checkbook.io api key"`
 	CheckbookSecret string `split_words:"true" desc:"The checkbook.io api secret"`
