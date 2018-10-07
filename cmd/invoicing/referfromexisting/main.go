@@ -93,7 +93,7 @@ func main() {
 			continue
 		}
 		// May have already sent the referral email, so skip it
-		if invoice.EmailState > invoicing.EmailStateStart {
+		if invoice.EmailState >= invoicing.EmailStateSentReferral {
 			fmt.Printf("email does not need to be sent, skipping: %v\n", invoice.Email)
 			continue
 		}
