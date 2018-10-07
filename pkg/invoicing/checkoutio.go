@@ -183,7 +183,7 @@ func testInvoiceResponse(r *RequestInvoiceParams) *InvoiceResponse {
 		Number:      "",
 		NumberInf:   "",
 		Recipient:   r.Recipient,
-		Status:      "UNPAID",
+		Status:      InvoiceStatusUnpaid,
 		CheckID:     "",
 	}
 

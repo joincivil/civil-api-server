@@ -3,6 +3,8 @@ package invoicing
 import (
 	log "github.com/golang/glog"
 	"time"
+
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -11,10 +13,11 @@ const (
 
 // NewCheckoutIOUpdater is a convenience func to create a new CheckoutIOUpdater
 func NewCheckoutIOUpdater(client *CheckbookIO, persister *PostgresPersister,
-	runEverySecs time.Duration) *CheckoutIOUpdater {
+	emailer *utils.Emailer, runEverySecs time.Duration) *CheckoutIOUpdater {
 	return &CheckoutIOUpdater{
 		checkbookIOClient: client,
 		invoicePersister:  persister,
+		emailer:           emailer,
 		runEverySecs:      runEverySecs,
 		cancelChan:        make(chan bool),
 	}
@@ -25,6 +28,7 @@ func NewCheckoutIOUpdater(client *CheckbookIO, persister *PostgresPersister,
 type CheckoutIOUpdater struct {
 	checkbookIOClient *CheckbookIO
 	invoicePersister  *PostgresPersister
+	emailer           *utils.Emailer
 	runEverySecs      time.Duration
 	cancelChan        chan bool
 }
@@ -126,14 +130,19 @@ func (c *CheckoutIOUpdater) updateInvoices(invoices []*PostgresInvoice) {
 			updatedFields = append(updatedFields, "CheckID")
 		}
 
+		if nowPaid {
+			log.Info("Post payment email would be pushed")
+			// TODO(PN): Commenting out for now
+			// SendPostPaymentEmail(c.emailer, invoice.Email, invoice.Name)
+			// log.Infof("Post payment email sent to %v", invoice.Email)
+
+			// invoice.EmailState = EmailStateSentNextSteps
+			// updatedFields = append(updatedFields, "EmailState")
+		}
+
 		err = c.invoicePersister.UpdateInvoice(invoice, updatedFields)
 		if err != nil {
 			log.Errorf("Error updated invoice %v to new status %v", checkbookInvoice.Status)
-		}
-
-		if nowPaid {
-			// Push a message to pubsub
-			log.Infof("Invoice was just paid, so push message to pubsub")
 		}
 
 		log.Infof("Updated invoice %v, %v to status %v", invoice.InvoiceID, invoice.Email, checkbookInvoice.Status)

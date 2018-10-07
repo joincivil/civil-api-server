@@ -25,8 +25,21 @@ const (
 	// Feature flag to enable/disable the email check
 	enableEmailCheck = false
 
-	defaultInvoiceDescription = "Complete Your CVL Token Purchase"
-	referralEmailTemplateID   = "d-33fbe062ad2d44bdbb4c584f75b9a576"
+	defaultInvoiceDescription  = "Complete Your CVL Token Purchase"
+	referralEmailTemplateID    = "d-33fbe062ad2d44bdbb4c584f75b9a576"
+	postPaymentEmailTemplateID = "d-fc18db3e7e394aad92c0774858f0a1d7"
+)
+
+// Email states, these are in order of occurrence.  Order should be maintained.
+// 1. Referral email sent with invoice
+// 2. Nudge email if they haven't paid yet
+// 3. Next steps email sent if they have paid.
+const (
+	EmailStateStart         = iota // Default start state
+	EmailStateSentReferral         // Referral email was sent for invoice
+	EmailStateSentNudge            // Nudge was sent for invoice
+	EmailStateSentNextSteps        // Next steps was sent for invoice
+	EmailStateSentCompleted        // Completed email was sent for invoice
 )
 
 var (
@@ -39,6 +52,24 @@ var (
 		"peter@civil.co",
 	}
 )
+
+// GenerateReferralCode generates a new referral code
+func GenerateReferralCode() (string, error) {
+	code, err := uuid.NewV4()
+	if err != nil {
+		return "", err
+	}
+	return code.String(), nil
+}
+
+func validReferralCode(code string) bool {
+	_, err := uuid.FromString(code)
+	if err != nil {
+		log.Errorf("err = %v", err)
+		return false
+	}
+	return true
+}
 
 // Request represents the incoming request for invoicing
 // If IsCheckbook flag is true, will send checkbook io invoice to user.  If
@@ -174,7 +205,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 		// Generate a new referral code for this invoice.
 		// If a user has multiple invoices, we will just figure out
 		// overall total referrals via that user's email.
-		referralCode, err := generateReferralCode()
+		referralCode, err := GenerateReferralCode()
 		if err != nil {
 			log.Errorf("Error generating new referrer code: %v", err)
 		}
@@ -203,6 +234,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 			IsThirdParty: request.IsThirdParty,
 			ReferralCode: referralCode,
 			ReferredBy:   referredBy,
+			EmailState:   EmailStateSentReferral,
 		}
 		if !existingInvoice {
 			err = config.InvoicePersister.SaveInvoice(postgresInvoice)
@@ -268,13 +300,13 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 				if !config.TestMode {
 					recipients = wireTransferAlertRecipientEmails
 				}
-				sendWireTransferAlertEmail(config.Emailer, request, recipients)
+				go sendWireTransferAlertEmail(config.Emailer, request, recipients)
 				log.Infof("send a wire transfer email")
 			}
 		}
 
 		// Send the referral email
-		sendReferralProgramEmail(config.Emailer, request, referralCode)
+		go SendReferralProgramEmail(config.Emailer, request, referralCode)
 
 		// Return the response
 		err = render.Render(w, r, OkResponseNormal)
@@ -285,69 +317,67 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 }
 
 func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientEmails []string) {
-	go func() {
-		text := fmt.Sprintf(
-			"First: %v\nLast:%v\nEmail: %v\nPhone: %v",
-			req.FirstName,
-			req.LastName,
-			req.Email,
-			req.Phone,
-		)
-		html := fmt.Sprintf(
-			`<p>First: %v</p>
-			<p>Last: %v</p>
-			<p>Email: %v</p>
-			<p>Phone: %v</p>`,
-			req.FirstName,
-			req.LastName,
-			req.Email,
-			req.Phone,
-		)
-		subject := fmt.Sprintf("Wire Transfer Inquiry: %v %v", req.FirstName, req.LastName)
+	text := fmt.Sprintf(
+		"First: %v\nLast:%v\nEmail: %v\nPhone: %v",
+		req.FirstName,
+		req.LastName,
+		req.Email,
+		req.Phone,
+	)
+	html := fmt.Sprintf(
+		`<p>First: %v</p>
+		<p>Last: %v</p>
+		<p>Email: %v</p>
+		<p>Phone: %v</p>`,
+		req.FirstName,
+		req.LastName,
+		req.Email,
+		req.Phone,
+	)
+	subject := fmt.Sprintf("Wire Transfer Inquiry: %v %v", req.FirstName, req.LastName)
 
-		emailReq := &utils.SendEmailRequest{
-			ToName:    "The Civil Media Company",
-			FromName:  "The Civil Media Company",
-			FromEmail: "support@civil.co",
-			Subject:   subject,
-			Text:      text,
-			HTML:      html,
+	emailReq := &utils.SendEmailRequest{
+		ToName:    "The Civil Media Company",
+		FromName:  "The Civil Media Company",
+		FromEmail: "support@civil.co",
+		Subject:   subject,
+		Text:      text,
+		HTML:      html,
+	}
+	for _, email := range recipientEmails {
+		emailReq.ToEmail = email
+		err := emailer.SendEmail(emailReq)
+		if err != nil {
+			log.Errorf("Error sending wire transfer email: err: %v", err)
 		}
-		for _, email := range recipientEmails {
-			emailReq.ToEmail = email
-			err := emailer.SendEmail(emailReq)
-			if err != nil {
-				log.Errorf("Error sending wire transfer email: err: %v", err)
-			}
-		}
-	}()
+	}
 }
 
-func sendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode string) {
-	go func() {
-		fullName := fmt.Sprintf("%v %v", req.FirstName, req.LastName)
+// SendReferralProgramEmail sends the referrer email with the given referral code to the
+// recipient specified in the request
+func SendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode string) {
+	fullName := fmt.Sprintf("%v %v", req.FirstName, req.LastName)
 
-		templateData := utils.TemplateData{}
-		templateData["first_name"] = req.FirstName
-		templateData["referral_link"] = referralLinkHTML(referralCode)
-		templateData["referral_email"] = referralEmailHTML(referralCode)
-		templateData["referral_twitter"] = referralTwitterHTML(referralCode)
-		templateData["referral_fb"] = referralFacebookHTML(referralCode)
+	templateData := utils.TemplateData{}
+	templateData["first_name"] = req.FirstName
+	templateData["referral_link"] = referralLinkHTML(referralCode)
+	templateData["referral_email"] = referralEmailHTML(referralCode)
+	templateData["referral_twitter"] = referralTwitterHTML(referralCode)
+	templateData["referral_fb"] = referralFacebookHTML(referralCode)
 
-		emailReq := &utils.SendTemplateEmailRequest{
-			ToName:       fullName,
-			ToEmail:      req.Email,
-			FromName:     "The Civil Media Company",
-			FromEmail:    "support@civil.co",
-			TemplateID:   referralEmailTemplateID,
-			TemplateData: templateData,
-			AsmGroupID:   7395,
-		}
-		err := emailer.SendTemplateEmail(emailReq)
-		if err != nil {
-			log.Errorf("Error sending referral email: err: %v", err)
-		}
-	}()
+	emailReq := &utils.SendTemplateEmailRequest{
+		ToName:       fullName,
+		ToEmail:      req.Email,
+		FromName:     "The Civil Media Company",
+		FromEmail:    "support@civil.co",
+		TemplateID:   referralEmailTemplateID,
+		TemplateData: templateData,
+		AsmGroupID:   7395,
+	}
+	err := emailer.SendTemplateEmail(emailReq)
+	if err != nil {
+		log.Errorf("Error sending referral email: err: %v", err)
+	}
 }
 
 func referralLinkHTML(referralCode string) string {
@@ -430,6 +460,7 @@ func (c *CheckUpdate) Bind(r *http.Request) error {
 // CheckbookIOWebhookConfig configures the CheckbookIOWebhook
 type CheckbookIOWebhookConfig struct {
 	InvoicePersister *PostgresPersister
+	Emailer          *utils.Emailer
 }
 
 // CheckbookIOWebhookHandler is the handler for the Checkbook.io webhook handler.
@@ -458,6 +489,7 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 		update.Status = strings.ToLower(update.Status)
 		update.Status = strings.Replace(update.Status, " ", "_", -1)
 
+		// Find the invoice in out DB from the ID
 		invoices, err := config.InvoicePersister.Invoices("", "", "", update.ID)
 		if err != nil {
 			log.Errorf("Error checking for existing invoices: err: %v", err)
@@ -487,11 +519,11 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 			return
 		}
 
+		// Has the status changed from unpaid to paid?
 		nowPaid := false
-		if invoice.CheckStatus == CheckStatusUnpaid ||
-			invoice.CheckStatus == CheckStatusInProcess {
+		if invoice.InvoiceStatus == InvoiceStatusUnpaid ||
+			invoice.InvoiceStatus == InvoiceStatusInProcess {
 			if update.Status == CheckStatusPaid {
-				log.Infof("setting nowpaid to true")
 				nowPaid = true
 			}
 		}
@@ -509,6 +541,19 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 			updatedFields = append(updatedFields, "InvoiceStatus")
 		}
 
+		// If the it was an unpaid to paid status, send email and update
+		// the email state
+		if nowPaid {
+			log.Infof("Post payment email would be pushed")
+			// TODO(PN): Commenting out for now
+			// SendPostPaymentEmail(config.Emailer, invoice.Email, invoice.Name)
+			// log.Infof("Post payment email sent to %v", invoice.Email)
+
+			// invoice.EmailState = EmailStateSentNextSteps
+			// updatedFields = append(updatedFields, "EmailState")
+		}
+
+		// Update the invoice and check status
 		err = config.InvoicePersister.UpdateInvoice(invoice, updatedFields)
 		if err != nil {
 			log.Errorf("Error saving invoice: %v", err)
@@ -519,15 +564,30 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 			return
 		}
 
-		if nowPaid {
-			// Push a message to pubsub
-			log.Infof("Check was just paid, so push message to pubsub")
-		}
-
 		err = render.Render(w, r, OkResponseNormal)
 		if err != nil {
 			log.Errorf("Error rendering response: err: %v", err)
 		}
+	}
+}
+
+// SendPostPaymentEmail sends the post payment instruction email
+func SendPostPaymentEmail(emailer *utils.Emailer, email string, name string) {
+	templateData := utils.TemplateData{}
+	templateData["name"] = name
+
+	emailReq := &utils.SendTemplateEmailRequest{
+		ToName:       name,
+		ToEmail:      email,
+		FromName:     "The Civil Media Company",
+		FromEmail:    "support@civil.co",
+		TemplateID:   postPaymentEmailTemplateID,
+		TemplateData: templateData,
+		AsmGroupID:   7395,
+	}
+	err := emailer.SendTemplateEmail(emailReq)
+	if err != nil {
+		log.Errorf("Error sending post payment email: err: %v", err)
 	}
 }
 
@@ -599,21 +659,4 @@ func ErrInvalidRequest(missingField string) render.Renderer {
 		HTTPStatusCode: 400,
 		StatusText:     msg,
 	}
-}
-
-func generateReferralCode() (string, error) {
-	code, err := uuid.NewV4()
-	if err != nil {
-		return "", err
-	}
-	return code.String(), nil
-}
-
-func validReferralCode(code string) bool {
-	_, err := uuid.FromString(code)
-	if err != nil {
-		log.Errorf("err = %v", err)
-		return false
-	}
-	return true
 }
