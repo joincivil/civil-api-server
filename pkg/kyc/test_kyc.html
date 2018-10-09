@@ -33,7 +33,7 @@
 
 
     <script>
-    var url = "http://localhost:8080/v1/kyc/query";
+    var url = "http://localhost:8080/v1/query";
 
     // Call to retrieve the SDK token
     var request = new XMLHttpRequest();
@@ -60,7 +60,7 @@
             console.log(
                 "everything is complete, calling to start check, data.face.variant = " + data.face.variant
             );
-            var url = "http://localhost:8080/v1/kyc/query";
+            var url = "http://localhost:8080/v1/query";
             var crequest = new XMLHttpRequest();
             var checkRequest = {
                 "query":"mutation { kycCreateCheck(applicantID: \"" + applicantID + "\", facialVariant: \"" + data.face.variant +"\")}"

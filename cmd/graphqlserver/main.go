@@ -175,7 +175,9 @@ func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
 func kycRouting(router chi.Router, config *utils.GraphQLConfig, onfido *kyc.OnfidoAPI,
 	emailer *utils.Emailer) error {
 
-	ofConfig := &kyc.OnfidoWebhookHandlerConfig{}
+	ofConfig := &kyc.OnfidoWebhookHandlerConfig{
+		OnfidoWebhookToken: config.OnfidoWebhookToken,
+	}
 
 	cblimiter := tollbooth.NewLimiter(10, nil) // 10 req/sec max
 	cblimiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
