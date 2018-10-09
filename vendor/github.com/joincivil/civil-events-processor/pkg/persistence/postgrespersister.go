@@ -132,6 +132,21 @@ func (p *PostgresPersister) GovernanceEventsByTxHash(txHash common.Hash) ([]*mod
 	return p.governanceEventsByTxHashFromTable(txHash, govEventTableName)
 }
 
+// GovernanceEventByChallengeID retrieves challenge by challengeID
+func (p *PostgresPersister) GovernanceEventByChallengeID(challengeID int) (*model.GovernanceEvent, error) {
+	challengeIDs := []int{challengeID}
+	govEvents, err := p.govEventsByChallengeIDsFromTable(challengeIDs, govEventTableName)
+	if len(govEvents) > 0 {
+		return govEvents[0], err
+	}
+	return nil, err
+}
+
+// GovernanceEventsByChallengeIDs retrieves challenges by challengeIDs
+func (p *PostgresPersister) GovernanceEventsByChallengeIDs(challengeIDs []int) ([]*model.GovernanceEvent, error) {
+	return p.govEventsByChallengeIDsFromTable(challengeIDs, govEventTableName)
+}
+
 // CreateGovernanceEvent creates a new governance event
 func (p *PostgresPersister) CreateGovernanceEvent(govEvent *model.GovernanceEvent) error {
 	return p.createGovernanceEventInTable(govEvent, govEventTableName)
@@ -233,7 +248,7 @@ func (p *PostgresPersister) listingsByAddressesFromTable(addresses []common.Addr
 	queryString := p.listingByAddressesQuery(tableName)
 	query, args, err := sqlx.In(queryString, stringAddresses)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+		return nil, fmt.Errorf("Error preparing 'IN' statement for listings by address query: %v", err)
 	}
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
@@ -263,6 +278,9 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			err = model.ErrPersisterNoResults
+		}
 		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
 	}
 
@@ -284,7 +302,7 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 		if ok {
 			listings[i] = retrievedListing
 		} else {
-			listings[i] = &model.Listing{}
+			listings[i] = nil
 		}
 	}
 	return listings, nil
@@ -552,15 +570,53 @@ func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address co
 
 func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash, tableName string) ([]*model.GovernanceEvent, error) {
 	queryString := p.governanceEventsByTxHashQuery(txHash, tableName)
-	govEvents := []*model.GovernanceEvent{}
-	govEvent := postgres.GovernanceEvent{}
 	rows, err := p.db.Queryx(queryString)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			err = model.ErrPersisterNoResults
 		}
-		return govEvents, fmt.Errorf("Error retrieving governance events from table: %v", err)
+		return nil, fmt.Errorf("Error retrieving governance events from table: %v", err)
 	}
+	return p.scanGovEvents(rows)
+}
+
+func (p *PostgresPersister) govEventsByChallengeIDsFromTable(challengeIDs []int, tableName string) ([]*model.GovernanceEvent, error) {
+	queryString := p.govEventsByChallengeIDQuery(tableName, challengeIDs)
+	rows, err := p.db.Queryx(queryString)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = model.ErrPersisterNoResults
+		}
+		return nil, fmt.Errorf("Error retrieving governance events from table: %v", err)
+	}
+
+	govEventsMap := map[int]*model.GovernanceEvent{}
+	for rows.Next() {
+		var dbGovEvent postgres.GovernanceEvent
+		err = rows.StructScan(&dbGovEvent)
+		if err != nil {
+			return nil, fmt.Errorf("Error scanning governance_event row from IN query: %v", err)
+		}
+		modelGovEvent := dbGovEvent.DbToGovernanceData()
+		challengeID := int(modelGovEvent.Metadata()["ChallengeID"].(float64))
+		govEventsMap[challengeID] = modelGovEvent
+	}
+	// Return govEvents in order
+	modelGovEvents := make([]*model.GovernanceEvent, len(challengeIDs))
+	for i, id := range challengeIDs {
+		retrievedGovEvent, ok := govEventsMap[id]
+		if ok {
+			modelGovEvents[i] = retrievedGovEvent
+		} else {
+			modelGovEvents[i] = nil
+		}
+	}
+	return modelGovEvents, err
+}
+
+func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceEvent, error) {
+	govEvents := []*model.GovernanceEvent{}
+	govEvent := postgres.GovernanceEvent{}
 	for rows.Next() {
 		err := rows.StructScan(&govEvent)
 		govEvents = append(govEvents, govEvent.DbToGovernanceData())
@@ -581,6 +637,20 @@ func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, ta
 func (p *PostgresPersister) govEventsQuery(tableName string) string {
 	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false)
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE listing_address=$1", fieldNames, tableName) // nolint: gosec
+	return queryString
+}
+
+func (p *PostgresPersister) govEventsByChallengeIDQuery(tableName string, challengeIDs []int) string {
+	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false)
+	var idbuf bytes.Buffer
+	for _, id := range challengeIDs {
+		idbuf.WriteString(fmt.Sprintf("'%d',", id)) // nolint: gosec
+	}
+	// take out extra comma
+	idbuf.Truncate(idbuf.Len() - 1)
+	ids := idbuf.String()
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE gov_event_type='Challenge' AND metadata ->>'ChallengeID' IN (%s);",
+		fieldNames, tableName, ids)
 	return queryString
 }
 

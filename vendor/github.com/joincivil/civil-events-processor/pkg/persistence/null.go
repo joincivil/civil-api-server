@@ -88,6 +88,16 @@ func (n *NullPersister) GovernanceEventsByListingAddress(address common.Address)
 	return []*model.GovernanceEvent{}, nil
 }
 
+// GovernanceEventByChallengeID retrieves challenge by challengeID
+func (n *NullPersister) GovernanceEventByChallengeID(challengeID int) (*model.GovernanceEvent, error) {
+	return &model.GovernanceEvent{}, nil
+}
+
+// GovernanceEventsByChallengeIDs retrieves challenges by challengeIDs
+func (n *NullPersister) GovernanceEventsByChallengeIDs(challengeIDs []int) ([]*model.GovernanceEvent, error) {
+	return []*model.GovernanceEvent{}, nil
+}
+
 // CreateGovernanceEvent creates a new governance event
 func (n *NullPersister) CreateGovernanceEvent(govEvent *model.GovernanceEvent) error {
 	return nil
