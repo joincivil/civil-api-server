@@ -39,7 +39,7 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
 			fetch: func(keys []int) ([]*model.GovernanceEvent, []error) {
-				challengeEvents, err := g.govEventPersister.ChallengesByIDs(keys)
+				challengeEvents, err := g.govEventPersister.GovernanceEventsByChallengeIDs(keys)
 				errors := []error{err}
 				return challengeEvents, errors
 			},
