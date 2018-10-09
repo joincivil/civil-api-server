@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+// ChallengeRequest contains a signature and the fields needed to verify it
 type ChallengeRequest struct {
 	ExpectedPrefix string
 	GracePeriod    int64
@@ -28,7 +29,7 @@ func VerifyEthChallengeAndSignature(request ChallengeRequest) error {
 	if err != nil {
 		return err
 	}
-	if verified == false {
+	if !verified {
 		return errors.New("could not verify signature")
 	}
 

@@ -18,7 +18,7 @@ func TestVerifySignature(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error thrown: %s", err)
 	}
-	if result == false {
+	if !result {
 		t.Errorf("signature was not verified")
 	}
 }

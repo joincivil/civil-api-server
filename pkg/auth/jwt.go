@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	log "github.com/golang/glog"
 )
 
 // JwtTokenGenerator is responsible for generating JWT authentication tokens.
@@ -70,7 +70,7 @@ func (gen *JwtTokenGenerator) ValidateToken(tokenString string) (jwt.MapClaims, 
 		return claims, nil
 	}
 
-	fmt.Println("Error validating token", err)
+	log.Errorf("Error validating token: err: %v", err)
 	return nil, err
 
 }
@@ -81,7 +81,7 @@ func (gen *JwtTokenGenerator) RefreshToken(refresh string, expires int) (string,
 
 	if err != nil {
 		return "", err
-	} else {
-		return gen.GenerateToken(claims["sub"].(string), expires)
 	}
+
+	return gen.GenerateToken(claims["sub"].(string), expires)
 }
