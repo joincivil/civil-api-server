@@ -21,6 +21,7 @@ import (
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
+	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
@@ -55,16 +56,23 @@ func initResolver(config *utils.GraphQLConfig) (*graphql.Resolver, error) {
 		log.Errorf("Error w governanceEventPersister: err: %v", err)
 		return nil, err
 	}
-	return graphql.NewResolver(
-		listingPersister,
-		contentRevisionPersister,
-		governanceEventPersister,
-	), nil
+	onfido := kyc.NewOnfidoAPI(
+		kyc.ProdAPIURL,
+		config.OnfidoKey,
+	)
+	return graphql.NewResolver(&graphql.ResolverConfig{
+		ListingPersister:    listingPersister,
+		RevisionPersister:   contentRevisionPersister,
+		GovEventPersister:   governanceEventPersister,
+		OnfidoAPI:           onfido,
+		OnfidoTokenReferrer: config.OnfidoReferrer,
+	}), nil
 }
 
-func debugGraphQLRouting(router chi.Router) {
+func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {
+	log.Infof("%v", fmt.Sprintf("/%v/%v", graphQLVersion, graphQlEndpoint))
 	router.Handle("/", handler.Playground("GraphQL playground",
-		fmt.Sprintf("/%v/query", graphQLVersion)))
+		fmt.Sprintf("/%v/%v", graphQLVersion, graphQlEndpoint)))
 }
 
 func graphQLRouting(router chi.Router, config *utils.GraphQLConfig) error {
@@ -73,7 +81,11 @@ func graphQLRouting(router chi.Router, config *utils.GraphQLConfig) error {
 		log.Fatalf("Error retrieving resolver: err: %v", rErr)
 		return rErr
 	}
-	queryHandler := handler.GraphQL(graphqlgen.NewExecutableSchema(graphqlgen.Config{Resolvers: resolver}))
+	queryHandler := handler.GraphQL(
+		graphqlgen.NewExecutableSchema(
+			graphqlgen.Config{Resolvers: resolver},
+		),
+	)
 	router.Handle(
 		fmt.Sprintf("/%v/query", graphQLVersion),
 		graphql.DataloaderMiddleware(resolver, queryHandler))
@@ -161,6 +173,26 @@ func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
 	return nil
 }
 
+func kycRouting(router chi.Router, config *utils.GraphQLConfig, onfido *kyc.OnfidoAPI,
+	emailer *utils.Emailer) error {
+
+	ofConfig := &kyc.OnfidoWebhookHandlerConfig{
+		OnfidoWebhookToken: config.OnfidoWebhookToken,
+	}
+
+	cblimiter := tollbooth.NewLimiter(10, nil) // 10 req/sec max
+	cblimiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
+	cblimiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	router.Route(fmt.Sprintf("/%v/kyc", invoicingVersion), func(r chi.Router) {
+		r.Route("/cb", func(r chi.Router) {
+			r.Use(tollbooth_chi.LimitHandler(cblimiter))
+			r.Post("/", kyc.OnfidoWebhookHandler(ofConfig))
+		})
+	})
+	return nil
+}
+
 func main() {
 	config := &utils.GraphQLConfig{}
 	flag.Usage = func() {
@@ -202,13 +234,7 @@ func main() {
 	// TODO(PN): Here is where we can add our own auth middleware
 	//router.Use(//Authentication)
 
-	// GraphQL Debug Console
-	if config.Debug {
-		debugGraphQLRouting(router)
-		log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
-	}
-
-	// GraphQL Query Endpoint
+	// GraphQL Query Endpoint (Crawler/KYC)
 	if config.EnableGraphQL {
 		err = graphQLRouting(router, config)
 		if err != nil {
@@ -219,9 +245,14 @@ func main() {
 			port,
 			graphQLVersion,
 		)
+		// GraphQL Debug Console
+		if config.Debug {
+			debugGraphQLRouting(router, "query")
+			log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
+		}
 	}
 
-	// REST invoicing endpoint
+	// Invoicing REST endpoints
 	if config.EnableInvoicing {
 		persister, perr := invoicePersister(config)
 		if perr != nil {
@@ -256,6 +287,25 @@ func main() {
 			checkbookUpdaterRunFreqSecs,
 		)
 		go updater.Run()
+
+	}
+
+	// KYC REST endpoints
+	if config.EnableKYC {
+		onfido := kyc.NewOnfidoAPI(
+			kyc.ProdAPIURL,
+			config.OnfidoKey,
+		)
+		emailer := utils.NewEmailer(config.SendgridKey)
+		err = kycRouting(router, config, onfido, emailer)
+		if err != nil {
+			log.Fatalf("Error setting up KYC routing: err: %v", err)
+		}
+		log.Infof(
+			"Connect to http://localhost:%v/%v/kyc/cb for onfido webhook\n",
+			port,
+			invoicingVersion,
+		)
 	}
 
 	err = http.ListenAndServe(":"+port, router)

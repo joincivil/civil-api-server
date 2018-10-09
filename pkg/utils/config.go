@@ -46,8 +46,13 @@ type GraphQLConfig struct {
 	Debug           bool `default:"false" desc:"If true, enables the GraphQL playground"`
 	EnableGraphQL   bool `envconfig:"enable_graphql" split_words:"true" default:"true" desc:"If true, enables the GraphQL endpoint"`
 	EnableInvoicing bool `split_words:"true" default:"false" desc:"If true, enables the invoicing endpoint"`
+	EnableKYC       bool `split_words:"true" default:"false" desc:"If true, enables the KYC endpoint"`
 
-	SendgridKey string `split_words:"true" desc:"The sendgrid API key"`
+	SendgridKey string `split_words:"true" desc:"The SendGrid API key"`
+
+	OnfidoKey          string `split_words:"true" desc:"The Onfido API key"`
+	OnfidoReferrer     string `split_words:"true" desc:"The Onfido token referrer"`
+	OnfidoWebhookToken string `split_words:"true" desc:"The Onfido webhook secret token"`
 
 	CheckbookKey    string `split_words:"true" desc:"The checkbook.io api key"`
 	CheckbookSecret string `split_words:"true" desc:"The checkbook.io api secret"`

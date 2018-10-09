@@ -32,6 +32,7 @@ type ResolverRoot interface {
 	ContentRevision() ContentRevisionResolver
 	GovernanceEvent() GovernanceEventResolver
 	Listing() ListingResolver
+	Mutation() MutationResolver
 	Query() QueryResolver
 }
 
@@ -75,6 +76,11 @@ type ListingResolver interface {
 	ChallengeID(ctx context.Context, obj *model.Listing) (int, error)
 	Challenge(ctx context.Context, obj *model.Listing) (*model.GovernanceEvent, error)
 }
+type MutationResolver interface {
+	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
+	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
+	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
+}
 type QueryResolver interface {
 	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
@@ -109,7 +115,19 @@ func (e *executableSchema) Query(ctx context.Context, op *ast.OperationDefinitio
 }
 
 func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefinition) *graphql.Response {
-	return graphql.ErrorResponse(ctx, "mutations are not supported")
+	ec := executionContext{graphql.GetRequestContext(ctx), e}
+
+	buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+		data := ec._Mutation(ctx, op.SelectionSet)
+		var buf bytes.Buffer
+		data.MarshalGQL(&buf)
+		return buf.Bytes()
+	})
+
+	return &graphql.Response{
+		Data:   buf,
+		Errors: ec.Errors,
+	}
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDefinition) func() *graphql.Response {
@@ -1341,6 +1359,148 @@ func (ec *executionContext) _Metadata_value(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(string)
 	return graphql.MarshalString(res)
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, mutationImplementors)
+
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "kycCreateApplicant":
+			out.Values[i] = ec._Mutation_kycCreateApplicant(ctx, field)
+		case "kycGenerateSdkToken":
+			out.Values[i] = ec._Mutation_kycGenerateSdkToken(ctx, field)
+		case "kycCreateCheck":
+			out.Values[i] = ec._Mutation_kycCreateCheck(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Mutation_kycCreateApplicant(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 KycCreateApplicantInput
+	if tmp, ok := rawArgs["applicant"]; ok {
+		var err error
+		arg0, err = UnmarshalKycCreateApplicantInput(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["applicant"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().KycCreateApplicant(ctx, args["applicant"].(KycCreateApplicantInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _Mutation_kycGenerateSdkToken(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicantID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["applicantID"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().KycGenerateSdkToken(ctx, args["applicantID"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _Mutation_kycCreateCheck(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicantID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["applicantID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["facialVariant"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["facialVariant"] = arg1
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().KycCreateCheck(ctx, args["applicantID"].(string), args["facialVariant"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 var queryImplementors = []string{"Query"}
@@ -2689,6 +2849,162 @@ func UnmarshalDateRange(v interface{}) (DateRange, error) {
 	return it, nil
 }
 
+func UnmarshalKycCreateApplicantInput(v interface{}) (KycCreateApplicantInput, error) {
+	var it KycCreateApplicantInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "firstName":
+			var err error
+			it.FirstName, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "lastName":
+			var err error
+			it.LastName, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "email":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Email = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "middleName":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.MiddleName = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "profession":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Profession = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "nationality":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Nationality = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "countryOfResidence":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.CountryOfResidence = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "dateOfBirth":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.DateOfBirth = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "buildingNumber":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.BuildingNumber = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "street":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Street = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "aptNumber":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.AptNumber = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "city":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.City = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "state":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.State = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "zipcode":
+			var err error
+			var ptr1 string
+			if v != nil {
+				ptr1, err = graphql.UnmarshalString(v)
+				it.Zipcode = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Resolver) interface{} {
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
@@ -2718,6 +3034,12 @@ type Query {
   governanceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
+}
+
+type Mutation {
+  kycCreateApplicant(applicant: KycCreateApplicantInput!): String
+  kycGenerateSdkToken(applicantID: String!): String
+  kycCreateCheck(applicantID: String!, facialVariant: String): String
 }
 
 input DateRange {
@@ -2791,6 +3113,25 @@ type ContentRevision {
   revisionUri: String!
   revisionDate: Time!
 }
+
+# A type that reflects values in onfido.CreateApplicantRequest
+input KycCreateApplicantInput {
+  firstName: String!
+  lastName: String!
+  email: String
+  middleName: String
+  profession: String
+  nationality: String
+  countryOfResidence: String
+  dateOfBirth: String
+  buildingNumber: String
+  street: String
+  aptNumber: String
+  city: String
+  state: String
+  zipcode: String
+}
+
 
 scalar Time
 scalar ArticlePayloadValue

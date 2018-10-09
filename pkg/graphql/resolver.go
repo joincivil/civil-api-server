@@ -19,23 +19,36 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/utils"
 
 	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	kyc "github.com/joincivil/civil-api-server/pkg/kyc"
 )
 
+// ResolverConfig is the config params for the Resolver
+type ResolverConfig struct {
+	ListingPersister    model.ListingPersister
+	RevisionPersister   model.ContentRevisionPersister
+	GovEventPersister   model.GovernanceEventPersister
+	OnfidoAPI           *kyc.OnfidoAPI
+	OnfidoTokenReferrer string
+}
+
 // NewResolver is a convenience function to init a Resolver struct
-func NewResolver(listingPersister model.ListingPersister, revisionPersister model.ContentRevisionPersister,
-	govEventPersister model.GovernanceEventPersister) *Resolver {
+func NewResolver(config *ResolverConfig) *Resolver {
 	return &Resolver{
-		listingPersister:  listingPersister,
-		revisionPersister: revisionPersister,
-		govEventPersister: govEventPersister,
+		listingPersister:    config.ListingPersister,
+		revisionPersister:   config.RevisionPersister,
+		govEventPersister:   config.GovEventPersister,
+		onfidoAPI:           config.OnfidoAPI,
+		onfidoTokenReferrer: config.OnfidoTokenReferrer,
 	}
 }
 
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
-	listingPersister  model.ListingPersister
-	revisionPersister model.ContentRevisionPersister
-	govEventPersister model.GovernanceEventPersister
+	listingPersister    model.ListingPersister
+	revisionPersister   model.ContentRevisionPersister
+	govEventPersister   model.GovernanceEventPersister
+	onfidoAPI           *kyc.OnfidoAPI
+	onfidoTokenReferrer string
 }
 
 // ContentRevision is the resolver for the ContentRevision type
@@ -56,6 +69,11 @@ func (r *Resolver) Listing() graphql.ListingResolver {
 // Query is the resolver for the Query type
 func (r *Resolver) Query() graphql.QueryResolver {
 	return &queryResolver{r}
+}
+
+// Mutation is the resolver for the Mutation type
+func (r *Resolver) Mutation() graphql.MutationResolver {
+	return &mutationResolver{r}
 }
 
 type contentRevisionResolver struct{ *Resolver }
@@ -339,4 +357,88 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 		modelRevisions[index] = *revision
 	}
 	return modelRevisions, nil
+}
+
+type mutationResolver struct{ *Resolver }
+
+func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant graphql.KycCreateApplicantInput) (*string, error) {
+	newAddress := kyc.Address{}
+	if applicant.AptNumber != nil {
+		newAddress.FlatNumber = *applicant.AptNumber
+	}
+	if applicant.BuildingNumber != nil {
+		newAddress.BuildingNumber = *applicant.BuildingNumber
+	}
+	if applicant.Street != nil {
+		newAddress.Street = *applicant.Street
+	}
+	if applicant.City != nil {
+		newAddress.Town = *applicant.City
+	}
+	if applicant.State != nil {
+		newAddress.State = *applicant.State
+	}
+	if applicant.Zipcode != nil {
+		newAddress.Postcode = *applicant.Zipcode
+	}
+	if applicant.CountryOfResidence != nil {
+		newAddress.Country = *applicant.CountryOfResidence
+	}
+
+	newApplicant := &kyc.Applicant{}
+	newApplicant.Addresses = []kyc.Address{newAddress}
+	newApplicant.FirstName = applicant.FirstName
+	newApplicant.LastName = applicant.LastName
+
+	if applicant.MiddleName != nil {
+		newApplicant.MiddleName = *applicant.MiddleName
+	}
+	if applicant.Email != nil {
+		newApplicant.Email = *applicant.Email
+	}
+	if applicant.DateOfBirth != nil {
+		newApplicant.Dob = *applicant.DateOfBirth
+	}
+	if applicant.CountryOfResidence != nil {
+		newApplicant.Country = *applicant.CountryOfResidence
+	}
+
+	returnedApplicant, err := r.onfidoAPI.CreateApplicant(newApplicant)
+	if err != nil {
+		return nil, err
+	}
+
+	return &returnedApplicant.ID, nil
+}
+func (r *mutationResolver) KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error) {
+	token, err := r.onfidoAPI.GenerateSDKToken(applicantID, r.onfidoTokenReferrer)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token, err
+}
+func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error) {
+	var rep *kyc.Report
+	if facialVariant != nil && *facialVariant == kyc.ReportVariantFacialSimilarityVideo {
+		rep = kyc.FacialSimilarityVideoReport
+	} else {
+		rep = kyc.FacialSimilarityStandardReport
+	}
+	newCheck := &kyc.Check{
+		Type: kyc.CheckTypeExpress,
+		Reports: []kyc.Report{
+			// *kyc.IdentityKycReport,
+			*kyc.DocumentReport,
+			*rep,
+			// *kyc.WatchlistKycReport,
+		},
+	}
+
+	returnedCheck, err := r.onfidoAPI.CreateCheck(applicantID, newCheck)
+	if err != nil {
+		return nil, err
+	}
+
+	return &returnedCheck.ID, nil
 }
