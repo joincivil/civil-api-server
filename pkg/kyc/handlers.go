@@ -35,7 +35,7 @@ func OnfidoWebhookHandler(config *OnfidoWebhookHandlerConfig) http.HandlerFunc {
 
 		log.Infof("Received onfido event: %v", event.String())
 
-		if validOnfidoRequest(r, config, event.String()) {
+		if !validOnfidoRequest(r, config, event.String()) {
 			log.Errorf("Invalid signature for request: err: %v", err)
 			err = render.Render(w, r, ErrInvalidOnfidoWebhookSig)
 			if err != nil {
