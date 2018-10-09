@@ -34,6 +34,7 @@ type Listing {
   appExpiry: Time!
   unstakedDeposit: String!
   challengeID: Int!
+  challenge: GovernanceEvent
 }
 
 # A type that reflects values in model.Metadata

@@ -51,5 +51,6 @@ To generate a dataloader file (i.e. for a `model.Listing` that creates `listingl
 go get -u github.com/vektah/dataloaden
 cd pkg/graphql
 dataloaden -keys string github.com/joincivil/civil-events-processor/pkg/model.Listing
+dataloaden -keys int github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
 ```
 Then implement code in `dataloaders.go` and modify `resolvers.go`
