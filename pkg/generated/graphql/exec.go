@@ -10,6 +10,8 @@ import (
 
 	graphql "github.com/99designs/gqlgen/graphql"
 	introspection "github.com/99designs/gqlgen/graphql/introspection"
+	auth "github.com/joincivil/civil-api-server/pkg/auth"
+	invoicing "github.com/joincivil/civil-api-server/pkg/invoicing"
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	gqlparser "github.com/vektah/gqlparser"
 	ast "github.com/vektah/gqlparser/ast"
@@ -82,6 +84,7 @@ type MutationResolver interface {
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
 }
 type QueryResolver interface {
+	CurrentUser(ctx context.Context) (*auth.CurrentUser, error)
 	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
 	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
@@ -550,6 +553,77 @@ func (ec *executionContext) _ContentRevision_revisionDate(ctx context.Context, f
 	})
 }
 
+var currentUserImplementors = []string{"CurrentUser"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _CurrentUser(ctx context.Context, sel ast.SelectionSet, obj *auth.CurrentUser) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, currentUserImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CurrentUser")
+		case "email":
+			out.Values[i] = ec._CurrentUser_email(ctx, field, obj)
+		case "invoices":
+			out.Values[i] = ec._CurrentUser_invoices(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _CurrentUser_email(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "CurrentUser"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Email, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _CurrentUser_invoices(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "CurrentUser"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Invoices()
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*invoicing.PostgresInvoice)
+	arr1 := graphql.Array{}
+	for idx1 := range res {
+		arr1 = append(arr1, func() graphql.Marshaler {
+			rctx := graphql.GetResolverContext(ctx)
+			rctx.PushIndex(idx1)
+			defer rctx.Pop()
+			if res[idx1] == nil {
+				return graphql.Null
+			}
+			return ec._Invoice(ctx, field.Selections, res[idx1])
+		}())
+	}
+	return arr1
+}
+
 var governanceEventImplementors = []string{"GovernanceEvent"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -812,6 +886,331 @@ func (ec *executionContext) _GovernanceEvent_listing(ctx context.Context, field 
 		res := resTmp.(model.Listing)
 		return ec._Listing(ctx, field.Selections, &res)
 	})
+}
+
+var invoiceImplementors = []string{"Invoice"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, invoiceImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Invoice")
+		case "hash":
+			out.Values[i] = ec._Invoice_hash(ctx, field, obj)
+		case "email":
+			out.Values[i] = ec._Invoice_email(ctx, field, obj)
+		case "phone":
+			out.Values[i] = ec._Invoice_phone(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._Invoice_name(ctx, field, obj)
+		case "amount":
+			out.Values[i] = ec._Invoice_amount(ctx, field, obj)
+		case "invoiceID":
+			out.Values[i] = ec._Invoice_invoiceID(ctx, field, obj)
+		case "invoiceNum":
+			out.Values[i] = ec._Invoice_invoiceNum(ctx, field, obj)
+		case "invoiceStatus":
+			out.Values[i] = ec._Invoice_invoiceStatus(ctx, field, obj)
+		case "checkID":
+			out.Values[i] = ec._Invoice_checkID(ctx, field, obj)
+		case "checkStatus":
+			out.Values[i] = ec._Invoice_checkStatus(ctx, field, obj)
+		case "stopPoll":
+			out.Values[i] = ec._Invoice_stopPoll(ctx, field, obj)
+		case "isCheckbook":
+			out.Values[i] = ec._Invoice_isCheckbook(ctx, field, obj)
+		case "isThirdParty":
+			out.Values[i] = ec._Invoice_isThirdParty(ctx, field, obj)
+		case "referralCode":
+			out.Values[i] = ec._Invoice_referralCode(ctx, field, obj)
+		case "referredBy":
+			out.Values[i] = ec._Invoice_referredBy(ctx, field, obj)
+		case "emailState":
+			out.Values[i] = ec._Invoice_emailState(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Invoice_hash(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Hash, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_email(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Email, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_phone(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Phone, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_name(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_amount(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Amount, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	return graphql.MarshalFloat(res)
+}
+
+func (ec *executionContext) _Invoice_invoiceID(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.InvoiceID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_invoiceNum(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.InvoiceNum, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_invoiceStatus(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.InvoiceStatus, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_checkID(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.CheckID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_checkStatus(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.CheckStatus, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_stopPoll(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.StopPoll, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	return graphql.MarshalBoolean(res)
+}
+
+func (ec *executionContext) _Invoice_isCheckbook(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.IsCheckbook, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	return graphql.MarshalBoolean(res)
+}
+
+func (ec *executionContext) _Invoice_isThirdParty(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.IsThirdParty, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	return graphql.MarshalBoolean(res)
+}
+
+func (ec *executionContext) _Invoice_referralCode(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.ReferralCode, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_referredBy(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.ReferredBy, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Invoice_emailState(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Invoice"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.EmailState, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	return graphql.MarshalInt(res)
 }
 
 var listingImplementors = []string{"Listing"}
@@ -1520,6 +1919,8 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "currentUser":
+			out.Values[i] = ec._Query_currentUser(ctx, field)
 		case "listings":
 			out.Values[i] = ec._Query_listings(ctx, field)
 		case "listing":
@@ -1540,6 +1941,35 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	}
 
 	return out
+}
+
+func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().CurrentUser(ctx)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*auth.CurrentUser)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._CurrentUser(ctx, field.Selections, res)
+	})
 }
 
 func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
@@ -3029,6 +3459,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 
 # The query type, represents all of the entry points into our object graph
 type Query {
+  currentUser: CurrentUser
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
   governanceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
@@ -3045,6 +3476,33 @@ type Mutation {
 input DateRange {
   gt: Time
   lt: Time
+}
+
+# A type that reflects values in auth.CurrentUser
+type CurrentUser {
+  email: String
+  invoices: [Invoice]
+}
+
+# A type that reflects values in invoicing.PostgresInvoice
+type Invoice {
+	hash:          String
+	email:         String
+	phone:         String
+	name:          String
+	amount:        Float
+	invoiceID:     String
+	invoiceNum:    String
+	invoiceStatus: String
+	checkID:      String 
+	checkStatus:   String
+	stopPoll:      Boolean
+	isCheckbook:   Boolean
+	isThirdParty:  Boolean 
+	referralCode:  String
+	referredBy:    String
+	emailState:    Int
+
 }
 
 # A type that reflects values in model.Listing
