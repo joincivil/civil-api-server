@@ -13,6 +13,11 @@ import (
 // Implements the ListingPersister, ContentRevisionPersister, and GovernanceEventPersister
 type NullPersister struct{}
 
+// ListingsByCriteria returns all listings by ListingCriteria
+func (n *NullPersister) ListingsByCriteria(criteria *model.ListingCriteria) ([]*model.Listing, error) {
+	return []*model.Listing{}, nil
+}
+
 // ListingsByAddresses returns a slice of Listings based on addresses
 func (n *NullPersister) ListingsByAddresses(addresses []common.Address) ([]*model.Listing, error) {
 	return []*model.Listing{}, nil
@@ -36,6 +41,11 @@ func (n *NullPersister) UpdateListing(listing *model.Listing, updatedFields []st
 // DeleteListing removes a listing
 func (n *NullPersister) DeleteListing(listing *model.Listing) error {
 	return nil
+}
+
+// ContentRevisionsByCriteria returns all content revisions by ContentRevisionCriteria
+func (n *NullPersister) ContentRevisionsByCriteria(criteria *model.ContentRevisionCriteria) ([]*model.ContentRevision, error) {
+	return []*model.ContentRevision{}, nil
 }
 
 // ContentRevisions retrieves the revisions for content on a listing
@@ -63,6 +73,16 @@ func (n *NullPersister) DeleteContentRevision(revision *model.ContentRevision) e
 	return nil
 }
 
+// GovernanceEventsByTxHash gets governance events based on txhash
+func (n *NullPersister) GovernanceEventsByTxHash(txHash common.Hash) ([]*model.GovernanceEvent, error) {
+	return []*model.GovernanceEvent{}, nil
+}
+
+// GovernanceEventsByCriteria retrieves governance events based on criteria
+func (n *NullPersister) GovernanceEventsByCriteria(criteria *model.GovernanceEventCriteria) ([]*model.GovernanceEvent, error) {
+	return []*model.GovernanceEvent{}, nil
+}
+
 // GovernanceEventsByListingAddress retrieves governance events based on criteria
 func (n *NullPersister) GovernanceEventsByListingAddress(address common.Address) ([]*model.GovernanceEvent, error) {
 	return []*model.GovernanceEvent{}, nil
@@ -78,7 +98,17 @@ func (n *NullPersister) UpdateGovernanceEvent(govEvent *model.GovernanceEvent, u
 	return nil
 }
 
-// DeleteGovenanceEvent removes a governance event
-func (n *NullPersister) DeleteGovenanceEvent(govEvent *model.GovernanceEvent) error {
+// DeleteGovernanceEvent removes a governance event
+func (n *NullPersister) DeleteGovernanceEvent(govEvent *model.GovernanceEvent) error {
+	return nil
+}
+
+// TimestampOfLastEventForCron returns the timestamp for the last event seen by the processor
+func (n *NullPersister) TimestampOfLastEventForCron() (int64, error) {
+	return int64(0), nil
+}
+
+// UpdateTimestampForCron updates the timestamp of the last event seen by the cron
+func (n *NullPersister) UpdateTimestampForCron(timestamp int64) error {
 	return nil
 }

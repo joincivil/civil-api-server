@@ -19,7 +19,6 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
-	kycgen "github.com/joincivil/civil-api-server/pkg/generated/kyc"
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
@@ -57,15 +56,17 @@ func initResolver(config *utils.GraphQLConfig) (*graphql.Resolver, error) {
 		log.Errorf("Error w governanceEventPersister: err: %v", err)
 		return nil, err
 	}
-	return graphql.NewResolver(
-		listingPersister,
-		contentRevisionPersister,
-		governanceEventPersister,
-	), nil
-}
-
-func initKYCResolver(config *utils.GraphQLConfig, onfido *kyc.OnfidoAPI) (*kyc.Resolver, error) {
-	return kyc.NewResolver(onfido, config.OnfidoReferrer), nil
+	onfido := kyc.NewOnfidoAPI(
+		kyc.ProdAPIURL,
+		config.OnfidoKey,
+	)
+	return graphql.NewResolver(&graphql.ResolverConfig{
+		ListingPersister:    listingPersister,
+		RevisionPersister:   contentRevisionPersister,
+		GovEventPersister:   governanceEventPersister,
+		OnfidoAPI:           onfido,
+		OnfidoTokenReferrer: config.OnfidoReferrer,
+	}), nil
 }
 
 func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {
@@ -173,17 +174,6 @@ func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
 
 func kycRouting(router chi.Router, config *utils.GraphQLConfig, onfido *kyc.OnfidoAPI,
 	emailer *utils.Emailer) error {
-	resolver, err := initKYCResolver(config, onfido)
-	if err != nil {
-		log.Fatalf("Error retrieving kyc resolver: err: %v", err)
-		return err
-	}
-
-	queryHandler := handler.GraphQL(
-		kycgen.NewExecutableSchema(
-			kycgen.Config{Resolvers: resolver},
-		),
-	)
 
 	ofConfig := &kyc.OnfidoWebhookHandlerConfig{}
 
@@ -192,9 +182,6 @@ func kycRouting(router chi.Router, config *utils.GraphQLConfig, onfido *kyc.Onfi
 	cblimiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
 
 	router.Route(fmt.Sprintf("/%v/kyc", invoicingVersion), func(r chi.Router) {
-		r.Route("/query", func(r chi.Router) {
-			r.Handle("/", queryHandler)
-		})
 		r.Route("/cb", func(r chi.Router) {
 			r.Use(tollbooth_chi.LimitHandler(cblimiter))
 			r.Post("/", kyc.OnfidoWebhookHandler(ofConfig))
@@ -244,9 +231,7 @@ func main() {
 	// TODO(PN): Here is where we can add our own auth middleware
 	//router.Use(//Authentication)
 
-	playgroundEnabled := false
-
-	// GraphQL Query Endpoint
+	// GraphQL Query Endpoint (Crawler/KYC)
 	if config.EnableGraphQL {
 		err = graphQLRouting(router, config)
 		if err != nil {
@@ -261,7 +246,6 @@ func main() {
 		if config.Debug {
 			debugGraphQLRouting(router, "query")
 			log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
-			playgroundEnabled = true
 		}
 	}
 
@@ -298,7 +282,7 @@ func main() {
 
 	}
 
-	// KYC GraphQL and REST endpoints
+	// KYC REST endpoints
 	if config.EnableKYC {
 		onfido := kyc.NewOnfidoAPI(
 			kyc.ProdAPIURL,
@@ -310,22 +294,10 @@ func main() {
 			log.Fatalf("Error setting up KYC routing: err: %v", err)
 		}
 		log.Infof(
-			"Connect to http://localhost:%v/%v/kyc/query for KYC GraphQL\n",
-			port,
-			invoicingVersion,
-		)
-		log.Infof(
 			"Connect to http://localhost:%v/%v/kyc/cb for onfido webhook\n",
 			port,
 			invoicingVersion,
 		)
-		// GraphQL Debug Console
-		if config.Debug && !playgroundEnabled {
-			log.Infof("debug for kyc")
-			debugGraphQLRouting(router, "kyc/query")
-			log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
-			playgroundEnabled = true
-		}
 	}
 
 	err = http.ListenAndServe(":"+port, router)

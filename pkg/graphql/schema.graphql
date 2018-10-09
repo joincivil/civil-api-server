@@ -11,6 +11,12 @@ type Query {
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 }
 
+type Mutation {
+  kycCreateApplicant(applicant: KycCreateApplicantInput!): String
+  kycGenerateSdkToken(applicantID: String!): String
+  kycCreateCheck(applicantID: String!, facialVariant: String): String
+}
+
 input DateRange {
   gt: Time
   lt: Time
@@ -81,6 +87,25 @@ type ContentRevision {
   revisionUri: String!
   revisionDate: Time!
 }
+
+# A type that reflects values in onfido.CreateApplicantRequest
+input KycCreateApplicantInput {
+  firstName: String!
+  lastName: String!
+  email: String
+  middleName: String
+  profession: String
+  nationality: String
+  countryOfResidence: String
+  dateOfBirth: String
+  buildingNumber: String
+  street: String
+  aptNumber: String
+  city: String
+  state: String
+  zipcode: String
+}
+
 
 scalar Time
 scalar ArticlePayloadValue
