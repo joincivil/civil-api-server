@@ -1,0 +1,15 @@
+# .gqlgen.yml example
+#
+# Refer to https://gqlgen.com/config/
+# for detailed .gqlgen.yml documentation.
+
+schema: schema.graphql
+exec:
+  filename: ../generated/kyc/exec.go
+  package: kyc
+model:
+  filename: ../generated/kyc/models.go
+  package: kyc
+resolver:
+  filename: resolver.go
+  type: Resolver

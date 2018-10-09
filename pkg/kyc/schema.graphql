@@ -1,0 +1,33 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+# The query type, represents all of the entry points into our object graph
+type Query {
+  kycApplicants: [String]!
+}
+
+type Mutation {
+  kycCreateApplicant(applicant: KycCreateApplicantInput!): String
+  kycGenerateSdkToken(applicantID: String!): String
+  kycCreateCheck(applicantID: String!, facialVariant: String): String
+}
+
+# A type that reflects values in onfido.CreateApplicantRequest
+input KycCreateApplicantInput {
+  firstName: String!
+  lastName: String!
+  email: String
+  middleName: String
+  profession: String
+  nationality: String
+  countryOfResidence: String
+  dateOfBirth: String
+  buildingNumber: String
+  street: String
+  aptNumber: String
+  city: String
+  state: String
+  zipcode: String
+}
