@@ -26,3 +26,7 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.ContentRevision
   ArticlePayloadValue:
     model: github.com/joincivil/civil-events-processor/pkg/model.ArticlePayloadValue
+  CurrentUser:
+    model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
+  Invoice:
+    model: github.com/joincivil/civil-api-server/pkg/invoicing.PostgresInvoice
