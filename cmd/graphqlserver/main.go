@@ -24,6 +24,7 @@ import (
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
+	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
@@ -62,6 +63,9 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		kyc.ProdAPIURL,
 		config.OnfidoKey,
 	)
+
+	tokenFoundry := tokenfoundry.NewAPI("https://tokenfoundry.com", config.TokenFoundryUser, config.TokenFoundryPassword)
+
 	return graphql.NewResolver(&graphql.ResolverConfig{
 		ListingPersister:    listingPersister,
 		RevisionPersister:   contentRevisionPersister,
@@ -69,6 +73,7 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		InvoicePersister:    invoicePersister,
 		OnfidoAPI:           onfido,
 		OnfidoTokenReferrer: config.OnfidoReferrer,
+		TokenFoundry:        tokenFoundry,
 	}), nil
 }
 

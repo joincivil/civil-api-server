@@ -10,6 +10,8 @@ import (
 	context "context"
 	"fmt"
 
+	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
+
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	// "fmt"
 	"strconv"
@@ -34,6 +36,7 @@ type ResolverConfig struct {
 	RevisionPersister   model.ContentRevisionPersister
 	OnfidoAPI           *kyc.OnfidoAPI
 	OnfidoTokenReferrer string
+	TokenFoundry        *tokenfoundry.API
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -45,6 +48,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		invoicePersister:    config.InvoicePersister,
 		onfidoAPI:           config.OnfidoAPI,
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
+		tokenFoundry:        config.TokenFoundry,
 	}
 }
 
@@ -56,6 +60,7 @@ type Resolver struct {
 	govEventPersister   model.GovernanceEventPersister
 	onfidoAPI           *kyc.OnfidoAPI
 	onfidoTokenReferrer string
+	tokenFoundry        *tokenfoundry.API
 }
 
 // ContentRevision is the resolver for the ContentRevision type
@@ -371,7 +376,7 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*auth.CurrentUser, err
 	if token == nil {
 		return nil, fmt.Errorf("Access denied")
 	}
-	return auth.GetCurrentUser(token.Sub, r.invoicePersister)
+	return auth.GetCurrentUser(token.Sub, r.invoicePersister, r.tokenFoundry)
 }
 
 type mutationResolver struct{ *Resolver }

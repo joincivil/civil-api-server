@@ -570,6 +570,8 @@ func (ec *executionContext) _CurrentUser(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._CurrentUser_email(ctx, field, obj)
 		case "invoices":
 			out.Values[i] = ec._CurrentUser_invoices(ctx, field, obj)
+		case "isTokenFoundryRegistered":
+			out.Values[i] = ec._CurrentUser_isTokenFoundryRegistered(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -622,6 +624,23 @@ func (ec *executionContext) _CurrentUser_invoices(ctx context.Context, field gra
 		}())
 	}
 	return arr1
+}
+
+func (ec *executionContext) _CurrentUser_isTokenFoundryRegistered(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "CurrentUser"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.IsTokenFoundryRegistered()
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	return graphql.MarshalBoolean(res)
 }
 
 var governanceEventImplementors = []string{"GovernanceEvent"}
@@ -3482,6 +3501,7 @@ input DateRange {
 type CurrentUser {
   email: String
   invoices: [Invoice]
+  isTokenFoundryRegistered: Boolean
 }
 
 # A type that reflects values in invoicing.PostgresInvoice
