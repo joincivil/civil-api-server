@@ -20,9 +20,12 @@ type Token struct {
 }
 
 // Middleware decodes the `authorization` header jwt token and puts into context
+// The authorization header must be of format
+// "Authorization: Bearer <JWT token>"
 func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 			authHeader := r.Header.Get("authorization")
 
 			// Allow unauthenticated users in
@@ -33,7 +36,9 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 
 			token, err := validateDecodeToken(jwt, authHeader)
 			if err != nil {
-				http.Error(w, "Invalid authorization header", http.StatusForbidden)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusForbidden)
+				_, _ = w.Write([]byte("{\"err\": \"Invalid authorization header\"}")) // nolint: gosec
 				return
 			}
 

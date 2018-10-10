@@ -31,6 +31,7 @@ import (
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
 	InvoicePersister    *invoicing.PostgresPersister
+	KycPersister        *kyc.PostgresPersister
 	ListingPersister    model.ListingPersister
 	GovEventPersister   model.GovernanceEventPersister
 	RevisionPersister   model.ContentRevisionPersister
@@ -42,10 +43,11 @@ type ResolverConfig struct {
 // NewResolver is a convenience function to init a Resolver struct
 func NewResolver(config *ResolverConfig) *Resolver {
 	return &Resolver{
+		invoicePersister:    config.InvoicePersister,
+		kycPersister:        config.KycPersister,
 		listingPersister:    config.ListingPersister,
 		revisionPersister:   config.RevisionPersister,
 		govEventPersister:   config.GovEventPersister,
-		invoicePersister:    config.InvoicePersister,
 		onfidoAPI:           config.OnfidoAPI,
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
 		tokenFoundry:        config.TokenFoundry,
@@ -55,6 +57,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
 	invoicePersister    *invoicing.PostgresPersister
+	kycPersister        *kyc.PostgresPersister
 	listingPersister    model.ListingPersister
 	revisionPersister   model.ContentRevisionPersister
 	govEventPersister   model.GovernanceEventPersister
@@ -376,7 +379,7 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*auth.CurrentUser, err
 	if token == nil {
 		return nil, fmt.Errorf("Access denied")
 	}
-	return auth.GetCurrentUser(token.Sub, r.invoicePersister, r.tokenFoundry)
+	return auth.GetCurrentUser(token.Sub, r.invoicePersister, r.kycPersister, r.tokenFoundry)
 }
 
 type mutationResolver struct{ *Resolver }
