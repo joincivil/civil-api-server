@@ -570,6 +570,8 @@ func (ec *executionContext) _CurrentUser(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._CurrentUser_email(ctx, field, obj)
 		case "invoices":
 			out.Values[i] = ec._CurrentUser_invoices(ctx, field, obj)
+		case "ethAddress":
+			out.Values[i] = ec._CurrentUser_ethAddress(ctx, field, obj)
 		case "isTokenFoundryRegistered":
 			out.Values[i] = ec._CurrentUser_isTokenFoundryRegistered(ctx, field, obj)
 		default:
@@ -624,6 +626,23 @@ func (ec *executionContext) _CurrentUser_invoices(ctx context.Context, field gra
 		}())
 	}
 	return arr1
+}
+
+func (ec *executionContext) _CurrentUser_ethAddress(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "CurrentUser"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.EthAddress()
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
 }
 
 func (ec *executionContext) _CurrentUser_isTokenFoundryRegistered(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
@@ -3501,6 +3520,7 @@ input DateRange {
 type CurrentUser {
   email: String
   invoices: [Invoice]
+  ethAddress: String
   isTokenFoundryRegistered: Boolean
 }
 
@@ -3514,11 +3534,11 @@ type Invoice {
 	invoiceID:     String
 	invoiceNum:    String
 	invoiceStatus: String
-	checkID:      String 
+	checkID:       String
 	checkStatus:   String
 	stopPoll:      Boolean
 	isCheckbook:   Boolean
-	isThirdParty:  Boolean 
+	isThirdParty:  Boolean
 	referralCode:  String
 	referredBy:    String
 	emailState:    Int
