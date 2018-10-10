@@ -1,8 +1,8 @@
 package main
 
-// Simple script to generate a referral code.  Used to generate them
-// for newsrooms or for one-offs.  Does not store this value anywhere, so need to
-// record it elsewhere.
+// Simple script to generate a JWT token
+// make sure `GRAPHQL_JWT_SECRET` environment variable is set
+// example usage: GRAPHQL_JWT_SECRET=civiliscool ./main someaddress@gmail.com
 
 import (
 	"fmt"

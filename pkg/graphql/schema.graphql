@@ -39,7 +39,7 @@ type Invoice {
 	invoiceID:     String
 	invoiceNum:    String
 	invoiceStatus: String
-	checkID:      String 
+	checkID:       String 
 	checkStatus:   String
 	stopPoll:      Boolean
 	isCheckbook:   Boolean
