@@ -4,10 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	log "github.com/golang/glog"
 	"net/http"
 	"os"
 	"strconv"
+
+	log "github.com/golang/glog"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/didip/tollbooth"
@@ -18,10 +19,12 @@ import (
 
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 
+	"github.com/joincivil/civil-api-server/pkg/auth"
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
+	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
@@ -40,7 +43,8 @@ var (
 	}
 )
 
-func initResolver(config *utils.GraphQLConfig) (*graphql.Resolver, error) {
+func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.PostgresPersister,
+	kycPersister *kyc.PostgresPersister) (*graphql.Resolver, error) {
 	listingPersister, err := helpers.ListingPersister(config)
 	if err != nil {
 		log.Errorf("Error w listingPersister: err: %v", err)
@@ -60,12 +64,22 @@ func initResolver(config *utils.GraphQLConfig) (*graphql.Resolver, error) {
 		kyc.ProdAPIURL,
 		config.OnfidoKey,
 	)
+
+	tokenFoundry := tokenfoundry.NewAPI(
+		"https://tokenfoundry.com",
+		config.TokenFoundryUser,
+		config.TokenFoundryPassword,
+	)
+
 	return graphql.NewResolver(&graphql.ResolverConfig{
+		InvoicePersister:    invoicePersister,
+		KycPersister:        kycPersister,
 		ListingPersister:    listingPersister,
 		RevisionPersister:   contentRevisionPersister,
 		GovEventPersister:   governanceEventPersister,
 		OnfidoAPI:           onfido,
 		OnfidoTokenReferrer: config.OnfidoReferrer,
+		TokenFoundry:        tokenFoundry,
 	}), nil
 }
 
@@ -75,8 +89,9 @@ func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {
 		fmt.Sprintf("/%v/%v", graphQLVersion, graphQlEndpoint)))
 }
 
-func graphQLRouting(router chi.Router, config *utils.GraphQLConfig) error {
-	resolver, rErr := initResolver(config)
+func graphQLRouting(router chi.Router, config *utils.GraphQLConfig, invoicePersister *invoicing.PostgresPersister,
+	kycPersister *kyc.PostgresPersister) error {
+	resolver, rErr := initResolver(config, invoicePersister, kycPersister)
 	if rErr != nil {
 		log.Fatalf("Error retrieving resolver: err: %v", rErr)
 		return rErr
@@ -92,8 +107,30 @@ func graphQLRouting(router chi.Router, config *utils.GraphQLConfig) error {
 	return nil
 }
 
-func invoicePersister(config *utils.GraphQLConfig) (*invoicing.PostgresPersister, error) {
+func initInvoicePersister(config *utils.GraphQLConfig) (*invoicing.PostgresPersister, error) {
 	persister, err := invoicing.NewPostgresPersister(
+		config.PostgresAddress(),
+		config.PostgresPort(),
+		config.PostgresUser(),
+		config.PostgresPw(),
+		config.PostgresDbname(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = persister.CreateTables()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating tables: err: %v", err)
+	}
+	err = persister.CreateIndices()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating indices: err: %v", err)
+	}
+	return persister, nil
+}
+
+func initKycPersister(config *utils.GraphQLConfig) (*kyc.PostgresPersister, error) {
+	persister, err := kyc.NewPostgresPersister(
 		config.PostgresAddress(),
 		config.PostgresPort(),
 		config.PostgresUser(),
@@ -231,12 +268,30 @@ func main() {
 	})
 	router.Use(cors.Handler)
 
-	// TODO(PN): Here is where we can add our own auth middleware
-	//router.Use(//Authentication)
+	tokenGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
+	router.Use(auth.Middleware(tokenGenerator))
+
+	// set up persisters
+	var invoicePersister *invoicing.PostgresPersister
+	var kycPersister *kyc.PostgresPersister
+	var perr error
+
+	if config.EnableInvoicing || config.EnableGraphQL {
+		invoicePersister, perr = initInvoicePersister(config)
+		if perr != nil {
+			log.Fatalf("Error setting up invoicing persister: err: %v", perr)
+		}
+	}
+	if config.EnableKYC || config.EnableGraphQL {
+		kycPersister, perr = initKycPersister(config)
+		if perr != nil {
+			log.Fatalf("Error setting up kyc persister: err: %v", perr)
+		}
+	}
 
 	// GraphQL Query Endpoint (Crawler/KYC)
 	if config.EnableGraphQL {
-		err = graphQLRouting(router, config)
+		err = graphQLRouting(router, config, invoicePersister, kycPersister)
 		if err != nil {
 			log.Fatalf("Error setting up graphql routing: err: %v", err)
 		}
@@ -254,10 +309,6 @@ func main() {
 
 	// Invoicing REST endpoints
 	if config.EnableInvoicing {
-		persister, perr := invoicePersister(config)
-		if perr != nil {
-			log.Fatalf("Error setting up invoicing persister: err: %v", perr)
-		}
 
 		checkbookIOClient, cerr := invoiceCheckbookIO(config)
 		if cerr != nil {
@@ -265,7 +316,7 @@ func main() {
 		}
 
 		emailer := utils.NewEmailer(config.SendgridKey)
-		err = invoicingRouting(router, checkbookIOClient, persister, emailer, config.CheckbookTest)
+		err = invoicingRouting(router, checkbookIOClient, invoicePersister, emailer, config.CheckbookTest)
 		if err != nil {
 			log.Fatalf("Error setting up invoicing routing: err: %v", err)
 		}
@@ -282,7 +333,7 @@ func main() {
 
 		updater := invoicing.NewCheckoutIOUpdater(
 			checkbookIOClient,
-			persister,
+			invoicePersister,
 			emailer,
 			checkbookUpdaterRunFreqSecs,
 		)
