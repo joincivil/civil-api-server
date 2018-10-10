@@ -16,7 +16,7 @@ func main() {
 	secret := []byte(os.Getenv("GRAPHQL_JWT_SECRET"))
 	jwt := auth.NewJwtTokenGenerator(secret)
 	// Generate a new code for a user
-	token, err := jwt.GenerateToken(os.Args[1], 40000)
+	token, err := jwt.GenerateToken(os.Args[1], 604800)
 	if err != nil {
 		log.Fatalf("Error generating token: err: %v", err)
 	}

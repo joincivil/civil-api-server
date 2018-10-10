@@ -27,6 +27,7 @@ input DateRange {
 type CurrentUser {
   email: String
   invoices: [Invoice]
+  isTokenFoundryRegistered: Boolean
 }
 
 # A type that reflects values in invoicing.PostgresInvoice
