@@ -303,7 +303,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 		}
 
 		// Send the referral email
-		go SendReferralProgramEmail(config.Emailer, request, referralCode)
+		// go SendReferralProgramEmail(config.Emailer, request, referralCode)
 
 		// Return the response
 		err = render.Render(w, r, OkResponseNormal)
