@@ -14,7 +14,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	// "github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -80,7 +80,7 @@ func main() {
 		return
 	}
 
-	emailer := utils.NewEmailer(config.SendgridKey)
+	// emailer := utils.NewEmailer(config.SendgridKey)
 
 	for _, invoice := range invoices {
 		// If code already exists, skip that user
@@ -122,7 +122,7 @@ func main() {
 		}
 
 		fmt.Printf("info = %v, %v, %v\n", req.FirstName, req.Email, referralCode)
-		invoicing.SendReferralProgramEmail(emailer, req, referralCode)
+		// invoicing.SendReferralProgramEmail(emailer, req, referralCode)
 
 		// Update the invoice w new referral code
 		invoice.ReferralCode = referralCode
