@@ -30,3 +30,7 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
   Invoice:
     model: github.com/joincivil/civil-api-server/pkg/invoicing.PostgresInvoice
+  User:
+    model: github.com/joincivil/civil-api-server/pkg/users.User
+  UserSetEthAddressInput:
+    model: github.com/joincivil/civil-api-server/pkg/users.SetEthAddressInput

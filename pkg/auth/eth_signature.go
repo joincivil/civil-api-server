@@ -22,7 +22,7 @@ type ChallengeRequest struct {
 // VerifyEthChallengeAndSignature accepts a ChallengeRequest and verifies that it is valid
 func VerifyEthChallengeAndSignature(request ChallengeRequest) error {
 	if err := VerifyEthChallenge(request.ExpectedPrefix, request.GracePeriod, request.InputChallenge); err != nil {
-		return nil
+		return err
 	}
 	verified, err := VerifyEthSignature(request.InputAddress, request.InputChallenge, request.Signature)
 
@@ -40,10 +40,14 @@ func VerifyEthChallengeAndSignature(request ChallengeRequest) error {
 func VerifyEthSignature(address string, message string, signature string) (bool, error) {
 	// sig must be a 65-byte compact ECDSA signature containing the
 	// recovery id as the last element.
-
-	var addressBytes = hexutil.MustDecode(address)
-	var signatureBytes = hexutil.MustDecode(signature)
-
+	addressBytes, err := hexutil.Decode(address)
+	if err != nil {
+		return false, errors.New("Address appears to be invalid")
+	}
+	signatureBytes, err := hexutil.Decode(signature)
+	if err != nil {
+		return false, errors.New("Signature appears to be invalid")
+	}
 	// TODO this is a hack to set the ECDSA signature recovery ID to 0
 	// web3 is returning 27 or 28, but should be 0 or 1
 	// https://github.com/ethereum/wiki/wiki/JavaScript-API#web3ethsign
@@ -73,6 +77,9 @@ func VerifyEthChallenge(prefix string, gracePeriod int64, challenge string) erro
 	var parts = strings.Split(challenge, " @ ")
 	if parts[0] != prefix {
 		return errors.New("challenge does not start with `" + prefix + "`")
+	}
+	if len(parts) != 2 {
+		return errors.New("challenge does not have time portion")
 	}
 
 	var now = time.Now()
