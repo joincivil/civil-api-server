@@ -10,8 +10,8 @@ import (
 
 	graphql "github.com/99designs/gqlgen/graphql"
 	introspection "github.com/99designs/gqlgen/graphql/introspection"
-	auth "github.com/joincivil/civil-api-server/pkg/auth"
 	invoicing "github.com/joincivil/civil-api-server/pkg/invoicing"
+	users "github.com/joincivil/civil-api-server/pkg/users"
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	gqlparser "github.com/vektah/gqlparser"
 	ast "github.com/vektah/gqlparser/ast"
@@ -36,6 +36,7 @@ type ResolverRoot interface {
 	Listing() ListingResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	User() UserResolver
 }
 
 type DirectiveRoot struct {
@@ -82,14 +83,19 @@ type MutationResolver interface {
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
 	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
+	UserSetEthAddress(ctx context.Context, input users.SetEthAddressInput) (*string, error)
 }
 type QueryResolver interface {
-	CurrentUser(ctx context.Context) (*auth.CurrentUser, error)
+	CurrentUser(ctx context.Context) (*users.User, error)
 	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
 	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
+}
+type UserResolver interface {
+	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
+	IsTokenFoundryRegistered(ctx context.Context, obj *users.User) (*bool, error)
 }
 
 type executableSchema struct {
@@ -551,115 +557,6 @@ func (ec *executionContext) _ContentRevision_revisionDate(ctx context.Context, f
 		res := resTmp.(time.Time)
 		return graphql.MarshalTime(res)
 	})
-}
-
-var currentUserImplementors = []string{"CurrentUser"}
-
-// nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _CurrentUser(ctx context.Context, sel ast.SelectionSet, obj *auth.CurrentUser) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, currentUserImplementors)
-
-	out := graphql.NewOrderedMap(len(fields))
-	for i, field := range fields {
-		out.Keys[i] = field.Alias
-
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("CurrentUser")
-		case "email":
-			out.Values[i] = ec._CurrentUser_email(ctx, field, obj)
-		case "invoices":
-			out.Values[i] = ec._CurrentUser_invoices(ctx, field, obj)
-		case "ethAddress":
-			out.Values[i] = ec._CurrentUser_ethAddress(ctx, field, obj)
-		case "isTokenFoundryRegistered":
-			out.Values[i] = ec._CurrentUser_isTokenFoundryRegistered(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-
-	return out
-}
-
-func (ec *executionContext) _CurrentUser_email(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "CurrentUser"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.Email, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	return graphql.MarshalString(res)
-}
-
-func (ec *executionContext) _CurrentUser_invoices(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "CurrentUser"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.Invoices()
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*invoicing.PostgresInvoice)
-	arr1 := graphql.Array{}
-	for idx1 := range res {
-		arr1 = append(arr1, func() graphql.Marshaler {
-			rctx := graphql.GetResolverContext(ctx)
-			rctx.PushIndex(idx1)
-			defer rctx.Pop()
-			if res[idx1] == nil {
-				return graphql.Null
-			}
-			return ec._Invoice(ctx, field.Selections, res[idx1])
-		}())
-	}
-	return arr1
-}
-
-func (ec *executionContext) _CurrentUser_ethAddress(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "CurrentUser"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.EthAddress()
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	return graphql.MarshalString(res)
-}
-
-func (ec *executionContext) _CurrentUser_isTokenFoundryRegistered(ctx context.Context, field graphql.CollectedField, obj *auth.CurrentUser) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "CurrentUser"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.IsTokenFoundryRegistered()
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	return graphql.MarshalBoolean(res)
 }
 
 var governanceEventImplementors = []string{"GovernanceEvent"}
@@ -1821,6 +1718,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_kycGenerateSdkToken(ctx, field)
 		case "kycCreateCheck":
 			out.Values[i] = ec._Mutation_kycCreateCheck(ctx, field)
+		case "userSetEthAddress":
+			out.Values[i] = ec._Mutation_userSetEthAddress(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1940,6 +1839,38 @@ func (ec *executionContext) _Mutation_kycCreateCheck(ctx context.Context, field 
 	return graphql.MarshalString(*res)
 }
 
+func (ec *executionContext) _Mutation_userSetEthAddress(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 users.SetEthAddressInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalUserSetEthAddressInput(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["input"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().UserSetEthAddress(ctx, args["input"].(users.SetEthAddressInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
 var queryImplementors = []string{"Query"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -2002,11 +1933,11 @@ func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphq
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(*auth.CurrentUser)
+		res := resTmp.(*users.User)
 		if res == nil {
 			return graphql.Null
 		}
-		return ec._CurrentUser(ctx, field.Selections, res)
+		return ec._User(ctx, field.Selections, res)
 	})
 }
 
@@ -2409,6 +2340,193 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 	return ec.___Schema(ctx, field.Selections, res)
+}
+
+var userImplementors = []string{"User"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *users.User) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, userImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("User")
+		case "uid":
+			out.Values[i] = ec._User_uid(ctx, field, obj)
+		case "email":
+			out.Values[i] = ec._User_email(ctx, field, obj)
+		case "ethAddress":
+			out.Values[i] = ec._User_ethAddress(ctx, field, obj)
+		case "onfidoApplicantId":
+			out.Values[i] = ec._User_onfidoApplicantId(ctx, field, obj)
+		case "kycStatus":
+			out.Values[i] = ec._User_kycStatus(ctx, field, obj)
+		case "invoices":
+			out.Values[i] = ec._User_invoices(ctx, field, obj)
+		case "isTokenFoundryRegistered":
+			out.Values[i] = ec._User_isTokenFoundryRegistered(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _User_uid(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.UID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.Email, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_ethAddress(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.EthAddress, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_onfidoApplicantId(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.OnfidoApplicantID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_kycStatus(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.KycStatus, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_invoices(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.User().Invoices(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]*invoicing.PostgresInvoice)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+				return ec._Invoice(ctx, field.Selections, res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _User_isTokenFoundryRegistered(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.User().IsTokenFoundryRegistered(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*bool)
+		if res == nil {
+			return graphql.Null
+		}
+		return graphql.MarshalBoolean(*res)
+	})
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -3473,6 +3591,60 @@ func UnmarshalKycCreateApplicantInput(v interface{}) (KycCreateApplicantInput, e
 	return it, nil
 }
 
+func UnmarshalUserSetEthAddressInput(v interface{}) (users.SetEthAddressInput, error) {
+	var it users.SetEthAddressInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "message":
+			var err error
+			it.Message, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "messageHash":
+			var err error
+			it.MessageHash, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "signature":
+			var err error
+			it.Signature, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "signer":
+			var err error
+			it.Signer, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "r":
+			var err error
+			it.R, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "s":
+			var err error
+			it.S, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "v":
+			var err error
+			it.V, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Resolver) interface{} {
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
@@ -3497,10 +3669,15 @@ var parsedSchema = gqlparser.MustLoadSchema(
 
 # The query type, represents all of the entry points into our object graph
 type Query {
-  currentUser: CurrentUser
+  currentUser: User
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
-  governanceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
+  governanceEvents(
+    addr: String
+    creationDate: DateRange
+    first: Int
+    after: String
+  ): [GovernanceEvent!]!
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 }
@@ -3509,6 +3686,7 @@ type Mutation {
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
   kycGenerateSdkToken(applicantID: String!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
+  userSetEthAddress(input: UserSetEthAddressInput!): String
 }
 
 input DateRange {
@@ -3516,33 +3694,39 @@ input DateRange {
   lt: Time
 }
 
-# A type that reflects values in auth.CurrentUser
-type CurrentUser {
+# A type that reflects values in users.User
+type User {
+  uid: String
   email: String
-  invoices: [Invoice]
   ethAddress: String
+  onfidoApplicantId: String
+  kycStatus: String
+  # quizPayload: String
+  # quizStatus: String
+  # dateCreated: Int
+  # dateUpdated: Int
+  invoices: [Invoice]
   isTokenFoundryRegistered: Boolean
 }
 
 # A type that reflects values in invoicing.PostgresInvoice
 type Invoice {
-	hash:          String
-	email:         String
-	phone:         String
-	name:          String
-	amount:        Float
-	invoiceID:     String
-	invoiceNum:    String
-	invoiceStatus: String
-	checkID:       String
-	checkStatus:   String
-	stopPoll:      Boolean
-	isCheckbook:   Boolean
-	isThirdParty:  Boolean
-	referralCode:  String
-	referredBy:    String
-	emailState:    Int
-
+  hash: String
+  email: String
+  phone: String
+  name: String
+  amount: Float
+  invoiceID: String
+  invoiceNum: String
+  invoiceStatus: String
+  checkID: String
+  checkStatus: String
+  stopPoll: Boolean
+  isCheckbook: Boolean
+  isThirdParty: Boolean
+  referralCode: String
+  referredBy: String
+  emailState: Int
 }
 
 # A type that reflects values in model.Listing
@@ -3575,10 +3759,10 @@ type Metadata {
 # A type that reflects block data in model.BlockData
 type BlockData {
   blockNumber: Int!
-  txHash:      String!
-  txIndex:     Int!
-  blockHash:   String!
-  index:       Int!
+  txHash: String!
+  txIndex: Int!
+  blockHash: String!
+  index: Int!
 }
 
 # A type that reflects values in model.GovernanceEvent
@@ -3630,9 +3814,17 @@ input KycCreateApplicantInput {
   zipcode: String
 }
 
+input UserSetEthAddressInput {
+  message: String!
+  messageHash: String!
+  signature: String!
+  signer: String!
+  r: String!
+  s: String!
+  v: String!
+}
 
 scalar Time
 scalar ArticlePayloadValue
-
 `},
 )

@@ -8,9 +8,9 @@ package graphql
 
 import (
 	context "context"
-	"fmt"
 
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
+	"github.com/joincivil/civil-api-server/pkg/users"
 
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	// "fmt"
@@ -23,7 +23,6 @@ import (
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
 	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	kyc "github.com/joincivil/civil-api-server/pkg/kyc"
 )
@@ -31,39 +30,39 @@ import (
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
 	InvoicePersister    *invoicing.PostgresPersister
-	KycPersister        *kyc.PostgresPersister
 	ListingPersister    model.ListingPersister
 	GovEventPersister   model.GovernanceEventPersister
 	RevisionPersister   model.ContentRevisionPersister
 	OnfidoAPI           *kyc.OnfidoAPI
 	OnfidoTokenReferrer string
 	TokenFoundry        *tokenfoundry.API
+	UserService         *users.UserService
 }
 
 // NewResolver is a convenience function to init a Resolver struct
 func NewResolver(config *ResolverConfig) *Resolver {
 	return &Resolver{
 		invoicePersister:    config.InvoicePersister,
-		kycPersister:        config.KycPersister,
 		listingPersister:    config.ListingPersister,
 		revisionPersister:   config.RevisionPersister,
 		govEventPersister:   config.GovEventPersister,
 		onfidoAPI:           config.OnfidoAPI,
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
 		tokenFoundry:        config.TokenFoundry,
+		userService:         config.UserService,
 	}
 }
 
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
 	invoicePersister    *invoicing.PostgresPersister
-	kycPersister        *kyc.PostgresPersister
 	listingPersister    model.ListingPersister
 	revisionPersister   model.ContentRevisionPersister
 	govEventPersister   model.GovernanceEventPersister
 	onfidoAPI           *kyc.OnfidoAPI
 	onfidoTokenReferrer string
 	tokenFoundry        *tokenfoundry.API
+	userService         *users.UserService
 }
 
 // ContentRevision is the resolver for the ContentRevision type
@@ -372,14 +371,6 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 		modelRevisions[index] = *revision
 	}
 	return modelRevisions, nil
-}
-
-func (r *queryResolver) CurrentUser(ctx context.Context) (*auth.CurrentUser, error) {
-	token := auth.ForContext(ctx)
-	if token == nil {
-		return nil, fmt.Errorf("Access denied")
-	}
-	return auth.GetCurrentUser(token.Sub, r.invoicePersister, r.kycPersister, r.tokenFoundry)
 }
 
 type mutationResolver struct{ *Resolver }

@@ -4,10 +4,15 @@ schema {
 
 # The query type, represents all of the entry points into our object graph
 type Query {
-  currentUser: CurrentUser
+  currentUser: User
   listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
   listing(addr: String!): Listing
-  governanceEvents(addr: String, creationDate: DateRange, first: Int, after: String): [GovernanceEvent!]!
+  governanceEvents(
+    addr: String
+    creationDate: DateRange
+    first: Int
+    after: String
+  ): [GovernanceEvent!]!
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 }
@@ -16,6 +21,7 @@ type Mutation {
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
   kycGenerateSdkToken(applicantID: String!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
+  userSetEthAddress(input: UserSetEthAddressInput!): String
 }
 
 input DateRange {
@@ -23,33 +29,39 @@ input DateRange {
   lt: Time
 }
 
-# A type that reflects values in auth.CurrentUser
-type CurrentUser {
+# A type that reflects values in users.User
+type User {
+  uid: String
   email: String
-  invoices: [Invoice]
   ethAddress: String
+  onfidoApplicantId: String
+  kycStatus: String
+  # quizPayload: String
+  # quizStatus: String
+  # dateCreated: Int
+  # dateUpdated: Int
+  invoices: [Invoice]
   isTokenFoundryRegistered: Boolean
 }
 
 # A type that reflects values in invoicing.PostgresInvoice
 type Invoice {
-	hash:          String
-	email:         String
-	phone:         String
-	name:          String
-	amount:        Float
-	invoiceID:     String
-	invoiceNum:    String
-	invoiceStatus: String
-	checkID:       String
-	checkStatus:   String
-	stopPoll:      Boolean
-	isCheckbook:   Boolean
-	isThirdParty:  Boolean
-	referralCode:  String
-	referredBy:    String
-	emailState:    Int
-
+  hash: String
+  email: String
+  phone: String
+  name: String
+  amount: Float
+  invoiceID: String
+  invoiceNum: String
+  invoiceStatus: String
+  checkID: String
+  checkStatus: String
+  stopPoll: Boolean
+  isCheckbook: Boolean
+  isThirdParty: Boolean
+  referralCode: String
+  referredBy: String
+  emailState: Int
 }
 
 # A type that reflects values in model.Listing
@@ -82,10 +94,10 @@ type Metadata {
 # A type that reflects block data in model.BlockData
 type BlockData {
   blockNumber: Int!
-  txHash:      String!
-  txIndex:     Int!
-  blockHash:   String!
-  index:       Int!
+  txHash: String!
+  txIndex: Int!
+  blockHash: String!
+  index: Int!
 }
 
 # A type that reflects values in model.GovernanceEvent
@@ -137,7 +149,15 @@ input KycCreateApplicantInput {
   zipcode: String
 }
 
+input UserSetEthAddressInput {
+  message: String!
+  messageHash: String!
+  signature: String!
+  signer: String!
+  r: String!
+  s: String!
+  v: String!
+}
 
 scalar Time
 scalar ArticlePayloadValue
-

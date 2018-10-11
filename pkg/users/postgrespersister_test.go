@@ -1,6 +1,6 @@
 // +build integration
 
-package kyc
+package users
 
 import (
 	"fmt"

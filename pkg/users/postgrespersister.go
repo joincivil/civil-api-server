@@ -1,15 +1,14 @@
-package kyc
+package users
 
 import (
 	"bytes"
 	// "crypto/sha256"
 	// "encoding/hex"
-	"errors"
+
 	"fmt"
 	"time"
 	// "database/sql"
 	// log "github.com/golang/glog"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/jmoiron/sqlx"
 	// driver for postgresql
@@ -29,13 +28,6 @@ const (
 	defaultKycUserTableName = "kyc_user"
 	dateUpdatedFieldName    = "DateUpdated"
 )
-
-// UserCriteria is used to query for a particular user
-type UserCriteria struct {
-	UID        string
-	Email      string
-	EthAddress string
-}
 
 // NewPostgresPersister creates a new postgres persister instance
 func NewPostgresPersister(host string, port int, user string, password string,
@@ -66,17 +58,17 @@ type PostgresPersister struct {
 }
 
 // User retrieves a user based on the given UserCriteria
-func (p *PostgresPersister) User(criteria *UserCriteria) (*PostgresKycUser, error) {
+func (p *PostgresPersister) User(criteria *UserCriteria) (*User, error) {
 	return p.userFromTable(criteria, defaultKycUserTableName)
 }
 
 // SaveUser saves a new user
-func (p *PostgresPersister) SaveUser(user *PostgresKycUser) error {
+func (p *PostgresPersister) SaveUser(user *User) error {
 	return p.createKycUserForTable(user, defaultKycUserTableName)
 }
 
 // UpdateUser updates an existing user
-func (p *PostgresPersister) UpdateUser(user *PostgresKycUser, updatedFields []string) error {
+func (p *PostgresPersister) UpdateUser(user *User, updatedFields []string) error {
 	return p.updateKycUserForTable(user, updatedFields, defaultKycUserTableName)
 }
 
@@ -95,8 +87,8 @@ func (p *PostgresPersister) CreateIndices() error {
 	return p.createKycUserIndicesForTable(defaultKycUserTableName)
 }
 
-func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName string) (*PostgresKycUser, error) {
-	kycUsers := []*PostgresKycUser{}
+func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName string) (*User, error) {
+	kycUsers := []*User{}
 	queryString := p.kycUserQuery(criteria, tableName)
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
@@ -115,7 +107,8 @@ func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName stri
 
 func (p *PostgresPersister) kycUserQuery(criteria *UserCriteria, tableName string) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
-	fieldNames, _ := crawlerpg.StructFieldsForQuery(PostgresKycUser{}, false)
+	fieldNames, _ := crawlerpg.StructFieldsForQuery(User{}, false)
+
 	queryBuf.WriteString(fieldNames) // nolint: gosec
 	queryBuf.WriteString(" FROM ")   // nolint: gosec
 	queryBuf.WriteString(tableName)  // nolint: gosec
@@ -131,7 +124,7 @@ func (p *PostgresPersister) kycUserQuery(criteria *UserCriteria, tableName strin
 	return queryBuf.String()
 }
 
-func (p *PostgresPersister) createKycUserForTable(user *PostgresKycUser, tableName string) error {
+func (p *PostgresPersister) createKycUserForTable(user *User, tableName string) error {
 	// Ensure a UID is generated. Will fail if a UID already exists, which means
 	// the user was already created
 	err := user.GenerateUID()
@@ -146,7 +139,8 @@ func (p *PostgresPersister) createKycUserForTable(user *PostgresKycUser, tableNa
 	user.DateCreated = ts
 	user.DateUpdated = ts
 
-	queryString := crawlerpg.InsertIntoDBQueryString(tableName, PostgresKycUser{})
+	queryString := crawlerpg.InsertIntoDBQueryString(tableName, User{})
+
 	_, err = p.db.NamedExec(queryString, user)
 	if err != nil {
 		return fmt.Errorf("Error saving user to table: err: %v", err)
@@ -154,7 +148,7 @@ func (p *PostgresPersister) createKycUserForTable(user *PostgresKycUser, tableNa
 	return nil
 }
 
-func (p *PostgresPersister) updateKycUserForTable(user *PostgresKycUser, updatedFields []string,
+func (p *PostgresPersister) updateKycUserForTable(user *User, updatedFields []string,
 	tableName string) error {
 	ts := crawlerutils.CurrentEpochSecsInInt64()
 	user.DateUpdated = ts
@@ -172,7 +166,7 @@ func (p *PostgresPersister) updateKycUserForTable(user *PostgresKycUser, updated
 }
 
 func (p *PostgresPersister) updateKycUserQuery(updatedFields []string, tableName string) (string, error) {
-	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, PostgresKycUser{})
+	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, User{})
 	if err != nil {
 		return "", err
 	}
@@ -234,31 +228,4 @@ func CreateKycUserTableIndicesString(tableName string) string {
 		CREATE INDEX IF NOT EXISTS eth_address_idx ON %s (eth_address);
 	`, tableName, tableName)
 	return queryString
-}
-
-// PostgresKycUser represents a KYC/Quiz User
-type PostgresKycUser struct {
-	UID               string                 `db:"uid"`
-	Email             string                 `db:"email"`
-	EthAddress        string                 `db:"eth_address"`
-	OnfidoApplicantID string                 `db:"onfido_applicant_id"`
-	KycStatus         string                 `db:"kyc_status"`
-	QuizPayload       crawlerpg.JsonbPayload `db:"quiz_payload"`
-	QuizStatus        string                 `db:"quiz_status"`
-	DateCreated       int64                  `db:"date_created"`
-	DateUpdated       int64                  `db:"date_updated"`
-}
-
-// GenerateUID generates and set the UID field for the user.  Will only
-// generate a new one if UID field is empty.
-func (p *PostgresKycUser) GenerateUID() error {
-	if p.UID != "" {
-		return errors.New("Already has a UID")
-	}
-	code, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
-	p.UID = code.String()
-	return nil
 }
