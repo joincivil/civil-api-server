@@ -179,7 +179,7 @@ workflows:
             branches:
               only:
                 - master
-                - /staging-.*/
+                - /staging.*/
       - push-container:
           context: gcp-common
           requires:
@@ -188,7 +188,7 @@ workflows:
             branches:
               only:
                 - master
-                - /staging-.*/
+                - /staging.*/
       - deploy-staging:
           context: gcp-common
           requires:
@@ -197,7 +197,7 @@ workflows:
             branches:
               only:
                 - master
-                - /staging-.*/
+                - /staging.*/
       - deploy-production:
           context: gcp-common
           requires:
