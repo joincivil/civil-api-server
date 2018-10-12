@@ -1,19 +1,19 @@
 version: 2
 
 defaults: &defaults
-    docker:
-      # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
-      - image: circleci/golang:1.10
-      # CircleCI PostgreSQL images available at: https://hub.docker.com/r/circleci/postgres/
-      - image: circleci/postgres:9.4.12-alpine
-        environment:
-          POSTGRES_USER: root
-          POSTGRES_DB: circle_test
+  docker:
+    # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
+    - image: circleci/golang:1.10
+    # CircleCI PostgreSQL images available at: https://hub.docker.com/r/circleci/postgres/
+    - image: circleci/postgres:9.4.12-alpine
+      environment:
+        POSTGRES_USER: root
+        POSTGRES_DB: circle_test
 jobs:
   build:
     <<: *defaults
     working_directory: /go/src/github.com/joincivil/civil-api-server
-    environment:
+    ? environment
     steps:
       - run:
           name: Local docker sudo
@@ -26,11 +26,11 @@ jobs:
               echo sudo > ~/sudo
             fi
       - checkout
-      - setup_remote_docker:   # (2)
+      - setup_remote_docker: # (2)
           docker_layer_caching: true # (3)
       - run:
-           name: Setting up tools
-           command: make check-go-env
+          name: Setting up tools
+          command: make check-go-env
       - run:
           name: Waiting for Postgres to be ready
           command: |
@@ -57,38 +57,38 @@ jobs:
   lint:
     <<: *defaults
     working_directory: /go/src/github.com/joincivil/civil-api-server
-    environment:
+    ? environment
     steps:
-        - attach_workspace:
-            at: ./
-        - run:
-           name: Setting up tools
-           command: make install-linter
-        - run:
-            name: Run linter
-            command: make lint
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Setting up tools
+          command: make install-linter
+      - run:
+          name: Run linter
+          command: make lint
 
   test:
     <<: *defaults
     working_directory: /go/src/github.com/joincivil/civil-api-server
-    environment:
+    ? environment
     steps:
-        - attach_workspace:
-            at: ./
-        - run:
-            name: Run unit tests
-            environment:
-               DB_URL: "postgres://root@localhost:5432/circle_test?sslmode=disable"
-               DB_MIGRATIONS: /go/src/github.com/joincivil/civil-api-server/migrations
-            command: |
-               make test
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Run unit tests
+          environment:
+            DB_URL: "postgres://root@localhost:5432/circle_test?sslmode=disable"
+            DB_MIGRATIONS: /go/src/github.com/joincivil/civil-api-server/migrations
+          command: |
+            make test
 
   setup-gcp:
     docker:
       - image: civilmedia/gcloud-node:latest
     working_directory: /go/src/github.com/joincivil/civil-api-server
     steps:
-       - run:
+      - run:
           name: Dump Google Cloud Credentials to file
           command: |
             echo ${GOOGLE_AUTH} | base64 -d > ${HOME}/gcp-key.json
@@ -97,7 +97,7 @@ jobs:
             gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
             gcloud --quiet container clusters get-credentials ${GOOGLE_CLUSTER_NAME}
             gcloud docker --authorize-only
-       - persist_to_workspace:
+      - persist_to_workspace:
           root: /root
           paths:
             - gcp-key.json
@@ -129,9 +129,9 @@ jobs:
       - deploy:
           name: Push Containers to Registry
           command: |
-           gcloud config list
-           echo "pushing $GOOGLE_PROJECT_ID"
-           docker push gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME
+            gcloud config list
+            echo "pushing $GOOGLE_PROJECT_ID"
+            docker push gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME
 
   deploy-staging:
     docker:
@@ -139,11 +139,12 @@ jobs:
     working_directory: ~/repo
     steps:
       - attach_workspace:
-              at: /root
+          at: /root
       - deploy:
           name: Update Kubernetes Deployment on STAGING
           command: |
-            kubectl set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME:development-$CIRCLE_SHA1 --namespace staging
+            TAG=`echo $CIRCLE_BRANCH | sed 's/\\//_/g'`
+            kubectl set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME:$TAG-$CIRCLE_SHA1 --namespace staging
 
   deploy-production:
     docker:
@@ -156,8 +157,6 @@ jobs:
           name: Update Kubernetes Deployment on PRODUCTION
           command: |
             kubectl set image deployment/$CIRCLE_PROJECT_REPONAME $CIRCLE_PROJECT_REPONAME=gcr.io/$GOOGLE_PROJECT_ID/$CIRCLE_PROJECT_REPONAME:master-$CIRCLE_SHA1 --namespace production
-
-
 
 workflows:
   version: 2
@@ -179,10 +178,8 @@ workflows:
           filters:
             branches:
               only:
-                - development
                 - master
-                - png/ci-updates
-                - /container-.*/
+                - /staging-.*/
       - push-container:
           context: gcp-common
           requires:
@@ -190,10 +187,8 @@ workflows:
           filters:
             branches:
               only:
-                - development
                 - master
-                - png/ci-updates
-                - /container-.*/
+                - /staging-.*/
       - deploy-staging:
           context: gcp-common
           requires:
@@ -201,8 +196,8 @@ workflows:
           filters:
             branches:
               only:
-                - development
-                - png/ci-updates
+                - master
+                - /staging-.*/
       - deploy-production:
           context: gcp-common
           requires:
