@@ -47,10 +47,10 @@ func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.Se
 		return nil, fmt.Errorf("Access denied")
 	}
 
-	_, err := r.userService.SetEthAddress(users.UserCriteria{Email: token.Sub}, &input)
+	user, err := r.userService.SetEthAddress(users.UserCriteria{Email: token.Sub}, &input)
 	if err != nil {
 		return nil, err
 	}
-	rtn := "ok"
+	rtn := user.EthAddress
 	return &rtn, nil
 }
