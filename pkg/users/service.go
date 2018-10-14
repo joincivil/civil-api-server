@@ -1,7 +1,10 @@
 package users
 
 import (
+	"errors"
+
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
 )
 
@@ -29,6 +32,52 @@ func (s *UserService) GetUser(identifier UserCriteria, createIfNotExists bool) (
 		return nil, err
 	}
 
+	return user, nil
+}
+
+// UserUpdateInput describes the input needed for UpdateUser
+type UserUpdateInput struct {
+	OnfidoApplicantID string                `json:"onfidoApplicantID"`
+	KycStatus         string                `json:"kycStatus"`
+	QuizPayload       postgres.JsonbPayload `json:"quizPayload"`
+	QuizStatus        string                `json:"quizStatus"`
+}
+
+// UpdateUser updates a user
+func (s *UserService) UpdateUser(requestor *auth.Token, uid string, input *UserUpdateInput) (*User, error) {
+
+	user, err := s.GetUser(UserCriteria{UID: uid}, false)
+	if err != nil {
+		return nil, err
+	}
+
+	if user.Email != requestor.Sub {
+		return nil, errors.New("user is not authorized")
+	}
+
+	// TODO(dankins): inspecting each attribute feels dirty, can we do this via reflection or something?
+	fields := []string{}
+	if input.QuizPayload != nil {
+		user.QuizPayload = input.QuizPayload
+		fields = append(fields, "QuizPayload")
+	}
+	if input.OnfidoApplicantID != "" {
+		user.OnfidoApplicantID = input.OnfidoApplicantID
+		fields = append(fields, "OnfidoApplicantID")
+	}
+	if input.QuizStatus != "" {
+		user.QuizStatus = input.QuizStatus
+		fields = append(fields, "QuizStatus")
+	}
+	if input.KycStatus != "" {
+		user.KycStatus = input.KycStatus
+		fields = append(fields, "KycStatus")
+	}
+
+	err = s.userPersister.UpdateUser(user, fields)
+	if err != nil {
+		return nil, err
+	}
 	return user, nil
 }
 

@@ -22,6 +22,7 @@ type Mutation {
   kycGenerateSdkToken(applicantID: String!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
   userSetEthAddress(input: UserSetEthAddressInput!): String
+  userUpdate(uid: String, input: UserUpdateInput): User
 }
 
 input DateRange {
@@ -36,8 +37,8 @@ type User {
   ethAddress: String
   onfidoApplicantId: String
   kycStatus: String
-  # quizPayload: String
-  # quizStatus: String
+  quizPayload: RawObject
+  quizStatus: String
   # dateCreated: Int
   # dateUpdated: Int
   invoices: [Invoice]
@@ -159,5 +160,13 @@ input UserSetEthAddressInput {
   v: String!
 }
 
+input UserUpdateInput {
+  onfidoApplicantID: String
+  kycStatus: String
+  quizPayload: RawObject
+  quizStatus: String
+}
+
 scalar Time
 scalar ArticlePayloadValue
+scalar RawObject

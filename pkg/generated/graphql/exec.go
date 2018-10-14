@@ -12,6 +12,8 @@ import (
 	introspection "github.com/99designs/gqlgen/graphql/introspection"
 	invoicing "github.com/joincivil/civil-api-server/pkg/invoicing"
 	users "github.com/joincivil/civil-api-server/pkg/users"
+	utils "github.com/joincivil/civil-api-server/pkg/utils"
+	postgres "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	gqlparser "github.com/vektah/gqlparser"
 	ast "github.com/vektah/gqlparser/ast"
@@ -84,6 +86,7 @@ type MutationResolver interface {
 	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
 	UserSetEthAddress(ctx context.Context, input users.SetEthAddressInput) (*string, error)
+	UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*users.User, error)
@@ -1720,6 +1723,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_kycCreateCheck(ctx, field)
 		case "userSetEthAddress":
 			out.Values[i] = ec._Mutation_userSetEthAddress(ctx, field)
+		case "userUpdate":
+			out.Values[i] = ec._Mutation_userUpdate(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1869,6 +1874,58 @@ func (ec *executionContext) _Mutation_userSetEthAddress(ctx context.Context, fie
 		return graphql.Null
 	}
 	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["uid"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["uid"] = arg0
+	var arg1 *users.UserUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		var ptr1 users.UserUpdateInput
+		if tmp != nil {
+			ptr1, err = UnmarshalUserUpdateInput(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["input"] = arg1
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().UserUpdate(ctx, args["uid"].(*string), args["input"].(*users.UserUpdateInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*users.User)
+	if res == nil {
+		return graphql.Null
+	}
+	return ec._User(ctx, field.Selections, res)
 }
 
 var queryImplementors = []string{"Query"}
@@ -2365,6 +2422,10 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_onfidoApplicantId(ctx, field, obj)
 		case "kycStatus":
 			out.Values[i] = ec._User_kycStatus(ctx, field, obj)
+		case "quizPayload":
+			out.Values[i] = ec._User_quizPayload(ctx, field, obj)
+		case "quizStatus":
+			out.Values[i] = ec._User_quizStatus(ctx, field, obj)
 		case "invoices":
 			out.Values[i] = ec._User_invoices(ctx, field, obj)
 		case "isTokenFoundryRegistered":
@@ -2454,6 +2515,40 @@ func (ec *executionContext) _User_kycStatus(ctx context.Context, field graphql.C
 	defer rctx.Pop()
 	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 		return obj.KycStatus, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_quizPayload(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.QuizPayload, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(postgres.JsonbPayload)
+	return utils.MarshalJsonbPayloadScalar(res)
+}
+
+func (ec *executionContext) _User_quizStatus(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.QuizStatus, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -3645,6 +3740,42 @@ func UnmarshalUserSetEthAddressInput(v interface{}) (users.SetEthAddressInput, e
 	return it, nil
 }
 
+func UnmarshalUserUpdateInput(v interface{}) (users.UserUpdateInput, error) {
+	var it users.UserUpdateInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "onfidoApplicantID":
+			var err error
+			it.OnfidoApplicantID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "kycStatus":
+			var err error
+			it.KycStatus, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "quizPayload":
+			var err error
+			it.QuizPayload, err = utils.UnmarshalJsonbPayloadScalar(v)
+			if err != nil {
+				return it, err
+			}
+		case "quizStatus":
+			var err error
+			it.QuizStatus, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Resolver) interface{} {
 	res, err := ec.ResolverMiddleware(ctx, next)
 	if err != nil {
@@ -3687,6 +3818,7 @@ type Mutation {
   kycGenerateSdkToken(applicantID: String!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
   userSetEthAddress(input: UserSetEthAddressInput!): String
+  userUpdate(uid: String, input: UserUpdateInput): User
 }
 
 input DateRange {
@@ -3701,8 +3833,8 @@ type User {
   ethAddress: String
   onfidoApplicantId: String
   kycStatus: String
-  # quizPayload: String
-  # quizStatus: String
+  quizPayload: RawObject
+  quizStatus: String
   # dateCreated: Int
   # dateUpdated: Int
   invoices: [Invoice]
@@ -3824,7 +3956,14 @@ input UserSetEthAddressInput {
   v: String!
 }
 
+input UserUpdateInput {
+  onfidoApplicantID: String
+  kycStatus: String
+  quizPayload: RawObject
+  quizStatus: String
+}
+
 scalar Time
 scalar ArticlePayloadValue
-`},
+scalar RawObject`},
 )

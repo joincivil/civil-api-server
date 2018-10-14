@@ -54,3 +54,16 @@ func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.Se
 	rtn := user.EthAddress
 	return &rtn, nil
 }
+
+func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, fmt.Errorf("Access denied")
+	}
+
+	user, err := r.userService.UpdateUser(token, *uid, input)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
