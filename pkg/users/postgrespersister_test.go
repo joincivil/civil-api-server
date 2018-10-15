@@ -135,6 +135,7 @@ func TestGetKycUser(t *testing.T) {
 		t.Fatalf("Should not have received an error saving user: err: %v", err)
 	}
 
+	// Test the get by email query
 	criteria := &UserCriteria{
 		Email: testKycUserToCreate.Email,
 	}
@@ -157,6 +158,7 @@ func TestGetKycUser(t *testing.T) {
 		t.Errorf("Should have gotten back a valid UUID for UID: err: %v", err)
 	}
 
+	// Test the onfido check id query
 	criteria = &UserCriteria{
 		OnfidoCheckID: testKycUserToCreate.OnfidoCheckID,
 	}

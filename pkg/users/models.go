@@ -7,6 +7,17 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const (
+	// UserKycStatusInProgress is a user with an in progress KYC
+	UserKycStatusInProgress = "in_progress"
+	// UserKycStatusPassed is a user with passed KYC
+	UserKycStatusPassed = "passed"
+	// UserKycStatusFailed is a user with failed KYC
+	UserKycStatusFailed = "failed"
+	// UserKycStatusNeedsReview is a user that needs additional human review
+	UserKycStatusNeedsReview = "needs_review"
+)
+
 // User represents a Civil User
 type User struct {
 	UID               string                 `db:"uid"`

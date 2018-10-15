@@ -12,11 +12,15 @@ import (
 	"net/http"
 
 	"github.com/go-chi/render"
+
+	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
 // OnfidoWebhookHandlerConfig is the config for the onfido webhook handler
 type OnfidoWebhookHandlerConfig struct {
 	OnfidoWebhookToken string
+	OnfidoAPI          *OnfidoAPI
+	UserPersister      users.UserPersister
 }
 
 // OnfidoWebhookHandler is the handler for the Onfido webhook handler.
@@ -33,8 +37,6 @@ func OnfidoWebhookHandler(config *OnfidoWebhookHandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		log.Infof("Received onfido event: %v", event.String())
-
 		if !validOnfidoRequest(r, config, event.String()) {
 			log.Errorf("Invalid signature for request: err: %v", err)
 			err = render.Render(w, r, ErrInvalidOnfidoWebhookSig)
@@ -44,15 +46,72 @@ func OnfidoWebhookHandler(config *OnfidoWebhookHandlerConfig) http.HandlerFunc {
 			return
 		}
 
-		// TODO(PN): Do something with it here.
-		// Email?
-		// Update entry KYC entry in db.
+		log.Infof("Received onfido event: %v", event.String())
+
+		err = HandleCheckCompleted(config.OnfidoAPI, config.UserPersister, event)
+		if err != nil {
+			log.Errorf("Error handling check: err: %v", err)
+		}
 
 		err = render.Render(w, r, OkResponseNormal)
 		if err != nil {
 			log.Errorf("Error rendering response: err: %v", err)
 		}
 	}
+}
+
+// HandleCheckCompleted will retrieve the check data and detemine
+// if the check for a user has passed or not, then save the results to the
+// user object
+func HandleCheckCompleted(onfido *OnfidoAPI, userPersister users.UserPersister,
+	event *Event) error {
+	// If not action is not complete, then skip
+	if event.Payload.Action != CheckStatusComplete {
+		return nil
+	}
+
+	// If not resource type check, then skip
+	if event.Payload.ResourceType != ResourceTypeCheck {
+		return nil
+	}
+
+	// Get check from event
+	check, err := onfido.RetrieveCheckFromHref(event.Payload.Object.Href)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Parsing check %v, href: %v", check.ID, check.Href)
+
+	// Run it through our pass or fail function to determine if the user
+	// has passed the check
+	result, err := ParseCheck(check, false)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Is user %v passed? %v", result)
+	// If passed or not, save to user object
+
+	user, err := userPersister.User(&users.UserCriteria{
+		OnfidoCheckID: check.ID,
+	})
+	if err != nil {
+		return err
+	}
+
+	if result == ParseCheckResultPass {
+		user.KycStatus = users.UserKycStatusPassed
+
+	} else if result == ParseCheckResultFailed {
+		user.KycStatus = users.UserKycStatusFailed
+
+	} else if result == ParseCheckResultNeedsReview {
+		user.KycStatus = users.UserKycStatusNeedsReview
+		// TODO(PN): Alert admins that user needs review
+	}
+
+	return userPersister.UpdateUser(user, []string{"KycStatus"})
 }
 
 func validOnfidoRequest(r *http.Request, config *OnfidoWebhookHandlerConfig,

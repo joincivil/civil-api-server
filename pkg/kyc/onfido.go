@@ -20,6 +20,21 @@ const (
 )
 
 const (
+	// ResourceTypeCheck represents a resource type "check"
+	ResourceTypeCheck = "check"
+
+	// ReportResultClear is the clear result for report
+	ReportResultClear = "clear"
+	// ReportResultConsider is the consider result for report
+	ReportResultConsider = "consider"
+	// ReportResultUnidentified is the unidentified result for report
+	ReportResultUnidentified = "unidentified"
+
+	// CheckResultClear is the clear result for report
+	CheckResultClear = "clear"
+	// CheckResultConsider is the consider result for report
+	CheckResultConsider = "consider"
+
 	// CheckStatusInProgress in_progress
 	CheckStatusInProgress = "in_progress"
 	// CheckStatusAwaitingApplicant awaiting_applicant
@@ -335,4 +350,36 @@ func (o *OnfidoAPI) CreateCheck(applicantID string, check *Check) (*Check, error
 		return nil, err
 	}
 	return checkResp, nil
+}
+
+// RetrieveCheckFromHref retrieves a Check from a URL returned by Onfido.
+func (o *OnfidoAPI) RetrieveCheckFromHref(url string) (*Check, error) {
+	bys, err := o.rest.SendRequestToURL(url, http.MethodGet, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	checkResp := &Check{}
+	err = json.Unmarshal(bys, checkResp)
+	if err != nil {
+		return nil, err
+	}
+	return checkResp, nil
+}
+
+// RetrieveReport retrieves a Report given the Check ID and Report ID
+func (o *OnfidoAPI) RetrieveReport(checkID string, reportID string) (*Report, error) {
+	endpointURI := fmt.Sprintf("v2/checks/%v/reports/%v", checkID, reportID)
+
+	bys, err := o.rest.SendRequest(endpointURI, http.MethodGet, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	reportResp := &Report{}
+	err = json.Unmarshal(bys, reportResp)
+	if err != nil {
+		return nil, err
+	}
+	return reportResp, nil
 }
