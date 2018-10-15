@@ -40,7 +40,6 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 }
 
 // MUTATIONS
-
 func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.SetEthAddressInput) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
