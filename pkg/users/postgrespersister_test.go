@@ -125,8 +125,9 @@ func TestGetKycUser(t *testing.T) {
 	defer deleteTestTable(persister, defaultKycUserTestTableName)
 
 	testKycUserToCreate := &User{
-		Email:      "test@civil.co",
-		EthAddress: "testEthAddress1",
+		Email:         "test@civil.co",
+		EthAddress:    "testEthAddress1",
+		OnfidoCheckID: "onfidocheckid1",
 	}
 
 	err = persister.createKycUserForTable(testKycUserToCreate, defaultKycUserTestTableName)
@@ -154,6 +155,18 @@ func TestGetKycUser(t *testing.T) {
 	_, err = uuid.FromString(user.UID)
 	if err != nil {
 		t.Errorf("Should have gotten back a valid UUID for UID: err: %v", err)
+	}
+
+	criteria = &UserCriteria{
+		OnfidoCheckID: testKycUserToCreate.OnfidoCheckID,
+	}
+	user, err = persister.userFromTable(criteria, defaultKycUserTestTableName)
+	if err != nil {
+		t.Fatalf("Should have received a result from users given check id: err: %v", err)
+	}
+
+	if user.OnfidoCheckID != testKycUserToCreate.OnfidoCheckID {
+		t.Error("Should have gotten the correct onfidocheckid entry")
 	}
 }
 

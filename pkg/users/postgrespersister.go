@@ -120,6 +120,8 @@ func (p *PostgresPersister) kycUserQuery(criteria *UserCriteria, tableName strin
 		queryBuf.WriteString(" WHERE r1.email = :email") // nolint: gosec
 	} else if criteria.EthAddress != "" {
 		queryBuf.WriteString(" WHERE r1.eth_address = :eth_address") // nolint: gosec
+	} else if criteria.OnfidoCheckID != "" {
+		queryBuf.WriteString(" WHERE r1.onfido_check_id = :onfido_check_id") // nolint: gosec
 	}
 	return queryBuf.String()
 }
@@ -140,7 +142,6 @@ func (p *PostgresPersister) createKycUserForTable(user *User, tableName string) 
 	user.DateUpdated = ts
 
 	queryString := crawlerpg.InsertIntoDBQueryString(tableName, User{})
-
 	_, err = p.db.NamedExec(queryString, user)
 	if err != nil {
 		return fmt.Errorf("Error saving user to table: err: %v", err)
@@ -211,6 +212,7 @@ func CreateKycUserTableQuery(tableName string) string {
 			email TEXT,
 			eth_address TEXT,
 			onfido_applicant_id TEXT,
+			onfido_check_id TEXT,
 			kyc_status TEXT,
 			quiz_payload JSONB,
 			quiz_status TEXT,
