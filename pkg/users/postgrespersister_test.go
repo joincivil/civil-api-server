@@ -17,7 +17,7 @@ const (
 	tpostgresPswd   = "docker"
 	tpostgresHost   = "localhost"
 
-	defaultKycUserTestTableName = "kyc_user_test"
+	defaultKycUserTestTableName = "civil_user_test"
 )
 
 func setupDBConnection() (*PostgresPersister, error) {
@@ -124,7 +124,7 @@ func TestGetKycUser(t *testing.T) {
 	}
 	defer deleteTestTable(persister, defaultKycUserTestTableName)
 
-	testKycUserToCreate := &PostgresKycUser{
+	testKycUserToCreate := &User{
 		Email:      "test@civil.co",
 		EthAddress: "testEthAddress1",
 	}
@@ -164,7 +164,7 @@ func TestUpdateKycUser(t *testing.T) {
 	}
 	defer deleteTestTable(persister, defaultKycUserTestTableName)
 
-	testKycUserToCreate := &PostgresKycUser{
+	testKycUserToCreate := &User{
 		Email:      "test@civil.co",
 		EthAddress: "testEthAddress1",
 	}

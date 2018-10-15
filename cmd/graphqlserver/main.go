@@ -83,6 +83,7 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		ListingPersister:    listingPersister,
 		RevisionPersister:   contentRevisionPersister,
 		GovEventPersister:   governanceEventPersister,
+		UserPersister:       userPersister,
 		OnfidoAPI:           onfido,
 		OnfidoTokenReferrer: config.OnfidoReferrer,
 		TokenFoundry:        tokenFoundry,

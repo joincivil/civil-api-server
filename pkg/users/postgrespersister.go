@@ -25,7 +25,7 @@ const (
 	maxOpenConns            = 20
 	maxIdleConns            = 5
 	connMaxLifetime         = time.Nanosecond
-	defaultKycUserTableName = "kyc_user"
+	defaultKycUserTableName = "civil_user"
 	dateUpdatedFieldName    = "DateUpdated"
 )
 
@@ -77,7 +77,7 @@ func (p *PostgresPersister) CreateTables() error {
 	kycUserTableQuery := CreateKycUserTableQuery(defaultKycUserTableName)
 	_, err := p.db.Exec(kycUserTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating kyc_user table in postgres: %v", err)
+		return fmt.Errorf("Error creating user table in postgres: %v", err)
 	}
 	return nil
 }
