@@ -57,9 +57,7 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 		newApplicant.Country = *applicant.CountryOfResidence
 	}
 
-	// Not using UserService here bc we want to check for user before
-	// we create an applicant.
-	user, err := r.userPersister.User(&users.UserCriteria{Email: token.Sub})
+	user, err := r.userService.GetUser(users.UserCriteria{Email: token.Sub}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +67,10 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 		return nil, err
 	}
 
-	user.OnfidoApplicantID = returnedApplicant.ID
-	updatedFields := []string{"OnfidoApplicantID"}
-	err = r.userPersister.UpdateUser(user, updatedFields)
+	update := &users.UserUpdateInput{
+		OnfidoApplicantID: returnedApplicant.ID,
+	}
+	_, err = r.userService.UpdateUser(token, user.UID, update)
 	if err != nil {
 		return nil, err
 	}
@@ -94,9 +93,7 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 		return nil, fmt.Errorf("Access denied")
 	}
 
-	// Not using UserService here bc we want to check for user before
-	// we create a check.
-	user, err := r.userPersister.User(&users.UserCriteria{Email: token.Sub})
+	user, err := r.userService.GetUser(users.UserCriteria{Email: token.Sub}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -123,11 +120,11 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 	}
 
 	// Save check ID to user object
-	user.OnfidoCheckID = returnedCheck.ID
-	user.KycStatus = users.UserKycStatusInProgress
-	updatedFields := []string{"OnfidoCheckID", "KycStatus"}
-
-	err = r.userPersister.UpdateUser(user, updatedFields)
+	update := &users.UserUpdateInput{
+		OnfidoCheckID: returnedCheck.ID,
+		KycStatus:     users.UserKycStatusInProgress,
+	}
+	_, err = r.userService.UpdateUser(token, user.UID, update)
 	if err != nil {
 		return nil, err
 	}

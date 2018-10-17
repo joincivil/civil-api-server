@@ -38,6 +38,7 @@ func (s *UserService) GetUser(identifier UserCriteria, createIfNotExists bool) (
 // UserUpdateInput describes the input needed for UpdateUser
 type UserUpdateInput struct {
 	OnfidoApplicantID string                `json:"onfidoApplicantID"`
+	OnfidoCheckID     string                `json:"onfidoCheckID"`
 	KycStatus         string                `json:"kycStatus"`
 	QuizPayload       postgres.JsonbPayload `json:"quizPayload"`
 	QuizStatus        string                `json:"quizStatus"`
@@ -64,6 +65,10 @@ func (s *UserService) UpdateUser(requestor *auth.Token, uid string, input *UserU
 	if input.OnfidoApplicantID != "" {
 		user.OnfidoApplicantID = input.OnfidoApplicantID
 		fields = append(fields, "OnfidoApplicantID")
+	}
+	if input.OnfidoCheckID != "" {
+		user.OnfidoCheckID = input.OnfidoCheckID
+		fields = append(fields, "OnfidoCheckID")
 	}
 	if input.QuizStatus != "" {
 		user.QuizStatus = input.QuizStatus
