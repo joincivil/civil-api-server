@@ -25,6 +25,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
+	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
@@ -44,7 +45,7 @@ var (
 )
 
 func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.PostgresPersister,
-	kycPersister *kyc.PostgresPersister) (*graphql.Resolver, error) {
+	userPersister *users.PostgresPersister) (*graphql.Resolver, error) {
 	listingPersister, err := helpers.ListingPersister(config)
 	if err != nil {
 		log.Errorf("Error w listingPersister: err: %v", err)
@@ -60,6 +61,11 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		log.Errorf("Error w governanceEventPersister: err: %v", err)
 		return nil, err
 	}
+	challengePersister, err := helpers.ChallengePersister(config)
+	if err != nil {
+		log.Errorf("Error w challengePersister: err: %v", err)
+		return nil, err
+	}
 	onfido := kyc.NewOnfidoAPI(
 		kyc.ProdAPIURL,
 		config.OnfidoKey,
@@ -71,15 +77,23 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		config.TokenFoundryPassword,
 	)
 
+	userService := users.NewUserService(userPersister)
+	if err != nil {
+		log.Errorf("Error w defaultUserService: err: %v", err)
+		return nil, err
+	}
+
 	return graphql.NewResolver(&graphql.ResolverConfig{
 		InvoicePersister:    invoicePersister,
-		KycPersister:        kycPersister,
 		ListingPersister:    listingPersister,
 		RevisionPersister:   contentRevisionPersister,
 		GovEventPersister:   governanceEventPersister,
+		ChallengePersister:  challengePersister,
+		UserPersister:       userPersister,
 		OnfidoAPI:           onfido,
 		OnfidoTokenReferrer: config.OnfidoReferrer,
 		TokenFoundry:        tokenFoundry,
+		UserService:         userService,
 	}), nil
 }
 
@@ -90,8 +104,8 @@ func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {
 }
 
 func graphQLRouting(router chi.Router, config *utils.GraphQLConfig, invoicePersister *invoicing.PostgresPersister,
-	kycPersister *kyc.PostgresPersister) error {
-	resolver, rErr := initResolver(config, invoicePersister, kycPersister)
+	userPersister *users.PostgresPersister) error {
+	resolver, rErr := initResolver(config, invoicePersister, userPersister)
 	if rErr != nil {
 		log.Fatalf("Error retrieving resolver: err: %v", rErr)
 		return rErr
@@ -129,8 +143,8 @@ func initInvoicePersister(config *utils.GraphQLConfig) (*invoicing.PostgresPersi
 	return persister, nil
 }
 
-func initKycPersister(config *utils.GraphQLConfig) (*kyc.PostgresPersister, error) {
-	persister, err := kyc.NewPostgresPersister(
+func initUserPersister(config *utils.GraphQLConfig) (*users.PostgresPersister, error) {
+	persister, err := users.NewPostgresPersister(
 		config.PostgresAddress(),
 		config.PostgresPort(),
 		config.PostgresUser(),
@@ -273,7 +287,7 @@ func main() {
 
 	// set up persisters
 	var invoicePersister *invoicing.PostgresPersister
-	var kycPersister *kyc.PostgresPersister
+	var userPersister *users.PostgresPersister
 	var perr error
 
 	if config.EnableInvoicing || config.EnableGraphQL {
@@ -283,15 +297,15 @@ func main() {
 		}
 	}
 	if config.EnableKYC || config.EnableGraphQL {
-		kycPersister, perr = initKycPersister(config)
+		userPersister, perr = initUserPersister(config)
 		if perr != nil {
-			log.Fatalf("Error setting up kyc persister: err: %v", perr)
+			log.Fatalf("Error setting up user persister: err: %v", perr)
 		}
 	}
 
 	// GraphQL Query Endpoint (Crawler/KYC)
 	if config.EnableGraphQL {
-		err = graphQLRouting(router, config, invoicePersister, kycPersister)
+		err = graphQLRouting(router, config, invoicePersister, userPersister)
 		if err != nil {
 			log.Fatalf("Error setting up graphql routing: err: %v", err)
 		}

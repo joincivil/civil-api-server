@@ -9,6 +9,7 @@ import (
 type Metadata map[string]interface{}
 
 // BlockData is block data from the block. NOTE: filled in by node, not secured by consensus
+// TODO(IS): Instead of intializing this in NewGovernanceEvent, create constructor for this.
 type BlockData struct {
 	blockNumber uint64
 	txHash      string

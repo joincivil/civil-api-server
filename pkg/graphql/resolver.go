@@ -8,12 +8,6 @@ package graphql
 
 import (
 	context "context"
-	"fmt"
-
-	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
-
-	"github.com/joincivil/civil-api-server/pkg/invoicing"
-	// "fmt"
 	"strconv"
 	time "time"
 
@@ -23,47 +17,55 @@ import (
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
 	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	kyc "github.com/joincivil/civil-api-server/pkg/kyc"
+	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
+	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
 	InvoicePersister    *invoicing.PostgresPersister
-	KycPersister        *kyc.PostgresPersister
 	ListingPersister    model.ListingPersister
 	GovEventPersister   model.GovernanceEventPersister
 	RevisionPersister   model.ContentRevisionPersister
+	ChallengePersister  model.ChallengePersister
+	UserPersister       users.UserPersister
 	OnfidoAPI           *kyc.OnfidoAPI
 	OnfidoTokenReferrer string
 	TokenFoundry        *tokenfoundry.API
+	UserService         *users.UserService
 }
 
 // NewResolver is a convenience function to init a Resolver struct
 func NewResolver(config *ResolverConfig) *Resolver {
 	return &Resolver{
 		invoicePersister:    config.InvoicePersister,
-		kycPersister:        config.KycPersister,
 		listingPersister:    config.ListingPersister,
 		revisionPersister:   config.RevisionPersister,
 		govEventPersister:   config.GovEventPersister,
+		challengePersister:  config.ChallengePersister,
+		userPersister:       config.UserPersister,
 		onfidoAPI:           config.OnfidoAPI,
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
 		tokenFoundry:        config.TokenFoundry,
+		userService:         config.UserService,
 	}
 }
 
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
 	invoicePersister    *invoicing.PostgresPersister
-	kycPersister        *kyc.PostgresPersister
 	listingPersister    model.ListingPersister
 	revisionPersister   model.ContentRevisionPersister
 	govEventPersister   model.GovernanceEventPersister
+	challengePersister  model.ChallengePersister
+	userPersister       users.UserPersister
 	onfidoAPI           *kyc.OnfidoAPI
 	onfidoTokenReferrer string
 	tokenFoundry        *tokenfoundry.API
+	userService         *users.UserService
 }
 
 // ContentRevision is the resolver for the ContentRevision type
@@ -79,6 +81,11 @@ func (r *Resolver) GovernanceEvent() graphql.GovernanceEventResolver {
 // Listing is the resolver for the listingtype
 func (r *Resolver) Listing() graphql.ListingResolver {
 	return &listingResolver{r}
+}
+
+// Challenge is the resolver for the listingtype
+func (r *Resolver) Challenge() graphql.ChallengeResolver {
+	return &challengeResolver{r}
 }
 
 // Query is the resolver for the Query type
@@ -245,14 +252,73 @@ func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listin
 func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (int, error) {
 	return int(obj.ChallengeID().Int64()), nil
 }
-func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.GovernanceEvent, error) {
-	loaders := ctxLoaders(ctx)
+func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
+	// TODO(IS): add dataloader here
 	challengeID := int(obj.ChallengeID().Int64())
-	challenge, err := loaders.challengeLoader.Load(challengeID)
+	challenge, err := r.challengePersister.ChallengeByChallengeID(challengeID)
 	if err != nil {
 		return nil, err
 	}
 	return challenge, nil
+}
+
+type challengeResolver struct{ *Resolver }
+
+func (r *challengeResolver) ChallengeID(ctx context.Context, obj *model.Challenge) (int, error) {
+	return int(obj.ChallengeID().Uint64()), nil
+}
+func (r *challengeResolver) ListingAddress(ctx context.Context, obj *model.Challenge) (string, error) {
+	return obj.ListingAddress().Hex(), nil
+}
+func (r *challengeResolver) RewardPool(ctx context.Context, obj *model.Challenge) (int, error) {
+	rewardPool := obj.RewardPool()
+	if rewardPool != nil {
+		return int(rewardPool.Uint64()), nil
+	}
+	return 0, nil
+}
+func (r *challengeResolver) Challenger(ctx context.Context, obj *model.Challenge) (string, error) {
+	return obj.Challenger().Hex(), nil
+}
+func (r *challengeResolver) Stake(ctx context.Context, obj *model.Challenge) (int, error) {
+	stake := obj.Stake()
+	if stake != nil {
+		return int(stake.Uint64()), nil
+	}
+	return 0, nil
+
+}
+func (r *challengeResolver) TotalTokens(ctx context.Context, obj *model.Challenge) (int, error) {
+	totalTokens := obj.TotalTokens()
+	if totalTokens != nil {
+		return int(totalTokens.Uint64()), nil
+	}
+	return 0, nil
+}
+func (r *challengeResolver) RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error) {
+	requestAppealExpiry := obj.RequestAppealExpiry()
+	if requestAppealExpiry != nil {
+		return int(requestAppealExpiry.Uint64()), nil
+	}
+	return 0, nil
+}
+func (r *challengeResolver) LastUpdatedDateTs(ctx context.Context, obj *model.Challenge) (int, error) {
+	return int(obj.LastUpdatedDateTs()), nil
+}
+func (r *challengeResolver) Poll(ctx context.Context, obj *model.Challenge) (*graphql.Poll, error) {
+	modelPoll := obj.Poll()
+	poll := graphql.Poll{}
+	poll.CommitEndDate = int(modelPoll.CommitEndDate())
+	poll.RevealEndDate = int(modelPoll.RevealEndDate())
+	poll.VoteQuorum = int(modelPoll.VoteQuorum())
+	poll.VotesFor = int(modelPoll.VotesFor())
+	poll.VotesAgainst = int(modelPoll.VotesAgainst())
+	return &poll, nil
+}
+func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*graphql.Appeal, error) {
+	// Keep this empty for now
+	appeal := graphql.Appeal{}
+	return &appeal, nil
 }
 
 type queryResolver struct{ *Resolver }
@@ -373,95 +439,12 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 	}
 	return modelRevisions, nil
 }
-
-func (r *queryResolver) CurrentUser(ctx context.Context) (*auth.CurrentUser, error) {
-	token := auth.ForContext(ctx)
-	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+func (r *queryResolver) Challenge(ctx context.Context, id int) (*model.Challenge, error) {
+	challenge, err := r.challengePersister.ChallengeByChallengeID(id)
+	if err != nil {
+		return nil, err
 	}
-	return auth.GetCurrentUser(token.Sub, r.invoicePersister, r.kycPersister, r.tokenFoundry)
+	return challenge, nil
 }
 
 type mutationResolver struct{ *Resolver }
-
-func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant graphql.KycCreateApplicantInput) (*string, error) {
-	newAddress := kyc.Address{}
-	if applicant.AptNumber != nil {
-		newAddress.FlatNumber = *applicant.AptNumber
-	}
-	if applicant.BuildingNumber != nil {
-		newAddress.BuildingNumber = *applicant.BuildingNumber
-	}
-	if applicant.Street != nil {
-		newAddress.Street = *applicant.Street
-	}
-	if applicant.City != nil {
-		newAddress.Town = *applicant.City
-	}
-	if applicant.State != nil {
-		newAddress.State = *applicant.State
-	}
-	if applicant.Zipcode != nil {
-		newAddress.Postcode = *applicant.Zipcode
-	}
-	if applicant.CountryOfResidence != nil {
-		newAddress.Country = *applicant.CountryOfResidence
-	}
-
-	newApplicant := &kyc.Applicant{}
-	newApplicant.Addresses = []kyc.Address{newAddress}
-	newApplicant.FirstName = applicant.FirstName
-	newApplicant.LastName = applicant.LastName
-
-	if applicant.MiddleName != nil {
-		newApplicant.MiddleName = *applicant.MiddleName
-	}
-	if applicant.Email != nil {
-		newApplicant.Email = *applicant.Email
-	}
-	if applicant.DateOfBirth != nil {
-		newApplicant.Dob = *applicant.DateOfBirth
-	}
-	if applicant.CountryOfResidence != nil {
-		newApplicant.Country = *applicant.CountryOfResidence
-	}
-
-	returnedApplicant, err := r.onfidoAPI.CreateApplicant(newApplicant)
-	if err != nil {
-		return nil, err
-	}
-
-	return &returnedApplicant.ID, nil
-}
-func (r *mutationResolver) KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error) {
-	token, err := r.onfidoAPI.GenerateSDKToken(applicantID, r.onfidoTokenReferrer)
-	if err != nil {
-		return nil, err
-	}
-
-	return &token, err
-}
-func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error) {
-	var rep *kyc.Report
-	if facialVariant != nil && *facialVariant == kyc.ReportVariantFacialSimilarityVideo {
-		rep = kyc.FacialSimilarityVideoReport
-	} else {
-		rep = kyc.FacialSimilarityStandardReport
-	}
-	newCheck := &kyc.Check{
-		Type: kyc.CheckTypeExpress,
-		Reports: []kyc.Report{
-			// *kyc.IdentityKycReport,
-			*kyc.DocumentReport,
-			*rep,
-			// *kyc.WatchlistKycReport,
-		},
-	}
-
-	returnedCheck, err := r.onfidoAPI.CreateCheck(applicantID, newCheck)
-	if err != nil {
-		return nil, err
-	}
-
-	return &returnedCheck.ID, nil
-}

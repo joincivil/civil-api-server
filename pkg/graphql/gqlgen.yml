@@ -26,7 +26,17 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.ContentRevision
   ArticlePayloadValue:
     model: github.com/joincivil/civil-events-processor/pkg/model.ArticlePayloadValue
+  Challenge:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Challenge
   CurrentUser:
     model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
   Invoice:
     model: github.com/joincivil/civil-api-server/pkg/invoicing.PostgresInvoice
+  RawObject:
+    model: github.com/joincivil/civil-api-server/pkg/utils.JsonbPayloadScalar
+  User:
+    model: github.com/joincivil/civil-api-server/pkg/users.User
+  UserSetEthAddressInput:
+    model: github.com/joincivil/civil-api-server/pkg/users.SetEthAddressInput
+  UserUpdateInput:
+    model: github.com/joincivil/civil-api-server/pkg/users.UserUpdateInput
