@@ -14,6 +14,7 @@ type Query {
     after: String
   ): [GovernanceEvent!]!
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
+  challengeByChallengeID(id: Int!): Challenge
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 }
 
@@ -84,6 +85,44 @@ type Listing {
   unstakedDeposit: String!
   challengeID: Int!
 }
+
+# A type that reflects values in model.Challenge
+type Challenge {
+  challengeID: Int!
+  listingAddress: String!
+  statement: String!
+  rewardPool: Int!
+  challenger: String!
+  resolved: Boolean!
+  stake: Int!
+  totalTokens: Int!
+  poll: Poll
+  requestAppealExpiry: Int!
+  appeal: Appeal
+  lastUpdatedDateTs: Int!
+}
+
+# A type that reflects values in model.Appeal
+type Appeal {
+  requester: String!
+  appealFeePaid: Int!
+  appealPhaseExpiry: Int!
+  appealGranted: Boolean!
+  appealOpenToChallengeExpiry: Int!
+  statement: String!
+  appealChallengeID: Int!
+}
+
+# A type that reflects values in model.Poll
+type Poll {
+  commitEndDate: Int!
+  revealEndDate: Int!
+  voteQuorum: Int!
+  votesFor: Int!
+  votesAgainst: Int!
+}
+
+
 
 # A type that reflects values in model.Metadata
 type Metadata {

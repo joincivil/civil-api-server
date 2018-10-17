@@ -184,13 +184,13 @@ func (p *PostgresPersister) UpdateChallenge(challenge *model.Challenge, updatedF
 }
 
 // ChallengesByChallengeIDs returns a slice of challenges based on challenge IDs
-func (p *PostgresPersister) ChallengesByChallengeIDs(challengeIDs []*big.Int) ([]*model.Challenge, error) {
+func (p *PostgresPersister) ChallengesByChallengeIDs(challengeIDs []int) ([]*model.Challenge, error) {
 	return p.challengesByChallengeIDsInTableInOrder(challengeIDs, challengeTableName)
 }
 
 // ChallengeByChallengeID gets a challenge by challengeID
-func (p *PostgresPersister) ChallengeByChallengeID(challengeID *big.Int) (*model.Challenge, error) {
-	challenges, err := p.challengesByChallengeIDsInTableInOrder([]*big.Int{challengeID}, challengeTableName)
+func (p *PostgresPersister) ChallengeByChallengeID(challengeID int) (*model.Challenge, error) {
+	challenges, err := p.challengesByChallengeIDsInTableInOrder([]int{challengeID}, challengeTableName)
 	if err != nil {
 		return nil, err
 	}
@@ -828,8 +828,8 @@ func (p *PostgresPersister) updateChallengeQuery(updatedFields []string, tableNa
 	return queryString.String(), nil
 }
 
-func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs []*big.Int, tableName string) ([]*model.Challenge, error) {
-	challengeIDsString := postgres.ListBigIntToListString(challengeIDs)
+func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs []int, tableName string) ([]*model.Challenge, error) {
+	challengeIDsString := postgres.ListIntToListString(challengeIDs)
 	queryString := p.challengesByChallengeIDsQuery(tableName)
 	query, args, err := sqlx.In(queryString, challengeIDsString)
 	if err != nil {
@@ -843,7 +843,7 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 		}
 		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
 	}
-	challengesMap := map[uint64]*model.Challenge{}
+	challengesMap := map[int]*model.Challenge{}
 	for rows.Next() {
 		var dbChallenge postgres.Challenge
 		err = rows.StructScan(&dbChallenge)
@@ -851,12 +851,12 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
 		}
 		modelChallenge := dbChallenge.DbToChallengeData()
-		challengesMap[modelChallenge.ChallengeID().Uint64()] = modelChallenge
+		challengesMap[int(modelChallenge.ChallengeID().Int64())] = modelChallenge
 	}
 	// NOTE(IS): Return challenges in same order
 	challenges := make([]*model.Challenge, len(challengeIDs))
 	for i, challengeID := range challengeIDs {
-		retrievedChallenge, ok := challengesMap[challengeID.Uint64()]
+		retrievedChallenge, ok := challengesMap[challengeID]
 		if ok {
 			challenges[i] = retrievedChallenge
 		} else {

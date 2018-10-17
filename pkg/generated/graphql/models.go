@@ -8,6 +8,15 @@ import (
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 )
 
+type Appeal struct {
+	Requester                   string `json:"requester"`
+	AppealFeePaid               int    `json:"appealFeePaid"`
+	AppealPhaseExpiry           int    `json:"appealPhaseExpiry"`
+	AppealGranted               bool   `json:"appealGranted"`
+	AppealOpenToChallengeExpiry int    `json:"appealOpenToChallengeExpiry"`
+	Statement                   string `json:"statement"`
+	AppealChallengeID           int    `json:"appealChallengeID"`
+}
 type ArticlePayload struct {
 	Key   string                    `json:"key"`
 	Value model.ArticlePayloadValue `json:"value"`
@@ -42,4 +51,11 @@ type KycCreateApplicantInput struct {
 type Metadata struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+type Poll struct {
+	CommitEndDate int `json:"commitEndDate"`
+	RevealEndDate int `json:"revealEndDate"`
+	VoteQuorum    int `json:"voteQuorum"`
+	VotesFor      int `json:"votesFor"`
+	VotesAgainst  int `json:"votesAgainst"`
 }

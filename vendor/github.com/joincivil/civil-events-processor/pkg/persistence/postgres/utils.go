@@ -88,11 +88,11 @@ func Float64ToBigInt(float float64) *big.Int {
 	return bigInt
 }
 
-// ListBigIntToListString converts a list of big.int to a list of string
-func ListBigIntToListString(listBigInt []*big.Int) []string {
-	listString := make([]string, len(listBigInt))
-	for i, bigint := range listBigInt {
-		listString[i] = bigint.String()
+// ListIntToListString converts a list of big.int to a list of string
+func ListIntToListString(listInt []int) []string {
+	listString := make([]string, len(listInt))
+	for idx, i := range listInt {
+		listString[idx] = strconv.Itoa(i)
 	}
 	return listString
 }
