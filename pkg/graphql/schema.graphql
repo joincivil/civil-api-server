@@ -82,6 +82,7 @@ type Listing {
   approvalDate: Time
   lastUpdatedDate: Time!
   appExpiry: Time!
+  appExpiryTs: Int!
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge

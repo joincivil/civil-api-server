@@ -92,6 +92,7 @@ type ListingResolver interface {
 	ApprovalDate(ctx context.Context, obj *model.Listing) (*time.Time, error)
 	LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error)
 	AppExpiry(ctx context.Context, obj *model.Listing) (time.Time, error)
+	AppExpiryTs(ctx context.Context, obj *model.Listing) (int, error)
 	UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error)
 	ChallengeID(ctx context.Context, obj *model.Listing) (int, error)
 	Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
@@ -1707,6 +1708,8 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Listing_lastUpdatedDate(ctx, field, obj)
 		case "appExpiry":
 			out.Values[i] = ec._Listing_appExpiry(ctx, field, obj)
+		case "appExpiryTs":
+			out.Values[i] = ec._Listing_appExpiryTs(ctx, field, obj)
 		case "unstakedDeposit":
 			out.Values[i] = ec._Listing_unstakedDeposit(ctx, field, obj)
 		case "challengeID":
@@ -2070,6 +2073,32 @@ func (ec *executionContext) _Listing_appExpiry(ctx context.Context, field graphq
 		}
 		res := resTmp.(time.Time)
 		return graphql.MarshalTime(res)
+	})
+}
+
+func (ec *executionContext) _Listing_appExpiryTs(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Listing",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Listing().AppExpiryTs(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -4552,6 +4581,7 @@ type Listing {
   approvalDate: Time
   lastUpdatedDate: Time!
   appExpiry: Time!
+  appExpiryTs: Int!
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge
@@ -4676,5 +4706,6 @@ input UserUpdateInput {
 
 scalar Time
 scalar ArticlePayloadValue
-scalar RawObject`},
+scalar RawObject
+`},
 )
