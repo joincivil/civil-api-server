@@ -33,20 +33,27 @@
 
 
     <script>
-    var url = "http://localhost:8080/v1/query";
 
     // Call to retrieve the SDK token
     var request = new XMLHttpRequest();
     var theUrl = new URL(window.location.href);
     var applicantID = theUrl.searchParams.get("applicantID");
     console.log("applicantID = " + applicantID);
+
+    var serverURL = theUrl.searchParams.get("serverURL");
+    if (serverURL == null) {
+        serverURL = "http://localhost:8080/v1/query";
+    }
+    console.log("serverURL = " + serverURL);
+
     var tokenRequest = {
         "query":"mutation { kycGenerateSdkToken(applicantID: \"" + applicantID + "\")}"
     }
 
-    request.open('POST', url, true);
+    request.open('POST', serverURL, true);
     request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
     request.send(JSON.stringify(tokenRequest));
+
     request.onload = function() {
       if (request.status >= 200 && request.status < 400) {
         var data = JSON.parse(request.responseText);
@@ -60,12 +67,11 @@
             console.log(
                 "everything is complete, calling to start check, data.face.variant = " + data.face.variant
             );
-            var url = "http://localhost:8080/v1/query";
             var crequest = new XMLHttpRequest();
             var checkRequest = {
                 "query":"mutation { kycCreateCheck(applicantID: \"" + applicantID + "\", facialVariant: \"" + data.face.variant +"\")}"
             }
-            crequest.open('POST', url, true);
+            crequest.open('POST', serverURL, true);
             crequest.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
             crequest.send(JSON.stringify(checkRequest));
             crequest.onload = function() {
@@ -87,5 +93,6 @@
       }
     }
     request.send()
+
     </script>
 </html>
