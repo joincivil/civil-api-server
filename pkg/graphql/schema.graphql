@@ -84,6 +84,7 @@ type Listing {
   appExpiry: Time!
   unstakedDeposit: String!
   challengeID: Int!
+  Challenge: Challenge
 }
 
 # A type that reflects values in model.Challenge

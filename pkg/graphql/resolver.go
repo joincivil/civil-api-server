@@ -8,7 +8,6 @@ package graphql
 
 import (
 	context "context"
-	"fmt"
 	"strconv"
 	time "time"
 
@@ -252,6 +251,15 @@ func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listin
 }
 func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (int, error) {
 	return int(obj.ChallengeID().Int64()), nil
+}
+func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
+	// TODO(IS): add dataloader here
+	challengeID := int(obj.ChallengeID().Int64())
+	challenge, err := r.challengePersister.ChallengeByChallengeID(challengeID)
+	if err != nil {
+		return nil, err
+	}
+	return challenge, nil
 }
 
 type challengeResolver struct{ *Resolver }
