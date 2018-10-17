@@ -246,6 +246,9 @@ func (r *listingResolver) LastUpdatedDate(ctx context.Context, obj *model.Listin
 func (r *listingResolver) AppExpiry(ctx context.Context, obj *model.Listing) (time.Time, error) {
 	return utils.SecsFromEpochToTime(obj.AppExpiry().Int64()), nil
 }
+func (r *listingResolver) AppExpiryTs(ctx context.Context, obj *model.Listing) (int, error) {
+	return int(obj.AppExpiry().Int64()), nil
+}
 func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error) {
 	return obj.UnstakedDeposit().String(), nil
 }
