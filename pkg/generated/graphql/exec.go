@@ -109,7 +109,7 @@ type QueryResolver interface {
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
 	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
-	ChallengeByChallengeID(ctx context.Context, id int) (*model.Challenge, error)
+	Challenge(ctx context.Context, id int) (*model.Challenge, error)
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
 }
 type UserResolver interface {
@@ -1711,8 +1711,8 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Listing_unstakedDeposit(ctx, field, obj)
 		case "challengeID":
 			out.Values[i] = ec._Listing_challengeID(ctx, field, obj)
-		case "Challenge":
-			out.Values[i] = ec._Listing_Challenge(ctx, field, obj)
+		case "challenge":
+			out.Values[i] = ec._Listing_challenge(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2125,7 +2125,7 @@ func (ec *executionContext) _Listing_challengeID(ctx context.Context, field grap
 	})
 }
 
-func (ec *executionContext) _Listing_Challenge(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+func (ec *executionContext) _Listing_challenge(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Listing",
 		Args:   nil,
@@ -2586,8 +2586,8 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query_governanceEvents(ctx, field)
 		case "governanceEventsTxHash":
 			out.Values[i] = ec._Query_governanceEventsTxHash(ctx, field)
-		case "challengeByChallengeID":
-			out.Values[i] = ec._Query_challengeByChallengeID(ctx, field)
+		case "challenge":
+			out.Values[i] = ec._Query_challenge(ctx, field)
 		case "articles":
 			out.Values[i] = ec._Query_articles(ctx, field)
 		case "__type":
@@ -2898,7 +2898,7 @@ func (ec *executionContext) _Query_governanceEventsTxHash(ctx context.Context, f
 	})
 }
 
-func (ec *executionContext) _Query_challengeByChallengeID(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_challenge(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args := map[string]interface{}{}
 	var arg0 int
@@ -2926,7 +2926,7 @@ func (ec *executionContext) _Query_challengeByChallengeID(ctx context.Context, f
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().ChallengeByChallengeID(ctx, args["id"].(int))
+			return ec.resolvers.Query().Challenge(ctx, args["id"].(int))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -4484,7 +4484,7 @@ type Query {
     after: String
   ): [GovernanceEvent!]!
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  challengeByChallengeID(id: Int!): Challenge
+  challenge(id: Int!): Challenge
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 }
 
@@ -4554,7 +4554,7 @@ type Listing {
   appExpiry: Time!
   unstakedDeposit: String!
   challengeID: Int!
-  Challenge: Challenge
+  challenge: Challenge
 }
 
 # A type that reflects values in model.Challenge
@@ -4592,8 +4592,6 @@ type Poll {
   votesFor: Int!
   votesAgainst: Int!
 }
-
-
 
 # A type that reflects values in model.Metadata
 type Metadata {

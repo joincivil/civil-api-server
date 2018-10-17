@@ -14,7 +14,7 @@ type Query {
     after: String
   ): [GovernanceEvent!]!
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  challengeByChallengeID(id: Int!): Challenge
+  challenge(id: Int!): Challenge
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
 }
 
@@ -84,7 +84,7 @@ type Listing {
   appExpiry: Time!
   unstakedDeposit: String!
   challengeID: Int!
-  Challenge: Challenge
+  challenge: Challenge
 }
 
 # A type that reflects values in model.Challenge
@@ -122,8 +122,6 @@ type Poll {
   votesFor: Int!
   votesAgainst: Int!
 }
-
-
 
 # A type that reflects values in model.Metadata
 type Metadata {

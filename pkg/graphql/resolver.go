@@ -439,7 +439,7 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 	}
 	return modelRevisions, nil
 }
-func (r *queryResolver) ChallengeByChallengeID(ctx context.Context, id int) (*model.Challenge, error) {
+func (r *queryResolver) Challenge(ctx context.Context, id int) (*model.Challenge, error) {
 	challenge, err := r.challengePersister.ChallengeByChallengeID(id)
 	if err != nil {
 		return nil, err
