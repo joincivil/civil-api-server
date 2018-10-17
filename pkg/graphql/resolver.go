@@ -30,6 +30,7 @@ type ResolverConfig struct {
 	ListingPersister    model.ListingPersister
 	GovEventPersister   model.GovernanceEventPersister
 	RevisionPersister   model.ContentRevisionPersister
+	ChallengePersister  model.ChallengePersister
 	UserPersister       users.UserPersister
 	OnfidoAPI           *kyc.OnfidoAPI
 	OnfidoTokenReferrer string
@@ -44,6 +45,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		listingPersister:    config.ListingPersister,
 		revisionPersister:   config.RevisionPersister,
 		govEventPersister:   config.GovEventPersister,
+		challengePersister:  config.ChallengePersister,
 		userPersister:       config.UserPersister,
 		onfidoAPI:           config.OnfidoAPI,
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
@@ -58,6 +60,7 @@ type Resolver struct {
 	listingPersister    model.ListingPersister
 	revisionPersister   model.ContentRevisionPersister
 	govEventPersister   model.GovernanceEventPersister
+	challengePersister  model.ChallengePersister
 	userPersister       users.UserPersister
 	onfidoAPI           *kyc.OnfidoAPI
 	onfidoTokenReferrer string
@@ -78,6 +81,11 @@ func (r *Resolver) GovernanceEvent() graphql.GovernanceEventResolver {
 // Listing is the resolver for the listingtype
 func (r *Resolver) Listing() graphql.ListingResolver {
 	return &listingResolver{r}
+}
+
+// Challenge is the resolver for the listingtype
+func (r *Resolver) Challenge() graphql.ChallengeResolver {
+	return &challengeResolver{r}
 }
 
 // Query is the resolver for the Query type
@@ -244,14 +252,73 @@ func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listin
 func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (int, error) {
 	return int(obj.ChallengeID().Int64()), nil
 }
-func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.GovernanceEvent, error) {
-	loaders := ctxLoaders(ctx)
+func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
+	// TODO(IS): add dataloader here
 	challengeID := int(obj.ChallengeID().Int64())
-	challenge, err := loaders.challengeLoader.Load(challengeID)
+	challenge, err := r.challengePersister.ChallengeByChallengeID(challengeID)
 	if err != nil {
 		return nil, err
 	}
 	return challenge, nil
+}
+
+type challengeResolver struct{ *Resolver }
+
+func (r *challengeResolver) ChallengeID(ctx context.Context, obj *model.Challenge) (int, error) {
+	return int(obj.ChallengeID().Uint64()), nil
+}
+func (r *challengeResolver) ListingAddress(ctx context.Context, obj *model.Challenge) (string, error) {
+	return obj.ListingAddress().Hex(), nil
+}
+func (r *challengeResolver) RewardPool(ctx context.Context, obj *model.Challenge) (int, error) {
+	rewardPool := obj.RewardPool()
+	if rewardPool != nil {
+		return int(rewardPool.Uint64()), nil
+	}
+	return 0, nil
+}
+func (r *challengeResolver) Challenger(ctx context.Context, obj *model.Challenge) (string, error) {
+	return obj.Challenger().Hex(), nil
+}
+func (r *challengeResolver) Stake(ctx context.Context, obj *model.Challenge) (int, error) {
+	stake := obj.Stake()
+	if stake != nil {
+		return int(stake.Uint64()), nil
+	}
+	return 0, nil
+
+}
+func (r *challengeResolver) TotalTokens(ctx context.Context, obj *model.Challenge) (int, error) {
+	totalTokens := obj.TotalTokens()
+	if totalTokens != nil {
+		return int(totalTokens.Uint64()), nil
+	}
+	return 0, nil
+}
+func (r *challengeResolver) RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error) {
+	requestAppealExpiry := obj.RequestAppealExpiry()
+	if requestAppealExpiry != nil {
+		return int(requestAppealExpiry.Uint64()), nil
+	}
+	return 0, nil
+}
+func (r *challengeResolver) LastUpdatedDateTs(ctx context.Context, obj *model.Challenge) (int, error) {
+	return int(obj.LastUpdatedDateTs()), nil
+}
+func (r *challengeResolver) Poll(ctx context.Context, obj *model.Challenge) (*graphql.Poll, error) {
+	modelPoll := obj.Poll()
+	poll := graphql.Poll{}
+	poll.CommitEndDate = int(modelPoll.CommitEndDate())
+	poll.RevealEndDate = int(modelPoll.RevealEndDate())
+	poll.VoteQuorum = int(modelPoll.VoteQuorum())
+	poll.VotesFor = int(modelPoll.VotesFor())
+	poll.VotesAgainst = int(modelPoll.VotesAgainst())
+	return &poll, nil
+}
+func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*graphql.Appeal, error) {
+	// Keep this empty for now
+	appeal := graphql.Appeal{}
+	return &appeal, nil
 }
 
 type queryResolver struct{ *Resolver }
@@ -371,6 +438,13 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 		modelRevisions[index] = *revision
 	}
 	return modelRevisions, nil
+}
+func (r *queryResolver) Challenge(ctx context.Context, id int) (*model.Challenge, error) {
+	challenge, err := r.challengePersister.ChallengeByChallengeID(id)
+	if err != nil {
+		return nil, err
+	}
+	return challenge, nil
 }
 
 type mutationResolver struct{ *Resolver }
