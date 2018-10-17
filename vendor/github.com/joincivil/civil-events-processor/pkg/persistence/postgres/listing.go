@@ -72,7 +72,7 @@ type Listing struct {
 	AppExpiry int64 `db:"app_expiry"`
 
 	UnstakedDeposit float64 `db:"unstaked_deposit"`
-
+	// TODO(IS): change challengeID to uint64
 	ChallengeID int64 `db:"challenge_id"`
 }
 

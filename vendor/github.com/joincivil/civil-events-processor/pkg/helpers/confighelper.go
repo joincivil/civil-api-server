@@ -74,6 +74,16 @@ func GovernanceEventPersister(config utils.PersisterConfig) (model.GovernanceEve
 	return p.(model.GovernanceEventPersister), nil
 }
 
+// ChallengePersister is a helper function to return the correct challenge persister based on
+// the given configuration
+func ChallengePersister(config utils.PersisterConfig) (model.ChallengePersister, error) {
+	p, err := persister(config)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.ChallengePersister), nil
+}
+
 func persister(config utils.PersisterConfig) (interface{}, error) {
 	if config.PersistType() == utils.PersisterTypePostgresql {
 		return postgresPersister(config)

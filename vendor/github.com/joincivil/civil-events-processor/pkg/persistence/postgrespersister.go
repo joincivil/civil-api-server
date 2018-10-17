@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	listingTableName  = "listing"
-	contRevTableName  = "content_revision"
-	govEventTableName = "governance_event"
-	cronTableName     = "cron"
+	listingTableName   = "listing"
+	contRevTableName   = "content_revision"
+	govEventTableName  = "governance_event"
+	cronTableName      = "cron"
+	challengeTableName = "challenge"
 
 	lastUpdatedDateDBModelName = "LastUpdatedDateTs"
 
@@ -172,6 +173,36 @@ func (p *PostgresPersister) UpdateTimestampForCron(timestamp int64) error {
 	return p.updateCronTimestampInTable(timestamp, cronTableName)
 }
 
+// CreateChallenge creates a new challenge
+func (p *PostgresPersister) CreateChallenge(challenge *model.Challenge) error {
+	return p.createChallengeInTable(challenge, challengeTableName)
+}
+
+// UpdateChallenge updates a challenge
+func (p *PostgresPersister) UpdateChallenge(challenge *model.Challenge, updatedFields []string) error {
+	return p.updateChallengeInTable(challenge, updatedFields, challengeTableName)
+}
+
+// ChallengesByChallengeIDs returns a slice of challenges based on challenge IDs
+func (p *PostgresPersister) ChallengesByChallengeIDs(challengeIDs []*big.Int) ([]*model.Challenge, error) {
+	return p.challengesByChallengeIDsInTableInOrder(challengeIDs, challengeTableName)
+}
+
+// ChallengeByChallengeID gets a challenge by challengeID
+func (p *PostgresPersister) ChallengeByChallengeID(challengeID *big.Int) (*model.Challenge, error) {
+	challenges, err := p.challengesByChallengeIDsInTableInOrder([]*big.Int{challengeID}, challengeTableName)
+	if err != nil {
+		return nil, err
+	}
+	if challenges == nil {
+		return nil, model.ErrPersisterNoResults
+	}
+	if len(challenges) > 0 {
+		return challenges[0], nil
+	}
+	return nil, model.ErrPersisterNoResults
+}
+
 // CreateTables creates the tables for processor if they don't exist
 func (p *PostgresPersister) CreateTables() error {
 	// this needs to get all the event tables for processor
@@ -179,6 +210,7 @@ func (p *PostgresPersister) CreateTables() error {
 	govEventTableQuery := postgres.CreateGovernanceEventTableQuery()
 	listingTableQuery := postgres.CreateListingTableQuery()
 	cronTableQuery := postgres.CreateCronTableQuery()
+	challengeTableQuery := postgres.CreateChallengeTableQuery()
 
 	_, err := p.db.Exec(contRevTableQuery)
 	if err != nil {
@@ -196,7 +228,11 @@ func (p *PostgresPersister) CreateTables() error {
 	if err != nil {
 		return fmt.Errorf("Error creating listing table in postgres: %v", err)
 	}
-	return err
+	_, err = p.db.Exec(challengeTableQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating challenge table in postgres: %v", err)
+	}
+	return nil
 }
 
 func (p *PostgresPersister) insertIntoDBQueryString(tableName string, dbModelStruct interface{}) string {
@@ -751,6 +787,88 @@ func (p *PostgresPersister) deleteGovernanceEventFromTable(govEvent *model.Gover
 
 func (p *PostgresPersister) deleteGovEventQuery(tableName string) string {
 	queryString := fmt.Sprintf("DELETE FROM %s WHERE event_hash=:event_hash;", tableName) // nolint: gosec
+	return queryString
+}
+
+func (p *PostgresPersister) createChallengeInTable(challenge *model.Challenge, tableName string) error {
+	dbChallenge := postgres.NewChallenge(challenge)
+	queryString := p.insertIntoDBQueryString(tableName, postgres.Challenge{})
+	_, err := p.db.NamedExec(queryString, dbChallenge)
+	if err != nil {
+		return fmt.Errorf("Error saving Challenge to table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updateChallengeInTable(challenge *model.Challenge, updatedFields []string,
+	tableName string) error {
+	// Update the last updated timestamp
+	challenge.SetLastUpdateDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
+
+	queryString, err := p.updateChallengeQuery(updatedFields, tableName)
+	if err != nil {
+		return fmt.Errorf("Error creating query string for update: %v ", err)
+	}
+
+	dbChallenge := postgres.NewChallenge(challenge)
+	_, err = p.db.NamedExec(queryString, dbChallenge)
+	if err != nil {
+		return fmt.Errorf("Error updating fields in challenge table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updateChallengeQuery(updatedFields []string, tableName string) (string, error) {
+	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, postgres.Challenge{})
+	if err != nil {
+		return "", err
+	}
+	queryString.WriteString(" WHERE challenge_id=:challenge_id;") // nolint: gosec
+	return queryString.String(), nil
+}
+
+func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs []*big.Int, tableName string) ([]*model.Challenge, error) {
+	challengeIDsString := postgres.ListBigIntToListString(challengeIDs)
+	queryString := p.challengesByChallengeIDsQuery(tableName)
+	query, args, err := sqlx.In(queryString, challengeIDsString)
+	if err != nil {
+		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+	}
+	query = p.db.Rebind(query)
+	rows, err := p.db.Queryx(query, args...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = model.ErrPersisterNoResults
+		}
+		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+	}
+	challengesMap := map[uint64]*model.Challenge{}
+	for rows.Next() {
+		var dbChallenge postgres.Challenge
+		err = rows.StructScan(&dbChallenge)
+		if err != nil {
+			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+		}
+		modelChallenge := dbChallenge.DbToChallengeData()
+		challengesMap[modelChallenge.ChallengeID().Uint64()] = modelChallenge
+	}
+	// NOTE(IS): Return challenges in same order
+	challenges := make([]*model.Challenge, len(challengeIDs))
+	for i, challengeID := range challengeIDs {
+		retrievedChallenge, ok := challengesMap[challengeID.Uint64()]
+		if ok {
+			challenges[i] = retrievedChallenge
+		} else {
+			challenges[i] = nil
+		}
+	}
+	return challenges, nil
+}
+
+func (p *PostgresPersister) challengesByChallengeIDsQuery(tableName string) string {
+	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false)
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE challenge_id IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
 

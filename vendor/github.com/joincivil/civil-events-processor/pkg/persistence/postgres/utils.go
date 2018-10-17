@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -70,4 +72,27 @@ func StructFieldsForQuery(exampleStruct interface{}, colon bool) (string, string
 		}
 	}
 	return fields.String(), fieldsWithColon.String()
+}
+
+// BigIntToFloat64 converts big.Int to float64 type
+func BigIntToFloat64(bigInt *big.Int) float64 {
+	f := new(big.Float).SetInt(bigInt)
+	val, _ := f.Float64()
+	return val
+}
+
+// Float64ToBigInt converts float64 to big.Int type
+func Float64ToBigInt(float float64) *big.Int {
+	bigInt := new(big.Int)
+	bigInt.SetString(strconv.FormatFloat(float, 'f', -1, 64), 10)
+	return bigInt
+}
+
+// ListBigIntToListString converts a list of big.int to a list of string
+func ListBigIntToListString(listBigInt []*big.Int) []string {
+	listString := make([]string, len(listBigInt))
+	for i, bigint := range listBigInt {
+		listString[i] = bigint.String()
+	}
+	return listString
 }
