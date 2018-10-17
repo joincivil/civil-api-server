@@ -244,15 +244,6 @@ func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listin
 func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (int, error) {
 	return int(obj.ChallengeID().Int64()), nil
 }
-func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.GovernanceEvent, error) {
-	loaders := ctxLoaders(ctx)
-	challengeID := int(obj.ChallengeID().Int64())
-	challenge, err := loaders.challengeLoader.Load(challengeID)
-	if err != nil {
-		return nil, err
-	}
-	return challenge, nil
-}
 
 type queryResolver struct{ *Resolver }
 

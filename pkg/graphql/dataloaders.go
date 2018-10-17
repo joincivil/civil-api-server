@@ -15,8 +15,8 @@ type ctxKeyType struct{ name string }
 var ctxKey = ctxKeyType{"userCtx"}
 
 type loaders struct {
-	listingLoader   *ListingLoader
-	challengeLoader *GovernanceEventLoader
+	listingLoader *ListingLoader
+	// challengeLoader *GovernanceEventLoader
 }
 
 // DataloaderMiddleware defines the listingLoader
@@ -35,15 +35,15 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 			},
 		}
 
-		ldrs.challengeLoader = &GovernanceEventLoader{
-			maxBatch: 100,
-			wait:     100 * time.Millisecond,
-			fetch: func(keys []int) ([]*model.GovernanceEvent, []error) {
-				challengeEvents, err := g.govEventPersister.GovernanceEventsByChallengeIDs(keys)
-				errors := []error{err}
-				return challengeEvents, errors
-			},
-		}
+		// ldrs.challengeLoader = &GovernanceEventLoader{
+		// 	maxBatch: 100,
+		// 	wait:     100 * time.Millisecond,
+		// 	fetch: func(keys []int) ([]*model.GovernanceEvent, []error) {
+		// 		challengeEvents, err := g.govEventPersister.GovernanceEventsByChallengeIDs(keys)
+		// 		errors := []error{err}
+		// 		return challengeEvents, errors
+		// 	},
+		// }
 
 		ctx := context.WithValue(r.Context(), ctxKey, ldrs) // nolint: golint
 		r = r.WithContext(ctx)

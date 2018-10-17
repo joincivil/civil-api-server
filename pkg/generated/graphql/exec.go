@@ -79,7 +79,6 @@ type ListingResolver interface {
 	AppExpiry(ctx context.Context, obj *model.Listing) (time.Time, error)
 	UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error)
 	ChallengeID(ctx context.Context, obj *model.Listing) (int, error)
-	Challenge(ctx context.Context, obj *model.Listing) (*model.GovernanceEvent, error)
 }
 type MutationResolver interface {
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
@@ -1196,8 +1195,6 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Listing_unstakedDeposit(ctx, field, obj)
 		case "challengeID":
 			out.Values[i] = ec._Listing_challengeID(ctx, field, obj)
-		case "challenge":
-			out.Values[i] = ec._Listing_challenge(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -1607,35 +1604,6 @@ func (ec *executionContext) _Listing_challengeID(ctx context.Context, field grap
 		}
 		res := resTmp.(int)
 		return graphql.MarshalInt(res)
-	})
-}
-
-func (ec *executionContext) _Listing_challenge(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "Listing",
-		Args:   nil,
-		Field:  field,
-	})
-	return graphql.Defer(func() (ret graphql.Marshaler) {
-		defer func() {
-			if r := recover(); r != nil {
-				userErr := ec.Recover(ctx, r)
-				ec.Error(ctx, userErr)
-				ret = graphql.Null
-			}
-		}()
-
-		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Listing().Challenge(ctx, obj)
-		})
-		if resTmp == nil {
-			return graphql.Null
-		}
-		res := resTmp.(*model.GovernanceEvent)
-		if res == nil {
-			return graphql.Null
-		}
-		return ec._GovernanceEvent(ctx, field.Selections, res)
 	})
 }
 
@@ -3879,7 +3847,6 @@ type Listing {
   appExpiry: Time!
   unstakedDeposit: String!
   challengeID: Int!
-  challenge: GovernanceEvent
 }
 
 # A type that reflects values in model.Metadata
