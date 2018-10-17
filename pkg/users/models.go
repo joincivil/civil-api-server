@@ -7,12 +7,24 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const (
+	// UserKycStatusInProgress is a user with an in progress KYC
+	UserKycStatusInProgress = "in_progress"
+	// UserKycStatusPassed is a user with passed KYC
+	UserKycStatusPassed = "passed"
+	// UserKycStatusFailed is a user with failed KYC
+	UserKycStatusFailed = "failed"
+	// UserKycStatusNeedsReview is a user that needs additional human review
+	UserKycStatusNeedsReview = "needs_review"
+)
+
 // User represents a Civil User
 type User struct {
 	UID               string                 `db:"uid"`
 	Email             string                 `db:"email"`
 	EthAddress        string                 `db:"eth_address"`
 	OnfidoApplicantID string                 `db:"onfido_applicant_id"`
+	OnfidoCheckID     string                 `db:"onfido_check_id"`
 	KycStatus         string                 `db:"kyc_status"`
 	QuizPayload       crawlerpg.JsonbPayload `db:"quiz_payload"`
 	QuizStatus        string                 `db:"quiz_status"`

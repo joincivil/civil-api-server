@@ -57,9 +57,7 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 		newApplicant.Country = *applicant.CountryOfResidence
 	}
 
-	// Not using UserService here bc we want to check for user before
-	// we create an applicant.
-	user, err := r.userPersister.User(&users.UserCriteria{Email: token.Sub})
+	user, err := r.userService.GetUser(users.UserCriteria{Email: token.Sub}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +67,10 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 		return nil, err
 	}
 
-	user.OnfidoApplicantID = returnedApplicant.ID
-	updatedFields := []string{"OnfidoApplicantID"}
-	err = r.userPersister.UpdateUser(user, updatedFields)
+	update := &users.UserUpdateInput{
+		OnfidoApplicantID: returnedApplicant.ID,
+	}
+	_, err = r.userService.UpdateUser(token, user.UID, update)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +88,16 @@ func (r *mutationResolver) KycGenerateSdkToken(ctx context.Context, applicantID 
 }
 
 func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, fmt.Errorf("Access denied")
+	}
+
+	user, err := r.userService.GetUser(users.UserCriteria{Email: token.Sub}, false)
+	if err != nil {
+		return nil, err
+	}
+
 	var rep *kyc.Report
 	if facialVariant != nil && *facialVariant == kyc.ReportVariantFacialSimilarityVideo {
 		rep = kyc.FacialSimilarityVideoReport
@@ -106,6 +115,16 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 	}
 
 	returnedCheck, err := r.onfidoAPI.CreateCheck(applicantID, newCheck)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save check ID to user object
+	update := &users.UserUpdateInput{
+		OnfidoCheckID: returnedCheck.ID,
+		KycStatus:     users.UserKycStatusInProgress,
+	}
+	_, err = r.userService.UpdateUser(token, user.UID, update)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,8 @@ type UserPersister interface {
 
 // UserCriteria is used to query for a particular user
 type UserCriteria struct {
-	UID        string
-	Email      string
-	EthAddress string
+	UID           string `db:"uid"`
+	Email         string `db:"email"`
+	EthAddress    string `db:"eth_address"`
+	OnfidoCheckID string `db:"onfido_check_id"`
 }
