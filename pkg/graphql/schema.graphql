@@ -39,6 +39,7 @@ type User {
   email: String
   ethAddress: String
   onfidoApplicantId: String
+  onfidoCheckID: String
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
