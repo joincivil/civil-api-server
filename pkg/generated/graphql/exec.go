@@ -3093,6 +3093,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_ethAddress(ctx, field, obj)
 		case "onfidoApplicantId":
 			out.Values[i] = ec._User_onfidoApplicantId(ctx, field, obj)
+		case "onfidoCheckID":
+			out.Values[i] = ec._User_onfidoCheckID(ctx, field, obj)
 		case "kycStatus":
 			out.Values[i] = ec._User_kycStatus(ctx, field, obj)
 		case "quizPayload":
@@ -3171,6 +3173,23 @@ func (ec *executionContext) _User_onfidoApplicantId(ctx context.Context, field g
 	defer rctx.Pop()
 	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 		return obj.OnfidoApplicantID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _User_onfidoCheckID(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "User"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.OnfidoCheckID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -4471,7 +4490,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
   query: Query
 }
 
-# NOTE: All date fields are ints in seconds from epoch
+# NOTE(PN): All date fields are ints in seconds from epoch
 
 # The query type, represents all of the entry points into our object graph
 type Query {
@@ -4508,6 +4527,7 @@ type User {
   email: String
   ethAddress: String
   onfidoApplicantId: String
+  onfidoCheckID: String
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
