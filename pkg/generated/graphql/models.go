@@ -3,8 +3,6 @@
 package graphql
 
 import (
-	time "time"
-
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 )
 
@@ -29,8 +27,8 @@ type BlockData struct {
 	Index       int    `json:"index"`
 }
 type DateRange struct {
-	Gt *time.Time `json:"gt"`
-	Lt *time.Time `json:"lt"`
+	Gt *int `json:"gt"`
+	Lt *int `json:"lt"`
 }
 type KycCreateApplicantInput struct {
 	FirstName          string  `json:"firstName"`

@@ -9,13 +9,11 @@ package graphql
 import (
 	context "context"
 	"strconv"
-	time "time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/iancoleman/strcase"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
-	"github.com/joincivil/civil-events-processor/pkg/utils"
 
 	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
@@ -126,8 +124,8 @@ func (r *contentRevisionResolver) ContractRevisionID(ctx context.Context, obj *m
 	bigInt := obj.ContractContentID()
 	return int(bigInt.Int64()), nil
 }
-func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.ContentRevision) (time.Time, error) {
-	return utils.SecsFromEpochToTime(obj.RevisionDateTs()), nil
+func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.ContentRevision) (int, error) {
+	return int(obj.RevisionDateTs()), nil
 }
 
 type governanceEventResolver struct{ *Resolver }
@@ -177,11 +175,11 @@ func (r *governanceEventResolver) BlockData(ctx context.Context, obj *model.Gove
 	blockData.Index = int(modelBlockData.Index())
 	return blockData, nil
 }
-func (r *governanceEventResolver) CreationDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
-	return utils.SecsFromEpochToTime(obj.CreationDateTs()), nil
+func (r *governanceEventResolver) CreationDate(ctx context.Context, obj *model.GovernanceEvent) (int, error) {
+	return int(obj.CreationDateTs()), nil
 }
-func (r *governanceEventResolver) LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error) {
-	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
+func (r *governanceEventResolver) LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (int, error) {
+	return int(obj.LastUpdatedDateTs()), nil
 }
 func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.GovernanceEvent) (model.Listing, error) {
 	loaders := ctxLoaders(ctx)
@@ -223,28 +221,28 @@ func (r *listingResolver) ContributorAddresses(ctx context.Context, obj *model.L
 	}
 	return ownerAddrs, nil
 }
-func (r *listingResolver) CreatedDate(ctx context.Context, obj *model.Listing) (time.Time, error) {
-	return utils.SecsFromEpochToTime(obj.CreatedDateTs()), nil
+func (r *listingResolver) CreatedDate(ctx context.Context, obj *model.Listing) (int, error) {
+	return int(obj.CreatedDateTs()), nil
 }
-func (r *listingResolver) ApplicationDate(ctx context.Context, obj *model.Listing) (*time.Time, error) {
+func (r *listingResolver) ApplicationDate(ctx context.Context, obj *model.Listing) (*int, error) {
 	if obj.ApplicationDateTs() == 0 {
 		return nil, nil
 	}
-	timeObj := utils.SecsFromEpochToTime(obj.ApplicationDateTs())
+	timeObj := int(obj.ApplicationDateTs())
 	return &timeObj, nil
 }
-func (r *listingResolver) ApprovalDate(ctx context.Context, obj *model.Listing) (*time.Time, error) {
+func (r *listingResolver) ApprovalDate(ctx context.Context, obj *model.Listing) (*int, error) {
 	if obj.ApprovalDateTs() == 0 {
 		return nil, nil
 	}
-	timeObj := utils.SecsFromEpochToTime(obj.ApprovalDateTs())
+	timeObj := int(obj.ApprovalDateTs())
 	return &timeObj, nil
 }
-func (r *listingResolver) LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error) {
-	return utils.SecsFromEpochToTime(obj.LastUpdatedDateTs()), nil
+func (r *listingResolver) LastUpdatedDate(ctx context.Context, obj *model.Listing) (int, error) {
+	return int(obj.LastUpdatedDateTs()), nil
 }
-func (r *listingResolver) AppExpiry(ctx context.Context, obj *model.Listing) (time.Time, error) {
-	return utils.SecsFromEpochToTime(obj.AppExpiry().Int64()), nil
+func (r *listingResolver) AppExpiry(ctx context.Context, obj *model.Listing) (int, error) {
+	return int(obj.AppExpiry().Int64()), nil
 }
 func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error) {
 	return obj.UnstakedDeposit().String(), nil
@@ -369,10 +367,10 @@ func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, crea
 	}
 	if creationDate != nil {
 		if creationDate.Gt != nil {
-			criteria.CreatedFromTs = utils.TimeToSecsFromEpoch(creationDate.Gt)
+			criteria.CreatedFromTs = int64(*creationDate.Gt)
 		}
 		if creationDate.Lt != nil {
-			criteria.CreatedBeforeTs = utils.TimeToSecsFromEpoch(creationDate.Lt)
+			criteria.CreatedBeforeTs = int64(*creationDate.Lt)
 		}
 	}
 	if after != nil && *after != "" {

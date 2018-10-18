@@ -6,7 +6,6 @@ import (
 	"bytes"
 	context "context"
 	strconv "strconv"
-	time "time"
 
 	graphql "github.com/99designs/gqlgen/graphql"
 	introspection "github.com/99designs/gqlgen/graphql/introspection"
@@ -66,15 +65,15 @@ type ContentRevisionResolver interface {
 	ContractContentID(ctx context.Context, obj *model.ContentRevision) (int, error)
 	ContractRevisionID(ctx context.Context, obj *model.ContentRevision) (int, error)
 
-	RevisionDate(ctx context.Context, obj *model.ContentRevision) (time.Time, error)
+	RevisionDate(ctx context.Context, obj *model.ContentRevision) (int, error)
 }
 type GovernanceEventResolver interface {
 	ListingAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error)
 	SenderAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error)
 	Metadata(ctx context.Context, obj *model.GovernanceEvent) ([]Metadata, error)
 
-	CreationDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error)
-	LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (time.Time, error)
+	CreationDate(ctx context.Context, obj *model.GovernanceEvent) (int, error)
+	LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (int, error)
 
 	BlockData(ctx context.Context, obj *model.GovernanceEvent) (BlockData, error)
 	Listing(ctx context.Context, obj *model.GovernanceEvent) (model.Listing, error)
@@ -87,11 +86,11 @@ type ListingResolver interface {
 	OwnerAddresses(ctx context.Context, obj *model.Listing) ([]string, error)
 	Owner(ctx context.Context, obj *model.Listing) (string, error)
 	ContributorAddresses(ctx context.Context, obj *model.Listing) ([]string, error)
-	CreatedDate(ctx context.Context, obj *model.Listing) (time.Time, error)
-	ApplicationDate(ctx context.Context, obj *model.Listing) (*time.Time, error)
-	ApprovalDate(ctx context.Context, obj *model.Listing) (*time.Time, error)
-	LastUpdatedDate(ctx context.Context, obj *model.Listing) (time.Time, error)
-	AppExpiry(ctx context.Context, obj *model.Listing) (time.Time, error)
+	CreatedDate(ctx context.Context, obj *model.Listing) (int, error)
+	ApplicationDate(ctx context.Context, obj *model.Listing) (*int, error)
+	ApprovalDate(ctx context.Context, obj *model.Listing) (*int, error)
+	LastUpdatedDate(ctx context.Context, obj *model.Listing) (int, error)
+	AppExpiry(ctx context.Context, obj *model.Listing) (int, error)
 	UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error)
 	ChallengeID(ctx context.Context, obj *model.Listing) (int, error)
 	Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
@@ -1072,8 +1071,8 @@ func (ec *executionContext) _ContentRevision_revisionDate(ctx context.Context, f
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(time.Time)
-		return graphql.MarshalTime(res)
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -1241,8 +1240,8 @@ func (ec *executionContext) _GovernanceEvent_creationDate(ctx context.Context, f
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(time.Time)
-		return graphql.MarshalTime(res)
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -1267,8 +1266,8 @@ func (ec *executionContext) _GovernanceEvent_lastUpdatedDate(ctx context.Context
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(time.Time)
-		return graphql.MarshalTime(res)
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -1958,8 +1957,8 @@ func (ec *executionContext) _Listing_createdDate(ctx context.Context, field grap
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(time.Time)
-		return graphql.MarshalTime(res)
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -1984,11 +1983,11 @@ func (ec *executionContext) _Listing_applicationDate(ctx context.Context, field 
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(*time.Time)
+		res := resTmp.(*int)
 		if res == nil {
 			return graphql.Null
 		}
-		return graphql.MarshalTime(*res)
+		return graphql.MarshalInt(*res)
 	})
 }
 
@@ -2013,11 +2012,11 @@ func (ec *executionContext) _Listing_approvalDate(ctx context.Context, field gra
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(*time.Time)
+		res := resTmp.(*int)
 		if res == nil {
 			return graphql.Null
 		}
-		return graphql.MarshalTime(*res)
+		return graphql.MarshalInt(*res)
 	})
 }
 
@@ -2042,8 +2041,8 @@ func (ec *executionContext) _Listing_lastUpdatedDate(ctx context.Context, field 
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(time.Time)
-		return graphql.MarshalTime(res)
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -2068,8 +2067,8 @@ func (ec *executionContext) _Listing_appExpiry(ctx context.Context, field graphq
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(time.Time)
-		return graphql.MarshalTime(res)
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
 	})
 }
 
@@ -4178,9 +4177,9 @@ func UnmarshalDateRange(v interface{}) (DateRange, error) {
 		switch k {
 		case "gt":
 			var err error
-			var ptr1 time.Time
+			var ptr1 int
 			if v != nil {
-				ptr1, err = graphql.UnmarshalTime(v)
+				ptr1, err = graphql.UnmarshalInt(v)
 				it.Gt = &ptr1
 			}
 
@@ -4189,9 +4188,9 @@ func UnmarshalDateRange(v interface{}) (DateRange, error) {
 			}
 		case "lt":
 			var err error
-			var ptr1 time.Time
+			var ptr1 int
 			if v != nil {
-				ptr1, err = graphql.UnmarshalTime(v)
+				ptr1, err = graphql.UnmarshalInt(v)
 				it.Lt = &ptr1
 			}
 
@@ -4472,6 +4471,8 @@ var parsedSchema = gqlparser.MustLoadSchema(
   query: Query
 }
 
+# NOTE: All date fields are ints in seconds from epoch
+
 # The query type, represents all of the entry points into our object graph
 type Query {
   currentUser: User
@@ -4497,8 +4498,8 @@ type Mutation {
 }
 
 input DateRange {
-  gt: Time
-  lt: Time
+  gt: Int
+  lt: Int
 }
 
 # A type that reflects values in users.User
@@ -4547,11 +4548,11 @@ type Listing {
   ownerAddresses: [String!]!
   owner: String!
   contributorAddresses: [String!]!
-  createdDate: Time!
-  applicationDate: Time
-  approvalDate: Time
-  lastUpdatedDate: Time!
-  appExpiry: Time!
+  createdDate: Int!
+  applicationDate: Int
+  approvalDate: Int
+  lastUpdatedDate: Int!
+  appExpiry: Int!
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge
@@ -4614,8 +4615,8 @@ type GovernanceEvent {
   senderAddress: String!
   metadata: [Metadata!]!
   governanceEventType: String!
-  creationDate: Time!
-  lastUpdatedDate: Time!
+  creationDate: Int!
+  lastUpdatedDate: Int!
   eventHash: String!
   blockData: BlockData!
   listing: Listing!
@@ -4636,7 +4637,7 @@ type ContentRevision {
   contractContentId: Int!
   contractRevisionId: Int!
   revisionUri: String!
-  revisionDate: Time!
+  revisionDate: Int!
 }
 
 # A type that reflects values in onfido.CreateApplicantRequest
@@ -4674,7 +4675,7 @@ input UserUpdateInput {
   quizStatus: String
 }
 
-scalar Time
 scalar ArticlePayloadValue
-scalar RawObject`},
+scalar RawObject
+`},
 )

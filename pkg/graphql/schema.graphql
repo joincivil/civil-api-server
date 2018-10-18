@@ -2,6 +2,8 @@ schema {
   query: Query
 }
 
+# NOTE(PN): All date fields are ints in seconds from epoch
+
 # The query type, represents all of the entry points into our object graph
 type Query {
   currentUser: User
@@ -27,8 +29,8 @@ type Mutation {
 }
 
 input DateRange {
-  gt: Time
-  lt: Time
+  gt: Int
+  lt: Int
 }
 
 # A type that reflects values in users.User
@@ -77,11 +79,11 @@ type Listing {
   ownerAddresses: [String!]!
   owner: String!
   contributorAddresses: [String!]!
-  createdDate: Time!
-  applicationDate: Time
-  approvalDate: Time
-  lastUpdatedDate: Time!
-  appExpiry: Time!
+  createdDate: Int!
+  applicationDate: Int
+  approvalDate: Int
+  lastUpdatedDate: Int!
+  appExpiry: Int!
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge
@@ -144,8 +146,8 @@ type GovernanceEvent {
   senderAddress: String!
   metadata: [Metadata!]!
   governanceEventType: String!
-  creationDate: Time!
-  lastUpdatedDate: Time!
+  creationDate: Int!
+  lastUpdatedDate: Int!
   eventHash: String!
   blockData: BlockData!
   listing: Listing!
@@ -166,7 +168,7 @@ type ContentRevision {
   contractContentId: Int!
   contractRevisionId: Int!
   revisionUri: String!
-  revisionDate: Time!
+  revisionDate: Int!
 }
 
 # A type that reflects values in onfido.CreateApplicantRequest
@@ -204,6 +206,5 @@ input UserUpdateInput {
   quizStatus: String
 }
 
-scalar Time
 scalar ArticlePayloadValue
 scalar RawObject
