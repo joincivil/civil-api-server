@@ -72,8 +72,8 @@ type Listing struct {
 	AppExpiry int64 `db:"app_expiry"`
 
 	UnstakedDeposit float64 `db:"unstaked_deposit"`
-	// TODO(IS): change challengeID to uint64
-	ChallengeID int64 `db:"challenge_id"`
+
+	ChallengeID uint64 `db:"challenge_id"`
 }
 
 // NewListing constructs a listing for DB from a model.Listing
@@ -82,10 +82,19 @@ func NewListing(listing *model.Listing) *Listing {
 	contributorAddresses := ListCommonAddressesToString(listing.ContributorAddresses())
 	lastGovernanceState := int(listing.LastGovernanceState())
 	owner := listing.Owner().Hex()
-	appExpiry := listing.AppExpiry().Int64()
-	f := new(big.Float).SetInt(listing.UnstakedDeposit())
-	unstakedDeposit, _ := f.Float64()
-	challengeID := listing.ChallengeID().Int64()
+	var appExpiry int64
+	var unstakedDeposit float64
+	var challengeID uint64
+	if listing.AppExpiry() != nil {
+		appExpiry = listing.AppExpiry().Int64()
+	}
+	if listing.UnstakedDeposit() != nil {
+		f := new(big.Float).SetInt(listing.UnstakedDeposit())
+		unstakedDeposit, _ = f.Float64()
+	}
+	if listing.ChallengeID() != nil {
+		challengeID = listing.ChallengeID().Uint64()
+	}
 	return &Listing{
 		Name:                 listing.Name(),
 		ContractAddress:      listing.ContractAddress().Hex(),
@@ -116,8 +125,12 @@ func (l *Listing) DbToListingData() *model.Listing {
 	appExpiry := big.NewInt(l.AppExpiry)
 	unstakedDeposit := new(big.Int)
 	unstakedDeposit.SetString(strconv.FormatFloat(l.UnstakedDeposit, 'f', -1, 64), 10)
-	challengeID := big.NewInt(l.ChallengeID)
-	return model.NewListing(l.Name, contractAddress, l.Whitelisted, governanceState, l.URL, l.CharterURI, ownerAddress,
-		ownerAddresses, contributorAddresses, l.CreatedDateTs, l.ApplicationDateTs, l.ApprovalDateTs, l.LastUpdatedDateTs,
-		appExpiry, unstakedDeposit, challengeID)
+	challengeID := big.NewInt(0)
+	challengeID.SetUint64(l.ChallengeID)
+	listing := model.NewListing(l.Name, contractAddress, l.Whitelisted, governanceState, l.URL, l.CharterURI, ownerAddress,
+		ownerAddresses, contributorAddresses, l.CreatedDateTs, l.ApplicationDateTs, l.ApprovalDateTs, l.LastUpdatedDateTs)
+	listing.SetAppExpiry(appExpiry)
+	listing.SetUnstakedDeposit(unstakedDeposit)
+	listing.SetChallengeID(challengeID)
+	return listing
 }

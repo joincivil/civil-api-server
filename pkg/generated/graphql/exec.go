@@ -32,16 +32,27 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Appeal() AppealResolver
 	Challenge() ChallengeResolver
 	ContentRevision() ContentRevisionResolver
 	GovernanceEvent() GovernanceEventResolver
 	Listing() ListingResolver
 	Mutation() MutationResolver
+	Poll() PollResolver
 	Query() QueryResolver
 	User() UserResolver
 }
 
 type DirectiveRoot struct {
+}
+type AppealResolver interface {
+	Requester(ctx context.Context, obj *model.Appeal) (string, error)
+	AppealFeePaid(ctx context.Context, obj *model.Appeal) (int, error)
+	AppealPhaseExpiry(ctx context.Context, obj *model.Appeal) (int, error)
+
+	AppealOpenToChallengeExpiry(ctx context.Context, obj *model.Appeal) (int, error)
+
+	AppealChallengeID(ctx context.Context, obj *model.Appeal) (int, error)
 }
 type ChallengeResolver interface {
 	ChallengeID(ctx context.Context, obj *model.Challenge) (int, error)
@@ -52,9 +63,9 @@ type ChallengeResolver interface {
 
 	Stake(ctx context.Context, obj *model.Challenge) (int, error)
 	TotalTokens(ctx context.Context, obj *model.Challenge) (int, error)
-	Poll(ctx context.Context, obj *model.Challenge) (*Poll, error)
+	Poll(ctx context.Context, obj *model.Challenge) (*model.Poll, error)
 	RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error)
-	Appeal(ctx context.Context, obj *model.Challenge) (*Appeal, error)
+	Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error)
 	LastUpdatedDateTs(ctx context.Context, obj *model.Challenge) (int, error)
 }
 type ContentRevisionResolver interface {
@@ -101,6 +112,13 @@ type MutationResolver interface {
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
 	UserSetEthAddress(ctx context.Context, input users.SetEthAddressInput) (*string, error)
 	UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error)
+}
+type PollResolver interface {
+	CommitEndDate(ctx context.Context, obj *model.Poll) (int, error)
+	RevealEndDate(ctx context.Context, obj *model.Poll) (int, error)
+	VoteQuorum(ctx context.Context, obj *model.Poll) (int, error)
+	VotesFor(ctx context.Context, obj *model.Poll) (int, error)
+	VotesAgainst(ctx context.Context, obj *model.Poll) (int, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*users.User, error)
@@ -169,7 +187,7 @@ type executionContext struct {
 var appealImplementors = []string{"Appeal"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Appeal(ctx context.Context, sel ast.SelectionSet, obj *Appeal) graphql.Marshaler {
+func (ec *executionContext) _Appeal(ctx context.Context, sel ast.SelectionSet, obj *model.Appeal) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, appealImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -201,58 +219,85 @@ func (ec *executionContext) _Appeal(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
-func (ec *executionContext) _Appeal_requester(ctx context.Context, field graphql.CollectedField, obj *Appeal) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Appeal"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.Requester, nil
+func (ec *executionContext) _Appeal_requester(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Appeal",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	return graphql.MarshalString(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Appeal().Requester(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
 }
 
-func (ec *executionContext) _Appeal_appealFeePaid(ctx context.Context, field graphql.CollectedField, obj *Appeal) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Appeal"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.AppealFeePaid, nil
+func (ec *executionContext) _Appeal_appealFeePaid(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Appeal",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Appeal().AppealFeePaid(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Appeal_appealPhaseExpiry(ctx context.Context, field graphql.CollectedField, obj *Appeal) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Appeal"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.AppealPhaseExpiry, nil
+func (ec *executionContext) _Appeal_appealPhaseExpiry(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Appeal",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Appeal().AppealPhaseExpiry(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Appeal_appealGranted(ctx context.Context, field graphql.CollectedField, obj *Appeal) graphql.Marshaler {
+func (ec *executionContext) _Appeal_appealGranted(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Appeal"
 	rctx.Args = nil
@@ -260,7 +305,7 @@ func (ec *executionContext) _Appeal_appealGranted(ctx context.Context, field gra
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
 	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.AppealGranted, nil
+		return obj.AppealGranted(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -269,24 +314,33 @@ func (ec *executionContext) _Appeal_appealGranted(ctx context.Context, field gra
 	return graphql.MarshalBoolean(res)
 }
 
-func (ec *executionContext) _Appeal_appealOpenToChallengeExpiry(ctx context.Context, field graphql.CollectedField, obj *Appeal) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Appeal"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.AppealOpenToChallengeExpiry, nil
+func (ec *executionContext) _Appeal_appealOpenToChallengeExpiry(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Appeal",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Appeal().AppealOpenToChallengeExpiry(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Appeal_statement(ctx context.Context, field graphql.CollectedField, obj *Appeal) graphql.Marshaler {
+func (ec *executionContext) _Appeal_statement(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Appeal"
 	rctx.Args = nil
@@ -294,7 +348,7 @@ func (ec *executionContext) _Appeal_statement(ctx context.Context, field graphql
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
 	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.Statement, nil
+		return obj.Statement(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -303,21 +357,30 @@ func (ec *executionContext) _Appeal_statement(ctx context.Context, field graphql
 	return graphql.MarshalString(res)
 }
 
-func (ec *executionContext) _Appeal_appealChallengeID(ctx context.Context, field graphql.CollectedField, obj *Appeal) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Appeal"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.AppealChallengeID, nil
+func (ec *executionContext) _Appeal_appealChallengeID(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Appeal",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Appeal().AppealChallengeID(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
 var articlePayloadImplementors = []string{"ArticlePayload"}
@@ -751,7 +814,7 @@ func (ec *executionContext) _Challenge_poll(ctx context.Context, field graphql.C
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(*Poll)
+		res := resTmp.(*model.Poll)
 		if res == nil {
 			return graphql.Null
 		}
@@ -806,7 +869,7 @@ func (ec *executionContext) _Challenge_appeal(ctx context.Context, field graphql
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(*Appeal)
+		res := resTmp.(*model.Appeal)
 		if res == nil {
 			return graphql.Null
 		}
@@ -2445,7 +2508,7 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 var pollImplementors = []string{"Poll"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Poll(ctx context.Context, sel ast.SelectionSet, obj *Poll) graphql.Marshaler {
+func (ec *executionContext) _Poll(ctx context.Context, sel ast.SelectionSet, obj *model.Poll) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, pollImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -2473,89 +2536,134 @@ func (ec *executionContext) _Poll(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
-func (ec *executionContext) _Poll_commitEndDate(ctx context.Context, field graphql.CollectedField, obj *Poll) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Poll"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.CommitEndDate, nil
+func (ec *executionContext) _Poll_commitEndDate(ctx context.Context, field graphql.CollectedField, obj *model.Poll) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Poll",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Poll().CommitEndDate(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Poll_revealEndDate(ctx context.Context, field graphql.CollectedField, obj *Poll) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Poll"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.RevealEndDate, nil
+func (ec *executionContext) _Poll_revealEndDate(ctx context.Context, field graphql.CollectedField, obj *model.Poll) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Poll",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Poll().RevealEndDate(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Poll_voteQuorum(ctx context.Context, field graphql.CollectedField, obj *Poll) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Poll"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.VoteQuorum, nil
+func (ec *executionContext) _Poll_voteQuorum(ctx context.Context, field graphql.CollectedField, obj *model.Poll) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Poll",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Poll().VoteQuorum(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Poll_votesFor(ctx context.Context, field graphql.CollectedField, obj *Poll) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Poll"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.VotesFor, nil
+func (ec *executionContext) _Poll_votesFor(ctx context.Context, field graphql.CollectedField, obj *model.Poll) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Poll",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Poll().VotesFor(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
-func (ec *executionContext) _Poll_votesAgainst(ctx context.Context, field graphql.CollectedField, obj *Poll) graphql.Marshaler {
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Poll"
-	rctx.Args = nil
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.VotesAgainst, nil
+func (ec *executionContext) _Poll_votesAgainst(ctx context.Context, field graphql.CollectedField, obj *model.Poll) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Poll",
+		Args:   nil,
+		Field:  field,
 	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	return graphql.MarshalInt(res)
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Poll().VotesAgainst(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
 }
 
 var queryImplementors = []string{"Query"}

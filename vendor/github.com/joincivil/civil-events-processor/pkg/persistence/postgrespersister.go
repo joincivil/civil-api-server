@@ -27,6 +27,8 @@ const (
 	govEventTableName  = "governance_event"
 	cronTableName      = "cron"
 	challengeTableName = "challenge"
+	pollTableName      = "poll"
+	appealTableName    = "appeal"
 
 	lastUpdatedDateDBModelName = "LastUpdatedDateTs"
 
@@ -203,6 +205,66 @@ func (p *PostgresPersister) ChallengeByChallengeID(challengeID int) (*model.Chal
 	return nil, model.ErrPersisterNoResults
 }
 
+// PollByPollID gets a poll by pollID
+func (p *PostgresPersister) PollByPollID(pollID int) (*model.Poll, error) {
+	polls, err := p.pollsByPollIDsInTableInOrder([]int{pollID}, pollTableName)
+	if err != nil {
+		return nil, err
+	}
+	if polls == nil {
+		return nil, model.ErrPersisterNoResults
+	}
+	if len(polls) > 0 {
+		return polls[0], nil
+	}
+	return nil, model.ErrPersisterNoResults
+}
+
+// PollsByPollIDs returns a slice of polls based on poll IDs
+func (p *PostgresPersister) PollsByPollIDs(pollIDs []int) ([]*model.Poll, error) {
+	return p.pollsByPollIDsInTableInOrder(pollIDs, pollTableName)
+}
+
+// CreatePoll creates a new poll
+func (p *PostgresPersister) CreatePoll(poll *model.Poll) error {
+	return p.createPollInTable(poll, pollTableName)
+}
+
+// UpdatePoll updates a poll
+func (p *PostgresPersister) UpdatePoll(poll *model.Poll, updatedFields []string) error {
+	return p.updatePollInTable(poll, updatedFields, pollTableName)
+}
+
+// AppealByChallengeID gets an appeal by challengeID
+func (p *PostgresPersister) AppealByChallengeID(challengeID int) (*model.Appeal, error) {
+	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, challengeTableName)
+	if err != nil {
+		return nil, err
+	}
+	if appeals == nil {
+		return nil, model.ErrPersisterNoResults
+	}
+	if len(appeals) > 0 {
+		return appeals[0], nil
+	}
+	return nil, model.ErrPersisterNoResults
+}
+
+// AppealsByChallengeIDs returns a slice of appeals based on challenge IDs
+func (p *PostgresPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
+	return p.appealsByChallengeIDsInTableInOrder(challengeIDs, appealTableName)
+}
+
+// CreateAppeal creates a new appeal
+func (p *PostgresPersister) CreateAppeal(appeal *model.Appeal) error {
+	return p.createAppealInTable(appeal, appealTableName)
+}
+
+// UpdateAppeal updates an appeal
+func (p *PostgresPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []string) error {
+	return p.updateAppealInTable(appeal, updatedFields, appealTableName)
+}
+
 // CreateTables creates the tables for processor if they don't exist
 func (p *PostgresPersister) CreateTables() error {
 	// this needs to get all the event tables for processor
@@ -211,6 +273,8 @@ func (p *PostgresPersister) CreateTables() error {
 	listingTableQuery := postgres.CreateListingTableQuery()
 	cronTableQuery := postgres.CreateCronTableQuery()
 	challengeTableQuery := postgres.CreateChallengeTableQuery()
+	pollTableQuery := postgres.CreatePollTableQuery()
+	appealTableQuery := postgres.CreateAppealTableQuery()
 
 	_, err := p.db.Exec(contRevTableQuery)
 	if err != nil {
@@ -231,6 +295,14 @@ func (p *PostgresPersister) CreateTables() error {
 	_, err = p.db.Exec(challengeTableQuery)
 	if err != nil {
 		return fmt.Errorf("Error creating challenge table in postgres: %v", err)
+	}
+	_, err = p.db.Exec(pollTableQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating poll table in postgres: %v", err)
+	}
+	_, err = p.db.Exec(appealTableQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating appeal table in postgres: %v", err)
 	}
 	return nil
 }
@@ -869,6 +941,169 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 func (p *PostgresPersister) challengesByChallengeIDsQuery(tableName string) string {
 	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false)
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE challenge_id IN (?);", fieldNames, tableName) // nolint: gosec
+	return queryString
+}
+
+func (p *PostgresPersister) createPollInTable(poll *model.Poll, tableName string) error {
+	dbPoll := postgres.NewPoll(poll)
+	queryString := p.insertIntoDBQueryString(tableName, postgres.Poll{})
+	_, err := p.db.NamedExec(queryString, dbPoll)
+	if err != nil {
+		return fmt.Errorf("Error saving Poll to table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updatePollInTable(poll *model.Poll, updatedFields []string,
+	tableName string) error {
+	// Update the last updated timestamp
+	poll.SetLastUpdatedDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
+
+	queryString, err := p.updatePollQuery(updatedFields, tableName)
+	if err != nil {
+		return fmt.Errorf("Error creating query string for update: %v ", err)
+	}
+	dbPoll := postgres.NewPoll(poll)
+	_, err = p.db.NamedExec(queryString, dbPoll)
+	if err != nil {
+		return fmt.Errorf("Error updating fields in poll table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updatePollQuery(updatedFields []string, tableName string) (string, error) {
+	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, postgres.Poll{})
+	if err != nil {
+		return "", err
+	}
+	queryString.WriteString(" WHERE poll_id=:poll_id;") // nolint: gosec
+	return queryString.String(), nil
+}
+
+func (p *PostgresPersister) pollsByPollIDsInTableInOrder(pollIDs []int, pollTableName string) ([]*model.Poll, error) {
+	pollIDsString := postgres.ListIntToListString(pollIDs)
+	queryString := p.pollByPollIDsQuery(pollTableName)
+	query, args, err := sqlx.In(queryString, pollIDsString)
+	if err != nil {
+		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+	}
+	query = p.db.Rebind(query)
+	rows, err := p.db.Queryx(query, args...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = model.ErrPersisterNoResults
+		}
+		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+	}
+	pollsMap := map[int]*model.Poll{}
+	for rows.Next() {
+		var dbPoll postgres.Poll
+		err = rows.StructScan(&dbPoll)
+		if err != nil {
+			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+		}
+		modelPoll := dbPoll.DbToPollData()
+		pollsMap[int(modelPoll.PollID().Int64())] = modelPoll
+	}
+	// NOTE(IS): Return challenges in same order
+	polls := make([]*model.Poll, len(pollIDs))
+	for i, pollID := range pollIDs {
+		retrievedPoll, ok := pollsMap[pollID]
+		if ok {
+			polls[i] = retrievedPoll
+		} else {
+			polls[i] = nil
+		}
+	}
+	return polls, nil
+}
+
+func (p *PostgresPersister) pollByPollIDsQuery(tableName string) string {
+	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Poll{}, false)
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE poll_id IN (?);", fieldNames, tableName) // nolint: gosec
+	return queryString
+}
+
+func (p *PostgresPersister) createAppealInTable(appeal *model.Appeal, tableName string) error {
+	dbAppeal := postgres.NewAppeal(appeal)
+	queryString := p.insertIntoDBQueryString(tableName, postgres.Appeal{})
+	_, err := p.db.NamedExec(queryString, dbAppeal)
+	if err != nil {
+		return fmt.Errorf("Error saving appeal to table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updateAppealInTable(appeal *model.Appeal, updatedFields []string,
+	tableName string) error {
+	// Update the last updated timestamp
+	appeal.SetLastUpdatedDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
+
+	queryString, err := p.updateAppealQuery(updatedFields, tableName)
+	if err != nil {
+		return fmt.Errorf("Error creating query string for update: %v ", err)
+	}
+
+	dbAppeal := postgres.NewAppeal(appeal)
+	_, err = p.db.NamedExec(queryString, dbAppeal)
+	if err != nil {
+		return fmt.Errorf("Error updating fields in appeal table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updateAppealQuery(updatedFields []string, tableName string) (string, error) {
+	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, postgres.Appeal{})
+	if err != nil {
+		return "", err
+	}
+	queryString.WriteString(" WHERE original_challenge_id=:original_challenge_id;") // nolint: gosec
+	return queryString.String(), nil
+}
+
+func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []int, tableName string) ([]*model.Appeal, error) {
+	challengeIDsString := postgres.ListIntToListString(challengeIDs)
+	queryString := p.appealsByChallengeIDsQuery(tableName)
+	query, args, err := sqlx.In(queryString, challengeIDsString)
+	if err != nil {
+		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+	}
+	query = p.db.Rebind(query)
+	rows, err := p.db.Queryx(query, args...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = model.ErrPersisterNoResults
+		}
+		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+	}
+	appealsMap := map[int]*model.Appeal{}
+	for rows.Next() {
+		var dbAppeal postgres.Appeal
+		err = rows.StructScan(&dbAppeal)
+		if err != nil {
+			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+		}
+		modelAppeal := dbAppeal.DbToAppealData()
+		appealsMap[int(modelAppeal.OriginalChallengeID().Int64())] = modelAppeal
+	}
+	// NOTE(IS): Return challenges in same order
+	appeals := make([]*model.Appeal, len(challengeIDs))
+	for i, challengeID := range challengeIDs {
+		retrievedAppeal, ok := appealsMap[challengeID]
+		if ok {
+			appeals[i] = retrievedAppeal
+		} else {
+			appeals[i] = nil
+		}
+	}
+	return appeals, nil
+}
+
+func (p *PostgresPersister) appealsByChallengeIDsQuery(tableName string) string {
+	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Appeal{}, false)
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE original_challenge_id IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
 

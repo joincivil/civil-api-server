@@ -215,8 +215,8 @@
   revision = "e315432844572405d21f232db27dc6c2e37838b0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:47c6ca0c167098a793f78a2da0a99663a8698385039b5051cfe609e771295f75"
+  branch = "inna/2455/challengedata-model-splitmodels"
+  digest = "1:308e9cf8551b74d354db98e0390b18d9c00e86bcc5a669cccd3c9d3f3ad3069e"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -227,7 +227,7 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "146152ba874f4995ecf810b9fbcd5b417d3597d4"
+  revision = "4e586c3b51203aadf66ee19aee967d596499ef9d"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"

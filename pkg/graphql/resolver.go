@@ -29,6 +29,8 @@ type ResolverConfig struct {
 	GovEventPersister   model.GovernanceEventPersister
 	RevisionPersister   model.ContentRevisionPersister
 	ChallengePersister  model.ChallengePersister
+	AppealPersister     model.AppealPersister
+	PollPersister       model.PollPersister
 	UserPersister       users.UserPersister
 	OnfidoAPI           *kyc.OnfidoAPI
 	OnfidoTokenReferrer string
@@ -44,6 +46,8 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		revisionPersister:   config.RevisionPersister,
 		govEventPersister:   config.GovEventPersister,
 		challengePersister:  config.ChallengePersister,
+		appealPersister:     config.AppealPersister,
+		pollPersister:       config.PollPersister,
 		userPersister:       config.UserPersister,
 		onfidoAPI:           config.OnfidoAPI,
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
@@ -59,6 +63,8 @@ type Resolver struct {
 	revisionPersister   model.ContentRevisionPersister
 	govEventPersister   model.GovernanceEventPersister
 	challengePersister  model.ChallengePersister
+	appealPersister     model.AppealPersister
+	pollPersister       model.PollPersister
 	userPersister       users.UserPersister
 	onfidoAPI           *kyc.OnfidoAPI
 	onfidoTokenReferrer string
@@ -76,14 +82,24 @@ func (r *Resolver) GovernanceEvent() graphql.GovernanceEventResolver {
 	return &governanceEventResolver{r}
 }
 
-// Listing is the resolver for the listingtype
+// Listing is the resolver for the Listing type
 func (r *Resolver) Listing() graphql.ListingResolver {
 	return &listingResolver{r}
 }
 
-// Challenge is the resolver for the listingtype
+// Challenge is the resolver for the Challenge type
 func (r *Resolver) Challenge() graphql.ChallengeResolver {
 	return &challengeResolver{r}
+}
+
+// Appeal is the resolver for the Appeal type
+func (r *Resolver) Appeal() graphql.AppealResolver {
+	return &appealResolver{r}
+}
+
+// Poll is the resolver for the Poll type
+func (r *Resolver) Poll() graphql.PollResolver {
+	return &pollResolver{r}
 }
 
 // Query is the resolver for the Query type
@@ -303,20 +319,61 @@ func (r *challengeResolver) RequestAppealExpiry(ctx context.Context, obj *model.
 func (r *challengeResolver) LastUpdatedDateTs(ctx context.Context, obj *model.Challenge) (int, error) {
 	return int(obj.LastUpdatedDateTs()), nil
 }
-func (r *challengeResolver) Poll(ctx context.Context, obj *model.Challenge) (*graphql.Poll, error) {
-	modelPoll := obj.Poll()
-	poll := graphql.Poll{}
-	poll.CommitEndDate = int(modelPoll.CommitEndDate())
-	poll.RevealEndDate = int(modelPoll.RevealEndDate())
-	poll.VoteQuorum = int(modelPoll.VoteQuorum())
-	poll.VotesFor = int(modelPoll.VotesFor())
-	poll.VotesAgainst = int(modelPoll.VotesAgainst())
-	return &poll, nil
+func (r *challengeResolver) Poll(ctx context.Context, obj *model.Challenge) (*model.Poll, error) {
+	challengeID := int(obj.ChallengeID().Int64())
+
+	poll, err := r.pollPersister.PollByPollID(challengeID)
+	if err != nil {
+		return nil, err
+	}
+
+	return poll, nil
 }
-func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*graphql.Appeal, error) {
-	// Keep this empty for now
-	appeal := graphql.Appeal{}
-	return &appeal, nil
+func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error) {
+	challengeID := int(obj.ChallengeID().Int64())
+
+	appeal, err := r.appealPersister.AppealByChallengeID(challengeID)
+	if err != nil {
+		return nil, err
+	}
+
+	return appeal, nil
+}
+
+type appealResolver struct{ *Resolver }
+
+func (r *appealResolver) Requester(ctx context.Context, obj *model.Appeal) (string, error) {
+	return obj.Requester().Hex(), nil
+}
+func (r *appealResolver) AppealFeePaid(ctx context.Context, obj *model.Appeal) (int, error) {
+	return int(obj.AppealFeePaid().Int64()), nil
+}
+func (r *appealResolver) AppealPhaseExpiry(ctx context.Context, obj *model.Appeal) (int, error) {
+	return int(obj.AppealPhaseExpiry().Int64()), nil
+}
+func (r *appealResolver) AppealOpenToChallengeExpiry(ctx context.Context, obj *model.Appeal) (int, error) {
+	return int(obj.AppealOpenToChallengeExpiry().Int64()), nil
+}
+func (r *appealResolver) AppealChallengeID(ctx context.Context, obj *model.Appeal) (int, error) {
+	return int(obj.AppealChallengeID().Int64()), nil
+}
+
+type pollResolver struct{ *Resolver }
+
+func (r *pollResolver) CommitEndDate(ctx context.Context, obj *model.Poll) (int, error) {
+	return int(obj.CommitEndDate().Int64()), nil
+}
+func (r *pollResolver) RevealEndDate(ctx context.Context, obj *model.Poll) (int, error) {
+	return int(obj.RevealEndDate().Int64()), nil
+}
+func (r *pollResolver) VoteQuorum(ctx context.Context, obj *model.Poll) (int, error) {
+	return int(obj.VoteQuorum().Int64()), nil
+}
+func (r *pollResolver) VotesFor(ctx context.Context, obj *model.Poll) (int, error) {
+	return int(obj.VotesFor().Int64()), nil
+}
+func (r *pollResolver) VotesAgainst(ctx context.Context, obj *model.Poll) (int, error) {
+	return int(obj.VotesAgainst().Int64()), nil
 }
 
 type queryResolver struct{ *Resolver }
