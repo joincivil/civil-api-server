@@ -44,6 +44,4 @@ required = ["github.com/99designs/gqlgen"]
 
 [[constraint]]
   name = "github.com/joincivil/civil-events-processor"
-  # branch = "master"
-  # Remove once this branch has been merged to master
-  branch = "inna/2455/challengedata-model-splitmodels"
+  branch = "master"

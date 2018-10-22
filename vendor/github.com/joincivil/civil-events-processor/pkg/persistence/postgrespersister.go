@@ -237,7 +237,7 @@ func (p *PostgresPersister) UpdatePoll(poll *model.Poll, updatedFields []string)
 
 // AppealByChallengeID gets an appeal by challengeID
 func (p *PostgresPersister) AppealByChallengeID(challengeID int) (*model.Appeal, error) {
-	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, challengeTableName)
+	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, appealTableName)
 	if err != nil {
 		return nil, err
 	}

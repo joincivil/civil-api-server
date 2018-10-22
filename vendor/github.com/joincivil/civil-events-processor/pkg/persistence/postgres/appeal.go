@@ -59,10 +59,21 @@ func NewAppeal(appealData *model.Appeal) *Appeal {
 	appeal.AppealFeePaid = appealData.AppealFeePaid().Uint64()
 	appeal.AppealPhaseExpiry = appealData.AppealPhaseExpiry().Int64()
 	appeal.AppealGranted = appealData.AppealGranted()
-	appeal.AppealOpenToChallengeExpiry = appealData.AppealOpenToChallengeExpiry().Int64()
-	appeal.Statement = appealData.Statement()
-	appeal.AppealChallengeID = appealData.AppealChallengeID().Uint64()
 	appeal.LastUpdatedDateTs = appealData.LastUpdatedDateTs()
+	appeal.Statement = appealData.Statement()
+
+	// NOTE(IS): following fields can be nil so set to 0
+	if appealData.AppealOpenToChallengeExpiry() != nil {
+		appeal.AppealOpenToChallengeExpiry = appealData.AppealOpenToChallengeExpiry().Int64()
+	} else {
+		appeal.AppealOpenToChallengeExpiry = int64(0)
+	}
+	if appealData.AppealChallengeID() != nil {
+		appeal.AppealChallengeID = appealData.AppealChallengeID().Uint64()
+	} else {
+		appeal.AppealChallengeID = uint64(0)
+	}
+
 	return appeal
 }
 
@@ -77,6 +88,8 @@ func (a *Appeal) DbToAppealData() *model.Appeal {
 		a.Statement,
 		a.LastUpdatedDateTs,
 	)
-	appeal.SetAppealChallengeID(new(big.Int).SetUint64(a.AppealFeePaid))
+
+	appeal.SetAppealChallengeID(new(big.Int).SetUint64(a.AppealChallengeID))
+	appeal.SetAppealOpenToChallengeExpiry(big.NewInt(a.AppealOpenToChallengeExpiry))
 	return appeal
 }
