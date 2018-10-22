@@ -66,6 +66,16 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		log.Errorf("Error w challengePersister: err: %v", err)
 		return nil, err
 	}
+	appealPersister, err := helpers.AppealPersister(config)
+	if err != nil {
+		log.Errorf("Error w appealPersister: err: %v", err)
+		return nil, err
+	}
+	pollPersister, err := helpers.PollPersister(config)
+	if err != nil {
+		log.Errorf("Error w pollPersister: err: %v", err)
+		return nil, err
+	}
 	onfido := kyc.NewOnfidoAPI(
 		kyc.ProdAPIURL,
 		config.OnfidoKey,
@@ -89,6 +99,8 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		RevisionPersister:   contentRevisionPersister,
 		GovEventPersister:   governanceEventPersister,
 		ChallengePersister:  challengePersister,
+		AppealPersister:     appealPersister,
+		PollPersister:       pollPersister,
 		UserPersister:       userPersister,
 		OnfidoAPI:           onfido,
 		OnfidoTokenReferrer: config.OnfidoReferrer,

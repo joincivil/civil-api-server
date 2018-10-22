@@ -16,8 +16,7 @@ var ResetChallengeIDEvents = []GovernanceState{
 func NewListing(name string, contractAddress common.Address, whitelisted bool,
 	lastState GovernanceState, url string, charterURI string, owner common.Address, ownerAddresses []common.Address,
 	contributorAddresses []common.Address, createdDateTs int64, applicationDateTs int64,
-	approvalDateTs int64, lastUpdatedDateTs int64, appExpiry *big.Int, unstakedDeposit *big.Int,
-	challengeID *big.Int) *Listing {
+	approvalDateTs int64, lastUpdatedDateTs int64) *Listing {
 	return &Listing{
 		name:                 name,
 		contractAddress:      contractAddress,
@@ -32,9 +31,6 @@ func NewListing(name string, contractAddress common.Address, whitelisted bool,
 		applicationDateTs:    applicationDateTs,
 		approvalDateTs:       approvalDateTs,
 		lastUpdatedDateTs:    lastUpdatedDateTs,
-		appExpiry:            appExpiry,
-		unstakedDeposit:      unstakedDeposit,
-		challengeID:          challengeID,
 	}
 }
 
@@ -215,9 +211,19 @@ func (l *Listing) AppExpiry() *big.Int {
 	return l.appExpiry
 }
 
+// SetAppExpiry returns the expiration date of the application to this newsroom
+func (l *Listing) SetAppExpiry(appExpiry *big.Int) {
+	l.appExpiry = appExpiry
+}
+
 // UnstakedDeposit returns the unstaked deposit of the newsroom
 func (l *Listing) UnstakedDeposit() *big.Int {
 	return l.unstakedDeposit
+}
+
+// SetUnstakedDeposit returns the unstaked deposit of the newsroom
+func (l *Listing) SetUnstakedDeposit(unstakedDeposit *big.Int) {
+	l.unstakedDeposit = unstakedDeposit
 }
 
 // SetChallengeID sets the challenge ID of the listing.

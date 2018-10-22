@@ -48,11 +48,14 @@ const (
 	GovernanceStateGrantedAppealConfirmed
 	// GovernanceStateGrantedAppealOverturned is when a granted appeal decision is overturned
 	GovernanceStateGrantedAppealOverturned
+
+	// GovernanceStateDeposit is when the owner of a listing increases their unstaked deposit
+	GovernanceStateDeposit
+	// GovernanceStateDepositWithdrawl is when the owner of a listing decreases their unstaked deposit
+	GovernanceStateDepositWithdrawl
 )
 
 // Events unused for states
-// "Deposit"
 // "GovernmentTransfered"
 // "RewardClaimed"
 // "TouchAndRemoved"
-// "Withdrawal"
