@@ -284,30 +284,30 @@ func (r *challengeResolver) ChallengeID(ctx context.Context, obj *model.Challeng
 func (r *challengeResolver) ListingAddress(ctx context.Context, obj *model.Challenge) (string, error) {
 	return obj.ListingAddress().Hex(), nil
 }
-func (r *challengeResolver) RewardPool(ctx context.Context, obj *model.Challenge) (int, error) {
+func (r *challengeResolver) RewardPool(ctx context.Context, obj *model.Challenge) (string, error) {
 	rewardPool := obj.RewardPool()
 	if rewardPool != nil {
-		return int(rewardPool.Uint64()), nil
+		return rewardPool.String(), nil
 	}
-	return 0, nil
+	return "", nil
 }
 func (r *challengeResolver) Challenger(ctx context.Context, obj *model.Challenge) (string, error) {
 	return obj.Challenger().Hex(), nil
 }
-func (r *challengeResolver) Stake(ctx context.Context, obj *model.Challenge) (int, error) {
+func (r *challengeResolver) Stake(ctx context.Context, obj *model.Challenge) (string, error) {
 	stake := obj.Stake()
 	if stake != nil {
-		return int(stake.Uint64()), nil
+		return stake.String(), nil
 	}
-	return 0, nil
+	return "", nil
 
 }
-func (r *challengeResolver) TotalTokens(ctx context.Context, obj *model.Challenge) (int, error) {
+func (r *challengeResolver) TotalTokens(ctx context.Context, obj *model.Challenge) (string, error) {
 	totalTokens := obj.TotalTokens()
 	if totalTokens != nil {
-		return int(totalTokens.Uint64()), nil
+		return totalTokens.String(), nil
 	}
-	return 0, nil
+	return "", nil
 }
 func (r *challengeResolver) RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error) {
 	requestAppealExpiry := obj.RequestAppealExpiry()

@@ -58,11 +58,11 @@ type ChallengeResolver interface {
 	ChallengeID(ctx context.Context, obj *model.Challenge) (int, error)
 	ListingAddress(ctx context.Context, obj *model.Challenge) (string, error)
 
-	RewardPool(ctx context.Context, obj *model.Challenge) (int, error)
+	RewardPool(ctx context.Context, obj *model.Challenge) (string, error)
 	Challenger(ctx context.Context, obj *model.Challenge) (string, error)
 
-	Stake(ctx context.Context, obj *model.Challenge) (int, error)
-	TotalTokens(ctx context.Context, obj *model.Challenge) (int, error)
+	Stake(ctx context.Context, obj *model.Challenge) (string, error)
+	TotalTokens(ctx context.Context, obj *model.Challenge) (string, error)
 	Poll(ctx context.Context, obj *model.Challenge) (*model.Poll, error)
 	RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error)
 	Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error)
@@ -693,8 +693,8 @@ func (ec *executionContext) _Challenge_rewardPool(ctx context.Context, field gra
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -762,8 +762,8 @@ func (ec *executionContext) _Challenge_stake(ctx context.Context, field graphql.
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -788,8 +788,8 @@ func (ec *executionContext) _Challenge_totalTokens(ctx context.Context, field gr
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -4691,11 +4691,11 @@ type Challenge {
   challengeID: Int!
   listingAddress: String!
   statement: String!
-  rewardPool: Int!
+  rewardPool: String!
   challenger: String!
   resolved: Boolean!
-  stake: Int!
-  totalTokens: Int!
+  stake: String!
+  totalTokens: String!
   poll: Poll
   requestAppealExpiry: Int!
   appeal: Appeal
