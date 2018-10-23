@@ -95,11 +95,11 @@ type Challenge {
   challengeID: Int!
   listingAddress: String!
   statement: String!
-  rewardPool: Int!
+  rewardPool: String!
   challenger: String!
   resolved: Boolean!
-  stake: Int!
-  totalTokens: Int!
+  stake: String!
+  totalTokens: String!
   poll: Poll
   requestAppealExpiry: Int!
   appeal: Appeal
