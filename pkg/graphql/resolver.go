@@ -14,6 +14,7 @@ import (
 	"github.com/iancoleman/strcase"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
+	putils "github.com/joincivil/civil-events-processor/pkg/utils"
 
 	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
@@ -85,6 +86,11 @@ func (r *Resolver) GovernanceEvent() graphql.GovernanceEventResolver {
 // Listing is the resolver for the Listing type
 func (r *Resolver) Listing() graphql.ListingResolver {
 	return &listingResolver{r}
+}
+
+// Charter is the resolver for the Charter type
+func (r *Resolver) Charter() graphql.CharterResolver {
+	return &charterResolver{r}
 }
 
 // Challenge is the resolver for the Challenge type
@@ -374,6 +380,27 @@ func (r *pollResolver) VotesFor(ctx context.Context, obj *model.Poll) (int, erro
 }
 func (r *pollResolver) VotesAgainst(ctx context.Context, obj *model.Poll) (int, error) {
 	return int(obj.VotesAgainst().Int64()), nil
+}
+
+type charterResolver struct{ *Resolver }
+
+func (r *charterResolver) ContentID(ctx context.Context, obj *model.Charter) (int, error) {
+	return int(obj.ContentID().Int64()), nil
+}
+func (r *charterResolver) RevisionID(ctx context.Context, obj *model.Charter) (int, error) {
+	return int(obj.RevisionID().Int64()), nil
+}
+func (r *charterResolver) Signature(ctx context.Context, obj *model.Charter) (string, error) {
+	return string(obj.Signature()), nil
+}
+func (r *charterResolver) Author(ctx context.Context, obj *model.Charter) (string, error) {
+	return obj.Author().Hex(), nil
+}
+func (r *charterResolver) ContentHash(ctx context.Context, obj *model.Charter) (string, error) {
+	return putils.Byte32ToHexString(obj.ContentHash()), nil
+}
+func (r *charterResolver) Timestamp(ctx context.Context, obj *model.Charter) (int, error) {
+	return int(obj.Timestamp().Int64()), nil
 }
 
 type queryResolver struct{ *Resolver }
