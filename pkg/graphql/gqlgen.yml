@@ -20,6 +20,8 @@ resolver:
 models:
   Listing:
     model: github.com/joincivil/civil-events-processor/pkg/model.Listing
+  Charter:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   GovernanceEvent:
     model: github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
   ContentRevision:

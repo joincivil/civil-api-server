@@ -2,10 +2,14 @@ package postgres // import "github.com/joincivil/civil-events-processor/pkg/pers
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/joincivil/civil-events-processor/pkg/model"
+	log "github.com/golang/glog"
 	"math/big"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	crawlerpg "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
+	"github.com/joincivil/civil-events-processor/pkg/model"
 )
 
 // CreateListingTableQuery returns the query to create the listing table
@@ -20,9 +24,9 @@ func CreateListingTableQueryString(tableName string) string {
             name TEXT,
             contract_address TEXT PRIMARY KEY,
             whitelisted BOOL,
-            last_governance_state BIGINT, 
+            last_governance_state BIGINT,
             url TEXT,
-            charter_uri TEXT,
+            charter JSONB,
             owner_addresses TEXT,
             owner TEXT,
             contributor_addresses TEXT,
@@ -52,7 +56,7 @@ type Listing struct {
 
 	URL string `db:"url"`
 
-	CharterURI string `db:"charter_uri"`
+	Charter crawlerpg.JsonbPayload `db:"charter"`
 
 	// OwnerAddresses is a comma delimited string
 	OwnerAddresses string `db:"owner_addresses"`
@@ -82,6 +86,7 @@ func NewListing(listing *model.Listing) *Listing {
 	contributorAddresses := ListCommonAddressesToString(listing.ContributorAddresses())
 	lastGovernanceState := int(listing.LastGovernanceState())
 	owner := listing.Owner().Hex()
+
 	var appExpiry int64
 	var unstakedDeposit float64
 	var challengeID uint64
@@ -95,13 +100,16 @@ func NewListing(listing *model.Listing) *Listing {
 	if listing.ChallengeID() != nil {
 		challengeID = listing.ChallengeID().Uint64()
 	}
+
+	charter := crawlerpg.JsonbPayload(listing.Charter().AsMap())
+
 	return &Listing{
 		Name:                 listing.Name(),
 		ContractAddress:      listing.ContractAddress().Hex(),
 		Whitelisted:          listing.Whitelisted(),
 		LastGovernanceState:  lastGovernanceState,
 		URL:                  listing.URL(),
-		CharterURI:           listing.CharterURI(),
+		Charter:              charter,
 		OwnerAddresses:       ownerAddresses,
 		Owner:                owner,
 		ContributorAddresses: contributorAddresses,
@@ -125,12 +133,33 @@ func (l *Listing) DbToListingData() *model.Listing {
 	appExpiry := big.NewInt(l.AppExpiry)
 	unstakedDeposit := new(big.Int)
 	unstakedDeposit.SetString(strconv.FormatFloat(l.UnstakedDeposit, 'f', -1, 64), 10)
+
 	challengeID := big.NewInt(0)
 	challengeID.SetUint64(l.ChallengeID)
-	listing := model.NewListing(l.Name, contractAddress, l.Whitelisted, governanceState, l.URL, l.CharterURI, ownerAddress,
-		ownerAddresses, contributorAddresses, l.CreatedDateTs, l.ApplicationDateTs, l.ApprovalDateTs, l.LastUpdatedDateTs)
-	listing.SetAppExpiry(appExpiry)
-	listing.SetUnstakedDeposit(unstakedDeposit)
-	listing.SetChallengeID(challengeID)
-	return listing
+
+	charter := &model.Charter{}
+	err := charter.FromMap(l.Charter)
+	if err != nil {
+		log.Errorf("Error decoding map to charter: err: ", err)
+	}
+
+	testListingParams := &model.NewListingParams{
+		Name:                 l.Name,
+		ContractAddress:      contractAddress,
+		Whitelisted:          l.Whitelisted,
+		LastState:            governanceState,
+		URL:                  l.URL,
+		Charter:              charter,
+		Owner:                ownerAddress,
+		OwnerAddresses:       ownerAddresses,
+		ContributorAddresses: contributorAddresses,
+		CreatedDateTs:        l.CreatedDateTs,
+		ApplicationDateTs:    l.ApplicationDateTs,
+		ApprovalDateTs:       l.ApprovalDateTs,
+		LastUpdatedDateTs:    l.LastUpdatedDateTs,
+		AppExpiry:            appExpiry,
+		UnstakedDeposit:      unstakedDeposit,
+		ChallengeID:          challengeID,
+	}
+	return model.NewListing(testListingParams)
 }

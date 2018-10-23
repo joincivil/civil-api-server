@@ -2,35 +2,219 @@
 package model // import "github.com/joincivil/civil-events-processor/pkg/model"
 
 import (
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/joincivil/civil-events-processor/pkg/utils"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // ResetChallengeIDEvents is the list of governance events that reset challengeID to 0
 var ResetChallengeIDEvents = []GovernanceState{
 	GovernanceStateAppWhitelisted,
 	GovernanceStateRemoved,
-	GovernanceStateAppRemoved}
+	GovernanceStateAppRemoved,
+}
+
+// CharterParams are params to create a new populated charter struct via
+// NewCharter
+type CharterParams struct {
+	URI         string
+	ContentID   *big.Int
+	RevisionID  *big.Int
+	Signature   []byte
+	Author      common.Address
+	ContentHash [32]byte
+	Timestamp   *big.Int
+}
+
+// NewCharter is a convenience func to create a new Charter struct
+func NewCharter(params *CharterParams) *Charter {
+	return &Charter{
+		uri:         params.URI,
+		contentID:   params.ContentID,
+		revisionID:  params.RevisionID,
+		signature:   params.Signature,
+		author:      params.Author,
+		contentHash: params.ContentHash,
+		timestamp:   params.Timestamp,
+	}
+}
+
+const (
+	uriMapStr         = "uri"
+	contentIDMapStr   = "content_id"
+	revisionIDMapStr  = "revision_id"
+	signatureMapStr   = "signature"
+	authorMapStr      = "author"
+	contentHashMapStr = "content_hash"
+	timestampMapStr   = "timestamp"
+)
+
+// Charter represents data for the newsroom/listing charter
+type Charter struct {
+	uri string
+
+	contentID *big.Int
+
+	revisionID *big.Int
+
+	signature []byte
+
+	author common.Address
+
+	contentHash [32]byte
+
+	timestamp *big.Int
+}
+
+// URI returns the charter uri
+func (c *Charter) URI() string {
+	return c.uri
+}
+
+// ContentID returns the charter content id
+func (c *Charter) ContentID() *big.Int {
+	return c.contentID
+}
+
+// RevisionID returns the charter revision id
+func (c *Charter) RevisionID() *big.Int {
+	return c.revisionID
+}
+
+// Signature returns the charter signature
+func (c *Charter) Signature() []byte {
+	return c.signature
+}
+
+// Author returns the charter author address
+func (c *Charter) Author() common.Address {
+	return c.author
+}
+
+// ContentHash returns the charter content hash
+func (c *Charter) ContentHash() [32]byte {
+	return c.contentHash
+}
+
+// Timestamp returns the charter timestamp
+func (c *Charter) Timestamp() *big.Int {
+	return c.timestamp
+}
+
+// AsMap returns the charter data as a map[string]interface{}
+func (c *Charter) AsMap() map[string]interface{} {
+	newMap := map[string]interface{}{}
+	newMap[uriMapStr] = c.uri
+	if c.contentID != nil {
+		newMap[contentIDMapStr] = c.contentID.Int64()
+	}
+	if c.revisionID != nil {
+		newMap[revisionIDMapStr] = c.revisionID.Int64()
+	}
+	newMap[signatureMapStr] = string(c.signature)
+	newMap[authorMapStr] = c.author.Hex()
+	newMap[contentHashMapStr] = utils.Byte32ToHexString(c.contentHash)
+
+	if c.timestamp != nil {
+		newMap[timestampMapStr] = c.timestamp.Int64()
+	}
+	return newMap
+}
+
+// FromMap converts the charter data from map[string]interface{} to
+// charter data
+func (c *Charter) FromMap(charterMap map[string]interface{}) error {
+	val, ok := charterMap[uriMapStr]
+	if ok && val != nil {
+		c.uri = val.(string)
+	}
+	val, ok = charterMap[contentIDMapStr]
+	if ok && val != nil {
+		switch t := val.(type) {
+		case int64:
+			c.contentID = big.NewInt(t)
+		case float64:
+			c.contentID = big.NewInt(int64(t))
+		}
+	}
+	val, ok = charterMap[revisionIDMapStr]
+	if ok && val != nil {
+		switch t := val.(type) {
+		case int64:
+			c.revisionID = big.NewInt(t)
+		case float64:
+			c.revisionID = big.NewInt(int64(t))
+		}
+	}
+	val, ok = charterMap[signatureMapStr]
+	if ok && val != nil {
+		c.signature = []byte(val.(string))
+	}
+	val, ok = charterMap[authorMapStr]
+	if ok && val != nil {
+		c.author = common.HexToAddress(val.(string))
+	}
+	val, ok = charterMap[contentHashMapStr]
+	if ok && val != nil {
+		fixed, err := utils.HexStringToByte32(val.(string))
+		if err != nil {
+			return err
+		}
+		c.contentHash = fixed
+	}
+	val, ok = charterMap[timestampMapStr]
+	if ok && val != nil {
+		switch t := val.(type) {
+		case int64:
+			c.timestamp = big.NewInt(t)
+		case float64:
+			c.timestamp = big.NewInt(int64(t))
+		}
+	}
+	return nil
+}
+
+// NewListingParams represents all the necessary data to create a new listing
+// using NewListing
+type NewListingParams struct {
+	Name                 string
+	ContractAddress      common.Address
+	Whitelisted          bool
+	LastState            GovernanceState
+	URL                  string
+	Charter              *Charter
+	Owner                common.Address
+	OwnerAddresses       []common.Address
+	ContributorAddresses []common.Address
+	CreatedDateTs        int64
+	ApplicationDateTs    int64
+	ApprovalDateTs       int64
+	LastUpdatedDateTs    int64
+	AppExpiry            *big.Int
+	UnstakedDeposit      *big.Int
+	ChallengeID          *big.Int
+}
 
 // NewListing is a convenience function to initialize a new Listing struct
-func NewListing(name string, contractAddress common.Address, whitelisted bool,
-	lastState GovernanceState, url string, charterURI string, owner common.Address, ownerAddresses []common.Address,
-	contributorAddresses []common.Address, createdDateTs int64, applicationDateTs int64,
-	approvalDateTs int64, lastUpdatedDateTs int64) *Listing {
+func NewListing(params *NewListingParams) *Listing {
 	return &Listing{
-		name:                 name,
-		contractAddress:      contractAddress,
-		whitelisted:          whitelisted,
-		lastGovernanceState:  lastState,
-		url:                  url,
-		charterURI:           charterURI,
-		owner:                owner,
-		ownerAddresses:       ownerAddresses,
-		contributorAddresses: contributorAddresses,
-		createdDateTs:        createdDateTs,
-		applicationDateTs:    applicationDateTs,
-		approvalDateTs:       approvalDateTs,
-		lastUpdatedDateTs:    lastUpdatedDateTs,
+		name:                 params.Name,
+		contractAddress:      params.ContractAddress,
+		whitelisted:          params.Whitelisted,
+		lastGovernanceState:  params.LastState,
+		url:                  params.URL,
+		charter:              params.Charter,
+		owner:                params.Owner,
+		ownerAddresses:       params.OwnerAddresses,
+		contributorAddresses: params.ContributorAddresses,
+		createdDateTs:        params.CreatedDateTs,
+		applicationDateTs:    params.ApplicationDateTs,
+		approvalDateTs:       params.ApprovalDateTs,
+		lastUpdatedDateTs:    params.LastUpdatedDateTs,
+		appExpiry:            params.AppExpiry,
+		unstakedDeposit:      params.UnstakedDeposit,
+		challengeID:          params.ChallengeID,
 	}
 }
 
@@ -46,7 +230,7 @@ type Listing struct {
 
 	url string
 
-	charterURI string // Updated to reflect how we are storing the charter
+	charter *Charter
 
 	owner common.Address
 
@@ -115,9 +299,14 @@ func (l *Listing) URL() string {
 	return l.url
 }
 
-// CharterURI returns the URI to the charter post for the newsroom
-func (l *Listing) CharterURI() string {
-	return l.charterURI
+// Charter returns the data regarding charter post for the newsroom
+func (l *Listing) Charter() *Charter {
+	return l.charter
+}
+
+// SetCharter set the data regarding charter post for the newsroom
+func (l *Listing) SetCharter(c *Charter) {
+	l.charter = c
 }
 
 // OwnerAddresses is the addresses of the owners of the newsroom - all members of multisig

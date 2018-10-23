@@ -76,7 +76,7 @@ type Listing {
   whitelisted: Boolean!
   lastGovState: String!
   url: String!
-  charterUri: String!
+  charter: Charter!
   ownerAddresses: [String!]!
   owner: String!
   contributorAddresses: [String!]!
@@ -88,6 +88,16 @@ type Listing {
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge
+}
+
+type Charter {
+  uri: String!
+  contentID: Int!
+  revisionID: Int!
+  signature: String!
+  author: String!
+  contentHash: String!
+  timestamp: Int!
 }
 
 # A type that reflects values in model.Challenge

@@ -34,6 +34,7 @@ type Config struct {
 type ResolverRoot interface {
 	Appeal() AppealResolver
 	Challenge() ChallengeResolver
+	Charter() CharterResolver
 	ContentRevision() ContentRevisionResolver
 	GovernanceEvent() GovernanceEventResolver
 	Listing() ListingResolver
@@ -67,6 +68,14 @@ type ChallengeResolver interface {
 	RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error)
 	Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error)
 	LastUpdatedDateTs(ctx context.Context, obj *model.Challenge) (int, error)
+}
+type CharterResolver interface {
+	ContentID(ctx context.Context, obj *model.Charter) (int, error)
+	RevisionID(ctx context.Context, obj *model.Charter) (int, error)
+	Signature(ctx context.Context, obj *model.Charter) (string, error)
+	Author(ctx context.Context, obj *model.Charter) (string, error)
+	ContentHash(ctx context.Context, obj *model.Charter) (string, error)
+	Timestamp(ctx context.Context, obj *model.Charter) (int, error)
 }
 type ContentRevisionResolver interface {
 	ListingAddress(ctx context.Context, obj *model.ContentRevision) (string, error)
@@ -894,6 +903,214 @@ func (ec *executionContext) _Challenge_lastUpdatedDateTs(ctx context.Context, fi
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 			return ec.resolvers.Challenge().LastUpdatedDateTs(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+var charterImplementors = []string{"Charter"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Charter(ctx context.Context, sel ast.SelectionSet, obj *model.Charter) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, charterImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Charter")
+		case "uri":
+			out.Values[i] = ec._Charter_uri(ctx, field, obj)
+		case "contentID":
+			out.Values[i] = ec._Charter_contentID(ctx, field, obj)
+		case "revisionID":
+			out.Values[i] = ec._Charter_revisionID(ctx, field, obj)
+		case "signature":
+			out.Values[i] = ec._Charter_signature(ctx, field, obj)
+		case "author":
+			out.Values[i] = ec._Charter_author(ctx, field, obj)
+		case "contentHash":
+			out.Values[i] = ec._Charter_contentHash(ctx, field, obj)
+		case "timestamp":
+			out.Values[i] = ec._Charter_timestamp(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	return out
+}
+
+func (ec *executionContext) _Charter_uri(ctx context.Context, field graphql.CollectedField, obj *model.Charter) graphql.Marshaler {
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Charter"
+	rctx.Args = nil
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return obj.URI(), nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	return graphql.MarshalString(res)
+}
+
+func (ec *executionContext) _Charter_contentID(ctx context.Context, field graphql.CollectedField, obj *model.Charter) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Charter",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Charter().ContentID(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Charter_revisionID(ctx context.Context, field graphql.CollectedField, obj *model.Charter) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Charter",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Charter().RevisionID(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(int)
+		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Charter_signature(ctx context.Context, field graphql.CollectedField, obj *model.Charter) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Charter",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Charter().Signature(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Charter_author(ctx context.Context, field graphql.CollectedField, obj *model.Charter) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Charter",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Charter().Author(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Charter_contentHash(ctx context.Context, field graphql.CollectedField, obj *model.Charter) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Charter",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Charter().ContentHash(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
+	})
+}
+
+func (ec *executionContext) _Charter_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Charter) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Charter",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Charter().Timestamp(ctx, obj)
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -1751,8 +1968,8 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Listing_lastGovState(ctx, field, obj)
 		case "url":
 			out.Values[i] = ec._Listing_url(ctx, field, obj)
-		case "charterUri":
-			out.Values[i] = ec._Listing_charterUri(ctx, field, obj)
+		case "charter":
+			out.Values[i] = ec._Listing_charter(ctx, field, obj)
 		case "ownerAddresses":
 			out.Values[i] = ec._Listing_ownerAddresses(ctx, field, obj)
 		case "owner":
@@ -1886,7 +2103,7 @@ func (ec *executionContext) _Listing_url(ctx context.Context, field graphql.Coll
 	return graphql.MarshalString(res)
 }
 
-func (ec *executionContext) _Listing_charterUri(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+func (ec *executionContext) _Listing_charter(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
 	rctx := graphql.GetResolverContext(ctx)
 	rctx.Object = "Listing"
 	rctx.Args = nil
@@ -1894,13 +2111,16 @@ func (ec *executionContext) _Listing_charterUri(ctx context.Context, field graph
 	rctx.PushField(field.Alias)
 	defer rctx.Pop()
 	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return obj.CharterURI(), nil
+		return obj.Charter(), nil
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
-	return graphql.MarshalString(res)
+	res := resTmp.(*model.Charter)
+	if res == nil {
+		return graphql.Null
+	}
+	return ec._Charter(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Listing_ownerAddresses(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
@@ -4672,7 +4892,7 @@ type Listing {
   whitelisted: Boolean!
   lastGovState: String!
   url: String!
-  charterUri: String!
+  charter: Charter!
   ownerAddresses: [String!]!
   owner: String!
   contributorAddresses: [String!]!
@@ -4684,6 +4904,16 @@ type Listing {
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge
+}
+
+type Charter {
+  uri: String!
+  contentID: Int!
+  revisionID: Int!
+  signature: String!
+  author: String!
+  contentHash: String!
+  timestamp: Int!
 }
 
 # A type that reflects values in model.Challenge
