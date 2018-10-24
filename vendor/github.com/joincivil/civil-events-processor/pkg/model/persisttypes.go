@@ -22,11 +22,18 @@ var (
 // ListingCriteria contains the retrieval criteria for the ListingsByCriteria
 // query.
 type ListingCriteria struct {
-	Offset          int   `db:"offset"`
-	Count           int   `db:"count"`
-	WhitelistedOnly bool  `db:"whitelisted_only"`
-	CreatedFromTs   int64 `db:"created_fromts"`
-	CreatedBeforeTs int64 `db:"created_beforets"`
+	Offset int `db:"offset"`
+	Count  int `db:"count"`
+	// Listings where whitelisted = true
+	WhitelistedOnly bool `db:"whitelisted_only"`
+	// Listings where whitelisted = false
+	RejectedOnly bool `db:"rejected_only"`
+	// Listings that have a challenge in progress
+	ActiveChallenge bool `db:"active_challenge"`
+	// Listings that do not have an active challenge
+	NoActiveChallenge bool  `db:"no_active_challenge"`
+	CreatedFromTs     int64 `db:"created_fromts"`
+	CreatedBeforeTs   int64 `db:"created_beforets"`
 }
 
 // ListingPersister is the interface to store the listings data related to the processor

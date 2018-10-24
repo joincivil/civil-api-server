@@ -439,6 +439,18 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" whitelisted = true") // nolint: gosec
 	}
+	if criteria.RejectedOnly {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(" whitelisted = false") // nolint: gosec
+	}
+	if criteria.ActiveChallenge {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(" challenge_id != 0") // nolint: gosec
+	}
+	if criteria.NoActiveChallenge {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(" challenge_id = 0") // nolint: gosec
+	}
 	if criteria.CreatedBeforeTs > 0 {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" creation_timestamp < :created_beforets") // nolint: gosec
