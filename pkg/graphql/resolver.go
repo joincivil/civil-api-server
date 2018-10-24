@@ -13,12 +13,14 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/iancoleman/strcase"
 
+	crawlutils "github.com/joincivil/civil-events-crawler/pkg/utils"
+
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	putils "github.com/joincivil/civil-events-processor/pkg/utils"
 
-	graphql "github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
-	kyc "github.com/joincivil/civil-api-server/pkg/kyc"
+	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
@@ -447,7 +449,7 @@ func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, crea
 	criteria := &model.GovernanceEventCriteria{}
 
 	if addr != nil && *addr != "" {
-		criteria.ListingAddress = *addr
+		criteria.ListingAddress = crawlutils.NormalizeEthAddress(*addr)
 	}
 	if creationDate != nil {
 		if creationDate.Gt != nil {
@@ -497,7 +499,7 @@ func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
 		LatestOnly: true,
 	}
 	if addr != nil && *addr != "" {
-		criteria.ListingAddress = *addr
+		criteria.ListingAddress = crawlutils.NormalizeEthAddress(*addr)
 	}
 	if after != nil && *after != "" {
 		afterInt, err := strconv.Atoi(*after)
