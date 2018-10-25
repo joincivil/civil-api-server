@@ -291,11 +291,13 @@ func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing)
 	}
 	totalChallenges := len(challenges)
 
+	// TODO(PN): Move this value to somewhere common, like in processor code
+	resolvedChallengeID := int64(0)
 	// If only 1 challenge, check to see if it is resolved and the current challenge id is 0.
 	// If it is, then is it the "previous" challenge.
 	if totalChallenges == 1 {
 		challenge := challenges[0]
-		if obj.ChallengeID().Int64() == 0 && challenge.Resolved() {
+		if obj.ChallengeID().Int64() == resolvedChallengeID && challenge.Resolved() {
 			return challenge, nil
 		}
 	}
@@ -303,7 +305,7 @@ func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing)
 	if totalChallenges > 1 {
 		latestChallenge := challenges[totalChallenges-1]
 		nextLatestChallenge := challenges[totalChallenges-2]
-		if obj.ChallengeID().Int64() == 0 && latestChallenge.Resolved() {
+		if obj.ChallengeID().Int64() == resolvedChallengeID && latestChallenge.Resolved() {
 			return latestChallenge, nil
 		}
 		return nextLatestChallenge, nil
