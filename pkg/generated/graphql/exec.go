@@ -54,6 +54,7 @@ type AppealResolver interface {
 	AppealOpenToChallengeExpiry(ctx context.Context, obj *model.Appeal) (int, error)
 
 	AppealChallengeID(ctx context.Context, obj *model.Appeal) (int, error)
+	AppealChallenge(ctx context.Context, obj *model.Appeal) (*model.Challenge, error)
 }
 type ChallengeResolver interface {
 	ChallengeID(ctx context.Context, obj *model.Challenge) (int, error)
@@ -221,6 +222,8 @@ func (ec *executionContext) _Appeal(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Appeal_statement(ctx, field, obj)
 		case "appealChallengeID":
 			out.Values[i] = ec._Appeal_appealChallengeID(ctx, field, obj)
+		case "appealChallenge":
+			out.Values[i] = ec._Appeal_appealChallenge(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -390,6 +393,35 @@ func (ec *executionContext) _Appeal_appealChallengeID(ctx context.Context, field
 		}
 		res := resTmp.(int)
 		return graphql.MarshalInt(res)
+	})
+}
+
+func (ec *executionContext) _Appeal_appealChallenge(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Appeal",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Appeal().AppealChallenge(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*model.Challenge)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._Challenge(ctx, field.Selections, res)
 	})
 }
 
@@ -4974,6 +5006,7 @@ type Appeal {
   appealOpenToChallengeExpiry: Int!
   statement: String!
   appealChallengeID: Int!
+  appealChallenge: Challenge
 }
 
 # A type that reflects values in model.Poll
