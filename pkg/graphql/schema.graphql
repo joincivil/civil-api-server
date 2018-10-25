@@ -88,6 +88,7 @@ type Listing {
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge
+  prevChallenge: Challenge
 }
 
 type Charter {

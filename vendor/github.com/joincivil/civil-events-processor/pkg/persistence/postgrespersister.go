@@ -196,13 +196,22 @@ func (p *PostgresPersister) ChallengeByChallengeID(challengeID int) (*model.Chal
 	if err != nil {
 		return nil, err
 	}
-	if challenges == nil {
+	if challenges == nil || len(challenges) <= 0 {
 		return nil, model.ErrPersisterNoResults
 	}
-	if len(challenges) > 0 {
-		return challenges[0], nil
+	return challenges[0], nil
+}
+
+// ChallengesByListingAddress gets a list of challenges for a listing sorted by challenge_id
+func (p *PostgresPersister) ChallengesByListingAddress(addr common.Address) ([]*model.Challenge, error) {
+	challenges, err := p.challengesByListingAddressInTable(addr, challengeTableName)
+	if err != nil {
+		return nil, err
 	}
-	return nil, model.ErrPersisterNoResults
+	if challenges == nil || len(challenges) <= 0 {
+		return nil, model.ErrPersisterNoResults
+	}
+	return challenges, nil
 }
 
 // PollByPollID gets a poll by pollID
@@ -211,13 +220,10 @@ func (p *PostgresPersister) PollByPollID(pollID int) (*model.Poll, error) {
 	if err != nil {
 		return nil, err
 	}
-	if polls == nil {
+	if polls == nil || len(polls) <= 0 {
 		return nil, model.ErrPersisterNoResults
 	}
-	if len(polls) > 0 {
-		return polls[0], nil
-	}
-	return nil, model.ErrPersisterNoResults
+	return polls[0], nil
 }
 
 // PollsByPollIDs returns a slice of polls based on poll IDs
@@ -241,13 +247,10 @@ func (p *PostgresPersister) AppealByChallengeID(challengeID int) (*model.Appeal,
 	if err != nil {
 		return nil, err
 	}
-	if appeals == nil {
+	if appeals == nil || len(appeals) <= 0 {
 		return nil, model.ErrPersisterNoResults
 	}
-	if len(appeals) > 0 {
-		return appeals[0], nil
-	}
-	return nil, model.ErrPersisterNoResults
+	return appeals[0], nil
 }
 
 // AppealsByChallengeIDs returns a slice of appeals based on challenge IDs
@@ -387,7 +390,7 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 	rows, err := p.db.Queryx(query, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = model.ErrPersisterNoResults
+			return nil, model.ErrPersisterNoResults
 		}
 		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
 	}
@@ -665,7 +668,7 @@ func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address co
 	err := p.db.Select(&dbGovEvents, queryString, address.Hex())
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = model.ErrPersisterNoResults
+			return nil, model.ErrPersisterNoResults
 		}
 		return govEvents, fmt.Errorf("Error retrieving governance events from table: %v", err)
 	}
@@ -681,7 +684,7 @@ func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash
 	rows, err := p.db.Queryx(queryString)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = model.ErrPersisterNoResults
+			return nil, model.ErrPersisterNoResults
 		}
 		return nil, fmt.Errorf("Error retrieving governance events from table: %v", err)
 	}
@@ -693,7 +696,7 @@ func (p *PostgresPersister) govEventsByChallengeIDsFromTable(challengeIDs []int,
 	rows, err := p.db.Queryx(queryString)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = model.ErrPersisterNoResults
+			return nil, model.ErrPersisterNoResults
 		}
 		return nil, fmt.Errorf("Error retrieving governance events from table: %v", err)
 	}
@@ -911,7 +914,7 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 	rows, err := p.db.Queryx(query, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = model.ErrPersisterNoResults
+			return nil, model.ErrPersisterNoResults
 		}
 		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
 	}
@@ -941,6 +944,38 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 func (p *PostgresPersister) challengesByChallengeIDsQuery(tableName string) string {
 	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false)
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE challenge_id IN (?);", fieldNames, tableName) // nolint: gosec
+	return queryString
+}
+
+// challengesByListingAddressQuery retrieves a list of challenges for a listing sorted
+// by challenge_id
+func (p *PostgresPersister) challengesByListingAddressInTable(addr common.Address,
+	tableName string) ([]*model.Challenge, error) {
+	challenges := []*model.Challenge{}
+	queryString := p.challengesByListingAddressQuery(tableName)
+	dbChallenges := []*postgres.Challenge{}
+	err := p.db.Select(&dbChallenges, queryString, addr.Hex())
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, model.ErrPersisterNoResults
+		}
+		return challenges, fmt.Errorf("Error retrieving challenges from table: %v", err)
+	}
+	for _, dbChallenge := range dbChallenges {
+		challenges = append(challenges, dbChallenge.DbToChallengeData())
+	}
+	return challenges, nil
+}
+
+// challengesByListingAddressQuery returns the query string to retrieved a list of
+// challenges for a listing sorted by challenge_id
+func (p *PostgresPersister) challengesByListingAddressQuery(tableName string) string {
+	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false)
+	queryString := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE listing_address = $1 ORDER BY challenge_id;",
+		fieldNames,
+		tableName,
+	) // nolint: gosec
 	return queryString
 }
 
@@ -992,7 +1027,7 @@ func (p *PostgresPersister) pollsByPollIDsInTableInOrder(pollIDs []int, pollTabl
 	rows, err := p.db.Queryx(query, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = model.ErrPersisterNoResults
+			return nil, model.ErrPersisterNoResults
 		}
 		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
 	}
@@ -1074,7 +1109,7 @@ func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []i
 	rows, err := p.db.Queryx(query, args...)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			err = model.ErrPersisterNoResults
+			return nil, model.ErrPersisterNoResults
 		}
 		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
 	}

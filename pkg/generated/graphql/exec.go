@@ -114,6 +114,7 @@ type ListingResolver interface {
 	UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error)
 	ChallengeID(ctx context.Context, obj *model.Listing) (int, error)
 	Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
+	PrevChallenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
 }
 type MutationResolver interface {
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
@@ -1992,6 +1993,8 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Listing_challengeID(ctx, field, obj)
 		case "challenge":
 			out.Values[i] = ec._Listing_challenge(ctx, field, obj)
+		case "prevChallenge":
+			out.Values[i] = ec._Listing_prevChallenge(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2424,6 +2427,35 @@ func (ec *executionContext) _Listing_challenge(ctx context.Context, field graphq
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 			return ec.resolvers.Listing().Challenge(ctx, obj)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*model.Challenge)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._Challenge(ctx, field.Selections, res)
+	})
+}
+
+func (ec *executionContext) _Listing_prevChallenge(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Listing",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Listing().PrevChallenge(ctx, obj)
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -4904,6 +4936,7 @@ type Listing {
   unstakedDeposit: String!
   challengeID: Int!
   challenge: Challenge
+  prevChallenge: Challenge
 }
 
 type Charter {

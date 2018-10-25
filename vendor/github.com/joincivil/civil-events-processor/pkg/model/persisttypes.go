@@ -122,6 +122,9 @@ type ChallengePersister interface {
 	ChallengeByChallengeID(challengeID int) (*Challenge, error)
 	// ChallengesByChallengeIDs returns a slice of challenges based on challenge IDs
 	ChallengesByChallengeIDs(challengeIDs []int) ([]*Challenge, error)
+	// ChallengesByListingAddress gets list of challenges for a listing sorted by
+	// challenge id
+	ChallengesByListingAddress(addr common.Address) ([]*Challenge, error)
 	// CreateChallenge creates a new challenge
 	CreateChallenge(challenge *Challenge) error
 	// UpdateChallenge updates a challenge
