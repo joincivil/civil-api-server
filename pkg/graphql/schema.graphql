@@ -7,7 +7,14 @@ schema {
 # The query type, represents all of the entry points into our object graph
 type Query {
   currentUser: User
-  listings(whitelistedOnly: Boolean, first: Int, after: String): [Listing!]!
+  listings(    
+    first: Int,
+    after: String,
+    whitelistedOnly: Boolean,
+    rejectedOnly: Boolean,
+    activeChallengeOnly: Boolean,
+    currentApplicationOnly: Boolean
+  ): [Listing!]!
   listing(addr: String!): Listing
   governanceEvents(
     addr: String

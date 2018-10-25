@@ -448,8 +448,9 @@ func (r *charterResolver) Timestamp(ctx context.Context, obj *model.Charter) (in
 
 type queryResolver struct{ *Resolver }
 
-func (r *queryResolver) Listings(ctx context.Context, whitelistedOnly *bool, first *int,
-	after *string) ([]model.Listing, error) {
+func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
+	whitelistedOnly *bool, rejectedOnly *bool, activeChallengeOnly *bool,
+	currentApplicationOnly *bool) ([]model.Listing, error) {
 	criteria := &model.ListingCriteria{}
 
 	if after != nil && *after != "" {
@@ -464,6 +465,12 @@ func (r *queryResolver) Listings(ctx context.Context, whitelistedOnly *bool, fir
 	}
 	if whitelistedOnly != nil {
 		criteria.WhitelistedOnly = *whitelistedOnly
+	} else if rejectedOnly != nil {
+		criteria.RejectedOnly = *rejectedOnly
+	} else if activeChallengeOnly != nil {
+		criteria.ActiveChallenge = *activeChallengeOnly
+	} else if currentApplicationOnly != nil {
+		criteria.CurrentApplication = *currentApplicationOnly
 	}
 
 	listings, err := r.listingPersister.ListingsByCriteria(criteria)
