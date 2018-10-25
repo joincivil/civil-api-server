@@ -84,6 +84,26 @@ func ChallengePersister(config utils.PersisterConfig) (model.ChallengePersister,
 	return p.(model.ChallengePersister), nil
 }
 
+// AppealPersister is a helper function to return the correct appeals persister based on
+// the given configuration
+func AppealPersister(config utils.PersisterConfig) (model.AppealPersister, error) {
+	p, err := persister(config)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.AppealPersister), nil
+}
+
+// PollPersister is a helper function to return the correct poll persister based on
+// the given configuration
+func PollPersister(config utils.PersisterConfig) (model.PollPersister, error) {
+	p, err := persister(config)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.PollPersister), nil
+}
+
 func persister(config utils.PersisterConfig) (interface{}, error) {
 	if config.PersistType() == utils.PersisterTypePostgresql {
 		return postgresPersister(config)

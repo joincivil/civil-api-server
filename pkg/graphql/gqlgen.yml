@@ -20,6 +20,8 @@ resolver:
 models:
   Listing:
     model: github.com/joincivil/civil-events-processor/pkg/model.Listing
+  Charter:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   GovernanceEvent:
     model: github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
   ContentRevision:
@@ -28,6 +30,10 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.ArticlePayloadValue
   Challenge:
     model: github.com/joincivil/civil-events-processor/pkg/model.Challenge
+  Appeal:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Appeal
+  Poll:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Poll
   CurrentUser:
     model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
   Invoice:

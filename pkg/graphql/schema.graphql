@@ -39,6 +39,7 @@ type User {
   email: String
   ethAddress: String
   onfidoApplicantId: String
+  onfidoCheckID: String
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
@@ -75,7 +76,7 @@ type Listing {
   whitelisted: Boolean!
   lastGovState: String!
   url: String!
-  charterUri: String!
+  charter: Charter!
   ownerAddresses: [String!]!
   owner: String!
   contributorAddresses: [String!]!
@@ -89,16 +90,26 @@ type Listing {
   challenge: Challenge
 }
 
+type Charter {
+  uri: String!
+  contentID: Int!
+  revisionID: Int!
+  signature: String!
+  author: String!
+  contentHash: String!
+  timestamp: Int!
+}
+
 # A type that reflects values in model.Challenge
 type Challenge {
   challengeID: Int!
   listingAddress: String!
   statement: String!
-  rewardPool: Int!
+  rewardPool: String!
   challenger: String!
   resolved: Boolean!
-  stake: Int!
-  totalTokens: Int!
+  stake: String!
+  totalTokens: String!
   poll: Poll
   requestAppealExpiry: Int!
   appeal: Appeal

@@ -127,3 +127,27 @@ type ChallengePersister interface {
 	// UpdateChallenge updates a challenge
 	UpdateChallenge(challenge *Challenge, updatedFields []string) error
 }
+
+// PollPersister is the interface to store PollData
+type PollPersister interface {
+	// PollByPollID gets a poll by pollID
+	PollByPollID(pollID int) (*Poll, error)
+	// PollsByPollIDs returns a slice of polls based on poll IDs
+	PollsByPollIDs(pollIDs []int) ([]*Poll, error)
+	// CreatePoll creates a new poll
+	CreatePoll(poll *Poll) error
+	// UpdatePoll updates a poll
+	UpdatePoll(poll *Poll, updatedFields []string) error
+}
+
+// AppealPersister is the interface to store AppealData
+type AppealPersister interface {
+	// AppealByChallengeID gets an appeal by challengeID
+	AppealByChallengeID(challengeID int) (*Appeal, error)
+	// AppealsByChallengeIDs returns a slice of appeals based on challenge IDs
+	AppealsByChallengeIDs(challengeIDs []int) ([]*Appeal, error)
+	// CreateAppeal creates a new appeal
+	CreateAppeal(appeal *Appeal) error
+	// UpdateAppeal updates an appeal
+	UpdateAppeal(appeal *Appeal, updatedFields []string) error
+}
