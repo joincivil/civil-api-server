@@ -424,14 +424,11 @@ func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	}
 	if whitelistedOnly != nil {
 		criteria.WhitelistedOnly = *whitelistedOnly
-	}
-	if rejectedOnly != nil {
+	} else if rejectedOnly != nil {
 		criteria.RejectedOnly = *rejectedOnly
-	}
-	if activeChallengeOnly != nil {
+	} else if activeChallengeOnly != nil {
 		criteria.ActiveChallenge = *activeChallengeOnly
-	}
-	if currentApplicationOnly != nil {
+	} else if currentApplicationOnly != nil {
 		criteria.CurrentApplication = *currentApplicationOnly
 	}
 
