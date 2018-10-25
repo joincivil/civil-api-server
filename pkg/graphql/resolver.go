@@ -283,6 +283,36 @@ func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*m
 	}
 	return challenge, nil
 }
+func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
+	// TODO(IS): add dataloader here
+	challenges, err := r.challengePersister.ChallengesByListingAddress(obj.ContractAddress())
+	if err != nil {
+		return nil, err
+	}
+	totalChallenges := len(challenges)
+
+	// TODO(PN): Move this value to somewhere common, like in processor code
+	resolvedChallengeID := int64(0)
+	// If only 1 challenge, check to see if it is resolved and the current challenge id is 0.
+	// If it is, then is it the "previous" challenge.
+	if totalChallenges == 1 {
+		challenge := challenges[0]
+		if obj.ChallengeID().Int64() == resolvedChallengeID && challenge.Resolved() {
+			return challenge, nil
+		}
+	}
+	// If there is more than 1 challenge, then determine which is the "previous challenge"
+	if totalChallenges > 1 {
+		latestChallenge := challenges[totalChallenges-1]
+		nextLatestChallenge := challenges[totalChallenges-2]
+		if obj.ChallengeID().Int64() == resolvedChallengeID && latestChallenge.Resolved() {
+			return latestChallenge, nil
+		}
+		return nextLatestChallenge, nil
+	}
+	// if no challenges, then return nothing
+	return nil, nil
+}
 
 type challengeResolver struct{ *Resolver }
 
@@ -364,6 +394,17 @@ func (r *appealResolver) AppealOpenToChallengeExpiry(ctx context.Context, obj *m
 }
 func (r *appealResolver) AppealChallengeID(ctx context.Context, obj *model.Appeal) (int, error) {
 	return int(obj.AppealChallengeID().Int64()), nil
+}
+func (r *appealResolver) AppealChallenge(ctx context.Context, obj *model.Appeal) (*model.Challenge, error) {
+	if obj.AppealChallengeID() == nil {
+		return nil, nil
+	}
+	challengeID := int(obj.AppealChallengeID().Int64())
+	challenge, err := r.challengePersister.ChallengeByChallengeID(challengeID)
+	if err != nil {
+		return nil, err
+	}
+	return challenge, nil
 }
 
 type pollResolver struct{ *Resolver }
