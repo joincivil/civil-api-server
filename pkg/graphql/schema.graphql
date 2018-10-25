@@ -126,6 +126,7 @@ type Appeal {
   appealOpenToChallengeExpiry: Int!
   statement: String!
   appealChallengeID: Int!
+  appealChallenge: Challenge
 }
 
 # A type that reflects values in model.Poll

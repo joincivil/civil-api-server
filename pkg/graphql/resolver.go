@@ -393,6 +393,17 @@ func (r *appealResolver) AppealOpenToChallengeExpiry(ctx context.Context, obj *m
 func (r *appealResolver) AppealChallengeID(ctx context.Context, obj *model.Appeal) (int, error) {
 	return int(obj.AppealChallengeID().Int64()), nil
 }
+func (r *appealResolver) AppealChallenge(ctx context.Context, obj *model.Appeal) (*model.Challenge, error) {
+	if obj.AppealChallengeID() == nil {
+		return nil, nil
+	}
+	challengeID := int(obj.AppealChallengeID().Int64())
+	challenge, err := r.challengePersister.ChallengeByChallengeID(challengeID)
+	if err != nil {
+		return nil, err
+	}
+	return challenge, nil
+}
 
 type pollResolver struct{ *Resolver }
 
