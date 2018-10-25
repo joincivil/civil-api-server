@@ -272,12 +272,12 @@
   version = "v0.8.0"
 
 [[projects]]
-  digest = "1:ba51b2c7d37f3741fcf6319ea843e88ee6a032412858de0d89a229f1725b279d"
+  digest = "1:31d83d1b1c288073c91abadee3caec87de2a1fb5dbe589039264a802e67a26b8"
   name = "github.com/rjeczalik/notify"
   packages = ["."]
   pruneopts = "UT"
-  revision = "52ae50d8490436622a8941bd70c3dbe0acdd4bbf"
-  version = "v0.9.0"
+  revision = "69d839f37b13a8cb7a78366f7633a4071cb43be7"
+  version = "v0.9.2"
 
 [[projects]]
   digest = "1:ed615c5430ecabbb0fb7629a182da65ecee6523900ac1ac932520860878ffcad"
@@ -471,11 +471,13 @@
     "github.com/joincivil/civil-events-processor/pkg/utils",
     "github.com/kelseyhightower/envconfig",
     "github.com/lib/pq",
+    "github.com/rjeczalik/notify",
     "github.com/satori/go.uuid",
     "github.com/sendgrid/sendgrid-go",
     "github.com/sendgrid/sendgrid-go/helpers/mail",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
+    "golang.org/x/sys/unix",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
