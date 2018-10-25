@@ -8,9 +8,13 @@ import (
 	"math/big"
 )
 
+const (
+	defaultContentRevisionTableName = "content_revision"
+)
+
 // CreateContentRevisionTableQuery returns the query to create the content_revision table
 func CreateContentRevisionTableQuery() string {
-	return CreateContentRevisionTableQueryString("content_revision")
+	return CreateContentRevisionTableQueryString(defaultContentRevisionTableName)
 }
 
 // CreateContentRevisionTableQueryString returns the query to create this table
@@ -28,6 +32,19 @@ func CreateContentRevisionTableQueryString(tableName string) string {
             revision_timestamp INT
         );
     `, tableName)
+	return queryString
+}
+
+// ContentRevisionTableIndices returns the query to create indices for this table
+func ContentRevisionTableIndices() string {
+	return CreateContentRevisionTableIndicesString(defaultContentRevisionTableName)
+}
+
+// CreateContentRevisionTableIndicesString returns the query to create indices for this table
+func CreateContentRevisionTableIndicesString(tableName string) string {
+	queryString := fmt.Sprintf(`
+		CREATE INDEX IF NOT EXISTS revision_addr_type_idx ON %s (listing_address);
+	`, tableName)
 	return queryString
 }
 

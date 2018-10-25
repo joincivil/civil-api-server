@@ -6,9 +6,13 @@ import (
 	"math/big"
 )
 
-// CreatePollTableQuery returns the query to create the governance_event table
+const (
+	defaultPollTableName = "poll"
+)
+
+// CreatePollTableQuery returns the query to create the poll table
 func CreatePollTableQuery() string {
-	return CreatePollTableQueryString("poll")
+	return CreatePollTableQueryString(defaultPollTableName)
 }
 
 // CreatePollTableQueryString returns the query to create this table
@@ -25,6 +29,19 @@ func CreatePollTableQueryString(tableName string) string {
         );
     `, tableName)
 	return queryString
+}
+
+// PollTableIndices returns the query to create indices for this table
+func PollTableIndices() string {
+	return CreatePollTableIndicesString(defaultPollTableName)
+}
+
+// CreatePollTableIndicesString returns the query to create indices for this table
+func CreatePollTableIndicesString(tableName string) string {
+	// queryString := fmt.Sprintf(`
+	// `, tableName)
+	// return queryString
+	return ""
 }
 
 // Poll is model for poll object

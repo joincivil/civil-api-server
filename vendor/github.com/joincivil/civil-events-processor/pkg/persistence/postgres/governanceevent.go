@@ -7,9 +7,13 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/model"
 )
 
+const (
+	defaultGoveranceEventTableName = "governance_event"
+)
+
 // CreateGovernanceEventTableQuery returns the query to create the governance_event table
 func CreateGovernanceEventTableQuery() string {
-	return CreateGovernanceEventTableQueryString("governance_event")
+	return CreateGovernanceEventTableQueryString(defaultGoveranceEventTableName)
 }
 
 // CreateGovernanceEventTableQueryString returns the query to create this table
@@ -26,6 +30,20 @@ func CreateGovernanceEventTableQueryString(tableName string) string {
             block_data JSONB
         );
     `, tableName)
+	return queryString
+}
+
+// GovernanceEventTableIndices returns the query to create indices for this table
+func GovernanceEventTableIndices() string {
+	return CreateGovernanceEventTableIndicesString(defaultGoveranceEventTableName)
+}
+
+// CreateGovernanceEventTableIndicesString returns the query to create indices for this table
+func CreateGovernanceEventTableIndicesString(tableName string) string {
+	queryString := fmt.Sprintf(`
+		CREATE INDEX IF NOT EXISTS govevent_addr_idx ON %s (listing_address);
+		CREATE INDEX IF NOT EXISTS govevent_block_data_idx ON %s USING GIN (block_data);
+	`, tableName, tableName)
 	return queryString
 }
 

@@ -131,7 +131,7 @@ type PollResolver interface {
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*users.User, error)
-	Listings(ctx context.Context, whitelistedOnly *bool, first *int, after *string, rejectedOnly *bool, activeChallenge *bool, noActiveChallenge *bool) ([]model.Listing, error)
+	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallengeOnly *bool, currentApplicationOnly *bool) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
 	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
@@ -2961,12 +2961,12 @@ func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphq
 func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args := map[string]interface{}{}
-	var arg0 *bool
-	if tmp, ok := rawArgs["whitelistedOnly"]; ok {
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
 		var err error
-		var ptr1 bool
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg0 = &ptr1
 		}
 
@@ -2975,13 +2975,13 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 			return graphql.Null
 		}
 	}
-	args["whitelistedOnly"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
 		var err error
-		var ptr1 int
+		var ptr1 string
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
+			ptr1, err = graphql.UnmarshalString(tmp)
 			arg1 = &ptr1
 		}
 
@@ -2990,13 +2990,13 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 			return graphql.Null
 		}
 	}
-	args["first"] = arg1
-	var arg2 *string
-	if tmp, ok := rawArgs["after"]; ok {
+	args["after"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["whitelistedOnly"]; ok {
 		var err error
-		var ptr1 string
+		var ptr1 bool
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
 			arg2 = &ptr1
 		}
 
@@ -3005,7 +3005,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 			return graphql.Null
 		}
 	}
-	args["after"] = arg2
+	args["whitelistedOnly"] = arg2
 	var arg3 *bool
 	if tmp, ok := rawArgs["rejectedOnly"]; ok {
 		var err error
@@ -3022,7 +3022,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 	}
 	args["rejectedOnly"] = arg3
 	var arg4 *bool
-	if tmp, ok := rawArgs["activeChallenge"]; ok {
+	if tmp, ok := rawArgs["activeChallengeOnly"]; ok {
 		var err error
 		var ptr1 bool
 		if tmp != nil {
@@ -3035,9 +3035,9 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 			return graphql.Null
 		}
 	}
-	args["activeChallenge"] = arg4
+	args["activeChallengeOnly"] = arg4
 	var arg5 *bool
-	if tmp, ok := rawArgs["noActiveChallenge"]; ok {
+	if tmp, ok := rawArgs["currentApplicationOnly"]; ok {
 		var err error
 		var ptr1 bool
 		if tmp != nil {
@@ -3050,7 +3050,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 			return graphql.Null
 		}
 	}
-	args["noActiveChallenge"] = arg5
+	args["currentApplicationOnly"] = arg5
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Query",
 		Args:   args,
@@ -3066,7 +3066,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().Listings(ctx, args["whitelistedOnly"].(*bool), args["first"].(*int), args["after"].(*string), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["noActiveChallenge"].(*bool))
+			return ec.resolvers.Query().Listings(ctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallengeOnly"].(*bool), args["currentApplicationOnly"].(*bool))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -4868,13 +4868,13 @@ var parsedSchema = gqlparser.MustLoadSchema(
 # The query type, represents all of the entry points into our object graph
 type Query {
   currentUser: User
-  listings(
-    whitelistedOnly: Boolean,
+  listings(    
     first: Int,
     after: String,
+    whitelistedOnly: Boolean,
     rejectedOnly: Boolean,
-    activeChallenge: Boolean,
-    noActiveChallenge: Boolean
+    activeChallengeOnly: Boolean,
+    currentApplicationOnly: Boolean
   ): [Listing!]!
   listing(addr: String!): Listing
   governanceEvents(

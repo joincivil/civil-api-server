@@ -130,6 +130,12 @@ func postgresPersister(config utils.PersisterConfig) (*persistence.PostgresPersi
 		// log.Errorf("Error creating tables, stopping...; err: %v", err)
 		return nil, err
 	}
+	// Attempts to create all the necessary table indices here
+	err = persister.CreateIndices()
+	if err != nil {
+		// log.Errorf("Error creating table indices, stopping...; err: %v", err)
+		return nil, err
+	}
 	return persister, nil
 }
 

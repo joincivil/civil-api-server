@@ -44,4 +44,4 @@ required = ["github.com/99designs/gqlgen"]
 
 [[constraint]]
   name = "github.com/joincivil/civil-events-processor"
-  branch = "inna/listing-criteria-updates"
+  branch = "master"

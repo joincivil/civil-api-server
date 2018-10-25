@@ -7,9 +7,13 @@ import (
 	"math/big"
 )
 
-// CreateAppealTableQuery returns the query to create the governance_event table
+const (
+	defaultAppealTableName = "appeal"
+)
+
+// CreateAppealTableQuery returns the query to create the appeal table
 func CreateAppealTableQuery() string {
-	return CreateAppealTableQueryString("appeal")
+	return CreateAppealTableQueryString(defaultAppealTableName)
 }
 
 // CreateAppealTableQueryString returns the query to create this table
@@ -28,6 +32,19 @@ func CreateAppealTableQueryString(tableName string) string {
         );
     `, tableName)
 	return queryString
+}
+
+// AppealTableIndices returns the query to create indices for this table
+func AppealTableIndices() string {
+	return CreateAppealTableIndicesString(defaultAppealTableName)
+}
+
+// CreateAppealTableIndicesString returns the query to create indices this table
+func CreateAppealTableIndicesString(tableName string) string {
+	// queryString := fmt.Sprintf(`
+	// `, tableName)
+	// return queryString
+	return ""
 }
 
 // Appeal is model for appeal object

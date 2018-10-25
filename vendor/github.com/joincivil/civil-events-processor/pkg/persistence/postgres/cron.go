@@ -10,11 +10,13 @@ const (
 	TimestampDataType = "timestamp"
 	// DataPersistedModelName is the string name of DataPersisted field in CronData
 	DataPersistedModelName = "DataPersisted"
+
+	defaultCronTableName = "cron"
 )
 
 // CreateCronTableQuery returns the query to create the cron table
 func CreateCronTableQuery() string {
-	return CreateCronTableQueryString("cron")
+	return CreateCronTableQueryString(defaultCronTableName)
 }
 
 // CreateCronTableQueryString returns the query to create this table
