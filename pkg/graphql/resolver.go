@@ -450,7 +450,7 @@ type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallengeOnly *bool,
-	currentApplicationOnly *bool) ([]model.Listing, error) {
+	currentApplicationOnly *bool, currentChallengeAndApplicationOnly *bool) ([]model.Listing, error) {
 	criteria := &model.ListingCriteria{}
 
 	if after != nil && *after != "" {
@@ -471,6 +471,8 @@ func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 		criteria.ActiveChallenge = *activeChallengeOnly
 	} else if currentApplicationOnly != nil {
 		criteria.CurrentApplication = *currentApplicationOnly
+	} else if currentChallengeAndApplicationOnly != nil {
+		criteria.ChallengesUnionApplications = *currentChallengeAndApplicationOnly
 	}
 
 	listings, err := r.listingPersister.ListingsByCriteria(criteria)

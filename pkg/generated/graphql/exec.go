@@ -133,7 +133,7 @@ type PollResolver interface {
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*users.User, error)
-	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallengeOnly *bool, currentApplicationOnly *bool) ([]model.Listing, error)
+	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallengeOnly *bool, currentApplicationOnly *bool, currentChallengeAndApplicationOnly *bool) ([]model.Listing, error)
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
 	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
@@ -3115,6 +3115,21 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 		}
 	}
 	args["currentApplicationOnly"] = arg5
+	var arg6 *bool
+	if tmp, ok := rawArgs["currentChallengeAndApplicationOnly"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg6 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["currentChallengeAndApplicationOnly"] = arg6
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Query",
 		Args:   args,
@@ -3130,7 +3145,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().Listings(ctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallengeOnly"].(*bool), args["currentApplicationOnly"].(*bool))
+			return ec.resolvers.Query().Listings(ctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallengeOnly"].(*bool), args["currentApplicationOnly"].(*bool), args["currentChallengeAndApplicationOnly"].(*bool))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -4938,7 +4953,8 @@ type Query {
     whitelistedOnly: Boolean,
     rejectedOnly: Boolean,
     activeChallengeOnly: Boolean,
-    currentApplicationOnly: Boolean
+    currentApplicationOnly: Boolean,
+    currentChallengeAndApplicationOnly: Boolean,
   ): [Listing!]!
   listing(addr: String!): Listing
   governanceEvents(
