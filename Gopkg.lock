@@ -256,8 +256,8 @@
   revision = "a12cea8e7192bc537de43d507b9decc154063928"
 
 [[projects]]
-  branch = "inna/2622/listings-challenges-and-applications"
-  digest = "1:e7a8147e2cdb86efd56e28cd3ddf63f89245926a8d89f56678b2d0a77704d398"
+  branch = "master"
+  digest = "1:7055a574c965aeeac8cd444780ba0cc0dfbc7661aaf1e1265e5a1c8d35786e30"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -268,7 +268,7 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "4bf77f7eb0c8ab2aafb705f4c53e3347dd7d6266"
+  revision = "063957781b1994f194d8417a46ba485a22723e8b"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"

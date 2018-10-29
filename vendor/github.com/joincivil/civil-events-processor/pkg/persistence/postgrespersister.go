@@ -372,20 +372,7 @@ func (p *PostgresPersister) updateDBQueryBuffer(updatedFields []string, tableNam
 func (p *PostgresPersister) listingsByCriteriaFromTable(criteria *model.ListingCriteria,
 	tableName string) ([]*model.Listing, error) {
 	dbListings := []postgres.Listing{}
-	var queryString string
-	if criteria.ChallengesUnionApplications {
-		activeChallengeCriteria := &model.ListingCriteria{
-			ActiveChallenge: true,
-		}
-		challengeQueryString := p.listingsByCriteriaQuery(activeChallengeCriteria, tableName)
-		currentApplicationCriteria := &model.ListingCriteria{
-			CurrentApplication: true,
-		}
-		applicationQueryString := p.listingsByCriteriaQuery(currentApplicationCriteria, tableName)
-		queryString = fmt.Sprintf("%s UNION %s", challengeQueryString, applicationQueryString)
-	} else {
-		queryString = p.listingsByCriteriaQuery(criteria, tableName)
-	}
+	queryString := p.listingsByCriteriaQuery(criteria, tableName)
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
 		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
@@ -492,6 +479,13 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 	} else if criteria.RejectedOnly {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" whitelisted = false AND challenge_id = 0") // nolint: gosec
+	} else if criteria.ActiveChallenge && criteria.CurrentApplication {
+		p.addWhereAnd(queryBuf)
+		currentTime := crawlerutils.CurrentEpochSecsInInt64()
+		queryBuf.WriteString(" (challenge_id > 0) OR ") // nolint: gosec
+		queryBuf.WriteString(                           // nolint: gosec
+			fmt.Sprintf(" (app_expiry > %v AND whitelisted = false AND challenge_id <= 0)", // nolint: gosec
+				currentTime))
 	} else if criteria.ActiveChallenge {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" challenge_id > 0") // nolint: gosec

@@ -32,11 +32,9 @@ type ListingCriteria struct {
 	// Listings that have a challenge in progress.
 	ActiveChallenge bool `db:"active_challenge"`
 	// Listings that have a current application in progress.
-	CurrentApplication bool `db:"current_application"`
-	// Union of ActiveChallenge and CurrentApplication
-	ChallengesUnionApplications bool  `db:"challenges_union_applications"`
-	CreatedFromTs               int64 `db:"created_fromts"`
-	CreatedBeforeTs             int64 `db:"created_beforets"`
+	CurrentApplication bool  `db:"current_application"`
+	CreatedFromTs      int64 `db:"created_fromts"`
+	CreatedBeforeTs    int64 `db:"created_beforets"`
 }
 
 // ListingPersister is the interface to store the listings data related to the processor
