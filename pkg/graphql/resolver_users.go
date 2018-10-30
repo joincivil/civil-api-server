@@ -10,13 +10,14 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
-// RESOLVER
-type userResolver struct{ *Resolver }
-
 // User is the resolver for the User type
 func (r *Resolver) User() graphql.UserResolver {
 	return &userResolver{r}
 }
+
+// TYPE RESOLVERS
+
+type userResolver struct{ *Resolver }
 
 // Invoices returns a list of `invoicing.PostgresInvoice` created by the user
 func (r *userResolver) Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error) {
@@ -30,6 +31,7 @@ func (r *userResolver) IsTokenFoundryRegistered(ctx context.Context, obj *users.
 }
 
 // QUERIES
+
 func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
@@ -40,6 +42,7 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 }
 
 // MUTATIONS
+
 func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.SetEthAddressInput) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {

@@ -6,8 +6,21 @@ schema {
 
 # The query type, represents all of the entry points into our object graph
 type Query {
-  currentUser: User
-  listings(    
+
+  # TCR / Crawler Queries (Legacy naming)
+  # TODO(PN): Temporary keep these until migrated over to new naming
+  # Just calls the properly named versions
+  articles(addr: String, first: Int, after: String): [ContentRevision!]!
+  challenge(id: Int!): Challenge
+  governanceEvents(
+    addr: String
+    after: String
+    creationDate: DateRange
+    first: Int
+  ): [GovernanceEvent!]!
+  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
+  listing(addr: String!): Listing
+  listings(
     first: Int,
     after: String,
     whitelistedOnly: Boolean,
@@ -15,65 +28,106 @@ type Query {
     activeChallenge: Boolean,
     currentApplication: Boolean,
   ): [Listing!]!
-  listing(addr: String!): Listing
-  governanceEvents(
+
+  # TCR Queries
+  tcrChallenge(id: Int!): Challenge
+  tcrGovernanceEvents(
     addr: String
+    after: String
     creationDate: DateRange
     first: Int
-    after: String
   ): [GovernanceEvent!]!
-  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  challenge(id: Int!): Challenge
-  articles(addr: String, first: Int, after: String): [ContentRevision!]!
+  tcrGovernanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
+  tcrListing(addr: String!): Listing
+  tcrListings(
+    first: Int,
+    after: String,
+    whitelistedOnly: Boolean,
+    rejectedOnly: Boolean,
+    activeChallenge: Boolean,
+    currentApplication: Boolean,
+  ): [Listing!]!
+
+  # Newsroom Queries
+  newsroomArticles(addr: String, first: Int, after: String): [ContentRevision!]!
+
+  # User Queries
+  currentUser: User
+
 }
 
 type Mutation {
+  # KYC Mutations
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
-  kycGenerateSdkToken(applicantID: String!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
+  kycGenerateSdkToken(applicantID: String!): String
+
+  # User Mutations
   userSetEthAddress(input: UserSetEthAddressInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
 }
 
-input DateRange {
-  gt: Int
-  lt: Int
+
+## TCR object schemas
+
+# A type that reflects values in model.Appeal
+type Appeal {
+  requester: String!
+  appealFeePaid: Int!
+  appealPhaseExpiry: Int!
+  appealGranted: Boolean!
+  appealOpenToChallengeExpiry: Int!
+  statement: String!
+  appealChallengeID: Int!
+  appealChallenge: Challenge
 }
 
-# A type that reflects values in users.User
-type User {
-  uid: String
-  email: String
-  ethAddress: String
-  onfidoApplicantId: String
-  onfidoCheckID: String
-  kycStatus: String
-  quizPayload: RawObject
-  quizStatus: String
-  # dateCreated: Int
-  # dateUpdated: Int
-  invoices: [Invoice]
-  isTokenFoundryRegistered: Boolean
+# A type that reflects block data in model.BlockData
+type BlockData {
+  blockNumber: Int!
+  txHash: String!
+  txIndex: Int!
+  blockHash: String!
+  index: Int!
 }
 
-# A type that reflects values in invoicing.PostgresInvoice
-type Invoice {
-  hash: String
-  email: String
-  phone: String
-  name: String
-  amount: Float
-  invoiceID: String
-  invoiceNum: String
-  invoiceStatus: String
-  checkID: String
-  checkStatus: String
-  stopPoll: Boolean
-  isCheckbook: Boolean
-  isThirdParty: Boolean
-  referralCode: String
-  referredBy: String
-  emailState: Int
+# A type that reflects values in model.Challenge
+type Challenge {
+  challengeID: Int!
+  listingAddress: String!
+  statement: String!
+  rewardPool: String!
+  challenger: String!
+  resolved: Boolean!
+  stake: String!
+  totalTokens: String!
+  poll: Poll
+  requestAppealExpiry: Int!
+  appeal: Appeal
+  lastUpdatedDateTs: Int!
+}
+
+type Charter {
+  uri: String!
+  contentID: Int!
+  revisionID: Int!
+  signature: String!
+  author: String!
+  contentHash: String!
+  timestamp: Int!
+}
+
+# A type that reflects values in model.GovernanceEvent
+type GovernanceEvent {
+  listingAddress: String!
+  senderAddress: String!
+  metadata: [Metadata!]!
+  governanceEventType: String!
+  creationDate: Int!
+  lastUpdatedDate: Int!
+  eventHash: String!
+  blockData: BlockData!
+  listing: Listing!
 }
 
 # A type that reflects values in model.Listing
@@ -98,42 +152,10 @@ type Listing {
   prevChallenge: Challenge
 }
 
-type Charter {
-  uri: String!
-  contentID: Int!
-  revisionID: Int!
-  signature: String!
-  author: String!
-  contentHash: String!
-  timestamp: Int!
-}
-
-# A type that reflects values in model.Challenge
-type Challenge {
-  challengeID: Int!
-  listingAddress: String!
-  statement: String!
-  rewardPool: String!
-  challenger: String!
-  resolved: Boolean!
-  stake: String!
-  totalTokens: String!
-  poll: Poll
-  requestAppealExpiry: Int!
-  appeal: Appeal
-  lastUpdatedDateTs: Int!
-}
-
-# A type that reflects values in model.Appeal
-type Appeal {
-  requester: String!
-  appealFeePaid: Int!
-  appealPhaseExpiry: Int!
-  appealGranted: Boolean!
-  appealOpenToChallengeExpiry: Int!
-  statement: String!
-  appealChallengeID: Int!
-  appealChallenge: Challenge
+# A type that reflects values in model.Metadata
+type Metadata {
+  key: String!
+  value: String!
 }
 
 # A type that reflects values in model.Poll
@@ -145,33 +167,8 @@ type Poll {
   votesAgainst: Int!
 }
 
-# A type that reflects values in model.Metadata
-type Metadata {
-  key: String!
-  value: String!
-}
 
-# A type that reflects block data in model.BlockData
-type BlockData {
-  blockNumber: Int!
-  txHash: String!
-  txIndex: Int!
-  blockHash: String!
-  index: Int!
-}
-
-# A type that reflects values in model.GovernanceEvent
-type GovernanceEvent {
-  listingAddress: String!
-  senderAddress: String!
-  metadata: [Metadata!]!
-  governanceEventType: String!
-  creationDate: Int!
-  lastUpdatedDate: Int!
-  eventHash: String!
-  blockData: BlockData!
-  listing: Listing!
-}
+## Newsroom object schemas
 
 # A type that reflects values in model.ArticlePayload
 type ArticlePayload {
@@ -191,6 +188,9 @@ type ContentRevision {
   revisionDate: Int!
 }
 
+
+## KYC object schemas
+
 # A type that reflects values in onfido.CreateApplicantRequest
 input KycCreateApplicantInput {
   firstName: String!
@@ -209,6 +209,45 @@ input KycCreateApplicantInput {
   zipcode: String
 }
 
+
+## User object schemas
+
+# A type that reflects values in invoicing.PostgresInvoice
+type Invoice {
+  hash: String
+  email: String
+  phone: String
+  name: String
+  amount: Float
+  invoiceID: String
+  invoiceNum: String
+  invoiceStatus: String
+  checkID: String
+  checkStatus: String
+  stopPoll: Boolean
+  isCheckbook: Boolean
+  isThirdParty: Boolean
+  referralCode: String
+  referredBy: String
+  emailState: Int
+}
+
+# A type that reflects values in users.User
+type User {
+  uid: String
+  email: String
+  ethAddress: String
+  onfidoApplicantId: String
+  onfidoCheckID: String
+  kycStatus: String
+  quizPayload: RawObject
+  quizStatus: String
+  # dateCreated: Int
+  # dateUpdated: Int
+  invoices: [Invoice]
+  isTokenFoundryRegistered: Boolean
+}
+
 input UserSetEthAddressInput {
   message: String!
   messageHash: String!
@@ -225,6 +264,16 @@ input UserUpdateInput {
   quizPayload: RawObject
   quizStatus: String
 }
+
+## Common object schemas
+
+input DateRange {
+  gt: Int
+  lt: Int
+}
+
+
+## Scalars
 
 scalar ArticlePayloadValue
 scalar RawObject
