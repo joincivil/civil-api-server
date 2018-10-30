@@ -10,6 +10,8 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
+// MUTATIONS
+
 func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant graphql.KycCreateApplicantInput) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
@@ -78,15 +80,6 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 	return &returnedApplicant.ID, nil
 }
 
-func (r *mutationResolver) KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error) {
-	token, err := r.onfidoAPI.GenerateSDKToken(applicantID, r.onfidoTokenReferrer)
-	if err != nil {
-		return nil, err
-	}
-
-	return &token, err
-}
-
 func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
@@ -130,4 +123,13 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 	}
 
 	return &returnedCheck.ID, nil
+}
+
+func (r *mutationResolver) KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error) {
+	token, err := r.onfidoAPI.GenerateSDKToken(applicantID, r.onfidoTokenReferrer)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token, err
 }

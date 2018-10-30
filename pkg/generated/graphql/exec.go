@@ -119,8 +119,8 @@ type ListingResolver interface {
 }
 type MutationResolver interface {
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
-	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
+	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	UserSetEthAddress(ctx context.Context, input users.SetEthAddressInput) (*string, error)
 	UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error)
 }
@@ -132,13 +132,19 @@ type PollResolver interface {
 	VotesAgainst(ctx context.Context, obj *model.Poll) (int, error)
 }
 type QueryResolver interface {
-	CurrentUser(ctx context.Context) (*users.User, error)
-	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) ([]model.Listing, error)
-	Listing(ctx context.Context, addr string) (*model.Listing, error)
-	GovernanceEvents(ctx context.Context, addr *string, creationDate *DateRange, first *int, after *string) ([]model.GovernanceEvent, error)
-	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
-	Challenge(ctx context.Context, id int) (*model.Challenge, error)
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
+	Challenge(ctx context.Context, id int) (*model.Challenge, error)
+	GovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int) ([]model.GovernanceEvent, error)
+	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
+	Listing(ctx context.Context, addr string) (*model.Listing, error)
+	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) ([]model.Listing, error)
+	TcrChallenge(ctx context.Context, id int) (*model.Challenge, error)
+	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int) ([]model.GovernanceEvent, error)
+	TcrGovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
+	TcrListing(ctx context.Context, addr string) (*model.Listing, error)
+	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) ([]model.Listing, error)
+	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
+	CurrentUser(ctx context.Context) (*users.User, error)
 }
 type UserResolver interface {
 	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
@@ -2578,10 +2584,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "kycCreateApplicant":
 			out.Values[i] = ec._Mutation_kycCreateApplicant(ctx, field)
-		case "kycGenerateSdkToken":
-			out.Values[i] = ec._Mutation_kycGenerateSdkToken(ctx, field)
 		case "kycCreateCheck":
 			out.Values[i] = ec._Mutation_kycCreateCheck(ctx, field)
+		case "kycGenerateSdkToken":
+			out.Values[i] = ec._Mutation_kycGenerateSdkToken(ctx, field)
 		case "userSetEthAddress":
 			out.Values[i] = ec._Mutation_userSetEthAddress(ctx, field)
 		case "userUpdate":
@@ -2615,38 +2621,6 @@ func (ec *executionContext) _Mutation_kycCreateApplicant(ctx context.Context, fi
 	defer rctx.Pop()
 	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 		return ec.resolvers.Mutation().KycCreateApplicant(ctx, args["applicant"].(KycCreateApplicantInput))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	if res == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalString(*res)
-}
-
-func (ec *executionContext) _Mutation_kycGenerateSdkToken(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["applicantID"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["applicantID"] = arg0
-	rctx := graphql.GetResolverContext(ctx)
-	rctx.Object = "Mutation"
-	rctx.Args = args
-	rctx.Field = field
-	rctx.PushField(field.Alias)
-	defer rctx.Pop()
-	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-		return ec.resolvers.Mutation().KycGenerateSdkToken(ctx, args["applicantID"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -2694,6 +2668,38 @@ func (ec *executionContext) _Mutation_kycCreateCheck(ctx context.Context, field 
 	defer rctx.Pop()
 	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
 		return ec.resolvers.Mutation().KycCreateCheck(ctx, args["applicantID"].(string), args["facialVariant"].(*string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+func (ec *executionContext) _Mutation_kycGenerateSdkToken(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["applicantID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["applicantID"] = arg0
+	rctx := graphql.GetResolverContext(ctx)
+	rctx.Object = "Mutation"
+	rctx.Args = args
+	rctx.Field = field
+	rctx.PushField(field.Alias)
+	defer rctx.Pop()
+	resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+		return ec.resolvers.Mutation().KycGenerateSdkToken(ctx, args["applicantID"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -2967,20 +2973,32 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "currentUser":
-			out.Values[i] = ec._Query_currentUser(ctx, field)
-		case "listings":
-			out.Values[i] = ec._Query_listings(ctx, field)
-		case "listing":
-			out.Values[i] = ec._Query_listing(ctx, field)
+		case "articles":
+			out.Values[i] = ec._Query_articles(ctx, field)
+		case "challenge":
+			out.Values[i] = ec._Query_challenge(ctx, field)
 		case "governanceEvents":
 			out.Values[i] = ec._Query_governanceEvents(ctx, field)
 		case "governanceEventsTxHash":
 			out.Values[i] = ec._Query_governanceEventsTxHash(ctx, field)
-		case "challenge":
-			out.Values[i] = ec._Query_challenge(ctx, field)
-		case "articles":
-			out.Values[i] = ec._Query_articles(ctx, field)
+		case "listing":
+			out.Values[i] = ec._Query_listing(ctx, field)
+		case "listings":
+			out.Values[i] = ec._Query_listings(ctx, field)
+		case "tcrChallenge":
+			out.Values[i] = ec._Query_tcrChallenge(ctx, field)
+		case "tcrGovernanceEvents":
+			out.Values[i] = ec._Query_tcrGovernanceEvents(ctx, field)
+		case "tcrGovernanceEventsTxHash":
+			out.Values[i] = ec._Query_tcrGovernanceEventsTxHash(ctx, field)
+		case "tcrListing":
+			out.Values[i] = ec._Query_tcrListing(ctx, field)
+		case "tcrListings":
+			out.Values[i] = ec._Query_tcrListings(ctx, field)
+		case "newsroomArticles":
+			out.Values[i] = ec._Query_newsroomArticles(ctx, field)
+		case "currentUser":
+			out.Values[i] = ec._Query_currentUser(ctx, field)
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -2993,10 +3011,57 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["addr"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["addr"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["after"] = arg2
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Object: "Query",
-		Args:   nil,
+		Args:   args,
 		Field:  field,
 	})
 	return graphql.Defer(func() (ret graphql.Marshaler) {
@@ -3009,16 +3074,248 @@ func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphq
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().CurrentUser(ctx)
+			return ec.resolvers.Query().Articles(ctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string))
 		})
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(*users.User)
+		res := resTmp.([]model.ContentRevision)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._ContentRevision(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_challenge(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["id"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().Challenge(ctx, args["id"].(int))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*model.Challenge)
 		if res == nil {
 			return graphql.Null
 		}
-		return ec._User(ctx, field.Selections, res)
+		return ec._Challenge(ctx, field.Selections, res)
+	})
+}
+
+func (ec *executionContext) _Query_governanceEvents(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["addr"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["addr"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["after"] = arg1
+	var arg2 *DateRange
+	if tmp, ok := rawArgs["creationDate"]; ok {
+		var err error
+		var ptr1 DateRange
+		if tmp != nil {
+			ptr1, err = UnmarshalDateRange(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["creationDate"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg3
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().GovernanceEvents(ctx, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]model.GovernanceEvent)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_governanceEventsTxHash(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txHash"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["txHash"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().GovernanceEventsTxHash(ctx, args["txHash"].(string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]model.GovernanceEvent)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_listing(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["addr"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["addr"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().Listing(ctx, args["addr"].(string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*model.Listing)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._Listing(ctx, field.Selections, res)
 	})
 }
 
@@ -3149,192 +3446,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 	})
 }
 
-func (ec *executionContext) _Query_listing(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["addr"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["addr"] = arg0
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "Query",
-		Args:   args,
-		Field:  field,
-	})
-	return graphql.Defer(func() (ret graphql.Marshaler) {
-		defer func() {
-			if r := recover(); r != nil {
-				userErr := ec.Recover(ctx, r)
-				ec.Error(ctx, userErr)
-				ret = graphql.Null
-			}
-		}()
-
-		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().Listing(ctx, args["addr"].(string))
-		})
-		if resTmp == nil {
-			return graphql.Null
-		}
-		res := resTmp.(*model.Listing)
-		if res == nil {
-			return graphql.Null
-		}
-		return ec._Listing(ctx, field.Selections, res)
-	})
-}
-
-func (ec *executionContext) _Query_governanceEvents(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args := map[string]interface{}{}
-	var arg0 *string
-	if tmp, ok := rawArgs["addr"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg0 = &ptr1
-		}
-
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["addr"] = arg0
-	var arg1 *DateRange
-	if tmp, ok := rawArgs["creationDate"]; ok {
-		var err error
-		var ptr1 DateRange
-		if tmp != nil {
-			ptr1, err = UnmarshalDateRange(tmp)
-			arg1 = &ptr1
-		}
-
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["creationDate"] = arg1
-	var arg2 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		var err error
-		var ptr1 int
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalInt(tmp)
-			arg2 = &ptr1
-		}
-
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["first"] = arg2
-	var arg3 *string
-	if tmp, ok := rawArgs["after"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg3 = &ptr1
-		}
-
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["after"] = arg3
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "Query",
-		Args:   args,
-		Field:  field,
-	})
-	return graphql.Defer(func() (ret graphql.Marshaler) {
-		defer func() {
-			if r := recover(); r != nil {
-				userErr := ec.Recover(ctx, r)
-				ec.Error(ctx, userErr)
-				ret = graphql.Null
-			}
-		}()
-
-		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().GovernanceEvents(ctx, args["addr"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["after"].(*string))
-		})
-		if resTmp == nil {
-			return graphql.Null
-		}
-		res := resTmp.([]model.GovernanceEvent)
-		arr1 := graphql.Array{}
-		for idx1 := range res {
-			arr1 = append(arr1, func() graphql.Marshaler {
-				rctx := graphql.GetResolverContext(ctx)
-				rctx.PushIndex(idx1)
-				defer rctx.Pop()
-				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
-			}())
-		}
-		return arr1
-	})
-}
-
-func (ec *executionContext) _Query_governanceEventsTxHash(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["txHash"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
-		if err != nil {
-			ec.Error(ctx, err)
-			return graphql.Null
-		}
-	}
-	args["txHash"] = arg0
-	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
-		Object: "Query",
-		Args:   args,
-		Field:  field,
-	})
-	return graphql.Defer(func() (ret graphql.Marshaler) {
-		defer func() {
-			if r := recover(); r != nil {
-				userErr := ec.Recover(ctx, r)
-				ec.Error(ctx, userErr)
-				ret = graphql.Null
-			}
-		}()
-
-		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().GovernanceEventsTxHash(ctx, args["txHash"].(string))
-		})
-		if resTmp == nil {
-			return graphql.Null
-		}
-		res := resTmp.([]model.GovernanceEvent)
-		arr1 := graphql.Array{}
-		for idx1 := range res {
-			arr1 = append(arr1, func() graphql.Marshaler {
-				rctx := graphql.GetResolverContext(ctx)
-				rctx.PushIndex(idx1)
-				defer rctx.Pop()
-				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
-			}())
-		}
-		return arr1
-	})
-}
-
-func (ec *executionContext) _Query_challenge(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_tcrChallenge(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args := map[string]interface{}{}
 	var arg0 int
@@ -3362,7 +3474,7 @@ func (ec *executionContext) _Query_challenge(ctx context.Context, field graphql.
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().Challenge(ctx, args["id"].(int))
+			return ec.resolvers.Query().TcrChallenge(ctx, args["id"].(int))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -3375,7 +3487,319 @@ func (ec *executionContext) _Query_challenge(ctx context.Context, field graphql.
 	})
 }
 
-func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_tcrGovernanceEvents(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["addr"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["addr"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["after"] = arg1
+	var arg2 *DateRange
+	if tmp, ok := rawArgs["creationDate"]; ok {
+		var err error
+		var ptr1 DateRange
+		if tmp != nil {
+			ptr1, err = UnmarshalDateRange(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["creationDate"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg3
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().TcrGovernanceEvents(ctx, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]model.GovernanceEvent)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_tcrGovernanceEventsTxHash(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txHash"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["txHash"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().TcrGovernanceEventsTxHash(ctx, args["txHash"].(string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]model.GovernanceEvent)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_tcrListing(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["addr"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["addr"] = arg0
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().TcrListing(ctx, args["addr"].(string))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*model.Listing)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._Listing(ctx, field.Selections, res)
+	})
+}
+
+func (ec *executionContext) _Query_tcrListings(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["after"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["whitelistedOnly"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["whitelistedOnly"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["rejectedOnly"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["rejectedOnly"] = arg3
+	var arg4 *bool
+	if tmp, ok := rawArgs["activeChallenge"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["activeChallenge"] = arg4
+	var arg5 *bool
+	if tmp, ok := rawArgs["currentApplication"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg5 = &ptr1
+		}
+
+		if err != nil {
+			ec.Error(ctx, err)
+			return graphql.Null
+		}
+	}
+	args["currentApplication"] = arg5
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().TcrListings(ctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool))
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.([]model.Listing)
+		arr1 := graphql.Array{}
+		for idx1 := range res {
+			arr1 = append(arr1, func() graphql.Marshaler {
+				rctx := graphql.GetResolverContext(ctx)
+				rctx.PushIndex(idx1)
+				defer rctx.Pop()
+				return ec._Listing(ctx, field.Selections, &res[idx1])
+			}())
+		}
+		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_newsroomArticles(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	rawArgs := field.ArgumentMap(ec.Variables)
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -3438,7 +3862,7 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 		}()
 
 		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
-			return ec.resolvers.Query().Articles(ctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string))
+			return ec.resolvers.Query().NewsroomArticles(ctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string))
 		})
 		if resTmp == nil {
 			return graphql.Null
@@ -3454,6 +3878,35 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 			}())
 		}
 		return arr1
+	})
+}
+
+func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	})
+	return graphql.Defer(func() (ret graphql.Marshaler) {
+		defer func() {
+			if r := recover(); r != nil {
+				userErr := ec.Recover(ctx, r)
+				ec.Error(ctx, userErr)
+				ret = graphql.Null
+			}
+		}()
+
+		resTmp := ec.FieldMiddleware(ctx, func(ctx context.Context) (interface{}, error) {
+			return ec.resolvers.Query().CurrentUser(ctx)
+		})
+		if resTmp == nil {
+			return graphql.Null
+		}
+		res := resTmp.(*users.User)
+		if res == nil {
+			return graphql.Null
+		}
+		return ec._User(ctx, field.Selections, res)
 	})
 }
 
@@ -4931,8 +5384,21 @@ var parsedSchema = gqlparser.MustLoadSchema(
 
 # The query type, represents all of the entry points into our object graph
 type Query {
-  currentUser: User
-  listings(    
+
+  # TCR / Crawler Queries (Legacy naming)
+  # TODO(PN): Temporary keep these until migrated over to new naming
+  # Just calls the properly named versions
+  articles(addr: String, first: Int, after: String): [ContentRevision!]!
+  challenge(id: Int!): Challenge
+  governanceEvents(
+    addr: String
+    after: String
+    creationDate: DateRange
+    first: Int
+  ): [GovernanceEvent!]!
+  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
+  listing(addr: String!): Listing
+  listings(
     first: Int,
     after: String,
     whitelistedOnly: Boolean,
@@ -4940,66 +5406,47 @@ type Query {
     activeChallenge: Boolean,
     currentApplication: Boolean,
   ): [Listing!]!
-  listing(addr: String!): Listing
-  governanceEvents(
+
+  # TCR Queries
+  tcrChallenge(id: Int!): Challenge
+  tcrGovernanceEvents(
     addr: String
+    after: String
     creationDate: DateRange
     first: Int
-    after: String
   ): [GovernanceEvent!]!
-  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  challenge(id: Int!): Challenge
-  articles(addr: String, first: Int, after: String): [ContentRevision!]!
+  tcrGovernanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
+  tcrListing(addr: String!): Listing
+  tcrListings(
+    first: Int,
+    after: String,
+    whitelistedOnly: Boolean,
+    rejectedOnly: Boolean,
+    activeChallenge: Boolean,
+    currentApplication: Boolean,
+  ): [Listing!]!
+
+  # Newsroom Queries
+  newsroomArticles(addr: String, first: Int, after: String): [ContentRevision!]!
+
+  # User Queries
+  currentUser: User
+
 }
 
 type Mutation {
+  # KYC Mutations
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
-  kycGenerateSdkToken(applicantID: String!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
+  kycGenerateSdkToken(applicantID: String!): String
+
+  # User Mutations
   userSetEthAddress(input: UserSetEthAddressInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
 }
 
-input DateRange {
-  gt: Int
-  lt: Int
-}
 
-# A type that reflects values in users.User
-type User {
-  uid: String
-  email: String
-  ethAddress: String
-  onfidoApplicantId: String
-  onfidoCheckID: String
-  kycStatus: String
-  quizPayload: RawObject
-  quizStatus: String
-  # dateCreated: Int
-  # dateUpdated: Int
-  invoices: [Invoice]
-  isTokenFoundryRegistered: Boolean
-}
-
-# A type that reflects values in invoicing.PostgresInvoice
-type Invoice {
-  hash: String
-  email: String
-  phone: String
-  name: String
-  amount: Float
-  invoiceID: String
-  invoiceNum: String
-  invoiceStatus: String
-  checkID: String
-  checkStatus: String
-  stopPoll: Boolean
-  isCheckbook: Boolean
-  isThirdParty: Boolean
-  referralCode: String
-  referredBy: String
-  emailState: Int
-}
+## TCR object schemas
 
 # A type that reflects values in model.Listing
 type Listing {
@@ -5098,6 +5545,9 @@ type GovernanceEvent {
   listing: Listing!
 }
 
+
+## Newsroom object schemas
+
 # A type that reflects values in model.ArticlePayload
 type ArticlePayload {
   key: String!
@@ -5115,6 +5565,9 @@ type ContentRevision {
   revisionUri: String!
   revisionDate: Int!
 }
+
+
+## KYC object schemas
 
 # A type that reflects values in onfido.CreateApplicantRequest
 input KycCreateApplicantInput {
@@ -5134,6 +5587,45 @@ input KycCreateApplicantInput {
   zipcode: String
 }
 
+
+## User object schemas
+
+# A type that reflects values in invoicing.PostgresInvoice
+type Invoice {
+  hash: String
+  email: String
+  phone: String
+  name: String
+  amount: Float
+  invoiceID: String
+  invoiceNum: String
+  invoiceStatus: String
+  checkID: String
+  checkStatus: String
+  stopPoll: Boolean
+  isCheckbook: Boolean
+  isThirdParty: Boolean
+  referralCode: String
+  referredBy: String
+  emailState: Int
+}
+
+# A type that reflects values in users.User
+type User {
+  uid: String
+  email: String
+  ethAddress: String
+  onfidoApplicantId: String
+  onfidoCheckID: String
+  kycStatus: String
+  quizPayload: RawObject
+  quizStatus: String
+  # dateCreated: Int
+  # dateUpdated: Int
+  invoices: [Invoice]
+  isTokenFoundryRegistered: Boolean
+}
+
 input UserSetEthAddressInput {
   message: String!
   messageHash: String!
@@ -5150,6 +5642,16 @@ input UserUpdateInput {
   quizPayload: RawObject
   quizStatus: String
 }
+
+## Common object schemas
+
+input DateRange {
+  gt: Int
+  lt: Int
+}
+
+
+## Scalars
 
 scalar ArticlePayloadValue
 scalar RawObject
