@@ -479,14 +479,22 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 	} else if criteria.RejectedOnly {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" whitelisted = false AND challenge_id = 0") // nolint: gosec
+	} else if criteria.ActiveChallenge && criteria.CurrentApplication {
+		p.addWhereAnd(queryBuf)
+		currentTime := crawlerutils.CurrentEpochSecsInInt64()
+		queryBuf.WriteString(" (challenge_id > 0) OR ") // nolint: gosec
+		queryBuf.WriteString(                           // nolint: gosec
+			fmt.Sprintf(" (app_expiry > %v AND whitelisted = false AND challenge_id <= 0)", // nolint: gosec
+				currentTime))
 	} else if criteria.ActiveChallenge {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" challenge_id > 0") // nolint: gosec
 	} else if criteria.CurrentApplication {
 		p.addWhereAnd(queryBuf)
 		currentTime := crawlerutils.CurrentEpochSecsInInt64()
-		queryBuf.WriteString(fmt.Sprintf(" app_expiry > %v AND whitelisted = false AND challenge_id <= 0",
-			currentTime)) // nolint: gosec
+		queryBuf.WriteString( // nolint: gosec
+			fmt.Sprintf(" app_expiry > %v AND whitelisted = false AND challenge_id <= 0", // nolint: gosec
+				currentTime))
 	}
 	if criteria.CreatedBeforeTs > 0 {
 		p.addWhereAnd(queryBuf)
@@ -786,7 +794,9 @@ func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceE
 
 func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, tableName string) string {
 	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false)
-	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }'", fieldNames,
+	queryString := fmt.Sprintf( // nolint: gosec
+		"SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }'",
+		fieldNames,
 		tableName, txHash.Hex())
 	return queryString
 }
@@ -806,7 +816,8 @@ func (p *PostgresPersister) govEventsByChallengeIDQuery(tableName string, challe
 	// take out extra comma
 	idbuf.Truncate(idbuf.Len() - 1)
 	ids := idbuf.String()
-	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE gov_event_type='Challenge' AND metadata ->>'ChallengeID' IN (%s);",
+	queryString := fmt.Sprintf( // nolint: gosec
+		"SELECT %s FROM %s WHERE gov_event_type='Challenge' AND metadata ->>'ChallengeID' IN (%s);",
 		fieldNames, tableName, ids)
 	return queryString
 }
@@ -1024,11 +1035,11 @@ func (p *PostgresPersister) challengesByListingAddressInTable(addr common.Addres
 // challenges for a listing sorted by challenge_id
 func (p *PostgresPersister) challengesByListingAddressQuery(tableName string) string {
 	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false)
-	queryString := fmt.Sprintf(
+	queryString := fmt.Sprintf( // nolint: gosec
 		"SELECT %s FROM %s WHERE listing_address = $1 ORDER BY challenge_id;",
 		fieldNames,
 		tableName,
-	) // nolint: gosec
+	)
 	return queryString
 }
 

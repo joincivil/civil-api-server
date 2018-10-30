@@ -12,8 +12,8 @@ type Query {
     after: String,
     whitelistedOnly: Boolean,
     rejectedOnly: Boolean,
-    activeChallengeOnly: Boolean,
-    currentApplicationOnly: Boolean
+    activeChallenge: Boolean,
+    currentApplication: Boolean,
   ): [Listing!]!
   listing(addr: String!): Listing
   governanceEvents(
