@@ -11,47 +11,47 @@ type GovernanceState int
 const (
 	// GovernanceStateNone is an invalid/empty governance state
 	GovernanceStateNone GovernanceState = iota
-	// GovernanceStateApplied is when a listing has just applied
+	// GovernanceStateApplied is _Application when a listing has just applied
 	GovernanceStateApplied
-	// GovernanceStateAppRemoved is when a listing's application has been removed
+	// GovernanceStateAppRemoved is _ApplicationRemoved when a listing's application has been removed
 	GovernanceStateAppRemoved
 
-	// GovernanceStateChallenged is when a listing has been challenged
+	// GovernanceStateChallenged is _Challenge when a listing has been challenged
 	GovernanceStateChallenged
-	// GovernanceStateChallengeFailed is when a challenge on a listing has failed
+	// GovernanceStateChallengeFailed is _ChallengeFailed when a challenge on a listing has failed
 	GovernanceStateChallengeFailed
-	// GovernanceStateChallengeSucceeded is when a challenge on a listing has succeeded
+	// GovernanceStateChallengeSucceeded is _ChallengeSucceeded when a challenge on a listing has succeeded
 	GovernanceStateChallengeSucceeded
-	// GovernanceStateFailedChallengeOverturned is when the original challenge on a
+	// GovernanceStateFailedChallengeOverturned is _FailedChallengeOverturned when the original challenge on a
 	// listing has failed
 	GovernanceStateFailedChallengeOverturned
-	// GovernanceStateSuccessfulChallengeOverturned is when the original challenge
+	// GovernanceStateSuccessfulChallengeOverturned _SuccessfulChallengeOverturned is when the original challenge
 	// on a listing has succeeded
 	GovernanceStateSuccessfulChallengeOverturned
 
-	// GovernanceStateAppWhitelisted is when a listing has been whitelisted
+	// GovernanceStateAppWhitelisted is _ApplicationWhitelisted when a listing has been whitelisted
 	GovernanceStateAppWhitelisted
-	// GovernanceStateRemoved is when a listing has been removed
+	// GovernanceStateRemoved is _ListingRemoved when a listing has been removed
 	GovernanceStateRemoved
-	// GovernanceStateWithdrawn is when a listing has been withdrawn before it
+	// GovernanceStateWithdrawn is _ListingWithdrawn when a listing has been withdrawn before it
 	// has been whitelisted
 	GovernanceStateWithdrawn
 
-	// GovernanceStateAppealGranted is when an appeal is granted by the CC
+	// GovernanceStateAppealGranted is _AppealGranted when an appeal is granted by the CC
 	GovernanceStateAppealGranted
-	// GovernanceStateAppealRequested is when an appeal against a listing is requested
+	// GovernanceStateAppealRequested is _AppealRequested when an appeal against a listing is requested
 	GovernanceStateAppealRequested
-	// GovernanceStateGrantedAppealChallenged is when a granted appeal is challenged
+	// GovernanceStateGrantedAppealChallenged is _GrantedAppealChallenged when a granted appeal is challenged
 	GovernanceStateGrantedAppealChallenged
-	// GovernanceStateGrantedAppealConfirmed is when a granted appeal is confirmed and the
+	// GovernanceStateGrantedAppealConfirmed is _GrantedAppealConfirmed when a granted appeal is confirmed and the
 	// appeal challenge has failed
 	GovernanceStateGrantedAppealConfirmed
-	// GovernanceStateGrantedAppealOverturned is when a granted appeal decision is overturned
+	// GovernanceStateGrantedAppealOverturned is _GrantedAppealOverturned when a granted appeal decision is overturned
 	GovernanceStateGrantedAppealOverturned
 
-	// GovernanceStateDeposit is when the owner of a listing increases their unstaked deposit
+	// GovernanceStateDeposit is _Deposit when the owner of a listing increases their unstaked deposit
 	GovernanceStateDeposit
-	// GovernanceStateDepositWithdrawl is when the owner of a listing decreases their unstaked deposit
+	// GovernanceStateDepositWithdrawl is _Withdrawal when the owner of a listing decreases their unstaked deposit
 	GovernanceStateDepositWithdrawl
 )
 

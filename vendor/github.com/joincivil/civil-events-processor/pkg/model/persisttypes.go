@@ -31,7 +31,8 @@ type ListingCriteria struct {
 	RejectedOnly bool `db:"rejected_only"`
 	// Listings that have a challenge in progress.
 	ActiveChallenge bool `db:"active_challenge"`
-	// Listings that have a current application in progress.
+	// Listings that have a current application in progress, or listings that have passed their appExpiry
+	// and have not been updated yet
 	CurrentApplication bool  `db:"current_application"`
 	CreatedFromTs      int64 `db:"created_fromts"`
 	CreatedBeforeTs    int64 `db:"created_beforets"`
