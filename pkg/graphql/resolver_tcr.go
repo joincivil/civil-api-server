@@ -282,6 +282,8 @@ func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listin
 }
 func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (int, error) {
 	challengeID := obj.ChallengeID().Int64()
+	// Currently saving listings who haven't yet been challenged with challengeID=-1. Handling
+	// this to return 0 matching with on-chain data
 	if challengeID < 0 {
 		return 0, nil
 	}
