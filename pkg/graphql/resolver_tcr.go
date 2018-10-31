@@ -281,7 +281,11 @@ func (r *listingResolver) UnstakedDeposit(ctx context.Context, obj *model.Listin
 	return obj.UnstakedDeposit().String(), nil
 }
 func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (int, error) {
-	return int(obj.ChallengeID().Int64()), nil
+	challengeID := obj.ChallengeID().Int64()
+	if challengeID < 0 {
+		return 0, nil
+	}
+	return int(challengeID), nil
 }
 func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
 	// TODO(IS): add dataloader here
