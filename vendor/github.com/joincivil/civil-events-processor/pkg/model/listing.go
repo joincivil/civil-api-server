@@ -8,9 +8,24 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// ResetListingFieldsEvents is the list of governance events emitted that reset fields in the Listing
+// model to 0 when UpdateStatus() is called
+// NOTE(IS): This is just a union of ResetChallengeIDEvents and ResetAppExpiryEvents
+var ResetListingFieldsEvents = []GovernanceState{
+	GovernanceStateAppWhitelisted,
+	GovernanceStateRemoved,
+	GovernanceStateAppRemoved,
+}
+
 // ResetChallengeIDEvents is the list of governance events that reset challengeID to 0
 var ResetChallengeIDEvents = []GovernanceState{
 	GovernanceStateAppWhitelisted,
+	GovernanceStateRemoved,
+	GovernanceStateAppRemoved,
+}
+
+// ResetAppExpiryEvents is the list of governance events that reset appExpiry to 0
+var ResetAppExpiryEvents = []GovernanceState{
 	GovernanceStateRemoved,
 	GovernanceStateAppRemoved,
 }
