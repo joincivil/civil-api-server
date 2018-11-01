@@ -142,10 +142,12 @@ func (c *CheckoutIOUpdater) updateInvoices(invoices []*PostgresInvoice) {
 
 		err = c.invoicePersister.UpdateInvoice(invoice, updatedFields)
 		if err != nil {
-			log.Errorf("Error updated invoice %v to new status %v", checkbookInvoice.Status)
+			log.Errorf("Error updated invoice %v to new status %v",
+				invoice.InvoiceID, checkbookInvoice.Status)
 		}
 
-		log.Infof("Updated invoice %v, %v to status %v", invoice.InvoiceID, invoice.Email, checkbookInvoice.Status)
+		log.Infof("Updated invoice %v, %v to status %v", invoice.InvoiceID,
+			invoice.Email, checkbookInvoice.Status)
 
 		// Sleep hack so we don't pound the checkbook API
 		time.Sleep(callDelayPerInvoiceMillis * time.Millisecond)
