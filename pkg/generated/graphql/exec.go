@@ -48,7 +48,7 @@ type DirectiveRoot struct {
 }
 type AppealResolver interface {
 	Requester(ctx context.Context, obj *model.Appeal) (string, error)
-	AppealFeePaid(ctx context.Context, obj *model.Appeal) (int, error)
+	AppealFeePaid(ctx context.Context, obj *model.Appeal) (string, error)
 	AppealPhaseExpiry(ctx context.Context, obj *model.Appeal) (int, error)
 
 	AppealOpenToChallengeExpiry(ctx context.Context, obj *model.Appeal) (int, error)
@@ -128,8 +128,8 @@ type PollResolver interface {
 	CommitEndDate(ctx context.Context, obj *model.Poll) (int, error)
 	RevealEndDate(ctx context.Context, obj *model.Poll) (int, error)
 	VoteQuorum(ctx context.Context, obj *model.Poll) (int, error)
-	VotesFor(ctx context.Context, obj *model.Poll) (int, error)
-	VotesAgainst(ctx context.Context, obj *model.Poll) (int, error)
+	VotesFor(ctx context.Context, obj *model.Poll) (string, error)
+	VotesAgainst(ctx context.Context, obj *model.Poll) (string, error)
 }
 type QueryResolver interface {
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
@@ -285,8 +285,8 @@ func (ec *executionContext) _Appeal_appealFeePaid(ctx context.Context, field gra
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -2925,8 +2925,8 @@ func (ec *executionContext) _Poll_votesFor(ctx context.Context, field graphql.Co
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -2951,8 +2951,8 @@ func (ec *executionContext) _Poll_votesAgainst(ctx context.Context, field graphq
 		if resTmp == nil {
 			return graphql.Null
 		}
-		res := resTmp.(int)
-		return graphql.MarshalInt(res)
+		res := resTmp.(string)
+		return graphql.MarshalString(res)
 	})
 }
 
@@ -5448,6 +5448,66 @@ type Mutation {
 
 ## TCR object schemas
 
+# A type that reflects values in model.Appeal
+type Appeal {
+  requester: String!
+  appealFeePaid: String!
+  appealPhaseExpiry: Int!
+  appealGranted: Boolean!
+  appealOpenToChallengeExpiry: Int!
+  statement: String!
+  appealChallengeID: Int!
+  appealChallenge: Challenge
+}
+
+# A type that reflects block data in model.BlockData
+type BlockData {
+  blockNumber: Int!
+  txHash: String!
+  txIndex: Int!
+  blockHash: String!
+  index: Int!
+}
+
+# A type that reflects values in model.Challenge
+type Challenge {
+  challengeID: Int!
+  listingAddress: String!
+  statement: String!
+  rewardPool: String!
+  challenger: String!
+  resolved: Boolean!
+  stake: String!
+  totalTokens: String!
+  poll: Poll
+  requestAppealExpiry: Int!
+  appeal: Appeal
+  lastUpdatedDateTs: Int!
+}
+
+type Charter {
+  uri: String!
+  contentID: Int!
+  revisionID: Int!
+  signature: String!
+  author: String!
+  contentHash: String!
+  timestamp: Int!
+}
+
+# A type that reflects values in model.GovernanceEvent
+type GovernanceEvent {
+  listingAddress: String!
+  senderAddress: String!
+  metadata: [Metadata!]!
+  governanceEventType: String!
+  creationDate: Int!
+  lastUpdatedDate: Int!
+  eventHash: String!
+  blockData: BlockData!
+  listing: Listing!
+}
+
 # A type that reflects values in model.Listing
 type Listing {
   name: String!
@@ -5470,42 +5530,10 @@ type Listing {
   prevChallenge: Challenge
 }
 
-type Charter {
-  uri: String!
-  contentID: Int!
-  revisionID: Int!
-  signature: String!
-  author: String!
-  contentHash: String!
-  timestamp: Int!
-}
-
-# A type that reflects values in model.Challenge
-type Challenge {
-  challengeID: Int!
-  listingAddress: String!
-  statement: String!
-  rewardPool: String!
-  challenger: String!
-  resolved: Boolean!
-  stake: String!
-  totalTokens: String!
-  poll: Poll
-  requestAppealExpiry: Int!
-  appeal: Appeal
-  lastUpdatedDateTs: Int!
-}
-
-# A type that reflects values in model.Appeal
-type Appeal {
-  requester: String!
-  appealFeePaid: Int!
-  appealPhaseExpiry: Int!
-  appealGranted: Boolean!
-  appealOpenToChallengeExpiry: Int!
-  statement: String!
-  appealChallengeID: Int!
-  appealChallenge: Challenge
+# A type that reflects values in model.Metadata
+type Metadata {
+  key: String!
+  value: String!
 }
 
 # A type that reflects values in model.Poll
@@ -5513,36 +5541,8 @@ type Poll {
   commitEndDate: Int!
   revealEndDate: Int!
   voteQuorum: Int!
-  votesFor: Int!
-  votesAgainst: Int!
-}
-
-# A type that reflects values in model.Metadata
-type Metadata {
-  key: String!
-  value: String!
-}
-
-# A type that reflects block data in model.BlockData
-type BlockData {
-  blockNumber: Int!
-  txHash: String!
-  txIndex: Int!
-  blockHash: String!
-  index: Int!
-}
-
-# A type that reflects values in model.GovernanceEvent
-type GovernanceEvent {
-  listingAddress: String!
-  senderAddress: String!
-  metadata: [Metadata!]!
-  governanceEventType: String!
-  creationDate: Int!
-  lastUpdatedDate: Int!
-  eventHash: String!
-  blockData: BlockData!
-  listing: Listing!
+  votesFor: String!
+  votesAgainst: String!
 }
 
 
