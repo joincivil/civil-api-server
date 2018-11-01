@@ -290,17 +290,18 @@ func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (
 	return int(challengeID), nil
 }
 func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
-	// TODO(IS): add dataloader here
+	loaders := ctxLoaders(ctx)
 	challengeID := int(obj.ChallengeID().Int64())
-	challenge, err := r.challengePersister.ChallengeByChallengeID(challengeID)
+	challenge, err := loaders.challengeLoader.Load(challengeID)
 	if err != nil {
 		return nil, err
 	}
 	return challenge, nil
 }
 func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
-	// TODO(IS): add dataloader here
-	challenges, err := r.challengePersister.ChallengesByListingAddress(obj.ContractAddress())
+	loaders := ctxLoaders(ctx)
+	listingAddress := obj.ContractAddress().Hex()
+	challenges, err := loaders.challengeAddressesLoader.Load(listingAddress)
 
 	// No 0 challenges found, return nil
 	if err == model.ErrPersisterNoResults || challenges == nil {
@@ -359,7 +360,8 @@ func (r *queryResolver) Challenge(ctx context.Context, id int) (*model.Challenge
 }
 
 func (r *queryResolver) TcrChallenge(ctx context.Context, id int) (*model.Challenge, error) {
-	challenge, err := r.challengePersister.ChallengeByChallengeID(id)
+	loaders := ctxLoaders(ctx)
+	challenge, err := loaders.challengeLoader.Load(id)
 	if err != nil {
 		return nil, err
 	}

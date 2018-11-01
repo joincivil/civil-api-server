@@ -28,13 +28,13 @@ func ListStringToListCommonAddress(addresses []string) []common.Address {
 	return addressesCommon
 }
 
-// ListCommonAddressesToString converts a list of common.address to string
+// ListCommonAddressesToString converts a list of common.address to a comma delimited string
 func ListCommonAddressesToString(addresses []common.Address) string {
 	addressesString := ListCommonAddressToListString(addresses)
 	return strings.Join(addressesString, ",")
 }
 
-// StringToCommonAddressesList converts a list of common.address to comma delimited string
+// StringToCommonAddressesList converts a comma delimited string to a list of common.address
 func StringToCommonAddressesList(addresses string) []common.Address {
 	addressesString := strings.Split(addresses, ",")
 	return ListStringToListCommonAddress(addressesString)

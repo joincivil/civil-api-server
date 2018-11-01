@@ -44,7 +44,7 @@ type ListingCriteria struct {
 type ListingPersister interface {
 	// Listings returns all listings by ListingCriteria
 	ListingsByCriteria(criteria *ListingCriteria) ([]*Listing, error)
-	// ListingsByAddress returns a slice of Listings based on addresses
+	// ListingsByAddress returns a slice of Listings in order based on addresses
 	ListingsByAddresses(addresses []common.Address) ([]*Listing, error)
 	// ListingByAddress retrieves listings based on addresses
 	ListingByAddress(address common.Address) (*Listing, error)
@@ -129,11 +129,14 @@ type CronPersister interface {
 type ChallengePersister interface {
 	// ChallengeByChallengeID gets a challenge by challengeID
 	ChallengeByChallengeID(challengeID int) (*Challenge, error)
-	// ChallengesByChallengeIDs returns a slice of challenges based on challenge IDs
+	// ChallengesByChallengeIDs returns a slice of challenges in order based on challenge IDs
 	ChallengesByChallengeIDs(challengeIDs []int) ([]*Challenge, error)
 	// ChallengesByListingAddress gets list of challenges for a listing sorted by
 	// challenge id
 	ChallengesByListingAddress(addr common.Address) ([]*Challenge, error)
+	// ChallengesByListingAddresses gets slice of challenges in order by challenge ID
+	// for a each listing address in order of addresses
+	ChallengesByListingAddresses(addr []common.Address) ([][]*Challenge, error)
 	// CreateChallenge creates a new challenge
 	CreateChallenge(challenge *Challenge) error
 	// UpdateChallenge updates a challenge
@@ -144,7 +147,7 @@ type ChallengePersister interface {
 type PollPersister interface {
 	// PollByPollID gets a poll by pollID
 	PollByPollID(pollID int) (*Poll, error)
-	// PollsByPollIDs returns a slice of polls based on poll IDs
+	// PollsByPollIDs returns a slice of polls in order based on poll IDs
 	PollsByPollIDs(pollIDs []int) ([]*Poll, error)
 	// CreatePoll creates a new poll
 	CreatePoll(poll *Poll) error
@@ -156,7 +159,7 @@ type PollPersister interface {
 type AppealPersister interface {
 	// AppealByChallengeID gets an appeal by challengeID
 	AppealByChallengeID(challengeID int) (*Appeal, error)
-	// AppealsByChallengeIDs returns a slice of appeals based on challenge IDs
+	// AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
 	AppealsByChallengeIDs(challengeIDs []int) ([]*Appeal, error)
 	// CreateAppeal creates a new appeal
 	CreateAppeal(appeal *Appeal) error

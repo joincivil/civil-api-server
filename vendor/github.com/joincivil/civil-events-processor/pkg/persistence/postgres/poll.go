@@ -54,9 +54,9 @@ type Poll struct {
 
 	VoteQuorum uint64 `db:"vote_quorum"`
 
-	VotesFor float64 `db:"votes_for"`
+	VotesFor uint64 `db:"votes_for"`
 
-	VotesAgainst float64 `db:"votes_against"`
+	VotesAgainst uint64 `db:"votes_against"`
 
 	LastUpdatedDateTs int64 `db:"last_updated_timestamp"`
 }
@@ -68,8 +68,8 @@ func NewPoll(pollData *model.Poll) *Poll {
 	poll.CommitEndDate = pollData.CommitEndDate().Int64()
 	poll.RevealEndDate = pollData.RevealEndDate().Int64()
 	poll.VoteQuorum = pollData.VoteQuorum().Uint64()
-	poll.VotesFor = BigIntToFloat64(pollData.VotesFor())
-	poll.VotesAgainst = BigIntToFloat64(pollData.VotesAgainst())
+	poll.VotesFor = pollData.VotesFor().Uint64()
+	poll.VotesAgainst = pollData.VotesAgainst().Uint64()
 	poll.LastUpdatedDateTs = pollData.LastUpdatedDateTs()
 	return poll
 }
@@ -81,8 +81,8 @@ func (p *Poll) DbToPollData() *model.Poll {
 		big.NewInt(p.CommitEndDate),
 		big.NewInt(p.RevealEndDate),
 		new(big.Int).SetUint64(p.VoteQuorum),
-		Float64ToBigInt(p.VotesFor),
-		Float64ToBigInt(p.VotesAgainst),
+		new(big.Int).SetUint64(p.VotesFor),
+		new(big.Int).SetUint64(p.VotesAgainst),
 		p.LastUpdatedDateTs,
 	)
 }
