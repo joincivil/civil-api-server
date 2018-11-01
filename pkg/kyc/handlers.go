@@ -90,9 +90,7 @@ func HandleCheckCompleted(onfido *OnfidoAPI, userPersister users.UserPersister,
 		return err
 	}
 
-	log.Infof("Is user %v passed? %v", result)
 	// If passed or not, save to user object
-
 	user, err := userPersister.User(&users.UserCriteria{
 		OnfidoCheckID: check.ID,
 	})
