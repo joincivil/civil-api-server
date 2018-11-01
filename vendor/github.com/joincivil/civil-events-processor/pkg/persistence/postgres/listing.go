@@ -159,7 +159,7 @@ func (l *Listing) DbToListingData() *model.Listing {
 	charter := &model.Charter{}
 	err := charter.FromMap(l.Charter)
 	if err != nil {
-		log.Errorf("Error decoding map to charter: err: ", err)
+		log.Errorf("Error decoding map to charter: err: %v", err)
 	}
 
 	testListingParams := &model.NewListingParams{

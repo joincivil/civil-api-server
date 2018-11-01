@@ -52,8 +52,8 @@ type appealResolver struct{ *Resolver }
 func (r *appealResolver) Requester(ctx context.Context, obj *model.Appeal) (string, error) {
 	return obj.Requester().Hex(), nil
 }
-func (r *appealResolver) AppealFeePaid(ctx context.Context, obj *model.Appeal) (int, error) {
-	return int(obj.AppealFeePaid().Int64()), nil
+func (r *appealResolver) AppealFeePaid(ctx context.Context, obj *model.Appeal) (string, error) {
+	return obj.AppealFeePaid().String(), nil
 }
 func (r *appealResolver) AppealPhaseExpiry(ctx context.Context, obj *model.Appeal) (int, error) {
 	return int(obj.AppealPhaseExpiry().Int64()), nil
@@ -345,11 +345,11 @@ func (r *pollResolver) RevealEndDate(ctx context.Context, obj *model.Poll) (int,
 func (r *pollResolver) VoteQuorum(ctx context.Context, obj *model.Poll) (int, error) {
 	return int(obj.VoteQuorum().Int64()), nil
 }
-func (r *pollResolver) VotesFor(ctx context.Context, obj *model.Poll) (int, error) {
-	return int(obj.VotesFor().Int64()), nil
+func (r *pollResolver) VotesFor(ctx context.Context, obj *model.Poll) (string, error) {
+	return obj.VotesFor().String(), nil
 }
-func (r *pollResolver) VotesAgainst(ctx context.Context, obj *model.Poll) (int, error) {
-	return int(obj.VotesAgainst().Int64()), nil
+func (r *pollResolver) VotesAgainst(ctx context.Context, obj *model.Poll) (string, error) {
+	return obj.VotesAgainst().String(), nil
 }
 
 // QUERIES

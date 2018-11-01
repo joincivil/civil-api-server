@@ -73,7 +73,7 @@ type Mutation {
 # A type that reflects values in model.Appeal
 type Appeal {
   requester: String!
-  appealFeePaid: Int!
+  appealFeePaid: String!
   appealPhaseExpiry: Int!
   appealGranted: Boolean!
   appealOpenToChallengeExpiry: Int!
@@ -163,8 +163,8 @@ type Poll {
   commitEndDate: Int!
   revealEndDate: Int!
   voteQuorum: Int!
-  votesFor: Int!
-  votesAgainst: Int!
+  votesFor: String!
+  votesAgainst: String!
 }
 
 
