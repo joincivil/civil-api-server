@@ -53,7 +53,7 @@ type Appeal struct {
 
 	Requester string `db:"requester"`
 
-	AppealFeePaid float64 `db:"appeal_fee_paid"`
+	AppealFeePaid uint64 `db:"appeal_fee_paid"`
 
 	AppealPhaseExpiry int64 `db:"appeal_phase_expiry"`
 
@@ -73,7 +73,7 @@ func NewAppeal(appealData *model.Appeal) *Appeal {
 	appeal := &Appeal{}
 	appeal.OriginalChallengeID = appealData.OriginalChallengeID().Int64()
 	appeal.Requester = appealData.Requester().Hex()
-	appeal.AppealFeePaid = BigIntToFloat64(appealData.AppealFeePaid())
+	appeal.AppealFeePaid = appealData.AppealFeePaid().Uint64()
 	appeal.AppealPhaseExpiry = appealData.AppealPhaseExpiry().Int64()
 	appeal.AppealGranted = appealData.AppealGranted()
 	appeal.LastUpdatedDateTs = appealData.LastUpdatedDateTs()
@@ -99,7 +99,7 @@ func (a *Appeal) DbToAppealData() *model.Appeal {
 	appeal := model.NewAppeal(
 		big.NewInt(a.OriginalChallengeID),
 		common.HexToAddress(a.Requester),
-		Float64ToBigInt(a.AppealFeePaid),
+		new(big.Int).SetUint64(a.AppealFeePaid),
 		big.NewInt(a.AppealPhaseExpiry),
 		a.AppealGranted,
 		a.Statement,

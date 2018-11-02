@@ -196,22 +196,17 @@ func (p *PostgresPersister) ChallengeByChallengeID(challengeID int) (*model.Chal
 	if err != nil {
 		return nil, err
 	}
-	if challenges == nil || len(challenges) <= 0 {
-		return nil, model.ErrPersisterNoResults
-	}
 	return challenges[0], nil
+}
+
+// ChallengesByListingAddresses gets slice of challenges for a each listing address in order of addresses
+func (p *PostgresPersister) ChallengesByListingAddresses(addrs []common.Address) ([][]*model.Challenge, error) {
+	return p.challengesByListingAddressesInTable(addrs, challengeTableName)
 }
 
 // ChallengesByListingAddress gets a list of challenges for a listing sorted by challenge_id
 func (p *PostgresPersister) ChallengesByListingAddress(addr common.Address) ([]*model.Challenge, error) {
-	challenges, err := p.challengesByListingAddressInTable(addr, challengeTableName)
-	if err != nil {
-		return nil, err
-	}
-	if challenges == nil || len(challenges) <= 0 {
-		return nil, model.ErrPersisterNoResults
-	}
-	return challenges, nil
+	return p.challengesByListingAddressInTable(addr, challengeTableName)
 }
 
 // PollByPollID gets a poll by pollID
@@ -226,7 +221,7 @@ func (p *PostgresPersister) PollByPollID(pollID int) (*model.Poll, error) {
 	return polls[0], nil
 }
 
-// PollsByPollIDs returns a slice of polls based on poll IDs
+// PollsByPollIDs returns a slice of polls in order based on poll IDs
 func (p *PostgresPersister) PollsByPollIDs(pollIDs []int) ([]*model.Poll, error) {
 	return p.pollsByPollIDsInTableInOrder(pollIDs, pollTableName)
 }
@@ -253,7 +248,7 @@ func (p *PostgresPersister) AppealByChallengeID(challengeID int) (*model.Appeal,
 	return appeals[0], nil
 }
 
-// AppealsByChallengeIDs returns a slice of appeals based on challenge IDs
+// AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
 func (p *PostgresPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
 	return p.appealsByChallengeIDsInTableInOrder(challengeIDs, appealTableName)
 }
@@ -960,13 +955,16 @@ func (p *PostgresPersister) updateChallengeQuery(updatedFields []string, tableNa
 	return queryString.String(), nil
 }
 
-func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs []int, tableName string) ([]*model.Challenge, error) {
+func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs []int,
+	tableName string) ([]*model.Challenge, error) {
 	challengeIDsString := postgres.ListIntToListString(challengeIDs)
 	queryString := p.challengesByChallengeIDsQuery(tableName)
+
 	query, args, err := sqlx.In(queryString, challengeIDsString)
 	if err != nil {
 		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
 	}
+
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	if err != nil {
@@ -975,6 +973,7 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 		}
 		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
 	}
+
 	challengesMap := map[int]*model.Challenge{}
 	for rows.Next() {
 		var dbChallenge postgres.Challenge
@@ -985,6 +984,7 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 		modelChallenge := dbChallenge.DbToChallengeData()
 		challengesMap[int(modelChallenge.ChallengeID().Int64())] = modelChallenge
 	}
+
 	// NOTE(IS): Return challenges in same order
 	challenges := make([]*model.Challenge, len(challengeIDs))
 	for i, challengeID := range challengeIDs {
@@ -995,6 +995,11 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 			challenges[i] = nil
 		}
 	}
+
+	if len(challenges) <= 0 {
+		return nil, model.ErrPersisterNoResults
+	}
+
 	return challenges, nil
 }
 
@@ -1004,7 +1009,74 @@ func (p *PostgresPersister) challengesByChallengeIDsQuery(tableName string) stri
 	return queryString
 }
 
-// challengesByListingAddressQuery retrieves a list of challenges for a listing sorted
+func (p *PostgresPersister) challengesByListingAddressesInTable(addrs []common.Address,
+	tableName string) ([][]*model.Challenge, error) {
+	listingAddrs := postgres.ListCommonAddressToListString(addrs)
+	queryString := p.challengesByListingAddressesQuery(tableName)
+
+	query, args, err := sqlx.In(queryString, listingAddrs)
+	if err != nil {
+		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+	}
+
+	query = p.db.Rebind(query)
+	rows, err := p.db.Queryx(query, args...)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, model.ErrPersisterNoResults
+		}
+		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+	}
+
+	challengesMap := map[string][]*model.Challenge{}
+	for rows.Next() {
+		var dbChallenge postgres.Challenge
+		err = rows.StructScan(&dbChallenge)
+		if err != nil {
+			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+		}
+		modelChallenge := dbChallenge.DbToChallengeData()
+		listingAddr := modelChallenge.ListingAddress().Hex()
+
+		listingChallenges, ok := challengesMap[listingAddr]
+		if !ok {
+			challengesMap[listingAddr] = []*model.Challenge{modelChallenge}
+		} else {
+			challengesMap[listingAddr] = append(listingChallenges, modelChallenge)
+		}
+	}
+
+	// Retain ordering of listing addresses
+	listingChallenges := make([][]*model.Challenge, len(addrs))
+	for i, addr := range addrs {
+		retrievedChallenges, ok := challengesMap[addr.Hex()]
+		if ok {
+			listingChallenges[i] = retrievedChallenges
+		} else {
+			listingChallenges[i] = nil
+		}
+	}
+
+	if len(listingChallenges) <= 0 {
+		return nil, model.ErrPersisterNoResults
+	}
+
+	return listingChallenges, nil
+}
+
+// challengesByListingAddressesQuery returns the query string to retrieved a list of
+// challenges for a list of listing addresses
+func (p *PostgresPersister) challengesByListingAddressesQuery(tableName string) string {
+	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false)
+	queryString := fmt.Sprintf( // nolint: gosec
+		"SELECT %s FROM %s WHERE listing_address IN (?)",
+		fieldNames,
+		tableName,
+	)
+	return queryString
+}
+
+// challengesByListingAddressInTable retrieves a list of challenges for a listing sorted
 // by challenge_id
 func (p *PostgresPersister) challengesByListingAddressInTable(addr common.Address,
 	tableName string) ([]*model.Challenge, error) {

@@ -1,13 +1,16 @@
 package graphql
 
-// NOTE(IS): The constructor method for dataloaders are manually added here. Only listing loader for now
+// NOTE(IS): The constructor method for dataloaders are manually added here.
 
 import (
 	"context"
-	model "github.com/joincivil/civil-events-processor/pkg/model"
-	"github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
 	"net/http"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+
+	model "github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
 )
 
 type ctxKeyType struct{ name string }
@@ -15,8 +18,9 @@ type ctxKeyType struct{ name string }
 var ctxKey = ctxKeyType{"userCtx"}
 
 type loaders struct {
-	listingLoader *ListingLoader
-	// challengeLoader *GovernanceEventLoader
+	listingLoader            *ListingLoader
+	challengeLoader          *ChallengeLoader
+	challengeAddressesLoader *ChallengeSliceByAddressesLoader
 }
 
 // DataloaderMiddleware defines the listingLoader
@@ -35,15 +39,31 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 			},
 		}
 
-		// ldrs.challengeLoader = &GovernanceEventLoader{
-		// 	maxBatch: 100,
-		// 	wait:     100 * time.Millisecond,
-		// 	fetch: func(keys []int) ([]*model.GovernanceEvent, []error) {
-		// 		challengeEvents, err := g.govEventPersister.GovernanceEventsByChallengeIDs(keys)
-		// 		errors := []error{err}
-		// 		return challengeEvents, errors
-		// 	},
-		// }
+		ldrs.challengeLoader = &ChallengeLoader{
+			maxBatch: 100,
+			wait:     100 * time.Millisecond,
+			fetch: func(keys []int) ([]*model.Challenge, []error) {
+				challengeEvents, err := g.challengePersister.ChallengesByChallengeIDs(keys)
+				errors := []error{err}
+				return challengeEvents, errors
+			},
+		}
+
+		ldrs.challengeAddressesLoader = &ChallengeSliceByAddressesLoader{
+			maxBatch: 100,
+			wait:     100 * time.Millisecond,
+			fetch: func(keys []string) ([][]*model.Challenge, []error) {
+				// This needs a function that returns a slice of slices of challenges for each item
+				// in the slice of keys.
+				addrKeys := make([]common.Address, len(keys))
+				for index, key := range keys {
+					addrKeys[index] = common.HexToAddress(key)
+				}
+				challengeEvents, err := g.challengePersister.ChallengesByListingAddresses(addrKeys)
+				errors := []error{err}
+				return challengeEvents, errors
+			},
+		}
 
 		ctx := context.WithValue(r.Context(), ctxKey, ldrs) // nolint: golint
 		r = r.WithContext(ctx)
@@ -51,9 +71,6 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 	})
 }
 
-// func getListingLoader(ctx context.Context) *ListingLoader {
-// 	return ctx.Value(listingLoaderKey).(*ListingLoader)
-// }
 func ctxLoaders(ctx context.Context) loaders {
 	return ctx.Value(ctxKey).(loaders)
 }
