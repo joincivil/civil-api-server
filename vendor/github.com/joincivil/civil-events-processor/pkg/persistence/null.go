@@ -122,3 +122,75 @@ func (n *NullPersister) TimestampOfLastEventForCron() (int64, error) {
 func (n *NullPersister) UpdateTimestampForCron(timestamp int64) error {
 	return nil
 }
+
+// ChallengeByChallengeID gets a challenge by challengeID
+func (n *NullPersister) ChallengeByChallengeID(challengeID int) (*model.Challenge, error) {
+	return &model.Challenge{}, nil
+}
+
+// ChallengesByChallengeIDs returns a slice of challenges in order based on challenge IDs
+func (n *NullPersister) ChallengesByChallengeIDs(challengeIDs []int) ([]*model.Challenge, error) {
+	return []*model.Challenge{}, nil
+}
+
+// ChallengesByListingAddress gets list of challenges for a listing sorted by
+// challenge id
+func (n *NullPersister) ChallengesByListingAddress(addr common.Address) ([]*model.Challenge, error) {
+	return []*model.Challenge{}, nil
+}
+
+// ChallengesByListingAddresses gets slice of challenges in order by challenge ID
+// for a each listing address in order of addresses
+func (n *NullPersister) ChallengesByListingAddresses(addr []common.Address) ([][]*model.Challenge, error) {
+	return [][]*model.Challenge{}, nil
+}
+
+// CreateChallenge creates a new challenge
+func (n *NullPersister) CreateChallenge(challenge *model.Challenge) error {
+	return nil
+}
+
+// UpdateChallenge updates a challenge
+func (n *NullPersister) UpdateChallenge(challenge *model.Challenge, updatedFields []string) error {
+	return nil
+}
+
+// PollByPollID gets a poll by pollID
+func (n *NullPersister) PollByPollID(pollID int) (*model.Poll, error) {
+	return &model.Poll{}, nil
+}
+
+// PollsByPollIDs returns a slice of polls in order based on poll IDs
+func (n *NullPersister) PollsByPollIDs(pollIDs []int) ([]*model.Poll, error) {
+	return []*model.Poll{}, nil
+}
+
+// CreatePoll creates a new poll
+func (n *NullPersister) CreatePoll(poll *model.Poll) error {
+	return nil
+}
+
+// UpdatePoll updates a poll
+func (n *NullPersister) UpdatePoll(poll *model.Poll, updatedFields []string) error {
+	return nil
+}
+
+// AppealByChallengeID gets an appeal by challengeID
+func (n *NullPersister) AppealByChallengeID(challengeID int) (*model.Appeal, error) {
+	return &model.Appeal{}, nil
+}
+
+// AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
+func (n *NullPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
+	return []*model.Appeal{}, nil
+}
+
+// CreateAppeal creates a new appeal
+func (n *NullPersister) CreateAppeal(appeal *model.Appeal) error {
+	return nil
+}
+
+// UpdateAppeal updates an appeal
+func (n *NullPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []string) error {
+	return nil
+}
