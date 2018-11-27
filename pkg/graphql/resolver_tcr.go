@@ -2,6 +2,7 @@ package graphql
 
 import (
 	context "context"
+	"fmt"
 	"github.com/iancoleman/strcase"
 	"strconv"
 
@@ -13,6 +14,10 @@ import (
 	putils "github.com/joincivil/civil-events-processor/pkg/utils"
 
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
+)
+
+const (
+	defaultCriteriaCount = 25
 )
 
 // Appeal is the resolver for the Appeal type
@@ -433,25 +438,51 @@ func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
 	currentApplication *bool) ([]model.Listing, error) {
-	return r.TcrListings(ctx, first, after, whitelistedOnly, rejectedOnly,
+
+	resultCursor, err := r.TcrListings(ctx, first, after, whitelistedOnly, rejectedOnly,
 		activeChallenge, currentApplication)
+	if err != nil {
+		return []model.Listing{}, err
+	}
+
+	results := make([]model.Listing, len(resultCursor.Edges))
+	for index, edge := range resultCursor.Edges {
+		results[index] = edge.Node
+	}
+	return results, nil
 }
 
 func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
-	currentApplication *bool) ([]model.Listing, error) {
+	currentApplication *bool) (*graphql.ListingResultCursor, error) {
+
+	// The default pagination is by offset
+	// Only support sorted offset until we need other types
+	cursor := defaultPaginationCursor
+
 	criteria := &model.ListingCriteria{}
 
+	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		afterInt, err := strconv.Atoi(*after)
+		afterCursor, err := decodeToPaginationCursor(*after)
 		if err != nil {
 			return nil, err
 		}
-		criteria.Offset = afterInt
+		if afterCursor.typeName == cursorTypeOffset {
+			cursorIntValue := afterCursor.ValueInt()
+			// Increment the offset and get the next item
+			criteria.Offset = cursorIntValue + 1
+			afterCursor.ValueFromInt(cursorIntValue + 1)
+			cursor = afterCursor
+		}
 	}
+
+	// Default count value
+	criteria.Count = defaultCriteriaCount
 	if first != nil {
 		criteria.Count = *first
 	}
+
 	if whitelistedOnly != nil {
 		criteria.WhitelistedOnly = *whitelistedOnly
 	} else if rejectedOnly != nil {
@@ -470,11 +501,42 @@ func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *stri
 		return nil, err
 	}
 
-	modelListings := make([]model.Listing, len(listings))
+	modelEdges := make([]*graphql.ListingEdge, len(listings))
+
+	// Build edges
+	// Only support sorted offset until we need other types
 	for index, listing := range listings {
-		modelListings[index] = *listing
+		cv := cursor.ValueInt()
+		newCursor := &paginationCursor{
+			typeName: cursor.typeName,
+			value:    fmt.Sprintf("%v", cv+index),
+		}
+
+		modelEdges[index] = &graphql.ListingEdge{
+			Cursor: newCursor.Encode(),
+			Node:   *listing,
+		}
 	}
-	return modelListings, nil
+
+	// Figure out the endCursor value
+	var endCursor *string
+	if len(modelEdges) > 0 {
+		endCursor = &(modelEdges[len(modelEdges)-1]).Cursor
+	}
+
+	// Figure out the hasNextPage value
+	hasNextPage := false
+	if len(modelEdges) == criteria.Count {
+		hasNextPage = true
+	}
+
+	return &graphql.ListingResultCursor{
+		Edges: modelEdges,
+		PageInfo: graphql.PageInfo{
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+	}, nil
 }
 
 func (r *queryResolver) Listing(ctx context.Context, addr string) (*model.Listing, error) {
