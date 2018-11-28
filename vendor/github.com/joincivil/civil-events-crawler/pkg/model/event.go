@@ -4,6 +4,7 @@ package model // import "github.com/joincivil/civil-events-crawler/pkg/model"
 import (
 	"errors"
 	"fmt"
+	log "github.com/golang/glog"
 	"math/big"
 	"reflect"
 	"strconv"
@@ -27,23 +28,23 @@ const (
 // RetrievalMethod is the enum for the type of retrieval method
 type RetrievalMethod int
 
-// ReturnEventsFromABI returns abi.Event struct from the ABI
-func ReturnEventsFromABI(_abi abi.ABI, eventType string) (abi.Event, error) {
+// ReturnEventFromABI returns abi.Event struct from the ABI
+func ReturnEventFromABI(_abi abi.ABI, eventType string) (abi.Event, error) {
 	// Some contracts have an underscore prefix on their events. Handle both
 	// non-underscore/underscore cases here.
-	events, ok := _abi.Events[eventType]
+	event, ok := _abi.Events[eventType]
 	if !ok {
-		events, ok = _abi.Events[fmt.Sprintf("_%s", eventType)]
+		event, ok = _abi.Events[fmt.Sprintf("_%s", eventType)]
 		if !ok {
-			return events, fmt.Errorf("No event type %v in contract", eventType)
+			return abi.Event{}, fmt.Errorf("No event type %v in contract", eventType)
 		}
 	}
-	return events, nil
+	return event, nil
 }
 
 // NewEventFromContractEvent creates a new event after converting eventData to interface{}
-func NewEventFromContractEvent(eventType string, contractName string, contractAddress common.Address, eventData interface{},
-	timestamp int64, retrievalMethod RetrievalMethod) (*Event, error) {
+func NewEventFromContractEvent(eventType string, contractName string, contractAddress common.Address,
+	eventData interface{}, timestamp int64, retrievalMethod RetrievalMethod) (*Event, error) {
 	event := &Event{}
 
 	payload := NewEventPayload(eventData)
@@ -116,12 +117,12 @@ func extractFieldsFromEvent(payload *EventPayload, eventData interface{}, eventT
 		return eventPayload, err
 	}
 
-	events, err := ReturnEventsFromABI(_abi, eventType)
+	abiEvent, err := ReturnEventFromABI(_abi, eventType)
 	if err != nil {
 		return eventPayload, err
 	}
 
-	for _, input := range events.Inputs {
+	for _, input := range abiEvent.Inputs {
 		eventFieldName := strings.Title(input.Name)
 		eventField, ok := payload.Value(eventFieldName)
 		if !ok {
@@ -189,8 +190,16 @@ func extractRawFieldFromEvent(payload *EventPayload) (*types.Log, error) {
 func (e *Event) hashEvent() string {
 	logIndex := int(e.logPayload.Index)
 	txHash := e.logPayload.TxHash.Hex()
-	eventBytes, _ := rlp.EncodeToBytes([]interface{}{e.contractAddress.Hex(), e.eventType, // nolint: gas
-		strconv.Itoa(logIndex), txHash})
+	eventBytes, err := rlp.EncodeToBytes([]interface{}{
+		e.contractAddress.Hex(),
+		e.eventType, // nolint: gas, gosec
+		strconv.Itoa(logIndex),
+		txHash,
+	})
+	if err != nil {
+		log.Errorf("Error encoding to bytes: err: %v", err)
+		return ""
+	}
 	h := crypto.Keccak256Hash(eventBytes)
 	return h.Hex()
 }

@@ -111,7 +111,7 @@ func (p *PostgresPersister) CreateTables() error {
 
 // CreateIndices creates the indices for DB if they don't exist
 func (p *PostgresPersister) CreateIndices() error {
-	indexQuery := postgres.EventTableIndices()
+	indexQuery := postgres.CreateEventTableIndices()
 	_, err := p.db.Exec(indexQuery)
 	return err
 }
@@ -169,7 +169,9 @@ func (p *PostgresPersister) retrieveEventsQuery(tableName string, criteria *mode
 		queryBuf.WriteString(" event_type = :eventtype") // nolint: gosec
 	}
 	if criteria.Reverse {
-		queryBuf.WriteString(" ORDER BY timestamp DESC") // nolint: gosec
+		queryBuf.WriteString(" ORDER BY id DESC") // nolint: gosec
+	} else {
+		queryBuf.WriteString(" ORDER BY id") // nolint: gosec
 	}
 	if criteria.Offset > 0 {
 		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
@@ -187,7 +189,7 @@ func (p *PostgresPersister) saveEventToTable(query string, event *model.Event) e
 	}
 	_, err = p.db.NamedExec(query, dbEvent)
 	if err != nil {
-		return fmt.Errorf("Error saving event to table %v", err)
+		return fmt.Errorf("Error saving event to table: err %v: event: %T", err, dbEvent.LogPayload["Data"])
 	}
 	return nil
 }
@@ -202,10 +204,14 @@ func (p *PostgresPersister) getLatestEvents(tableName string) ([]postgres.Event,
 // retrieveLatestEventsQueryString queries for the events with the latest timestamp given an event type and contract address
 func (p *PostgresPersister) retrieveLatestEventsQueryString(tableName string) string {
 	// Query for the latest timestamp.
-	return fmt.Sprintf(`SELECT e.event_type, e.log_payload, e.payload, e.hash, e.contract_address, e.contract_name, max_e.timestamp
+	return fmt.Sprintf( // nolint: gosec
+		`SELECT e.event_type, e.log_payload, e.payload, e.hash, e.contract_address, e.contract_name, max_e.timestamp
 		FROM (SELECT event_type, contract_address, MAX(timestamp) AS timestamp FROM %s GROUP BY event_type, contract_address) max_e
 		JOIN %s e ON e.event_type = max_e.event_type AND e.timestamp = max_e.timestamp AND e.contract_address = max_e.contract_address;
-        `, tableName, tableName)
+        `,
+		tableName,
+		tableName,
+	)
 }
 
 func (p *PostgresPersister) parseEventToPersist(event *model.Event) error {
