@@ -2,9 +2,10 @@ package postgres // import "github.com/joincivil/civil-events-processor/pkg/pers
 
 import (
 	"fmt"
-	log "github.com/golang/glog"
 	"math/big"
 	"strconv"
+
+	log "github.com/golang/glog"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -56,7 +57,8 @@ func ListingTableIndices() string {
 func CreateListingTableIndicesString(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS listing_whitelisted_type_idx ON %s (whitelisted);
-	`, tableName)
+		CREATE INDEX IF NOT EXISTS listing_creation_timestamp_idx ON %s (creation_timestamp);
+	`, tableName, tableName)
 	return queryString
 }
 
