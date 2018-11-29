@@ -3,17 +3,35 @@
 package {{ .PackageName }}
 
 import (
-{{- range $import := .Imports }}
-	{{- $import.Write }}
-{{ end }}
+	%%%IMPORTS%%%
+
+	{{ reserveImport "context"  }}
+	{{ reserveImport "fmt"  }}
+	{{ reserveImport "io"  }}
+	{{ reserveImport "strconv"  }}
+	{{ reserveImport "time"  }}
+	{{ reserveImport "sync"  }}
+	{{ reserveImport "errors"  }}
+	{{ reserveImport "bytes"  }}
+
+	{{ reserveImport "github.com/vektah/gqlparser" }}
+	{{ reserveImport "github.com/vektah/gqlparser/ast" }}
+	{{ reserveImport "github.com/99designs/gqlgen/graphql" }}
+	{{ reserveImport "github.com/99designs/gqlgen/graphql/introspection" }}
 )
 
 {{ range $model := .Models }}
+	{{with .Description}} {{.|prefixLines "// "}} {{end}}
 	{{- if .IsInterface }}
-		type {{.GoType}} interface {}
+		type {{.GoType}} interface {
+			Is{{.GoType}}()
+		}
 	{{- else }}
 		type {{.GoType}} struct {
 			{{- range $field := .Fields }}
+				{{- with .Description}}
+					{{.|prefixLines "// "}}
+				{{- end}}
 				{{- if $field.GoFieldName }}
 					{{ $field.GoFieldName }} {{$field.Signature}} `json:"{{$field.GQLName}}"`
 				{{- else }}
@@ -21,14 +39,22 @@ import (
 				{{- end }}
 			{{- end }}
 		}
+
+		{{- range $iface := .Implements }}
+			func ({{$model.GoType}}) Is{{$iface.GoType}}() {}
+		{{- end }}
+
 	{{- end }}
 {{- end}}
 
 {{ range $enum := .Enums }}
+	{{with .Description}}{{.|prefixLines "// "}} {{end}}
 	type {{.GoType}} string
 	const (
-	{{ range $value := .Values -}}
-		{{with .Description}} {{.|prefixLines "// "}} {{end}}
+	{{- range $value := .Values}}
+		{{- with .Description}}
+			{{.|prefixLines "// "}}
+		{{- end}}
 		{{$enum.GoType}}{{ .Name|toCamel }} {{$enum.GoType}} = {{.Name|quote}}
 	{{- end }}
 	)

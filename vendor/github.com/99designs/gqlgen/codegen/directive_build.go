@@ -1,6 +1,10 @@
 package codegen
 
-import "github.com/pkg/errors"
+import (
+	"sort"
+
+	"github.com/pkg/errors"
+)
 
 func (cfg *Config) buildDirectives(types NamedTypes) ([]*Directive, error) {
 	var directives []*Directive
@@ -28,7 +32,6 @@ func (cfg *Config) buildDirectives(types NamedTypes) ([]*Directive, error) {
 				if err != nil {
 					return nil, errors.Errorf("default value for directive argument %s(%s) is not valid: %s", dir.Name, arg.Name, err.Error())
 				}
-				newArg.StripPtr()
 			}
 			args = append(args, newArg)
 		}
@@ -38,5 +41,8 @@ func (cfg *Config) buildDirectives(types NamedTypes) ([]*Directive, error) {
 			Args: args,
 		})
 	}
+
+	sort.Slice(directives, func(i, j int) bool { return directives[i].Name < directives[j].Name })
+
 	return directives, nil
 }

@@ -23,15 +23,16 @@ func (cfg *Config) buildEnums(types NamedTypes) []Enum {
 		}
 
 		enum := Enum{
-			NamedType: namedType,
-			Values:    values,
+			NamedType:   namedType,
+			Values:      values,
+			Description: typ.Description,
 		}
 		enum.GoType = templates.ToCamel(enum.GQLType)
 		enums = append(enums, enum)
 	}
 
 	sort.Slice(enums, func(i, j int) bool {
-		return strings.Compare(enums[i].GQLType, enums[j].GQLType) == -1
+		return enums[i].GQLType < enums[j].GQLType
 	})
 
 	return enums
