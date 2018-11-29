@@ -3,13 +3,14 @@
 package graphql
 
 import (
-	model "github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/civil-events-processor/pkg/model"
 )
 
 type ArticlePayload struct {
 	Key   string                    `json:"key"`
 	Value model.ArticlePayloadValue `json:"value"`
 }
+
 type BlockData struct {
 	BlockNumber int    `json:"blockNumber"`
 	TxHash      string `json:"txHash"`
@@ -17,10 +18,12 @@ type BlockData struct {
 	BlockHash   string `json:"blockHash"`
 	Index       int    `json:"index"`
 }
+
 type DateRange struct {
 	Gt *int `json:"gt"`
 	Lt *int `json:"lt"`
 }
+
 type KycCreateApplicantInput struct {
 	FirstName          string  `json:"firstName"`
 	LastName           string  `json:"lastName"`
@@ -37,6 +40,7 @@ type KycCreateApplicantInput struct {
 	State              *string `json:"state"`
 	Zipcode            *string `json:"zipcode"`
 }
+
 type Metadata struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
