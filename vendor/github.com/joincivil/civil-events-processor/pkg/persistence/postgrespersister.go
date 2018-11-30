@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+
 	// log "github.com/golang/glog"
 	"math/big"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
+
 	// driver for postgresql
 	_ "github.com/lib/pq"
 
@@ -58,7 +60,7 @@ type PostgresPersister struct {
 	db *sqlx.DB
 }
 
-// ListingsByCriteria returns a slice of Listings by ListingCriteria
+// ListingsByCriteria returns a slice of Listings by ListingCriteria sorted by creation ts
 func (p *PostgresPersister) ListingsByCriteria(criteria *model.ListingCriteria) ([]*model.Listing, error) {
 	return p.listingsByCriteriaFromTable(criteria, listingTableName)
 }
@@ -467,12 +469,15 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 	if criteria.CreatedFromTs > 0 {
 		queryBuf.WriteString(" WHERE creation_timestamp > :created_fromts") // nolint: gosec
 	}
+
 	if criteria.WhitelistedOnly {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" whitelisted = true") // nolint: gosec
+
 	} else if criteria.RejectedOnly {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" whitelisted = false AND challenge_id = 0") // nolint: gosec
+
 	} else if criteria.ActiveChallenge && criteria.CurrentApplication {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString( // nolint: gosec
@@ -481,17 +486,24 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 	} else if criteria.ActiveChallenge {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" challenge_id > 0") // nolint: gosec
+
 	} else if criteria.CurrentApplication {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" app_expiry > 0 AND whitelisted = false AND challenge_id <= 0") // nolint: gosec
 	}
+
 	if criteria.CreatedBeforeTs > 0 {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" creation_timestamp < :created_beforets") // nolint: gosec
 	}
+
+	// Always sort them by creation_timestamp
+	queryBuf.WriteString(" ORDER BY creation_timestamp") // nolint: gosec
+
 	if criteria.Offset > 0 {
 		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
 	}
+
 	if criteria.Count > 0 {
 		queryBuf.WriteString(" LIMIT :count") // nolint: gosec
 	}

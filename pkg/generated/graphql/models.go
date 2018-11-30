@@ -41,7 +41,22 @@ type KycCreateApplicantInput struct {
 	Zipcode            *string `json:"zipcode"`
 }
 
+type ListingEdge struct {
+	Cursor string        `json:"cursor"`
+	Node   model.Listing `json:"node"`
+}
+
+type ListingResultCursor struct {
+	Edges    []*ListingEdge `json:"edges"`
+	PageInfo PageInfo       `json:"pageInfo"`
+}
+
 type Metadata struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+type PageInfo struct {
+	EndCursor   *string `json:"endCursor"`
+	HasNextPage bool    `json:"hasNextPage"`
 }

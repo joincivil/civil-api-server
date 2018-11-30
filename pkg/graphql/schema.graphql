@@ -46,7 +46,7 @@ type Query {
     rejectedOnly: Boolean,
     activeChallenge: Boolean,
     currentApplication: Boolean,
-  ): [Listing!]!
+  ): ListingResultCursor
 
   # Newsroom Queries
   newsroomArticles(addr: String, first: Int, after: String): [ContentRevision!]!
@@ -128,6 +128,16 @@ type GovernanceEvent {
   eventHash: String!
   blockData: BlockData!
   listing: Listing!
+}
+
+type ListingResultCursor {
+  edges: [ListingEdge]!
+  pageInfo: PageInfo!
+}
+
+type ListingEdge {
+  cursor: String!
+  node: Listing!
 }
 
 # A type that reflects values in model.Listing
@@ -270,6 +280,11 @@ input UserUpdateInput {
 input DateRange {
   gt: Int
   lt: Int
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
 }
 
 

@@ -2,8 +2,10 @@ package graphql
 
 import (
 	context "context"
-	"github.com/iancoleman/strcase"
+	"fmt"
 	"strconv"
+
+	"github.com/iancoleman/strcase"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -13,6 +15,10 @@ import (
 	putils "github.com/joincivil/civil-events-processor/pkg/utils"
 
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
+)
+
+const (
+	defaultCriteriaCount = 25
 )
 
 // Appeal is the resolver for the Appeal type
@@ -433,25 +439,40 @@ func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
 	currentApplication *bool) ([]model.Listing, error) {
-	return r.TcrListings(ctx, first, after, whitelistedOnly, rejectedOnly,
+
+	resultCursor, err := r.TcrListings(ctx, first, after, whitelistedOnly, rejectedOnly,
 		activeChallenge, currentApplication)
+	if err != nil {
+		return []model.Listing{}, err
+	}
+
+	results := make([]model.Listing, len(resultCursor.Edges))
+	for index, edge := range resultCursor.Edges {
+		results[index] = edge.Node
+	}
+	return results, nil
 }
 
 func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
-	currentApplication *bool) ([]model.Listing, error) {
+	currentApplication *bool) (*graphql.ListingResultCursor, error) {
+	var err error
+
+	// The default pagination is by offset
+	// Only support sorted offset until we need other types
+	cursor := defaultPaginationCursor
 	criteria := &model.ListingCriteria{}
 
+	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		afterInt, err := strconv.Atoi(*after)
+		criteria.Offset, cursor, err = r.listingsPaginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
-		criteria.Offset = afterInt
 	}
-	if first != nil {
-		criteria.Count = *first
-	}
+
+	criteria.Count = r.listingsCriteriaCount(first)
+
 	if whitelistedOnly != nil {
 		criteria.WhitelistedOnly = *whitelistedOnly
 	} else if rejectedOnly != nil {
@@ -465,16 +486,114 @@ func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *stri
 		criteria.CurrentApplication = *currentApplication
 	}
 
-	listings, err := r.listingPersister.ListingsByCriteria(criteria)
+	allListings, err := r.listingPersister.ListingsByCriteria(criteria)
 	if err != nil {
 		return nil, err
 	}
 
-	modelListings := make([]model.Listing, len(listings))
-	for index, listing := range listings {
-		modelListings[index] = *listing
+	// Figure out the listings to return and if there is another page
+	// to query for.
+	listings, hasNextPage := r.listingsReturnListings(allListings, criteria)
+
+	// Build edges
+	// Only support sorted offset until we need other types
+	modelEdges := r.listingsBuildEdges(listings, cursor)
+
+	// Figure out the endCursor value
+	endCursor := r.listingsEndCursor(modelEdges)
+
+	return &graphql.ListingResultCursor{
+		Edges: modelEdges,
+		PageInfo: graphql.PageInfo{
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+	}, nil
+}
+
+func (r *queryResolver) listingsReturnListings(allListings []*model.Listing,
+	criteria *model.ListingCriteria) ([]*model.Listing, bool) {
+	allListingsLen := len(allListings)
+
+	// Figure out the hasNextPage value
+	// If we received all the listings for the criteria.Count, that means there
+	// are more beyond the requested number of listings.  This saves us an extra query.
+	hasNextPage := false
+	var listings []*model.Listing
+
+	// Figure out the "true" listings we want to return.
+	// If the listings actually equals what we requested, then we have more results
+	// and hasNextPage should be true
+	if allListingsLen == criteria.Count {
+		hasNextPage = true
+		listings = allListings[:allListingsLen-1]
+	} else {
+		listings = allListings
 	}
-	return modelListings, nil
+	return listings, hasNextPage
+}
+
+func (r *queryResolver) listingsBuildEdges(listings []*model.Listing,
+	cursor *paginationCursor) []*graphql.ListingEdge {
+
+	modelEdges := make([]*graphql.ListingEdge, len(listings))
+
+	// Build edges
+	// Only support sorted offset until we need other types
+	for index, listing := range listings {
+		cv := cursor.ValueInt()
+		newCursor := &paginationCursor{
+			typeName: cursor.typeName,
+			value:    fmt.Sprintf("%v", cv+index),
+		}
+		modelEdges[index] = &graphql.ListingEdge{
+			Cursor: newCursor.Encode(),
+			Node:   *listing,
+		}
+	}
+	return modelEdges
+}
+
+func (r *queryResolver) listingsCriteriaCount(first *int) int {
+	// Default count value
+	criteriaCount := defaultCriteriaCount
+	if first != nil {
+		criteriaCount = *first
+	}
+
+	// Add 1 to all of these to see if there are additional listings
+	// If we see listings beyond what we truly requested, then that warrants
+	// another query by the caller.
+	criteriaCount++
+	return criteriaCount
+}
+
+func (r *queryResolver) listingsPaginationOffsetFromCursor(cursor *paginationCursor,
+	after *string) (int, *paginationCursor, error) {
+	afterCursor, err := decodeToPaginationCursor(*after)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	startOffset := 0
+
+	if afterCursor.typeName == cursorTypeOffset {
+		cursorIntValue := afterCursor.ValueInt()
+		// Increment the offset and get the next item
+		startOffset = cursorIntValue + 1
+		afterCursor.ValueFromInt(cursorIntValue + 1)
+		cursor = afterCursor
+	}
+
+	return startOffset, cursor, nil
+}
+
+func (r *queryResolver) listingsEndCursor(modelEdges []*graphql.ListingEdge) *string {
+	var endCursor *string
+	if len(modelEdges) > 0 {
+		endCursor = &(modelEdges[len(modelEdges)-1]).Cursor
+	}
+	return endCursor
 }
 
 func (r *queryResolver) Listing(ctx context.Context, addr string) (*model.Listing, error) {

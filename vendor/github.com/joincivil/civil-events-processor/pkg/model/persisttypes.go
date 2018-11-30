@@ -42,7 +42,7 @@ type ListingCriteria struct {
 // and the aggregated data from the events.  Potentially to be used to service
 // the APIs to pull data.
 type ListingPersister interface {
-	// Listings returns all listings by ListingCriteria
+	// Listings returns all listings by ListingCriteria sorted by creation ts
 	ListingsByCriteria(criteria *ListingCriteria) ([]*Listing, error)
 	// ListingsByAddress returns a slice of Listings in order based on addresses
 	ListingsByAddresses(addresses []common.Address) ([]*Listing, error)
