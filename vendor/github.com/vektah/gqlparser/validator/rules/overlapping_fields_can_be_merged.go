@@ -292,7 +292,11 @@ func (m *overlappingFieldsCanBeMergedManager) collectConflictsBetweenFieldsAndFr
 
 	// (E) Then collect any conflicts between the provided collection of fields
 	// and any fragment names found in the given fragment.
+	baseFragmentSpread := fragmentSpread
 	for _, fragmentSpread := range fragmentSpreads {
+		if fragmentSpread.Name == baseFragmentSpread.Name {
+			continue
+		}
 		m.collectConflictsBetweenFieldsAndFragment(conflicts, areMutuallyExclusive, fieldsMap, fragmentSpread)
 	}
 }
@@ -410,7 +414,7 @@ func (m *overlappingFieldsCanBeMergedManager) collectConflictsBetween(conflicts 
 }
 
 func (m *overlappingFieldsCanBeMergedManager) findConflict(parentFieldsAreMutuallyExclusive bool, fieldA *ast.Field, fieldB *ast.Field) *ConflictMessage {
-	if fieldA.Definition == nil || fieldB.Definition == nil {
+	if fieldA.Definition == nil || fieldA.ObjectDefinition == nil || fieldB.Definition == nil || fieldB.ObjectDefinition == nil {
 		return nil
 	}
 

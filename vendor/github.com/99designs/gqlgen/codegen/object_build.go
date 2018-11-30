@@ -3,14 +3,13 @@ package codegen
 import (
 	"log"
 	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/ast"
 	"golang.org/x/tools/go/loader"
 )
 
-func (cfg *Config) buildObjects(types NamedTypes, prog *loader.Program, imports *Imports) (Objects, error) {
+func (cfg *Config) buildObjects(types NamedTypes, prog *loader.Program) (Objects, error) {
 	var objects Objects
 
 	for _, typ := range cfg.schema.Types {
@@ -18,7 +17,7 @@ func (cfg *Config) buildObjects(types NamedTypes, prog *loader.Program, imports 
 			continue
 		}
 
-		obj, err := cfg.buildObject(types, typ, imports)
+		obj, err := cfg.buildObject(types, typ)
 		if err != nil {
 			return nil, err
 		}
@@ -28,7 +27,7 @@ func (cfg *Config) buildObjects(types NamedTypes, prog *loader.Program, imports 
 			return nil, err
 		}
 		if def != nil {
-			for _, bindErr := range bindObject(def.Type(), obj, imports) {
+			for _, bindErr := range bindObject(def.Type(), obj, cfg.StructTag) {
 				log.Println(bindErr.Error())
 				log.Println("  Adding resolver method")
 			}
@@ -38,7 +37,7 @@ func (cfg *Config) buildObjects(types NamedTypes, prog *loader.Program, imports 
 	}
 
 	sort.Slice(objects, func(i, j int) bool {
-		return strings.Compare(objects[i].GQLType, objects[j].GQLType) == -1
+		return objects[i].GQLType < objects[j].GQLType
 	})
 
 	return objects, nil
@@ -82,12 +81,11 @@ func sanitizeArgName(name string) string {
 	return name
 }
 
-func (cfg *Config) buildObject(types NamedTypes, typ *ast.Definition, imports *Imports) (*Object, error) {
+func (cfg *Config) buildObject(types NamedTypes, typ *ast.Definition) (*Object, error) {
 	obj := &Object{NamedType: types[typ.Name]}
 	typeEntry, entryExists := cfg.Models[typ.Name]
 
-	imp := imports.findByPath(cfg.Exec.ImportPath())
-	obj.ResolverInterface = &Ref{GoType: obj.GQLType + "Resolver", Import: imp}
+	obj.ResolverInterface = &Ref{GoType: obj.GQLType + "Resolver"}
 
 	if typ == cfg.schema.Query {
 		obj.Root = true
@@ -105,29 +103,32 @@ func (cfg *Config) buildObject(types NamedTypes, typ *ast.Definition, imports *I
 
 	obj.Satisfies = append(obj.Satisfies, typ.Interfaces...)
 
+	for _, intf := range cfg.schema.GetImplements(typ) {
+		obj.Implements = append(obj.Implements, types[intf.Name])
+	}
+
 	for _, field := range typ.Fields {
 		if typ == cfg.schema.Query && field.Name == "__type" {
 			obj.Fields = append(obj.Fields, Field{
-				Type:           &Type{types["__Schema"], []string{modPtr}, nil},
+				Type:           &Type{types["__Schema"], []string{modPtr}, ast.NamedType("__Schema", nil), nil},
 				GQLName:        "__schema",
-				NoErr:          true,
 				GoFieldType:    GoFieldMethod,
 				GoReceiverName: "ec",
 				GoFieldName:    "introspectSchema",
 				Object:         obj,
+				Description:    field.Description,
 			})
 			continue
 		}
 		if typ == cfg.schema.Query && field.Name == "__schema" {
 			obj.Fields = append(obj.Fields, Field{
-				Type:           &Type{types["__Type"], []string{modPtr}, nil},
+				Type:           &Type{types["__Type"], []string{modPtr}, ast.NamedType("__Schema", nil), nil},
 				GQLName:        "__type",
-				NoErr:          true,
 				GoFieldType:    GoFieldMethod,
 				GoReceiverName: "ec",
 				GoFieldName:    "introspectType",
 				Args: []FieldArgument{
-					{GQLName: "name", Type: &Type{types["String"], []string{}, nil}, Object: &Object{}},
+					{GQLName: "name", Type: &Type{types["String"], []string{}, ast.NamedType("String", nil), nil}, Object: &Object{}},
 				},
 				Object: obj,
 			})
@@ -162,7 +163,6 @@ func (cfg *Config) buildObject(types NamedTypes, typ *ast.Definition, imports *I
 				if err != nil {
 					return nil, errors.Errorf("default value for %s.%s is not valid: %s", typ.Name, field.Name, err.Error())
 				}
-				newArg.StripPtr()
 			}
 			args = append(args, newArg)
 		}

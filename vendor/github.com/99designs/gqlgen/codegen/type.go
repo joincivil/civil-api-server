@@ -3,6 +3,10 @@ package codegen
 import (
 	"strconv"
 	"strings"
+
+	"github.com/99designs/gqlgen/codegen/templates"
+
+	"github.com/vektah/gqlparser/ast"
 )
 
 type NamedTypes map[string]*NamedType
@@ -17,16 +21,16 @@ type NamedType struct {
 }
 
 type Ref struct {
-	GoType        string  // Name of the go type
-	Package       string  // the package the go type lives in
-	Import        *Import // the resolved import with alias
-	IsUserDefined bool    // does the type exist in the typemap
+	GoType        string // Name of the go type
+	Package       string // the package the go type lives in
+	IsUserDefined bool   // does the type exist in the typemap
 }
 
 type Type struct {
 	*NamedType
 
 	Modifiers   []string
+	ASTType     *ast.Type
 	AliasedType *Ref
 }
 
@@ -40,10 +44,13 @@ func (t Ref) FullName() string {
 }
 
 func (t Ref) PkgDot() string {
-	if t.Import == nil || t.Import.Alias() == "" {
+	name := templates.CurrentImports.Lookup(t.Package)
+	if name == "" {
 		return ""
+
 	}
-	return t.Import.Alias() + "."
+
+	return name + "."
 }
 
 func (t Type) Signature() string {

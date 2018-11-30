@@ -18,20 +18,23 @@
   version = "v0.31.0"
 
 [[projects]]
-  digest = "1:8ff51c8e567e46e67fddbb20a846cc2875eb2fbb010965eb6d523b874b2181ae"
+  digest = "1:b7e8a179ec93d17be4d7454bc58872226faa73b0387a5f27debb827831f0c828"
   name = "github.com/99designs/gqlgen"
   packages = [
     ".",
     "cmd",
     "codegen",
     "codegen/templates",
+    "complexity",
     "graphql",
     "graphql/introspection",
     "handler",
+    "internal/gopath",
+    "internal/imports",
   ]
   pruneopts = "UT"
-  revision = "3575c289486fce174c941b63749b9bbb88c3ca90"
-  version = "0.4.3"
+  revision = "3a7f37c7e22a8fedce430c4d340ad5c1351198f4"
+  version = "v0.7.1"
 
 [[projects]]
   branch = "master"
@@ -216,20 +219,23 @@
   version = "v1.2.0"
 
 [[projects]]
+  digest = "1:8ec8d88c248041a6df5f6574b87bc00e7e0b493881dad2e7ef47b11dc69093b5"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru",
+  ]
+  pruneopts = "UT"
+  revision = "20f1fb78b0740ba8c3cb143a61e86ba5c8669768"
+  version = "v0.5.0"
+
+[[projects]]
   branch = "master"
   digest = "1:89cd2208bdeb192cc83ee287216af3c987fc87a90b9087718ad6631b636cefcf"
   name = "github.com/iancoleman/strcase"
   packages = ["."]
   pruneopts = "UT"
   revision = "3605ed457bf7f8caa1371b4fafadadc026673479"
-
-[[projects]]
-  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
-  name = "github.com/inconshreveable/mousetrap"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
-  version = "v1.0"
 
 [[projects]]
   digest = "1:7654989089e5bd5b6734ec3be8b695e87d3f1f8d95620b343fd7d3995a5b60d7"
@@ -374,22 +380,6 @@
   revision = "365899397c9ad12805631fe4c9b2a64be9d74818"
 
 [[projects]]
-  digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
-  name = "github.com/spf13/cobra"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
-  version = "v0.0.3"
-
-[[projects]]
-  digest = "1:dab83a1bbc7ad3d7a6ba1a1cc1760f25ac38cdf7d96a5cdd55cd915a4f5ceaf9"
-  name = "github.com/spf13/pflag"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "9a97c102cda95a86cec2345a6f09f55a939babf5"
-  version = "v1.0.2"
-
-[[projects]]
   branch = "master"
   digest = "1:b3cfb8d82b1601a846417c3f31c03a7961862cb2c98dcf0959c473843e6d9a2b"
   name = "github.com/syndtr/goleveldb"
@@ -411,8 +401,15 @@
   revision = "c4c61651e9e37fa117f53c5a906d3b63090d8445"
 
 [[projects]]
-  branch = "master"
-  digest = "1:b6e9876e0935b7252ef00a6cb3bdd4c3c26d76a53223a5de8c37487dcdf50225"
+  digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
+  name = "github.com/urfave/cli"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
+
+[[projects]]
+  digest = "1:ed6a41de3eedd8d4868eea057837860453ebbe08c5e385fd50d4c24e5642ec18"
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -424,7 +421,8 @@
     "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "04021c23cb3810632117e34c3e0e3d415a202c63"
+  revision = "e805d08bb209b1accdea76bd2327811858d81985"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:381ccafa5e013a0e3f9b54604ae522a73b9533a375a6a714b483c634d5e927ab"

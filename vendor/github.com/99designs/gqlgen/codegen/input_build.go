@@ -3,14 +3,13 @@ package codegen
 import (
 	"go/types"
 	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/ast"
 	"golang.org/x/tools/go/loader"
 )
 
-func (cfg *Config) buildInputs(namedTypes NamedTypes, prog *loader.Program, imports *Imports) (Objects, error) {
+func (cfg *Config) buildInputs(namedTypes NamedTypes, prog *loader.Program) (Objects, error) {
 	var inputs Objects
 
 	for _, typ := range cfg.schema.Types {
@@ -27,7 +26,7 @@ func (cfg *Config) buildInputs(namedTypes NamedTypes, prog *loader.Program, impo
 			}
 			if def != nil {
 				input.Marshaler = buildInputMarshaler(typ, def)
-				bindErrs := bindObject(def.Type(), input, imports)
+				bindErrs := bindObject(def.Type(), input, cfg.StructTag)
 				if len(bindErrs) > 0 {
 					return nil, bindErrs
 				}
@@ -38,7 +37,7 @@ func (cfg *Config) buildInputs(namedTypes NamedTypes, prog *loader.Program, impo
 	}
 
 	sort.Slice(inputs, func(i, j int) bool {
-		return strings.Compare(inputs[i].GQLType, inputs[j].GQLType) == -1
+		return inputs[i].GQLType < inputs[j].GQLType
 	})
 
 	return inputs, nil

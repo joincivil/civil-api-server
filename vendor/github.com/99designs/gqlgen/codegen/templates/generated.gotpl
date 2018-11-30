@@ -3,9 +3,21 @@
 package {{ .PackageName }}
 
 import (
-{{- range $import := .Imports }}
-	{{- $import.Write }}
-{{ end }}
+	%%%IMPORTS%%%
+
+	{{ reserveImport "context"  }}
+	{{ reserveImport "fmt"  }}
+	{{ reserveImport "io"  }}
+	{{ reserveImport "strconv"  }}
+	{{ reserveImport "time"  }}
+	{{ reserveImport "sync"  }}
+	{{ reserveImport "errors"  }}
+	{{ reserveImport "bytes"  }}
+
+	{{ reserveImport "github.com/vektah/gqlparser" }}
+	{{ reserveImport "github.com/vektah/gqlparser/ast" }}
+	{{ reserveImport "github.com/99designs/gqlgen/graphql" }}
+	{{ reserveImport "github.com/99designs/gqlgen/graphql/introspection" }}
 )
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
@@ -13,12 +25,14 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 	return &executableSchema{
 		resolvers: cfg.Resolvers,
 		directives: cfg.Directives,
+		complexity: cfg.Complexity,
 	}
 }
 
 type Config struct {
 	Resolvers  ResolverRoot
 	Directives DirectiveRoot
+	Complexity ComplexityRoot
 }
 
 type ResolverRoot interface {
@@ -35,7 +49,21 @@ type DirectiveRoot struct {
 {{ end }}
 }
 
-{{- range $object := .Objects -}}
+type ComplexityRoot struct {
+{{ range $object := .Objects }}
+	{{ if not $object.IsReserved -}}
+		{{ $object.GQLType|toCamel }} struct {
+		{{ range $field := $object.Fields -}}
+			{{ if not $field.IsReserved -}}
+				{{ $field.GQLName|toCamel }} {{ $field.ComplexitySignature }}
+			{{ end }}
+		{{- end }}
+		}
+	{{- end }}
+{{ end }}
+}
+
+{{ range $object := .Objects -}}
 	{{ if $object.HasResolvers }}
 		type {{$object.GQLType}}Resolver interface {
 		{{ range $field := $object.Fields -}}
@@ -45,13 +73,57 @@ type DirectiveRoot struct {
 	{{- end }}
 {{- end }}
 
+{{ range $object := .Objects -}}
+	{{ range $field := $object.Fields -}}
+		{{ if $field.Args }}
+			func {{ $field.ArgsFunc }}(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+			{{ template "args.gotpl" $field.Args }}
+			}
+		{{ end }}
+	{{ end }}
+{{- end }}
+
+{{ range $directive := .Directives }}
+	{{ if $directive.Args }}
+		func {{ $directive.ArgsFunc }}(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+		{{ template "args.gotpl" $directive.Args }}
+		}
+	{{ end }}
+{{ end }}
+
 type executableSchema struct {
 	resolvers  ResolverRoot
 	directives DirectiveRoot
+	complexity ComplexityRoot
 }
 
 func (e *executableSchema) Schema() *ast.Schema {
 	return parsedSchema
+}
+
+func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
+	switch typeName + "." + field {
+	{{ range $object := .Objects }}
+		{{ if not $object.IsReserved }}
+			{{ range $field := $object.Fields }}
+				{{ if not $field.IsReserved }}
+					case "{{$object.GQLType}}.{{$field.GQLName}}":
+						if e.complexity.{{$object.GQLType|toCamel}}.{{$field.GQLName|toCamel}} == nil {
+							break
+						}
+						{{ if $field.Args }}
+							args, err := {{ $field.ArgsFunc }}(rawArgs)
+							if err != nil {
+								return 0, false
+							}
+						{{ end }}
+						return e.complexity.{{$object.GQLType|toCamel}}.{{$field.GQLName|toCamel}}(childComplexity{{if $field.Args}}, {{$field.ComplexityArgs}} {{end}}), true
+				{{ end }}
+			{{ end }}
+		{{ end }}
+	{{ end }}
+	}
+	return 0, false
 }
 
 func (e *executableSchema) Query(ctx context.Context, op *ast.OperationDefinition) *graphql.Response {
@@ -66,9 +138,9 @@ func (e *executableSchema) Query(ctx context.Context, op *ast.OperationDefinitio
 		})
 
 		return &graphql.Response{
-			Data:   buf,
-			Errors: ec.Errors,
-		}
+			Data:       buf,
+			Errors:     ec.Errors,
+			Extensions: ec.Extensions,		}
 	{{- else }}
 		return graphql.ErrorResponse(ctx, "queries are not supported")
 	{{- end }}
@@ -86,8 +158,9 @@ func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefini
 		})
 
 		return &graphql.Response{
-			Data:   buf,
-			Errors: ec.Errors,
+			Data:       buf,
+			Errors:     ec.Errors,
+			Extensions: ec.Extensions,
 		}
 	{{- else }}
 		return graphql.ErrorResponse(ctx, "mutations are not supported")
@@ -116,9 +189,14 @@ func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDe
 				return buf.Bytes()
 			})
 
+			if buf == nil {
+				return nil
+			}
+
 			return &graphql.Response{
-				Data:   buf,
-				Errors: ec.Errors,
+				Data:       buf,
+				Errors:     ec.Errors,
+				Extensions: ec.Extensions,
 			}
 		}
 	{{- else }}
@@ -147,7 +225,13 @@ type executionContext struct {
 	{{ template "input.gotpl" $input }}
 {{- end }}
 
-func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Resolver) interface{} {
+func (ec *executionContext) FieldMiddleware(ctx context.Context, obj interface{}, next graphql.Resolver) (ret interface{}) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
 	{{- if .Directives }}
 	rctx := graphql.GetResolverContext(ctx)
 	for _, d := range rctx.Field.Definition.Directives {
@@ -157,7 +241,11 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Re
 			if ec.directives.{{$directive.Name|ucFirst}} != nil {
 				{{- if $directive.Args }}
 					rawArgs := d.ArgumentMap(ec.Variables)
-					{{ template "args.gotpl" $directive.Args }}
+					args, err := {{ $directive.ArgsFunc }}(rawArgs)
+					if err != nil {
+						ec.Error(ctx, err)
+						return nil
+					}
 				{{- end }}
 				n := next
 				next = func(ctx context.Context) (interface{}, error) {
@@ -176,14 +264,22 @@ func (ec *executionContext) FieldMiddleware(ctx context.Context, next graphql.Re
 	return res
 }
 
-func (ec *executionContext) introspectSchema() *introspection.Schema {
-	return introspection.WrapSchema(parsedSchema)
+func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
+	if ec.DisableIntrospection {
+		return nil, errors.New("introspection disabled")
+	}
+	return introspection.WrapSchema(parsedSchema), nil
 }
 
-func (ec *executionContext) introspectType(name string) *introspection.Type {
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name])
+func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
+	if ec.DisableIntrospection {
+		return nil, errors.New("introspection disabled")
+	}
+	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: {{.SchemaFilename|quote}}, Input: {{.SchemaRaw|rawQuote}}},
+	{{- range $filename, $schema := .SchemaRaw }}
+		&ast.Source{Name: {{$filename|quote}}, Input: {{$schema|rawQuote}}},
+	{{- end }}
 )

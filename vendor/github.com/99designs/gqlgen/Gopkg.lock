@@ -26,7 +26,7 @@
   version = "v3.3.2"
 
 [[projects]]
-  digest = "1:78907d832e27dbfc6e3fdfc52bd2e5e2e05c1d0e3789d4825b824489fbeab233"
+  digest = "1:f3df613325a793ffb3d0ce7644a3bb6f62db45ac744dafe20172fe999c61cdbf"
   name = "github.com/gogo/protobuf"
   packages = [
     "io",
@@ -61,12 +61,15 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
-  name = "github.com/inconshreveable/mousetrap"
-  packages = ["."]
+  branch = "master"
+  digest = "1:cf296baa185baae04a9a7004efee8511d08e2f5f51d4cbe5375da89722d681db"
+  name = "github.com/hashicorp/golang-lru"
+  packages = [
+    ".",
+    "simplelru",
+  ]
   pruneopts = "UT"
-  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
-  version = "v1.0"
+  revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
   branch = "master"
@@ -75,14 +78,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "a4e142e9c047c904fa2f1e144d9a84e6133024bc"
-
-[[projects]]
-  branch = "master"
-  digest = "1:f0157668c753bf20253dc027a7698d170c8c65253c0ffcbdf8e310ee14184a7b"
-  name = "github.com/opentracing-contrib/go-stdlib"
-  packages = ["nethttp"]
-  pruneopts = "UT"
-  revision = "36723135187404d2f4002f4f189938565e64cc5c"
 
 [[projects]]
   digest = "1:d07bd28263c09c5d7f6502e8ddac63e027eca0eafcd07632790d958b50360317"
@@ -96,7 +91,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:27af6024faa3c28426a698b8c653be0fd908bc96e25b7d76f2192eb342427db6"
+  digest = "1:450b7623b185031f3a456801155c8320209f75d0d4c4e633c6b1e59d44d6e392"
   name = "github.com/opentracing/opentracing-go"
   packages = [
     ".",
@@ -124,6 +119,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:b0c25f00bad20d783d259af2af8666969e2fc343fa0dc9efe52936bbd67fb758"
+  name = "github.com/rs/cors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9a47f48565a795472d43519dd49aac781f3034fb"
+  version = "v1.6.0"
+
+[[projects]]
   branch = "master"
   digest = "1:7ca2584fa7da0520cd2d1136a10194fe5a5b220bdb215074ab6f7b5ad91115f4"
   name = "github.com/shurcooL/httpfs"
@@ -140,23 +143,7 @@
   revision = "ffb13db8def02f545acc58bd288ec6057c2bbfb9"
 
 [[projects]]
-  digest = "1:872fa275c31e1f9db31d66fa9b1d4a7bb9a080ff184e6977da01f36bfbe07f11"
-  name = "github.com/spf13/cobra"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
-  version = "v0.0.3"
-
-[[projects]]
-  digest = "1:9424f440bba8f7508b69414634aef3b2b3a877e522d8a4624692412805407bb7"
-  name = "github.com/spf13/pflag"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
-  version = "v1.0.1"
-
-[[projects]]
-  digest = "1:73697231b93fb74a73ebd8384b68b9a60c57ea6b13c56d2425414566a72c8e6d"
+  digest = "1:7e8d267900c7fa7f35129a2a37596e38ed0f11ca746d6d9ba727980ee138f9f6"
   name = "github.com/stretchr/testify"
   packages = [
     "assert",
@@ -167,6 +154,14 @@
   version = "v1.2.1"
 
 [[projects]]
+  digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
+  name = "github.com/urfave/cli"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "cfb38830724cc34fedffe9a2a29fb54fa9169cd1"
+  version = "v1.20.0"
+
+[[projects]]
   branch = "master"
   digest = "1:3684f335059f8441260c3e949c0b99de97ea1057ecc493fdbd72ff3c27863277"
   name = "github.com/vektah/dataloaden"
@@ -175,8 +170,7 @@
   revision = "314ac81052eedc03ac0a79bdc89d05a49a2a5814"
 
 [[projects]]
-  branch = "master"
-  digest = "1:7acc3d2f02aed0095986646435472af4c2e2db42ad730aa78cae780aba5b59f9"
+  digest = "1:ed6a41de3eedd8d4868eea057837860453ebbe08c5e385fd50d4c24e5642ec18"
   name = "github.com/vektah/gqlparser"
   packages = [
     ".",
@@ -188,7 +182,8 @@
     "validator/rules",
   ]
   pruneopts = "UT"
-  revision = "6298a7d57d3de59879b323d6a8cb66280826906f"
+  revision = "e805d08bb209b1accdea76bd2327811858d81985"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -200,7 +195,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:77fe642412bfed48743e2b75163e3ab5c430cfe22dd488788647b89b28794635"
+  digest = "1:3cbc05413b8aac22b1f6d4350ed696b5a83a8515a4136db8f1ec3a0aee3d76e1"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -221,7 +216,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7ddb3a7b35cc853fe0db36a1b2473bdff03f28add7d28e4725e692603111266e"
+  digest = "1:741ebea9214cc226789d3003baeca9b169e04b5b336fb1a3b2c16e75bd296bb5"
   name = "sourcegraph.com/sourcegraph/appdash"
   packages = [
     ".",
@@ -237,7 +232,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:be108b48d79c3b3c345811a57a47ee87fdbe895beb4bb56239da71d4943e5be7"
+  digest = "1:8e0a2957fe342f22d70a543c3fcdf390f7627419c3d82d87ab4fd715a9ef5716"
   name = "sourcegraph.com/sourcegraph/appdash-data"
   packages = ["."]
   pruneopts = "UT"
@@ -249,20 +244,21 @@
   input-imports = [
     "github.com/go-chi/chi",
     "github.com/gorilla/websocket",
+    "github.com/hashicorp/golang-lru",
     "github.com/mitchellh/mapstructure",
-    "github.com/opentracing-contrib/go-stdlib/nethttp",
     "github.com/opentracing/opentracing-go",
-    "github.com/opentracing/opentracing-go/ext",
-    "github.com/opentracing/opentracing-go/log",
     "github.com/pkg/errors",
-    "github.com/spf13/cobra",
+    "github.com/rs/cors",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "github.com/urfave/cli",
     "github.com/vektah/dataloaden",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
     "github.com/vektah/gqlparser/gqlerror",
+    "github.com/vektah/gqlparser/parser",
     "github.com/vektah/gqlparser/validator",
+    "golang.org/x/tools/go/ast/astutil",
     "golang.org/x/tools/go/loader",
     "golang.org/x/tools/imports",
     "gopkg.in/yaml.v2",

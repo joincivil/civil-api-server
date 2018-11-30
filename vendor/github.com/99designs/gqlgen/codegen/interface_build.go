@@ -1,11 +1,8 @@
 package codegen
 
 import (
-	"fmt"
 	"go/types"
-	"os"
 	"sort"
-	"strings"
 
 	"github.com/vektah/gqlparser/ast"
 	"golang.org/x/tools/go/loader"
@@ -20,7 +17,7 @@ func (cfg *Config) buildInterfaces(types NamedTypes, prog *loader.Program) []*In
 	}
 
 	sort.Slice(interfaces, func(i, j int) bool {
-		return strings.Compare(interfaces[i].GQLType, interfaces[j].GQLType) == -1
+		return interfaces[i].GQLType < interfaces[j].GQLType
 	})
 
 	return interfaces
@@ -52,20 +49,5 @@ func (cfg *Config) isValueReceiver(intf *NamedType, implementor *NamedType, prog
 		return true
 	}
 
-	for i := 0; i < interfaceType.NumMethods(); i++ {
-		intfMethod := interfaceType.Method(i)
-
-		implMethod := findMethod(implementorType, intfMethod.Name())
-		if implMethod == nil {
-			fmt.Fprintf(os.Stderr, "missing method %s on %s\n", intfMethod.Name(), implementor.GoType)
-			return false
-		}
-
-		sig := implMethod.Type().(*types.Signature)
-		if _, isPtr := sig.Recv().Type().(*types.Pointer); isPtr {
-			return false
-		}
-	}
-
-	return true
+	return types.Implements(implementorType, interfaceType)
 }
