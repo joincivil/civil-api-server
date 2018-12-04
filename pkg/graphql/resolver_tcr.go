@@ -376,12 +376,36 @@ func (r *queryResolver) TcrChallenge(ctx context.Context, id int) (*model.Challe
 
 func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, after *string,
 	creationDate *graphql.DateRange, first *int) ([]model.GovernanceEvent, error) {
-	return r.TcrGovernanceEvents(ctx, addr, after, creationDate, first)
+	resultCursor, err := r.TcrGovernanceEvents(ctx, addr, after, creationDate, first)
+	if err != nil {
+		return []model.GovernanceEvent{}, nil
+	}
+
+	results := make([]model.GovernanceEvent, len(resultCursor.Edges))
+	for index, edge := range resultCursor.Edges {
+		results[index] = edge.Node
+	}
+	return results, nil
 }
 
 func (r *queryResolver) TcrGovernanceEvents(ctx context.Context, addr *string, after *string,
-	creationDate *graphql.DateRange, first *int) ([]model.GovernanceEvent, error) {
+	creationDate *graphql.DateRange, first *int) (*graphql.GovernanceEventResultCursor, error) {
+	var err error
+
+	// The default pagination is by offset
+	// Only support sorted offset until we need other types
+	cursor := defaultPaginationCursor
 	criteria := &model.GovernanceEventCriteria{}
+
+	// Figure out the pagination index start point if given
+	if after != nil && *after != "" {
+		criteria.Offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	criteria.Count = r.criteriaCount(first)
 
 	if addr != nil && *addr != "" {
 		criteria.ListingAddress = crawlutils.NormalizeEthAddress(*addr)
@@ -394,27 +418,81 @@ func (r *queryResolver) TcrGovernanceEvents(ctx context.Context, addr *string, a
 			criteria.CreatedBeforeTs = int64(*creationDate.Lt)
 		}
 	}
-	if after != nil && *after != "" {
-		afterInt, err := strconv.Atoi(*after)
-		if err != nil {
-			return nil, err
-		}
-		criteria.Offset = afterInt
-	}
-	if first != nil {
-		criteria.Count = *first
-	}
 
-	events, err := r.govEventPersister.GovernanceEventsByCriteria(criteria)
+	allEvents, err := r.govEventPersister.GovernanceEventsByCriteria(criteria)
 	if err != nil {
 		return nil, err
 	}
 
-	modelEvents := make([]model.GovernanceEvent, len(events))
-	for index, event := range events {
-		modelEvents[index] = *event
+	// Figure out the listings to return and if there is another page
+	// to query for.
+	events, hasNextPage := r.govEventsReturnGovEvents(allEvents, criteria)
+
+	// Build edges
+	// Only support sorted offset until we need other types
+	edges := r.govEventsBuildEdges(events, cursor)
+
+	// Figure out the endCursor value
+	endCursor := r.govEventsEndCursor(edges)
+
+	return &graphql.GovernanceEventResultCursor{
+		Edges: edges,
+		PageInfo: graphql.PageInfo{
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+	}, err
+}
+
+func (r *queryResolver) govEventsReturnGovEvents(allEvents []*model.GovernanceEvent,
+	criteria *model.GovernanceEventCriteria) ([]*model.GovernanceEvent, bool) {
+	allEventsLen := len(allEvents)
+
+	// Figure out the hasNextPage value
+	// If we received all the events for the criteria.Count, that means there
+	// are more beyond the requested number of events.  This saves us an extra query.
+	hasNextPage := false
+	var events []*model.GovernanceEvent
+
+	// Figure out the "true" events we want to return.
+	// If the events actually equals what we requested, then we have more results
+	// and hasNextPage should be true
+	if allEventsLen == criteria.Count {
+		hasNextPage = true
+		events = allEvents[:allEventsLen-1]
+	} else {
+		events = allEvents
 	}
-	return modelEvents, err
+	return events, hasNextPage
+}
+
+func (r *queryResolver) govEventsBuildEdges(events []*model.GovernanceEvent,
+	cursor *paginationCursor) []*graphql.GovernanceEventEdge {
+
+	edges := make([]*graphql.GovernanceEventEdge, len(events))
+
+	// Build edges
+	// Only support sorted offset until we need other types
+	for index, event := range events {
+		cv := cursor.ValueInt()
+		newCursor := &paginationCursor{
+			typeName: cursor.typeName,
+			value:    fmt.Sprintf("%v", cv+index),
+		}
+		edges[index] = &graphql.GovernanceEventEdge{
+			Cursor: newCursor.Encode(),
+			Node:   *event,
+		}
+	}
+	return edges
+}
+
+func (r *queryResolver) govEventsEndCursor(edges []*graphql.GovernanceEventEdge) *string {
+	var endCursor *string
+	if len(edges) > 0 {
+		endCursor = &(edges[len(edges)-1]).Cursor
+	}
+	return endCursor
 }
 
 func (r *queryResolver) GovernanceEventsTxHash(ctx context.Context,
@@ -465,13 +543,13 @@ func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *stri
 
 	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		criteria.Offset, cursor, err = r.listingsPaginationOffsetFromCursor(cursor, after)
+		criteria.Offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	criteria.Count = r.listingsCriteriaCount(first)
+	criteria.Count = r.criteriaCount(first)
 
 	if whitelistedOnly != nil {
 		criteria.WhitelistedOnly = *whitelistedOnly
@@ -554,40 +632,6 @@ func (r *queryResolver) listingsBuildEdges(listings []*model.Listing,
 	return modelEdges
 }
 
-func (r *queryResolver) listingsCriteriaCount(first *int) int {
-	// Default count value
-	criteriaCount := defaultCriteriaCount
-	if first != nil {
-		criteriaCount = *first
-	}
-
-	// Add 1 to all of these to see if there are additional listings
-	// If we see listings beyond what we truly requested, then that warrants
-	// another query by the caller.
-	criteriaCount++
-	return criteriaCount
-}
-
-func (r *queryResolver) listingsPaginationOffsetFromCursor(cursor *paginationCursor,
-	after *string) (int, *paginationCursor, error) {
-	afterCursor, err := decodeToPaginationCursor(*after)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	startOffset := 0
-
-	if afterCursor.typeName == cursorTypeOffset {
-		cursorIntValue := afterCursor.ValueInt()
-		// Increment the offset and get the next item
-		startOffset = cursorIntValue + 1
-		afterCursor.ValueFromInt(cursorIntValue + 1)
-		cursor = afterCursor
-	}
-
-	return startOffset, cursor, nil
-}
-
 func (r *queryResolver) listingsEndCursor(modelEdges []*graphql.ListingEdge) *string {
 	var endCursor *string
 	if len(modelEdges) > 0 {
@@ -607,4 +651,38 @@ func (r *queryResolver) TcrListing(ctx context.Context, addr string) (*model.Lis
 		return nil, err
 	}
 	return listing, nil
+}
+
+func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,
+	after *string) (int, *paginationCursor, error) {
+	afterCursor, err := decodeToPaginationCursor(*after)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	startOffset := 0
+
+	if afterCursor.typeName == cursorTypeOffset {
+		cursorIntValue := afterCursor.ValueInt()
+		// Increment the offset and get the next item
+		startOffset = cursorIntValue + 1
+		afterCursor.ValueFromInt(cursorIntValue + 1)
+		cursor = afterCursor
+	}
+
+	return startOffset, cursor, nil
+}
+
+func (r *queryResolver) criteriaCount(first *int) int {
+	// Default count value
+	criteriaCount := defaultCriteriaCount
+	if first != nil {
+		criteriaCount = *first
+	}
+
+	// Add 1 to all of these to see if there are additional items
+	// If we see items beyond what we truly requested, then that warrants
+	// another query by the caller.
+	criteriaCount++
+	return criteriaCount
 }
