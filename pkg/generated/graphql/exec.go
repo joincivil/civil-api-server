@@ -114,7 +114,6 @@ type ComplexityRoot struct {
 
 	GovernanceEvent struct {
 		ListingAddress      func(childComplexity int) int
-		SenderAddress       func(childComplexity int) int
 		Metadata            func(childComplexity int) int
 		GovernanceEventType func(childComplexity int) int
 		CreationDate        func(childComplexity int) int
@@ -274,7 +273,6 @@ type ContentRevisionResolver interface {
 }
 type GovernanceEventResolver interface {
 	ListingAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error)
-	SenderAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error)
 	Metadata(ctx context.Context, obj *model.GovernanceEvent) ([]Metadata, error)
 
 	CreationDate(ctx context.Context, obj *model.GovernanceEvent) (int, error)
@@ -1291,13 +1289,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GovernanceEvent.ListingAddress(childComplexity), true
-
-	case "GovernanceEvent.senderAddress":
-		if e.complexity.GovernanceEvent.SenderAddress == nil {
-			break
-		}
-
-		return e.complexity.GovernanceEvent.SenderAddress(childComplexity), true
 
 	case "GovernanceEvent.metadata":
 		if e.complexity.GovernanceEvent.Metadata == nil {
@@ -3668,15 +3659,6 @@ func (ec *executionContext) _GovernanceEvent(ctx context.Context, sel ast.Select
 				}
 				wg.Done()
 			}(i, field)
-		case "senderAddress":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._GovernanceEvent_senderAddress(ctx, field, obj)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
-				wg.Done()
-			}(i, field)
 		case "metadata":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -3757,33 +3739,6 @@ func (ec *executionContext) _GovernanceEvent_listingAddress(ctx context.Context,
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.GovernanceEvent().ListingAddress(rctx, obj)
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _GovernanceEvent_senderAddress(ctx context.Context, field graphql.CollectedField, obj *model.GovernanceEvent) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "GovernanceEvent",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.GovernanceEvent().SenderAddress(rctx, obj)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9015,7 +8970,6 @@ type Charter {
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {
   listingAddress: String!
-  senderAddress: String!
   metadata: [Metadata!]!
   governanceEventType: String!
   creationDate: Int!

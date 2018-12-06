@@ -173,10 +173,6 @@ func (r *governanceEventResolver) ListingAddress(ctx context.Context, obj *model
 	return obj.ListingAddress().Hex(), nil
 }
 
-func (r *governanceEventResolver) SenderAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error) {
-	return obj.SenderAddress().Hex(), nil
-}
-
 func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.GovernanceEvent) ([]graphql.Metadata, error) {
 	data := make([]graphql.Metadata, len(obj.Metadata()))
 	index := 0

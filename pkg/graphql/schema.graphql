@@ -120,7 +120,6 @@ type Charter {
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {
   listingAddress: String!
-  senderAddress: String!
   metadata: [Metadata!]!
   governanceEventType: String!
   creationDate: Int!
