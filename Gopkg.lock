@@ -263,7 +263,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b4800faebb59636e6a985a899992f268a1aa562878341a6f506882f643085ee7"
+  digest = "1:b4dc2fdf06265a84628d2fcc4afe60719bb69be015a0e07e5974714646370c30"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -274,7 +274,7 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "ef3195735d1942403b622f6aec3f9a163d3829e9"
+  revision = "d829d6718f3f2ab19dc739f7fb3a0b5e95383fb0"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -656,6 +656,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/99designs/gqlgen",
+    "github.com/99designs/gqlgen/cmd",
     "github.com/99designs/gqlgen/graphql",
     "github.com/99designs/gqlgen/graphql/introspection",
     "github.com/99designs/gqlgen/handler",

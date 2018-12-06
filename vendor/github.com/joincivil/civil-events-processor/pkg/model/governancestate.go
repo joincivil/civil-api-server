@@ -33,9 +33,6 @@ const (
 	GovernanceStateAppWhitelisted
 	// GovernanceStateRemoved is _ListingRemoved when a listing has been removed
 	GovernanceStateRemoved
-	// GovernanceStateWithdrawn is _ListingWithdrawn when a listing has been withdrawn before it
-	// has been whitelisted
-	GovernanceStateWithdrawn
 
 	// GovernanceStateAppealGranted is _AppealGranted when an appeal is granted by the CC
 	GovernanceStateAppealGranted
@@ -51,11 +48,19 @@ const (
 
 	// GovernanceStateDeposit is _Deposit when the owner of a listing increases their unstaked deposit
 	GovernanceStateDeposit
-	// GovernanceStateDepositWithdrawl is _Withdrawal when the owner of a listing decreases their unstaked deposit
-	GovernanceStateDepositWithdrawl
+	// GovernanceStateWithdrawal is _Withdrawal when the owner of a listing decreases their unstaked deposit
+	GovernanceStateWithdrawal
+
+	// GovernanceStateRewardClaimed is _RewardClaimed when a voted claims their reward
+	GovernanceStateRewardClaimed
+
+	// GovernanceStateTouchRemoved is _TouchAndRemoved. This event is not actionable
+	GovernanceStateTouchRemoved
+
+	// GovernanceStateListingWithdrawn is _ListingWithdrawn. This event is not actionable
+	GovernanceStateListingWithdrawn
 )
 
-// Events unused for states
+// Events that are not actionable (Check out crawler doc for details)
+// NOTE(IS): We should actually still process these because we should update governanceevents with them.
 // "GovernmentTransfered"
-// "RewardClaimed"
-// "TouchAndRemoved"

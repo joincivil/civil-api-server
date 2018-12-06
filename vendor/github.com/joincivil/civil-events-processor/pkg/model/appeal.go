@@ -2,8 +2,9 @@
 package model // import "github.com/joincivil/civil-events-processor/pkg/model"
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // Appeal represents the appealdata for a Challenge
@@ -66,7 +67,7 @@ func (a *Appeal) AppealPhaseExpiry() *big.Int {
 	return a.appealPhaseExpiry
 }
 
-// AppealGranted returns wheter appeal was granted.
+// AppealGranted returns whether appeal was granted.
 func (a *Appeal) AppealGranted() bool {
 	return a.appealGranted
 }

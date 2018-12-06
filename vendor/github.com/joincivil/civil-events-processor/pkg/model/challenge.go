@@ -67,6 +67,11 @@ func (c *Challenge) RewardPool() *big.Int {
 	return c.rewardPool
 }
 
+// SetRewardPool sets the RewardPool
+func (c *Challenge) SetRewardPool(rewardPool *big.Int) {
+	c.rewardPool = rewardPool
+}
+
 // Challenger returns the challenger address
 func (c *Challenge) Challenger() common.Address {
 	return c.challenger
@@ -85,6 +90,11 @@ func (c *Challenge) SetResolved(resolved bool) {
 // Stake returns the stake of this challenge
 func (c *Challenge) Stake() *big.Int {
 	return c.stake
+}
+
+// SetStake sets the stake of this challenge
+func (c *Challenge) SetStake(stake *big.Int) {
+	c.stake = stake
 }
 
 // TotalTokens returns the totaltokens for reward distribution purposes

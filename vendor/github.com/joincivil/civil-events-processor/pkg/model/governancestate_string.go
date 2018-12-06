@@ -4,9 +4,9 @@ package model
 
 import "strconv"
 
-const _GovernanceState_name = "GovernanceStateNoneGovernanceStateAppliedGovernanceStateAppRemovedGovernanceStateChallengedGovernanceStateChallengeFailedGovernanceStateChallengeSucceededGovernanceStateFailedChallengeOverturnedGovernanceStateSuccessfulChallengeOverturnedGovernanceStateAppWhitelistedGovernanceStateRemovedGovernanceStateWithdrawnGovernanceStateAppealGrantedGovernanceStateAppealRequestedGovernanceStateGrantedAppealChallengedGovernanceStateGrantedAppealConfirmedGovernanceStateGrantedAppealOverturnedGovernanceStateDepositGovernanceStateDepositWithdrawl"
+const _GovernanceState_name = "GovernanceStateNoneGovernanceStateAppliedGovernanceStateAppRemovedGovernanceStateChallengedGovernanceStateChallengeFailedGovernanceStateChallengeSucceededGovernanceStateFailedChallengeOverturnedGovernanceStateSuccessfulChallengeOverturnedGovernanceStateAppWhitelistedGovernanceStateRemovedGovernanceStateAppealGrantedGovernanceStateAppealRequestedGovernanceStateGrantedAppealChallengedGovernanceStateGrantedAppealConfirmedGovernanceStateGrantedAppealOverturnedGovernanceStateDepositGovernanceStateWithdrawalGovernanceStateRewardClaimed"
 
-var _GovernanceState_index = [...]uint16{0, 19, 41, 66, 91, 121, 154, 194, 238, 267, 289, 313, 341, 371, 409, 446, 484, 506, 537}
+var _GovernanceState_index = [...]uint16{0, 19, 41, 66, 91, 121, 154, 194, 238, 267, 289, 317, 347, 385, 422, 460, 482, 507, 535}
 
 func (i GovernanceState) String() string {
 	if i < 0 || i >= GovernanceState(len(_GovernanceState_index)-1) {
