@@ -13,12 +13,6 @@ type contextKey struct {
 	name string
 }
 
-// Token is a decoded JWT auth token
-type Token struct {
-	Sub     string
-	IsAdmin bool
-}
-
 // Middleware decodes the `authorization` header jwt token and puts into context
 // The authorization header must be of format
 // "Authorization: Bearer <JWT token>"

@@ -9,6 +9,7 @@ package graphql
 import (
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 
+	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
@@ -18,6 +19,7 @@ import (
 
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
+	AuthService         *auth.Service
 	InvoicePersister    *invoicing.PostgresPersister
 	ListingPersister    model.ListingPersister
 	GovEventPersister   model.GovernanceEventPersister
@@ -35,6 +37,7 @@ type ResolverConfig struct {
 // NewResolver is a convenience function to init a Resolver struct
 func NewResolver(config *ResolverConfig) *Resolver {
 	return &Resolver{
+		authService:         config.AuthService,
 		invoicePersister:    config.InvoicePersister,
 		listingPersister:    config.ListingPersister,
 		revisionPersister:   config.RevisionPersister,
@@ -52,6 +55,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
+	authService         *auth.Service
 	invoicePersister    *invoicing.PostgresPersister
 	listingPersister    model.ListingPersister
 	revisionPersister   model.ContentRevisionPersister

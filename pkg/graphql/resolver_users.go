@@ -49,7 +49,18 @@ func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.Se
 		return nil, fmt.Errorf("Access denied")
 	}
 
-	user, err := r.userService.SetEthAddress(users.UserCriteria{Email: token.Sub}, &input)
+	err := auth.VerifyEthChallengeAndSignature(auth.ChallengeRequest{
+		ExpectedPrefix: "I control this address",
+		GracePeriod:    10,
+		InputAddress:   input.Signer,
+		InputChallenge: input.Message,
+		Signature:      input.Signature,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := r.userService.SetEthAddress(users.UserCriteria{Email: token.Sub}, input.Signer)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +74,7 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *u
 		return nil, fmt.Errorf("Access denied")
 	}
 
-	user, err := r.userService.UpdateUser(token, *uid, input)
+	user, err := r.userService.UpdateUser(token.Sub, *uid, input)
 	if err != nil {
 		return nil, err
 	}

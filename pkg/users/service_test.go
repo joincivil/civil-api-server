@@ -3,7 +3,6 @@ package users_test
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
@@ -20,16 +19,15 @@ func buildService() *users.UserService {
 func TestSetEthAddress(t *testing.T) {
 	svc := buildService()
 	crit := users.UserCriteria{Email: "foo@bar.com"}
+	svc.CreateUser(crit)
 
-	svc.GetUser(crit, true)
-
-	request := &users.SetEthAddressInput{
-		Message:   "I control this address @ " + time.Now().Format(time.RFC3339),
-		Signature: "invalid",
+	user, err := svc.SetEthAddress(crit, "foobar")
+	if err != nil {
+		t.Fatalf("error in SetEthAddress")
 	}
-	_, err := svc.SetEthAddress(crit, request)
-	if err == nil {
-		t.Errorf("expected an error")
+
+	if user.EthAddress != "foobar" {
+		t.Fatalf("eth address was not set as expected")
 	}
 
 }

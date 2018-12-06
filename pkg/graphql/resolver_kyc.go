@@ -72,7 +72,7 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 	update := &users.UserUpdateInput{
 		OnfidoApplicantID: returnedApplicant.ID,
 	}
-	_, err = r.userService.UpdateUser(token, user.UID, update)
+	_, err = r.userService.UpdateUser(token.Sub, user.UID, update)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +117,7 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 		OnfidoCheckID: returnedCheck.ID,
 		KycStatus:     users.UserKycStatusInProgress,
 	}
-	_, err = r.userService.UpdateUser(token, user.UID, update)
+	_, err = r.userService.UpdateUser(token.Sub, user.UID, update)
 	if err != nil {
 		return nil, err
 	}

@@ -57,14 +57,29 @@ type Query {
 }
 
 type Mutation {
+  # Auth Mutations
+  authSignupEth(input: UserSignatureInput!): AuthLoginResponse
+  authSignupEmail(emailAddress: String!): String
+  authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
+  authLoginEth(input: UserSignatureInput!): AuthLoginResponse
+  authLoginEmail(emailAddress: String!): String
+  authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+
   # KYC Mutations
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
   kycGenerateSdkToken(applicantID: String!): String
 
   # User Mutations
-  userSetEthAddress(input: UserSetEthAddressInput!): String
+  userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
+}
+
+## Auth object schemas
+type AuthLoginResponse {
+  token: String
+	refreshToken: String
+	uid: String
 }
 
 
@@ -258,7 +273,7 @@ type User {
   isTokenFoundryRegistered: Boolean
 }
 
-input UserSetEthAddressInput {
+input UserSignatureInput {
   message: String!
   messageHash: String!
   signature: String!

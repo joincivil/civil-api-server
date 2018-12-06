@@ -3,7 +3,6 @@ package users
 import (
 	"errors"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
 )
@@ -13,23 +12,48 @@ type UserService struct {
 	userPersister UserPersister
 }
 
-// GetUser no comment
+// GetUser retrieves a user from the database
 func (s *UserService) GetUser(identifier UserCriteria, createIfNotExists bool) (*User, error) {
 
 	var user *User
 
 	user, err := s.userPersister.User(&identifier)
 
-	if err != nil && err == processormodel.ErrPersisterNoResults {
-		user = &User{
-			Email: identifier.Email,
-		}
-		newUserErr := s.userPersister.SaveUser(user)
+	if err != nil && err == processormodel.ErrPersisterNoResults && createIfNotExists {
+		newUser, newUserErr := s.CreateUser(identifier)
 		if newUserErr != nil {
 			return nil, newUserErr
 		}
+		user = newUser
 	} else if err != nil {
 		return nil, err
+	}
+
+	return user, nil
+}
+
+// MaybeGetUser retrieves a user from the database or returns nil if no results
+func (s *UserService) MaybeGetUser(identifier UserCriteria) (*User, error) {
+
+	user, err := s.GetUser(identifier, false)
+	if err == processormodel.ErrPersisterNoResults {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+// CreateUser creates and persists a new User model
+func (s *UserService) CreateUser(identifier UserCriteria) (*User, error) {
+	user := &User{
+		Email:      identifier.Email,
+		EthAddress: identifier.EthAddress,
+	}
+	newUserErr := s.userPersister.SaveUser(user)
+	if newUserErr != nil {
+		return nil, newUserErr
 	}
 
 	return user, nil
@@ -45,15 +69,15 @@ type UserUpdateInput struct {
 }
 
 // UpdateUser updates a user
-func (s *UserService) UpdateUser(requestor *auth.Token, uid string, input *UserUpdateInput) (*User, error) {
+func (s *UserService) UpdateUser(requestorUID string, uid string, input *UserUpdateInput) (*User, error) {
+
+	if uid != requestorUID {
+		return nil, errors.New("user is not authorized")
+	}
 
 	user, err := s.GetUser(UserCriteria{UID: uid}, false)
 	if err != nil {
 		return nil, err
-	}
-
-	if user.Email != requestor.Sub {
-		return nil, errors.New("user is not authorized")
 	}
 
 	// TODO(dankins): inspecting each attribute feels dirty, can we do this via reflection or something?
@@ -98,25 +122,14 @@ type SetEthAddressInput struct {
 }
 
 // SetEthAddress verifies that the signature if valid and then updates their ETH address
-func (s *UserService) SetEthAddress(identifier UserCriteria, request *SetEthAddressInput) (*User, error) {
+func (s *UserService) SetEthAddress(identifier UserCriteria, address string) (*User, error) {
 
 	user, err := s.GetUser(identifier, false)
 	if err != nil {
 		return nil, err
 	}
 
-	err = auth.VerifyEthChallengeAndSignature(auth.ChallengeRequest{
-		ExpectedPrefix: "I control this address",
-		GracePeriod:    120,
-		InputAddress:   request.Signer,
-		InputChallenge: request.Message,
-		Signature:      request.Signature,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	user.EthAddress = request.Signer
+	user.EthAddress = address
 
 	err = s.userPersister.UpdateUser(user, []string{"EthAddress"})
 	if err != nil {

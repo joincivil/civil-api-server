@@ -18,6 +18,8 @@ resolver:
   type: Resolver
 
 models:
+  AuthLoginResponse:
+    model: github.com/joincivil/civil-api-server/pkg/auth.LoginResponse
   Listing:
     model: github.com/joincivil/civil-events-processor/pkg/model.Listing
   Charter:
@@ -42,7 +44,7 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/utils.JsonbPayloadScalar
   User:
     model: github.com/joincivil/civil-api-server/pkg/users.User
-  UserSetEthAddressInput:
+  UserSignatureInput:
     model: github.com/joincivil/civil-api-server/pkg/users.SetEthAddressInput
   UserUpdateInput:
     model: github.com/joincivil/civil-api-server/pkg/users.UserUpdateInput

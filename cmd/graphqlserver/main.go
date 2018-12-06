@@ -89,11 +89,17 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 
 	userService := users.NewUserService(userPersister)
 	if err != nil {
-		log.Errorf("Error w defaultUserService: err: %v", err)
+		log.Errorf("Error w userService: err: %v", err)
 		return nil, err
 	}
 
+	// TODO(dankins): building a new instance of tokenGenerator here, which is a little hacky.
+	jwtGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
+	emailer := utils.NewEmailer(config.SendgridKey)
+	authService := auth.NewAuthService(userService, jwtGenerator, emailer)
+
 	return graphql.NewResolver(&graphql.ResolverConfig{
+		AuthService:         authService,
 		InvoicePersister:    invoicePersister,
 		ListingPersister:    listingPersister,
 		RevisionPersister:   contentRevisionPersister,
