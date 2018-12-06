@@ -147,7 +147,7 @@ type Listing {
   whitelisted: Boolean!
   lastGovState: String!
   url: String!
-  charter: Charter!
+  charter: Charter
   ownerAddresses: [String!]!
   owner: String!
   contributorAddresses: [String!]!

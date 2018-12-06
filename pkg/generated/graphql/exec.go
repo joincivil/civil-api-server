@@ -4512,9 +4512,6 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 			}
 		case "charter":
 			out.Values[i] = ec._Listing_charter(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
 		case "ownerAddresses":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -4773,9 +4770,6 @@ func (ec *executionContext) _Listing_charter(ctx context.Context, field graphql.
 		return obj.Charter(), nil
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Charter)
@@ -4783,9 +4777,6 @@ func (ec *executionContext) _Listing_charter(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	if res == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 
@@ -9051,7 +9042,7 @@ type Listing {
   whitelisted: Boolean!
   lastGovState: String!
   url: String!
-  charter: Charter!
+  charter: Charter
   ownerAddresses: [String!]!
   owner: String!
   contributorAddresses: [String!]!
