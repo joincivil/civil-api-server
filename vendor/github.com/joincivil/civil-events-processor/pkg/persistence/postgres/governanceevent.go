@@ -21,7 +21,6 @@ func CreateGovernanceEventTableQueryString(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             listing_address TEXT,
-            sender_address TEXT,
             metadata JSONB,
             gov_event_type TEXT,
             creation_date INT,
@@ -51,7 +50,6 @@ func CreateGovernanceEventTableIndicesString(tableName string) string {
 func NewGovernanceEvent(governanceEvent *model.GovernanceEvent) *GovernanceEvent {
 	govEvent := &GovernanceEvent{}
 	govEvent.ListingAddress = governanceEvent.ListingAddress().Hex()
-	govEvent.SenderAddress = governanceEvent.SenderAddress().Hex()
 	govEvent.Metadata = crawlerpostgres.JsonbPayload(governanceEvent.Metadata())
 	govEvent.GovernanceEventType = governanceEvent.GovernanceEventType()
 	govEvent.CreationDateTs = governanceEvent.CreationDateTs()
@@ -65,8 +63,6 @@ func NewGovernanceEvent(governanceEvent *model.GovernanceEvent) *GovernanceEvent
 // GovernanceEvent is postgres definition of model.GovernanceEvent
 type GovernanceEvent struct {
 	ListingAddress string `db:"listing_address"`
-
-	SenderAddress string `db:"sender_address"`
 
 	Metadata crawlerpostgres.JsonbPayload `db:"metadata"`
 
@@ -85,7 +81,6 @@ type GovernanceEvent struct {
 // NOTE: jsonb payloads are stored in DB as map[string]interface{}, Postgres converts some fields, see notes in function.
 func (ge *GovernanceEvent) DbToGovernanceData() *model.GovernanceEvent {
 	listingAddress := common.HexToAddress(ge.ListingAddress)
-	senderAddress := common.HexToAddress(ge.SenderAddress)
 	metadata := model.Metadata(ge.Metadata)
 	// NOTE: BlockNumber is stored in DB as float64
 	blockNumber := uint64(ge.BlockData["blockNumber"].(float64))
@@ -95,8 +90,8 @@ func (ge *GovernanceEvent) DbToGovernanceData() *model.GovernanceEvent {
 	blockHash := common.HexToHash(ge.BlockData["blockHash"].(string))
 	// NOTE: Index is stored in DB as float64
 	index := uint(ge.BlockData["index"].(float64))
-	return model.NewGovernanceEvent(listingAddress, senderAddress, metadata, ge.GovernanceEventType,
-		ge.CreationDateTs, ge.LastUpdatedDateTs, ge.EventHash, blockNumber, txHash, txIndex, blockHash, index)
+	return model.NewGovernanceEvent(listingAddress, metadata, ge.GovernanceEventType, ge.CreationDateTs,
+		ge.LastUpdatedDateTs, ge.EventHash, blockNumber, txHash, txIndex, blockHash, index)
 }
 
 func (ge *GovernanceEvent) fillBlockData(blockData model.BlockData) {

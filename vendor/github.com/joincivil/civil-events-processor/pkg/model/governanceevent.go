@@ -45,13 +45,12 @@ func (bd *BlockData) Index() uint {
 
 // NewGovernanceEvent is a convenience function to init a new GovernanceEvent
 // struct
-func NewGovernanceEvent(listingAddr common.Address, senderAddr common.Address,
-	metadata Metadata, eventType string, creationDateTs int64,
+func NewGovernanceEvent(listingAddr common.Address, metadata Metadata,
+	eventType string, creationDateTs int64,
 	lastUpdatedDateTs int64, eventHash string, blockNumber uint64,
 	txHash common.Hash, txIndex uint, blockHash common.Hash, index uint) *GovernanceEvent {
 	ge := &GovernanceEvent{}
 	ge.listingAddress = listingAddr
-	ge.senderAddress = senderAddr
 	ge.metadata = metadata
 	ge.governanceEventType = eventType
 	ge.creationDateTs = creationDateTs
@@ -72,8 +71,6 @@ func NewGovernanceEvent(listingAddr common.Address, senderAddr common.Address,
 type GovernanceEvent struct {
 	listingAddress common.Address
 
-	senderAddress common.Address
-
 	metadata Metadata
 
 	governanceEventType string
@@ -90,12 +87,6 @@ type GovernanceEvent struct {
 // ListingAddress returns the listing address associated with this event
 func (g *GovernanceEvent) ListingAddress() common.Address {
 	return g.listingAddress
-}
-
-// SenderAddress returns the address of the sender of this event. The sender
-// is the address that initiated this event
-func (g *GovernanceEvent) SenderAddress() common.Address {
-	return g.senderAddress
 }
 
 // Metadata returns the Metadata associated with the event. It might be anything

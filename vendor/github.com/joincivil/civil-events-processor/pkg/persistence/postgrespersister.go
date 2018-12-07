@@ -23,6 +23,10 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
 )
 
+// TODO(IS): take out sql.ErrNoRows
+// TODO(IS): Actually use model.ErrPersisterNoresults for its intended use. Currently this is only
+// triggered when an empty list is queried for.
+
 const (
 	listingTableName   = "listing"
 	contRevTableName   = "content_revision"

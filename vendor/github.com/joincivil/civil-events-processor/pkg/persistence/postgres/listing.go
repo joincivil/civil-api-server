@@ -122,8 +122,10 @@ func NewListing(listing *model.Listing) *Listing {
 	} else {
 		challengeID = nilChallengeID
 	}
-
-	charter := crawlerpg.JsonbPayload(listing.Charter().AsMap())
+	var charter crawlerpg.JsonbPayload
+	if listing.Charter() != nil {
+		charter = crawlerpg.JsonbPayload(listing.Charter().AsMap())
+	}
 
 	return &Listing{
 		Name:                 listing.Name(),
@@ -159,9 +161,13 @@ func (l *Listing) DbToListingData() *model.Listing {
 	challengeID := big.NewInt(l.ChallengeID)
 
 	charter := &model.Charter{}
-	err := charter.FromMap(l.Charter)
-	if err != nil {
-		log.Errorf("Error decoding map to charter: err: %v", err)
+	if len(l.Charter) != 0 {
+		err := charter.FromMap(l.Charter)
+		if err != nil {
+			log.Errorf("Error decoding map to charter: err: %v", err)
+		}
+	} else {
+		charter = nil
 	}
 
 	testListingParams := &model.NewListingParams{

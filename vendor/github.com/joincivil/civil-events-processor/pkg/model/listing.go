@@ -406,6 +406,7 @@ func (l *Listing) SetLastUpdatedDateTs(date int64) {
 }
 
 // CreatedDateTs returns the timestamp of listing creation
+// (i.e. the block timestamp of the application event that created this listing)
 func (l *Listing) CreatedDateTs() int64 {
 	return l.createdDateTs
 }
