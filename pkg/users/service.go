@@ -12,30 +12,28 @@ type UserService struct {
 	userPersister UserPersister
 }
 
+var (
+	// ErrUserExists is an error that represents an attempt to create a new user
+	// with a duplicate Email or ETH address
+	ErrUserExists = errors.New("User already exists with this identifier")
+)
+
 // GetUser retrieves a user from the database
-func (s *UserService) GetUser(identifier UserCriteria, createIfNotExists bool) (*User, error) {
+func (s *UserService) GetUser(identifier UserCriteria) (*User, error) {
 
 	var user *User
-
 	user, err := s.userPersister.User(&identifier)
 
-	if err != nil && err == processormodel.ErrPersisterNoResults && createIfNotExists {
-		newUser, newUserErr := s.CreateUser(identifier)
-		if newUserErr != nil {
-			return nil, newUserErr
-		}
-		user = newUser
-	} else if err != nil {
+	if err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 
 // MaybeGetUser retrieves a user from the database or returns nil if no results
 func (s *UserService) MaybeGetUser(identifier UserCriteria) (*User, error) {
 
-	user, err := s.GetUser(identifier, false)
+	user, err := s.GetUser(identifier)
 	if err == processormodel.ErrPersisterNoResults {
 		return nil, nil
 	} else if err != nil {
@@ -47,6 +45,16 @@ func (s *UserService) MaybeGetUser(identifier UserCriteria) (*User, error) {
 
 // CreateUser creates and persists a new User model
 func (s *UserService) CreateUser(identifier UserCriteria) (*User, error) {
+
+	existingUser, err := s.MaybeGetUser(identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	if existingUser != nil {
+		return nil, ErrUserExists
+	}
+
 	user := &User{
 		Email:      identifier.Email,
 		EthAddress: identifier.EthAddress,
@@ -75,7 +83,7 @@ func (s *UserService) UpdateUser(requestorUID string, uid string, input *UserUpd
 		return nil, errors.New("user is not authorized")
 	}
 
-	user, err := s.GetUser(UserCriteria{UID: uid}, false)
+	user, err := s.GetUser(UserCriteria{UID: uid})
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +132,7 @@ type SetEthAddressInput struct {
 // SetEthAddress verifies that the signature if valid and then updates their ETH address
 func (s *UserService) SetEthAddress(identifier UserCriteria, address string) (*User, error) {
 
-	user, err := s.GetUser(identifier, false)
+	user, err := s.GetUser(identifier)
 	if err != nil {
 		return nil, err
 	}

@@ -59,7 +59,7 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 		newApplicant.Country = *applicant.CountryOfResidence
 	}
 
-	user, err := r.userService.GetUser(users.UserCriteria{Email: token.Sub}, false)
+	user, err := r.userService.GetUser(users.UserCriteria{UID: token.Sub})
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 		return nil, fmt.Errorf("Access denied")
 	}
 
-	user, err := r.userService.GetUser(users.UserCriteria{Email: token.Sub}, false)
+	user, err := r.userService.GetUser(users.UserCriteria{UID: token.Sub})
 	if err != nil {
 		return nil, err
 	}

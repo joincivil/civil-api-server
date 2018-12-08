@@ -50,15 +50,6 @@ func (s *Service) SignupEth(input *users.SetEthAddressInput) (*LoginResponse, er
 	}
 
 	identifier := users.UserCriteria{EthAddress: input.Signer}
-	existingUser, err := s.userService.MaybeGetUser(identifier)
-	if err != nil {
-		return nil, err
-	}
-
-	if existingUser != nil {
-		return nil, fmt.Errorf("User already exists with this address")
-	}
-
 	user, err := s.userService.CreateUser(identifier)
 	if err != nil {
 		return nil, err
@@ -85,16 +76,6 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	email := claims["sub"].(string)
 
 	identifier := users.UserCriteria{Email: email}
-	existingUser, err := s.userService.MaybeGetUser(identifier)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if existingUser != nil {
-		return nil, fmt.Errorf("User already exists with this email")
-	}
-
 	user, err := s.userService.CreateUser(identifier)
 	if err != nil {
 		return nil, err
@@ -117,7 +98,7 @@ func (s *Service) LoginEth(input *users.SetEthAddressInput) (*LoginResponse, err
 	}
 
 	identifier := users.UserCriteria{EthAddress: input.Signer}
-	user, err := s.userService.GetUser(identifier, false)
+	user, err := s.userService.GetUser(identifier)
 	if err != nil && err == processormodel.ErrPersisterNoResults {
 		return nil, fmt.Errorf("User does not exist")
 	} else if err != nil {

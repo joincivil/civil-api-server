@@ -38,7 +38,7 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 		return nil, fmt.Errorf("Access denied")
 	}
 
-	return r.userService.GetUser(users.UserCriteria{Email: token.Sub}, true)
+	return r.userService.GetUser(users.UserCriteria{UID: token.Sub})
 }
 
 // MUTATIONS
