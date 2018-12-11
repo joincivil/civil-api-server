@@ -73,6 +73,12 @@ type Mutation {
   userUpdate(uid: String, input: UserUpdateInput): User
 }
 
+# BEGIN Subscription
+type Subscription {
+  ethereumTransaction(txID: String!): String!
+}
+# END Subscription
+
 ## Auth object schemas
 type AuthLoginResponse {
   token: String

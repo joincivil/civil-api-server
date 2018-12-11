@@ -21,7 +21,6 @@ var (
 // GetUser retrieves a user from the database
 func (s *UserService) GetUser(identifier UserCriteria) (*User, error) {
 
-	var user *User
 	user, err := s.userPersister.User(&identifier)
 
 	if err != nil {

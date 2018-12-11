@@ -10,6 +10,7 @@ import (
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/eth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
@@ -20,6 +21,7 @@ import (
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
 	AuthService         *auth.Service
+	EthService          *eth.Service
 	InvoicePersister    *invoicing.PostgresPersister
 	ListingPersister    model.ListingPersister
 	GovEventPersister   model.GovernanceEventPersister
@@ -38,6 +40,7 @@ type ResolverConfig struct {
 func NewResolver(config *ResolverConfig) *Resolver {
 	return &Resolver{
 		authService:         config.AuthService,
+		ethService:          config.EthService,
 		invoicePersister:    config.InvoicePersister,
 		listingPersister:    config.ListingPersister,
 		revisionPersister:   config.RevisionPersister,
@@ -56,6 +59,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
 	authService         *auth.Service
+	ethService          *eth.Service
 	invoicePersister    *invoicing.PostgresPersister
 	listingPersister    model.ListingPersister
 	revisionPersister   model.ContentRevisionPersister
@@ -80,6 +84,13 @@ func (r *Resolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
 }
 
+// Subscription is the resolver for the Subscription type
+func (r *Resolver) Subscription() graphql.SubscriptionResolver {
+	return &subscriptionResolver{r}
+}
+
 type queryResolver struct{ *Resolver }
 
 type mutationResolver struct{ *Resolver }
+
+type subscriptionResolver struct{ *Resolver }

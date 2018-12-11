@@ -46,6 +46,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Poll() PollResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 	User() UserResolver
 }
 
@@ -238,6 +239,10 @@ type ComplexityRoot struct {
 		CurrentUser               func(childComplexity int) int
 	}
 
+	Subscription struct {
+		EthereumTransaction func(childComplexity int, txID string) int
+	}
+
 	User struct {
 		Uid                      func(childComplexity int) int
 		Email                    func(childComplexity int) int
@@ -356,6 +361,9 @@ type QueryResolver interface {
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) (*ListingResultCursor, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
+}
+type SubscriptionResolver interface {
+	EthereumTransaction(ctx context.Context, txID string) (<-chan string, error)
 }
 type UserResolver interface {
 	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
@@ -1061,6 +1069,21 @@ func field_Query___type_args(rawArgs map[string]interface{}) (map[string]interfa
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+
+}
+
+func field_Subscription_ethereumTransaction_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["txID"] = arg0
 	return args, nil
 
 }
@@ -2119,6 +2142,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.CurrentUser(childComplexity), true
 
+	case "Subscription.ethereumTransaction":
+		if e.complexity.Subscription.EthereumTransaction == nil {
+			break
+		}
+
+		args, err := field_Subscription_ethereumTransaction_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.EthereumTransaction(childComplexity, args["txID"].(string)), true
+
 	case "User.uid":
 		if e.complexity.User.Uid == nil {
 			break
@@ -2227,7 +2262,36 @@ func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefini
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDefinition) func() *graphql.Response {
-	return graphql.OneShot(graphql.ErrorResponse(ctx, "subscriptions are not supported"))
+	ec := executionContext{graphql.GetRequestContext(ctx), e}
+
+	next := ec._Subscription(ctx, op.SelectionSet)
+	if ec.Errors != nil {
+		return graphql.OneShot(&graphql.Response{Data: []byte("null"), Errors: ec.Errors})
+	}
+
+	var buf bytes.Buffer
+	return func() *graphql.Response {
+		buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+			return buf.Bytes()
+		})
+
+		if buf == nil {
+			return nil
+		}
+
+		return &graphql.Response{
+			Data:       buf,
+			Errors:     ec.Errors,
+			Extensions: ec.Extensions,
+		}
+	}
 }
 
 type executionContext struct {
@@ -7504,6 +7568,56 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.___Schema(ctx, field.Selections, res)
 }
 
+var subscriptionImplementors = []string{"Subscription"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, subscriptionImplementors)
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "ethereumTransaction":
+		return ec._Subscription_ethereumTransaction(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
+}
+
+func (ec *executionContext) _Subscription_ethereumTransaction(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Subscription_ethereumTransaction_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Field: field,
+	})
+	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
+	//          and Tracer stack
+	rctx := ctx
+	results, err := ec.resolvers.Subscription().EthereumTransaction(rctx, args["txID"].(string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		var out graphql.OrderedMap
+		out.Add(field.Alias, func() graphql.Marshaler { return graphql.MarshalString(res) }())
+		return &out
+	}
+}
+
 var userImplementors = []string{"User"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -9668,6 +9782,12 @@ type Mutation {
   userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
 }
+
+# BEGIN Subscription
+type Subscription {
+  ethereumTransaction(txID: String!): String!
+}
+# END Subscription
 
 ## Auth object schemas
 type AuthLoginResponse {

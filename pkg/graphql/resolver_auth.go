@@ -11,9 +11,6 @@ import (
 func (r *mutationResolver) AuthSignupEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error) {
 	response, err := r.authService.SignupEth(&input)
 	if err != nil {
-		if err == fmt.Errorf("User already exists with this address") {
-			return nil, err
-		}
 		return nil, err
 	}
 

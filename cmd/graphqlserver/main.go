@@ -8,7 +8,10 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/ethclient"
+
 	log "github.com/golang/glog"
+	"github.com/gorilla/websocket"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/didip/tollbooth"
@@ -20,9 +23,11 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/eth"
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
+	"github.com/joincivil/civil-api-server/pkg/jobs"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -98,8 +103,19 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 	emailer := utils.NewEmailer(config.SendgridKey)
 	authService := auth.NewAuthService(userService, jwtGenerator, emailer)
 
+	log.Info("Ethereum RPC Address: ", config.EthereumRPCAddress)
+	blockchain, err := ethclient.Dial(config.EthereumRPCAddress)
+	if err != nil {
+		log.Errorf("Error starting ETH client: %v", err)
+		return nil, err
+	}
+	jobService := jobs.NewInMemoryJobService()
+	txListener := eth.NewTxListener(blockchain, jobService)
+	ethService := eth.NewService(txListener)
+
 	return graphql.NewResolver(&graphql.ResolverConfig{
 		AuthService:         authService,
+		EthService:          ethService,
 		InvoicePersister:    invoicePersister,
 		ListingPersister:    listingPersister,
 		RevisionPersister:   contentRevisionPersister,
@@ -132,6 +148,11 @@ func graphQLRouting(router chi.Router, config *utils.GraphQLConfig, invoicePersi
 		graphqlgen.NewExecutableSchema(
 			graphqlgen.Config{Resolvers: resolver},
 		),
+		handler.WebsocketUpgrader(websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		}),
 	)
 	router.Handle(
 		fmt.Sprintf("/%v/query", graphQLVersion),
