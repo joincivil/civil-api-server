@@ -163,7 +163,7 @@ func getTestListings(t *testing.T) []*pmodel.Listing {
 	return listings
 }
 
-// Generates a random list of gov events, half with one address, and half with another.
+// Generates a random list of gov events for a single address
 func getTestGovEvents(t *testing.T) ([]*pmodel.GovernanceEvent, common.Address) {
 	listingAddress1, err := utils.RandomHexStr(32)
 	if err != nil {
