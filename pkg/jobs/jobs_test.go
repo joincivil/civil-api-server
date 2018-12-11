@@ -24,9 +24,9 @@ func (s *Spy) Run() {
 func buildJob(spy *Spy) *jobs.Job {
 	jobID := "test"
 	work := func(updates chan<- string) {
-		spy.Run()
 		updates <- "foo"
 		updates <- "bar"
+		spy.Run()
 	}
 	return jobs.NewJob(jobID, work)
 }
@@ -44,10 +44,10 @@ func TestJob(t *testing.T) {
 		}
 
 		job.Start()
-		if job.GetStatus() != "initialized" {
-			t.Fatalf("job status should be `initialized`")
-		}
 		job.WaitForFinish()
+		if job.GetStatus() != "complete" {
+			t.Fatalf("job status should be `complete`")
+		}
 		if spy.RunCount != 1 {
 			t.Fatalf("work function should be 1")
 		}
@@ -97,45 +97,43 @@ func TestJob(t *testing.T) {
 	t.Run("unsubscribe", func(t *testing.T) {
 		var wg sync.WaitGroup
 		wg.Add(2)
-		spy := NewSpy()
-		jobID := "test"
-		var job *jobs.Job
 
-		signals := make(chan string)
-		work := func(updates chan<- string) {
-			updates <- "foo"
-			// wait for a signal to resume, so sub2 can unsubscribe
-			<-signals
-			//job.Unsubscribe(sub2)
-			updates <- "bar"
-			spy.Run()
-		}
-		job = jobs.NewJob(jobID, work)
+		spyJob := NewSpy()
+		spySub1 := NewSpy()
+		spySub2 := NewSpy()
+
+		job := buildJob(spyJob)
 		sub1 := job.Subscribe()
 		sub2 := job.Subscribe()
-		job.Start()
-
-		sub1Event1 := <-sub1.Updates
-		sub2Event1 := <-sub2.Updates
-		if sub1Event1 != "foo" && sub2Event1 != "foo" {
-			t.Fatalf("unexpected event values")
-		}
 
 		job.Unsubscribe(sub2)
-		signals <- "continue"
-		sub3 := job.Subscribe()
+		job.Start()
 
-		sub1Event2 := <-sub1.Updates
-		sub3Event2 := <-sub3.Updates
-		if sub1Event2 != "bar" && sub3Event2 != "bar" {
-			t.Fatalf("unexpected event values")
+		go func() {
+			for range sub1.Updates {
+				spySub1.Run()
+			}
+			wg.Done()
+		}()
+
+		go func() {
+			for range sub2.Updates {
+				spySub2.Run()
+			}
+			wg.Done()
+		}()
+
+		wg.Wait()
+
+		if spyJob.RunCount != 1 {
+			t.Fatalf("work RunCount should be 1 but is %v", spyJob.RunCount)
+		}
+		if spySub1.RunCount != 2 {
+			t.Fatalf("spySub3 RunCount should be 0 but is %v", spyJob.RunCount)
+		}
+		if spySub2.RunCount != 0 {
+			t.Fatalf("spySub3 RunCount should be 0 but is %v", spySub2.RunCount)
 		}
 
-		if job.GetStatus() != "complete" {
-			t.Fatalf("job status should be `complete`")
-		}
-		if spy.RunCount != 1 {
-			t.Fatalf("work RunCount should be 1 but is %v", spy.RunCount)
-		}
 	})
 }
