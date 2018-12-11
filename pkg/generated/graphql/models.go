@@ -24,6 +24,16 @@ type DateRange struct {
 	Lt *int `json:"lt"`
 }
 
+type GovernanceEventEdge struct {
+	Cursor string                `json:"cursor"`
+	Node   model.GovernanceEvent `json:"node"`
+}
+
+type GovernanceEventResultCursor struct {
+	Edges    []*GovernanceEventEdge `json:"edges"`
+	PageInfo PageInfo               `json:"pageInfo"`
+}
+
 type KycCreateApplicantInput struct {
 	FirstName          string  `json:"firstName"`
 	LastName           string  `json:"lastName"`

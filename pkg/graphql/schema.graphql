@@ -36,7 +36,7 @@ type Query {
     after: String
     creationDate: DateRange
     first: Int
-  ): [GovernanceEvent!]!
+  ): GovernanceEventResultCursor
   tcrGovernanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   tcrListing(addr: String!): Listing
   tcrListings(
@@ -117,6 +117,7 @@ type Charter {
   timestamp: Int!
 }
 
+
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {
   listingAddress: String!
@@ -129,14 +130,14 @@ type GovernanceEvent {
   listing: Listing!
 }
 
-type ListingResultCursor {
-  edges: [ListingEdge]!
-  pageInfo: PageInfo!
+type GovernanceEventEdge {
+  cursor: String!
+  node: GovernanceEvent!
 }
 
-type ListingEdge {
-  cursor: String!
-  node: Listing!
+type GovernanceEventResultCursor {
+  edges: [GovernanceEventEdge]!
+  pageInfo: PageInfo!
 }
 
 # A type that reflects values in model.Listing
@@ -159,6 +160,16 @@ type Listing {
   challengeID: Int!
   challenge: Challenge
   prevChallenge: Challenge
+}
+
+type ListingEdge {
+  cursor: String!
+  node: Listing!
+}
+
+type ListingResultCursor {
+  edges: [ListingEdge]!
+  pageInfo: PageInfo!
 }
 
 # A type that reflects values in model.Metadata

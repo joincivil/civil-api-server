@@ -123,6 +123,16 @@ type ComplexityRoot struct {
 		Listing             func(childComplexity int) int
 	}
 
+	GovernanceEventEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
+	}
+
+	GovernanceEventResultCursor struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
 	Invoice struct {
 		Hash          func(childComplexity int) int
 		Email         func(childComplexity int) int
@@ -321,7 +331,7 @@ type QueryResolver interface {
 	Listing(ctx context.Context, addr string) (*model.Listing, error)
 	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) ([]model.Listing, error)
 	TcrChallenge(ctx context.Context, id int) (*model.Challenge, error)
-	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int) ([]model.GovernanceEvent, error)
+	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int) (*GovernanceEventResultCursor, error)
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
 	TcrListing(ctx context.Context, addr string) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) (*ListingResultCursor, error)
@@ -1338,6 +1348,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GovernanceEvent.Listing(childComplexity), true
+
+	case "GovernanceEventEdge.cursor":
+		if e.complexity.GovernanceEventEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.GovernanceEventEdge.Cursor(childComplexity), true
+
+	case "GovernanceEventEdge.node":
+		if e.complexity.GovernanceEventEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.GovernanceEventEdge.Node(childComplexity), true
+
+	case "GovernanceEventResultCursor.edges":
+		if e.complexity.GovernanceEventResultCursor.Edges == nil {
+			break
+		}
+
+		return e.complexity.GovernanceEventResultCursor.Edges(childComplexity), true
+
+	case "GovernanceEventResultCursor.pageInfo":
+		if e.complexity.GovernanceEventResultCursor.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.GovernanceEventResultCursor.PageInfo(childComplexity), true
 
 	case "Invoice.hash":
 		if e.complexity.Invoice.Hash == nil {
@@ -3976,6 +4014,223 @@ func (ec *executionContext) _GovernanceEvent_listing(ctx context.Context, field 
 	return ec._Listing(ctx, field.Selections, &res)
 }
 
+var governanceEventEdgeImplementors = []string{"GovernanceEventEdge"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _GovernanceEventEdge(ctx context.Context, sel ast.SelectionSet, obj *GovernanceEventEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, governanceEventEdgeImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GovernanceEventEdge")
+		case "cursor":
+			out.Values[i] = ec._GovernanceEventEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "node":
+			out.Values[i] = ec._GovernanceEventEdge_node(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _GovernanceEventEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *GovernanceEventEdge) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "GovernanceEventEdge",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _GovernanceEventEdge_node(ctx context.Context, field graphql.CollectedField, obj *GovernanceEventEdge) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "GovernanceEventEdge",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Node, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.GovernanceEvent)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._GovernanceEvent(ctx, field.Selections, &res)
+}
+
+var governanceEventResultCursorImplementors = []string{"GovernanceEventResultCursor"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _GovernanceEventResultCursor(ctx context.Context, sel ast.SelectionSet, obj *GovernanceEventResultCursor) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, governanceEventResultCursorImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("GovernanceEventResultCursor")
+		case "edges":
+			out.Values[i] = ec._GovernanceEventResultCursor_edges(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "pageInfo":
+			out.Values[i] = ec._GovernanceEventResultCursor_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _GovernanceEventResultCursor_edges(ctx context.Context, field graphql.CollectedField, obj *GovernanceEventResultCursor) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "GovernanceEventResultCursor",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*GovernanceEventEdge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._GovernanceEventEdge(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _GovernanceEventResultCursor_pageInfo(ctx context.Context, field graphql.CollectedField, obj *GovernanceEventResultCursor) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "GovernanceEventResultCursor",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._PageInfo(ctx, field.Selections, &res)
+}
+
 var invoiceImplementors = []string{"Invoice"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -5972,9 +6227,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_tcrGovernanceEvents(ctx, field)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
 				wg.Done()
 			}(i, field)
 		case "tcrGovernanceEventsTxHash":
@@ -6419,48 +6671,17 @@ func (ec *executionContext) _Query_tcrGovernanceEvents(ctx context.Context, fiel
 		return ec.resolvers.Query().TcrGovernanceEvents(rctx, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int))
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]model.GovernanceEvent)
+	res := resTmp.(*GovernanceEventResultCursor)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	arr1 := make(graphql.Array, len(res))
-	var wg sync.WaitGroup
-
-	isLen1 := len(res) == 1
-	if !isLen1 {
-		wg.Add(len(res))
+	if res == nil {
+		return graphql.Null
 	}
 
-	for idx1 := range res {
-		idx1 := idx1
-		rctx := &graphql.ResolverContext{
-			Index:  &idx1,
-			Result: &res[idx1],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(idx1 int) {
-			if !isLen1 {
-				defer wg.Done()
-			}
-			arr1[idx1] = func() graphql.Marshaler {
-
-				return ec._GovernanceEvent(ctx, field.Selections, &res[idx1])
-			}()
-		}
-		if isLen1 {
-			f(idx1)
-		} else {
-			go f(idx1)
-		}
-
-	}
-	wg.Wait()
-	return arr1
+	return ec._GovernanceEventResultCursor(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -8886,7 +9107,7 @@ type Query {
     after: String
     creationDate: DateRange
     first: Int
-  ): [GovernanceEvent!]!
+  ): GovernanceEventResultCursor
   tcrGovernanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   tcrListing(addr: String!): Listing
   tcrListings(
@@ -8967,6 +9188,7 @@ type Charter {
   timestamp: Int!
 }
 
+
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {
   listingAddress: String!
@@ -8979,14 +9201,14 @@ type GovernanceEvent {
   listing: Listing!
 }
 
-type ListingResultCursor {
-  edges: [ListingEdge]!
-  pageInfo: PageInfo!
+type GovernanceEventEdge {
+  cursor: String!
+  node: GovernanceEvent!
 }
 
-type ListingEdge {
-  cursor: String!
-  node: Listing!
+type GovernanceEventResultCursor {
+  edges: [GovernanceEventEdge]!
+  pageInfo: PageInfo!
 }
 
 # A type that reflects values in model.Listing
@@ -9009,6 +9231,16 @@ type Listing {
   challengeID: Int!
   challenge: Challenge
   prevChallenge: Challenge
+}
+
+type ListingEdge {
+  cursor: String!
+  node: Listing!
+}
+
+type ListingResultCursor {
+  edges: [ListingEdge]!
+  pageInfo: PageInfo!
 }
 
 # A type that reflects values in model.Metadata
