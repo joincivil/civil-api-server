@@ -31,7 +31,7 @@ func TestSignupEth(t *testing.T) {
 
 	address := utils.GetEthAddressFromPrivateKey(pk).Hex()
 
-	input := &users.SetEthAddressInput{
+	input := &users.SignatureInput{
 		Message:     msg,
 		MessageHash: hash.String(),
 		Signature:   "0x" + hex.EncodeToString(signature),

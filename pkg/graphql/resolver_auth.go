@@ -8,7 +8,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
-func (r *mutationResolver) AuthSignupEth(ctx context.Context, input users.SetEthAddressInput) (*auth.LoginResponse, error) {
+func (r *mutationResolver) AuthSignupEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error) {
 	response, err := r.authService.SignupEth(&input)
 	if err != nil {
 		if err == fmt.Errorf("User already exists with this address") {
@@ -20,8 +20,8 @@ func (r *mutationResolver) AuthSignupEth(ctx context.Context, input users.SetEth
 	return response, nil
 }
 
-func (r *mutationResolver) AuthSignupEmail(ctx context.Context, emailAddress string) (*string, error) {
-	result, err := r.authService.SignupEmail(emailAddress)
+func (r *mutationResolver) AuthSignupEmailSend(ctx context.Context, emailAddress string) (*string, error) {
+	result, err := r.authService.SignupEmailSend(emailAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (r *mutationResolver) AuthSignupEmailConfirm(ctx context.Context, signupJWT
 	return response, nil
 }
 
-func (r *mutationResolver) AuthLoginEth(ctx context.Context, input users.SetEthAddressInput) (*auth.LoginResponse, error) {
+func (r *mutationResolver) AuthLoginEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error) {
 	response, err := r.authService.LoginEth(&input)
 	if err != nil {
 		return nil, fmt.Errorf("signature invalid or not signed up")
@@ -46,8 +46,8 @@ func (r *mutationResolver) AuthLoginEth(ctx context.Context, input users.SetEthA
 
 	return response, nil
 }
-func (r *mutationResolver) AuthLoginEmail(ctx context.Context, emailAddress string) (*string, error) {
-	result, err := r.authService.LoginEmail(emailAddress)
+func (r *mutationResolver) AuthLoginEmailSend(ctx context.Context, emailAddress string) (*string, error) {
+	result, err := r.authService.LoginEmailSend(emailAddress)
 	if err != nil {
 		return nil, err
 	}

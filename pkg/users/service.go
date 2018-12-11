@@ -118,8 +118,8 @@ func (s *UserService) UpdateUser(requestorUID string, uid string, input *UserUpd
 	return user, nil
 }
 
-// SetEthAddressInput is used to update a user's ETH address
-type SetEthAddressInput struct {
+// SignatureInput is used to update a user's ETH address
+type SignatureInput struct {
 	Message     string `json:"message"`
 	MessageHash string `json:"messageHash"`
 	Signature   string `json:"signature"`

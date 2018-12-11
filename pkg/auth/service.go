@@ -12,11 +12,16 @@ import (
 const (
 	// number of seconds that a JWT token has until it expires
 	defaultJWTExpiration = 60 * 60 * 24
+	// number of seconds that a JWT token sent for login or signup is valid
+	defaultJWTEmailExpiration = 60 * 60 * 24 * 10
 	// number of seconds for a signature challenge
 	defaultGracePeriod = 15
-	//
+	// sendgrid template ID for signup that sends a JWT encoded with the email address
 	signupEmailConfirmTemplateID = "d-88f731b52a524e6cafc308d0359b84a6"
-	loginEmailConfirmTemplateID  = "d-a228aa83fed8476b82d4c97288df20d5"
+	// sendgrid template ID for login that sends a JWT encoded with the email address
+	loginEmailConfirmTemplateID = "d-a228aa83fed8476b82d4c97288df20d5"
+	// OkResponse is sent when an action is completed successfully
+	OkResponse = "ok"
 )
 
 // Service is used to create and login in Users
@@ -36,7 +41,7 @@ func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGene
 }
 
 // SignupEth validates the Signature input then creates a User for that address
-func (s *Service) SignupEth(input *users.SetEthAddressInput) (*LoginResponse, error) {
+func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error) {
 
 	err := VerifyEthChallengeAndSignature(ChallengeRequest{
 		ExpectedPrefix: "Sign up with Civil",
@@ -58,13 +63,13 @@ func (s *Service) SignupEth(input *users.SetEthAddressInput) (*LoginResponse, er
 	return s.buildLoginResponse(user)
 }
 
-// SignupEmail sends an email to allow the user to confirm before creating the User
-func (s *Service) SignupEmail(emailAddress string) (string, error) {
+// SignupEmailSend sends an email to allow the user to confirm before creating the User
+func (s *Service) SignupEmailSend(emailAddress string) (string, error) {
 	err := s.sendEmailToken(emailAddress, signupEmailConfirmTemplateID)
 	if err != nil {
 		return "", err
 	}
-	return "ok", nil
+	return OkResponse, nil
 }
 
 // SignupEmailConfirm validates the JWT token emailed to the user and creates the User account
@@ -85,7 +90,7 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 }
 
 // LoginEth creates a new user for the address in the Ethereum signature
-func (s *Service) LoginEth(input *users.SetEthAddressInput) (*LoginResponse, error) {
+func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) {
 	err := VerifyEthChallengeAndSignature(ChallengeRequest{
 		ExpectedPrefix: "Log in to Civil",
 		GracePeriod:    defaultGracePeriod,
@@ -108,13 +113,13 @@ func (s *Service) LoginEth(input *users.SetEthAddressInput) (*LoginResponse, err
 	return s.buildLoginResponse(user)
 }
 
-// LoginEmail sends an email to allow the user to confirm before creating the User
-func (s *Service) LoginEmail(emailAddress string) (string, error) {
+// LoginEmailSend sends an email to allow the user to confirm before creating the User
+func (s *Service) LoginEmailSend(emailAddress string) (string, error) {
 	err := s.sendEmailToken(emailAddress, loginEmailConfirmTemplateID)
 	if err != nil {
 		return "", err
 	}
-	return "ok", nil
+	return OkResponse, nil
 }
 
 // LoginEmailConfirm validates the JWT token emailed to the user and creates the User account
@@ -152,7 +157,7 @@ func (s *Service) buildLoginResponse(user *users.User) (*LoginResponse, error) {
 }
 
 func (s *Service) sendEmailToken(emailAddress string, templateID string) error {
-	emailToken, err := s.tokenGenerator.GenerateToken(emailAddress, 60*60*24*10)
+	emailToken, err := s.tokenGenerator.GenerateToken(emailAddress, defaultJWTEmailExpiration)
 	if err != nil {
 		return err
 	}

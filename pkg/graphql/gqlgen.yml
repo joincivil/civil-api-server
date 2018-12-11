@@ -45,6 +45,6 @@ models:
   User:
     model: github.com/joincivil/civil-api-server/pkg/users.User
   UserSignatureInput:
-    model: github.com/joincivil/civil-api-server/pkg/users.SetEthAddressInput
+    model: github.com/joincivil/civil-api-server/pkg/users.SignatureInput
   UserUpdateInput:
     model: github.com/joincivil/civil-api-server/pkg/users.UserUpdateInput

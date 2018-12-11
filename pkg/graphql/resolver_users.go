@@ -43,7 +43,7 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 
 // MUTATIONS
 
-func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.SetEthAddressInput) (*string, error) {
+func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.SignatureInput) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return nil, fmt.Errorf("Access denied")
