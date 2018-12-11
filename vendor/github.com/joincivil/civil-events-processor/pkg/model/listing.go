@@ -357,6 +357,12 @@ func (l *Listing) RemoveOwnerAddress(addr common.Address) {
 	l.ownerAddresses = addrs
 }
 
+// ResetOwnerAddresses removes all addresses from ownerAddresses and owner
+func (l *Listing) ResetOwnerAddresses() {
+	l.owner = common.Address{}
+	l.ownerAddresses = []common.Address{}
+}
+
 // ContributorAddresses returns a list of contributor data to a newsroom
 func (l *Listing) ContributorAddresses() []common.Address {
 	return l.contributorAddresses
@@ -378,6 +384,11 @@ func (l *Listing) RemoveContributorAddress(addr common.Address) {
 		}
 	}
 	l.contributorAddresses = addrs
+}
+
+// ResetContributorAddresses removes all addresses from ownerAddresses
+func (l *Listing) ResetContributorAddresses() {
+	l.contributorAddresses = []common.Address{}
 }
 
 // ApplicationDateTs returns the timestamp of the listing's initial application
