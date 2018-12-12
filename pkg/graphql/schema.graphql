@@ -6,7 +6,6 @@ schema {
 
 # The query type, represents all of the entry points into our object graph
 type Query {
-
   # TCR / Crawler Queries (Legacy naming)
   # TODO(PN): Temporary keep these until migrated over to new naming
   # Just calls the properly named versions
@@ -21,12 +20,12 @@ type Query {
   governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   listing(addr: String!): Listing
   listings(
-    first: Int,
-    after: String,
-    whitelistedOnly: Boolean,
-    rejectedOnly: Boolean,
-    activeChallenge: Boolean,
-    currentApplication: Boolean,
+    first: Int
+    after: String
+    whitelistedOnly: Boolean
+    rejectedOnly: Boolean
+    activeChallenge: Boolean
+    currentApplication: Boolean
   ): [Listing!]!
 
   # TCR Queries
@@ -40,12 +39,12 @@ type Query {
   tcrGovernanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
   tcrListing(addr: String!): Listing
   tcrListings(
-    first: Int,
-    after: String,
-    whitelistedOnly: Boolean,
-    rejectedOnly: Boolean,
-    activeChallenge: Boolean,
-    currentApplication: Boolean,
+    first: Int
+    after: String
+    whitelistedOnly: Boolean
+    rejectedOnly: Boolean
+    activeChallenge: Boolean
+    currentApplication: Boolean
   ): ListingResultCursor
 
   # Newsroom Queries
@@ -53,20 +52,33 @@ type Query {
 
   # User Queries
   currentUser: User
-
 }
 
 type Mutation {
+  # Auth Mutations
+  authSignupEth(input: UserSignatureInput!): AuthLoginResponse
+  authSignupEmailSend(emailAddress: String!): String
+  authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
+  authLoginEth(input: UserSignatureInput!): AuthLoginResponse
+  authLoginEmailSend(emailAddress: String!): String
+  authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+
   # KYC Mutations
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
   kycCreateCheck(applicantID: String!, facialVariant: String): String
   kycGenerateSdkToken(applicantID: String!): String
 
   # User Mutations
-  userSetEthAddress(input: UserSetEthAddressInput!): String
+  userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
 }
 
+## Auth object schemas
+type AuthLoginResponse {
+  token: String
+  refreshToken: String
+  uid: String
+}
 
 ## TCR object schemas
 
@@ -187,7 +199,6 @@ type Poll {
   votesAgainst: String!
 }
 
-
 ## Newsroom object schemas
 
 # A type that reflects values in model.ArticlePayload
@@ -208,7 +219,6 @@ type ContentRevision {
   revisionDate: Int!
 }
 
-
 ## KYC object schemas
 
 # A type that reflects values in onfido.CreateApplicantRequest
@@ -228,7 +238,6 @@ input KycCreateApplicantInput {
   state: String
   zipcode: String
 }
-
 
 ## User object schemas
 
@@ -268,7 +277,7 @@ type User {
   isTokenFoundryRegistered: Boolean
 }
 
-input UserSetEthAddressInput {
+input UserSignatureInput {
   message: String!
   messageHash: String!
   signature: String!
@@ -296,7 +305,6 @@ type PageInfo {
   endCursor: String
   hasNextPage: Boolean!
 }
-
 
 ## Scalars
 
