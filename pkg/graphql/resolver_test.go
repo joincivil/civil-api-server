@@ -175,10 +175,6 @@ func getTestGovEvents(t *testing.T) ([]*pmodel.GovernanceEvent, common.Address) 
 	events := []*pmodel.GovernanceEvent{}
 
 	for i := 0; i < numEvents; i++ {
-		rand2, err := utils.RandomHexStr(32)
-		if err != nil {
-			t.Logf("Error getting random hex str: err: %v", err)
-		}
 		rand3, err := utils.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
@@ -200,7 +196,6 @@ func getTestGovEvents(t *testing.T) ([]*pmodel.GovernanceEvent, common.Address) 
 
 		event := pmodel.NewGovernanceEvent(
 			addr,
-			common.HexToAddress(rand2),
 			pmodel.Metadata{},
 			govStates[rand.Intn(len(govStates))],
 			utils.CurrentEpochSecsInInt64(),
