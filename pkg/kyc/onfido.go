@@ -4,10 +4,11 @@ import (
 	// "bytes"
 	"encoding/json"
 	"fmt"
-	log "github.com/golang/glog"
 	"net/http"
 
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	log "github.com/golang/glog"
+
+	chttp "github.com/joincivil/go-common/pkg/http"
 )
 
 const (
@@ -97,7 +98,7 @@ func NewOnfidoAPI(baseAPIURL string, apiKey string) *OnfidoAPI {
 	return &OnfidoAPI{
 		apiKey:     apiKey,
 		baseAPIURL: baseAPIURL,
-		rest:       utils.NewRestHelper(baseAPIURL, authHeader),
+		rest:       chttp.NewRestHelper(baseAPIURL, authHeader),
 	}
 }
 
@@ -105,7 +106,7 @@ func NewOnfidoAPI(baseAPIURL string, apiKey string) *OnfidoAPI {
 type OnfidoAPI struct {
 	baseAPIURL string
 	apiKey     string
-	rest       *utils.RestHelper
+	rest       *chttp.RestHelper
 }
 
 // Hash represents a map of values

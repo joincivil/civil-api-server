@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+
 	// "strings"
 	"time"
 	// "database/sql"
@@ -15,10 +16,8 @@ import (
 	// driver for postgresql
 	_ "github.com/lib/pq"
 
-	processorpg "github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
-
-	crawlerpg "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
-	crawlerutils "github.com/joincivil/civil-events-crawler/pkg/utils"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
+	ctime "github.com/joincivil/go-common/pkg/time"
 )
 
 const (
@@ -115,7 +114,7 @@ func (p *PostgresPersister) invoicesFromTable(id string, email string, status st
 func (p *PostgresPersister) invoicesQuery(id string, email string, status string,
 	checkID string, tableName string) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
-	fieldNames, _ := crawlerpg.StructFieldsForQuery(PostgresInvoice{}, false)
+	fieldNames, _ := cpostgres.StructFieldsForQuery(PostgresInvoice{}, false, "")
 	queryBuf.WriteString(fieldNames) // nolint: gosec
 	queryBuf.WriteString(" FROM ")   // nolint: gosec
 	queryBuf.WriteString(tableName)  // nolint: gosec
@@ -134,7 +133,7 @@ func (p *PostgresPersister) invoicesQuery(id string, email string, status string
 }
 
 func (p *PostgresPersister) createInvoiceForTable(invoice *PostgresInvoice, tableName string) error {
-	ts := crawlerutils.CurrentEpochSecsInInt64()
+	ts := ctime.CurrentEpochSecsInInt64()
 	invoice.DateCreated = ts
 	invoice.DateUpdated = ts
 	err := invoice.GenerateHash()
@@ -142,7 +141,7 @@ func (p *PostgresPersister) createInvoiceForTable(invoice *PostgresInvoice, tabl
 		return fmt.Errorf("Error generating hash for invoice: err: %v", err)
 	}
 
-	queryString := crawlerpg.InsertIntoDBQueryString(tableName, PostgresInvoice{})
+	queryString := cpostgres.InsertIntoDBQueryString(tableName, PostgresInvoice{})
 	_, err = p.db.NamedExec(queryString, invoice)
 	if err != nil {
 		return fmt.Errorf("Error saving invoice to table: err: %v", err)
@@ -152,7 +151,7 @@ func (p *PostgresPersister) createInvoiceForTable(invoice *PostgresInvoice, tabl
 
 func (p *PostgresPersister) updateInvoiceForTable(invoice *PostgresInvoice, updatedFields []string,
 	tableName string) error {
-	ts := crawlerutils.CurrentEpochSecsInInt64()
+	ts := ctime.CurrentEpochSecsInInt64()
 	invoice.DateUpdated = ts
 	updatedFields = append(updatedFields, dateUpdatedFieldName)
 
@@ -185,7 +184,7 @@ func (p *PostgresPersister) updateDBQueryBuffer(updatedFields []string, tableNam
 	queryBuf.WriteString(tableName) // nolint: gosec
 	queryBuf.WriteString(" SET ")   // nolint: gosec
 	for idx, field := range updatedFields {
-		dbFieldName, err := processorpg.DbFieldNameFromModelName(dbModelStruct, field)
+		dbFieldName, err := cpostgres.DbFieldNameFromModelName(dbModelStruct, field)
 		if err != nil {
 			return queryBuf, fmt.Errorf("Error getting %s from %s table DB struct tag: %v", field, tableName, err)
 		}

@@ -8,11 +8,12 @@ import (
 	"github.com/golang/glog"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
+
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
 // MarshalJsonbPayloadScalar takes a JsonbPayload and converst it to graphql
-func MarshalJsonbPayloadScalar(payload postgres.JsonbPayload) graphql.Marshaler {
+func MarshalJsonbPayloadScalar(payload cpostgres.JsonbPayload) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		jsonBytes, err := json.Marshal(payload)
 		if err != nil {
@@ -28,7 +29,7 @@ func MarshalJsonbPayloadScalar(payload postgres.JsonbPayload) graphql.Marshaler 
 }
 
 // UnmarshalJsonbPayloadScalar takes the graphql data and converts to postgres.JsonbPayload
-func UnmarshalJsonbPayloadScalar(v interface{}) (postgres.JsonbPayload, error) {
+func UnmarshalJsonbPayloadScalar(v interface{}) (cpostgres.JsonbPayload, error) {
 	kv, ok := v.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("points must be a map of string->interface")

@@ -12,7 +12,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
-	"github.com/joincivil/civil-api-server/pkg/utils"
+
+	cemail "github.com/joincivil/go-common/pkg/email"
 )
 
 const (
@@ -53,12 +54,12 @@ func invoiceLink(invoiceID string) string {
 	return invoiceLink
 }
 
-func sendNudgeEmail(emailer *utils.Emailer, email string, name string, invoiceID string) {
-	templateData := utils.TemplateData{}
+func sendNudgeEmail(emailer *cemail.Emailer, email string, name string, invoiceID string) {
+	templateData := cemail.TemplateData{}
 	templateData["name"] = name
 	templateData["invoice_link"] = invoiceLink(invoiceID)
 
-	emailReq := &utils.SendTemplateEmailRequest{
+	emailReq := &cemail.SendTemplateEmailRequest{
 		ToName:       name,
 		ToEmail:      email,
 		FromName:     "Christine from Civil",
@@ -106,7 +107,7 @@ func main() {
 		return
 	}
 
-	emailer := utils.NewEmailer(config.SendgridKey)
+	emailer := cemail.NewEmailer(config.SendgridKey)
 
 	// Store the most recent invoice for an email address.
 	emailToInvoice := map[string]*invoicing.PostgresInvoice{}

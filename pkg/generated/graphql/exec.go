@@ -15,8 +15,8 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
-	"github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 	"github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/go-common/pkg/persistence/postgres"
 	"github.com/vektah/gqlparser"
 	"github.com/vektah/gqlparser/ast"
 )

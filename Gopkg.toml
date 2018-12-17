@@ -35,9 +35,9 @@ required = ["github.com/99designs/gqlgen"]
     unused-packages = false
 
 [[constraint]]
-  name = "github.com/sendgrid/sendgrid-go"
-  revision = "8cb43f4ca4f5a26bb75861eaf5ee58c3302eacb1"
-
-[[constraint]]
   name = "github.com/satori/go.uuid"
   revision = "36e9d2ebbde5e3f13ab2e25625fd453271d6522e"
+
+[[constraint]]
+  branch = "png/api-server-functions"
+  name = "github.com/joincivil/go-common"

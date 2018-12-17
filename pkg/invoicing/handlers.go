@@ -6,16 +6,17 @@ package invoicing
 import (
 	"errors"
 	"fmt"
-	log "github.com/golang/glog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 
+	log "github.com/golang/glog"
+
 	"github.com/go-chi/render"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	cemail "github.com/joincivil/go-common/pkg/email"
 )
 
 const (
@@ -131,7 +132,7 @@ func (e *Request) validate(w http.ResponseWriter, r *http.Request) error {
 type SendInvoiceHandlerConfig struct {
 	CheckbookIOClient *CheckbookIO
 	InvoicePersister  *PostgresPersister
-	Emailer           *utils.Emailer
+	Emailer           *cemail.Emailer
 	TestMode          bool
 }
 
@@ -313,7 +314,7 @@ func SendInvoiceHandler(config *SendInvoiceHandlerConfig) http.HandlerFunc {
 	}
 }
 
-func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientEmails []string) {
+func sendWireTransferAlertEmail(emailer *cemail.Emailer, req *Request, recipientEmails []string) {
 	text := fmt.Sprintf(
 		"First: %v\nLast:%v\nEmail: %v\nPhone: %v",
 		req.FirstName,
@@ -333,7 +334,7 @@ func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientE
 	)
 	subject := fmt.Sprintf("Wire Transfer Inquiry: %v %v", req.FirstName, req.LastName)
 
-	emailReq := &utils.SendEmailRequest{
+	emailReq := &cemail.SendEmailRequest{
 		ToName:    "The Civil Media Company",
 		FromName:  "The Civil Media Company",
 		FromEmail: "support@civil.co",
@@ -352,17 +353,17 @@ func sendWireTransferAlertEmail(emailer *utils.Emailer, req *Request, recipientE
 
 // SendReferralProgramEmail sends the referrer email with the given referral code to the
 // recipient specified in the request
-func SendReferralProgramEmail(emailer *utils.Emailer, req *Request, referralCode string) {
+func SendReferralProgramEmail(emailer *cemail.Emailer, req *Request, referralCode string) {
 	fullName := fmt.Sprintf("%v %v", req.FirstName, req.LastName)
 
-	templateData := utils.TemplateData{}
+	templateData := cemail.TemplateData{}
 	templateData["first_name"] = req.FirstName
 	templateData["referral_link"] = referralLinkHTML(referralCode)
 	templateData["referral_email"] = referralEmailHTML(referralCode)
 	templateData["referral_twitter"] = referralTwitterHTML(referralCode)
 	templateData["referral_fb"] = referralFacebookHTML(referralCode)
 
-	emailReq := &utils.SendTemplateEmailRequest{
+	emailReq := &cemail.SendTemplateEmailRequest{
 		ToName:       fullName,
 		ToEmail:      req.Email,
 		FromName:     "The Civil Media Company",
@@ -457,7 +458,7 @@ func (c *CheckUpdate) Bind(r *http.Request) error {
 // CheckbookIOWebhookConfig configures the CheckbookIOWebhook
 type CheckbookIOWebhookConfig struct {
 	InvoicePersister *PostgresPersister
-	Emailer          *utils.Emailer
+	Emailer          *cemail.Emailer
 }
 
 // CheckbookIOWebhookHandler is the handler for the Checkbook.io webhook handler.
@@ -569,11 +570,11 @@ func CheckbookIOWebhookHandler(config *CheckbookIOWebhookConfig) http.HandlerFun
 }
 
 // SendPostPaymentEmail sends the post payment instruction email
-func SendPostPaymentEmail(emailer *utils.Emailer, email string, name string) {
-	templateData := utils.TemplateData{}
+func SendPostPaymentEmail(emailer *cemail.Emailer, email string, name string) {
+	templateData := cemail.TemplateData{}
 	templateData["name"] = name
 
-	emailReq := &utils.SendTemplateEmailRequest{
+	emailReq := &cemail.SendTemplateEmailRequest{
 		ToName:       name,
 		ToEmail:      email,
 		FromName:     "The Civil Media Company",

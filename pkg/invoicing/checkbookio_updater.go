@@ -1,10 +1,10 @@
 package invoicing
 
 import (
-	log "github.com/golang/glog"
 	"time"
 
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	log "github.com/golang/glog"
+	"github.com/joincivil/go-common/pkg/email"
 )
 
 const (
@@ -13,7 +13,7 @@ const (
 
 // NewCheckoutIOUpdater is a convenience func to create a new CheckoutIOUpdater
 func NewCheckoutIOUpdater(client *CheckbookIO, persister *PostgresPersister,
-	emailer *utils.Emailer, runEverySecs time.Duration) *CheckoutIOUpdater {
+	emailer *email.Emailer, runEverySecs time.Duration) *CheckoutIOUpdater {
 	return &CheckoutIOUpdater{
 		checkbookIOClient: client,
 		invoicePersister:  persister,
@@ -28,7 +28,7 @@ func NewCheckoutIOUpdater(client *CheckbookIO, persister *PostgresPersister,
 type CheckoutIOUpdater struct {
 	checkbookIOClient *CheckbookIO
 	invoicePersister  *PostgresPersister
-	emailer           *utils.Emailer
+	emailer           *email.Emailer
 	runEverySecs      time.Duration
 	cancelChan        chan bool
 }

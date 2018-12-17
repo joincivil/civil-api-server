@@ -2,12 +2,12 @@ package graphql
 
 import (
 	context "context"
-	"github.com/iancoleman/strcase"
 	"strconv"
 
-	crawlutils "github.com/joincivil/civil-events-crawler/pkg/utils"
+	"github.com/iancoleman/strcase"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/go-common/pkg/eth"
 
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )
@@ -64,7 +64,7 @@ func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, firs
 		LatestOnly: true,
 	}
 	if addr != nil && *addr != "" {
-		criteria.ListingAddress = crawlutils.NormalizeEthAddress(*addr)
+		criteria.ListingAddress = eth.NormalizeEthAddress(*addr)
 	}
 	if after != nil && *after != "" {
 		afterInt, err := strconv.Atoi(*after)

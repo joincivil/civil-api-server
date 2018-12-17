@@ -3,7 +3,7 @@ package users
 import (
 	"errors"
 
-	crawlerpg "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -26,9 +26,9 @@ type User struct {
 	OnfidoApplicantID string                 `db:"onfido_applicant_id"`
 	OnfidoCheckID     string                 `db:"onfido_check_id"`
 	KycStatus         string                 `db:"kyc_status"`
-	QuizPayload       crawlerpg.JsonbPayload `db:"quiz_payload"`
+	QuizPayload       cpostgres.JsonbPayload `db:"quiz_payload"`
 	QuizStatus        string                 `db:"quiz_status"`
-	NewsroomData      crawlerpg.JsonbPayload `db:"newsroom_data"`
+	NewsroomData      cpostgres.JsonbPayload `db:"newsroom_data"`
 	DateCreated       int64                  `db:"date_created"`
 	DateUpdated       int64                  `db:"date_updated"`
 }

@@ -3,8 +3,8 @@ package users
 import (
 	"errors"
 
-	"github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
 // UserService is an implementation of UserService that uses Postgres for persistence
@@ -69,11 +69,11 @@ func (s *UserService) CreateUser(identifier UserCriteria) (*User, error) {
 
 // UserUpdateInput describes the input needed for UpdateUser
 type UserUpdateInput struct {
-	OnfidoApplicantID string                `json:"onfidoApplicantID"`
-	OnfidoCheckID     string                `json:"onfidoCheckID"`
-	KycStatus         string                `json:"kycStatus"`
-	QuizPayload       postgres.JsonbPayload `json:"quizPayload"`
-	QuizStatus        string                `json:"quizStatus"`
+	OnfidoApplicantID string                 `json:"onfidoApplicantID"`
+	OnfidoCheckID     string                 `json:"onfidoCheckID"`
+	KycStatus         string                 `json:"kycStatus"`
+	QuizPayload       cpostgres.JsonbPayload `json:"quizPayload"`
+	QuizStatus        string                 `json:"quizStatus"`
 }
 
 // UpdateUser updates a user

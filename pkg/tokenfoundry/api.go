@@ -5,18 +5,18 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	chttp "github.com/joincivil/go-common/pkg/http"
 )
 
 // API allows you to interact with the TokenFoundry REST API
 type API struct {
-	rest *utils.RestHelper
+	rest *chttp.RestHelper
 }
 
 // NewAPI constructs a new instance of an API
 func NewAPI(baseURL string, username string, password string) *API {
-	authHeader := utils.BuildBasicAuthHeader(username, password)
-	rest := utils.NewRestHelper(baseURL, authHeader)
+	authHeader := chttp.BuildBasicAuthHeader(username, password)
+	rest := chttp.NewRestHelper(baseURL, authHeader)
 
 	return &API{rest: rest}
 }
