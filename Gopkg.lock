@@ -45,6 +45,17 @@
   revision = "3d21ba515fe27b856f230847e856431ae1724adc"
 
 [[projects]]
+  digest = "1:1156cfea0ff969858f6027df95c15ca5e802556b466aebeedaf53dde3b301db3"
+  name = "github.com/allegro/bigcache"
+  packages = [
+    ".",
+    "queue",
+  ]
+  pruneopts = "UT"
+  revision = "f31987a23e44c5121ef8c8b2f2ea2e8ffa37b068"
+  version = "v1.1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:7d191fd0c54ff370eaf6116a14dafe2a328df487baea280699f597aae858d00d"
   name = "github.com/aristanetworks/goarista"
@@ -98,7 +109,7 @@
   revision = "6ab5f3083f3d925e1944d58cdaebf43bbbff9238"
 
 [[projects]]
-  digest = "1:08af77c41dc6a9ab5dd123ce76356fa4068d57287c060cdc934e1131973dd037"
+  digest = "1:87fa9f2d71fd2516e6c0d906b7eb58886c8b4fcc6ee8cada0553a0e50bfeef3a"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -124,8 +135,8 @@
     "trie",
   ]
   pruneopts = "T"
-  revision = "8bbe72075e4e16442c4e28d999edee12e294329e"
-  version = "v1.8.17"
+  revision = "24d727b6d6e2c0cde222fa12155c4a6db5caaf2e"
+  version = "v1.8.20"
 
 [[projects]]
   digest = "1:ca82a3b99694824c627573c2a76d0e49719b4a9c02d1d85a2ac91f1c1f52ab9b"
@@ -275,6 +286,22 @@
   ]
   pruneopts = "UT"
   revision = "74ea7d64a79e2e44aa1e59b7a229aeb2600eb9a3"
+
+[[projects]]
+  branch = "png/api-server-functions"
+  digest = "1:b6949c32f151d02f8a4a422156f7fef0726bfc8750e8bb6fbf677b2ef69fa32e"
+  name = "github.com/joincivil/go-common"
+  packages = [
+    "pkg/bytes",
+    "pkg/email",
+    "pkg/eth",
+    "pkg/http",
+    "pkg/persistence/postgres",
+    "pkg/strings",
+    "pkg/time",
+  ]
+  pruneopts = "UT"
+  revision = "cff19487ebe6d74b6532f12836e5c32b7f39ecba"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -673,17 +700,19 @@
     "github.com/golang/glog",
     "github.com/iancoleman/strcase",
     "github.com/jmoiron/sqlx",
-    "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres",
-    "github.com/joincivil/civil-events-crawler/pkg/utils",
     "github.com/joincivil/civil-events-processor/pkg/helpers",
     "github.com/joincivil/civil-events-processor/pkg/model",
-    "github.com/joincivil/civil-events-processor/pkg/persistence/postgres",
     "github.com/joincivil/civil-events-processor/pkg/utils",
+    "github.com/joincivil/go-common/pkg/bytes",
+    "github.com/joincivil/go-common/pkg/email",
+    "github.com/joincivil/go-common/pkg/eth",
+    "github.com/joincivil/go-common/pkg/http",
+    "github.com/joincivil/go-common/pkg/persistence/postgres",
+    "github.com/joincivil/go-common/pkg/strings",
+    "github.com/joincivil/go-common/pkg/time",
     "github.com/kelseyhightower/envconfig",
     "github.com/lib/pq",
     "github.com/satori/go.uuid",
-    "github.com/sendgrid/sendgrid-go",
-    "github.com/sendgrid/sendgrid-go/helpers/mail",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
   ]

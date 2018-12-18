@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 	"time"
+
 	// "database/sql"
 	// log "github.com/golang/glog"
 
@@ -14,10 +15,9 @@ import (
 	// driver for postgresql
 	_ "github.com/lib/pq"
 
-	crawlerpg "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
-	crawlerutils "github.com/joincivil/civil-events-crawler/pkg/utils"
 	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
-	processorpg "github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
+	ctime "github.com/joincivil/go-common/pkg/time"
 )
 
 const (
@@ -107,7 +107,7 @@ func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName stri
 
 func (p *PostgresPersister) kycUserQuery(criteria *UserCriteria, tableName string) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
-	fieldNames, _ := crawlerpg.StructFieldsForQuery(User{}, false)
+	fieldNames, _ := cpostgres.StructFieldsForQuery(User{}, false, "")
 
 	queryBuf.WriteString(fieldNames) // nolint: gosec
 	queryBuf.WriteString(" FROM ")   // nolint: gosec
@@ -135,13 +135,13 @@ func (p *PostgresPersister) createKycUserForTable(user *User, tableName string) 
 	}
 	// Create a default empty payload if none found
 	if user.QuizPayload == nil {
-		user.QuizPayload = crawlerpg.JsonbPayload{}
+		user.QuizPayload = cpostgres.JsonbPayload{}
 	}
-	ts := crawlerutils.CurrentEpochSecsInInt64()
+	ts := ctime.CurrentEpochSecsInInt64()
 	user.DateCreated = ts
 	user.DateUpdated = ts
 
-	queryString := crawlerpg.InsertIntoDBQueryString(tableName, User{})
+	queryString := cpostgres.InsertIntoDBQueryString(tableName, User{})
 	_, err = p.db.NamedExec(queryString, user)
 	if err != nil {
 		return fmt.Errorf("Error saving user to table: err: %v", err)
@@ -151,7 +151,7 @@ func (p *PostgresPersister) createKycUserForTable(user *User, tableName string) 
 
 func (p *PostgresPersister) updateKycUserForTable(user *User, updatedFields []string,
 	tableName string) error {
-	ts := crawlerutils.CurrentEpochSecsInInt64()
+	ts := ctime.CurrentEpochSecsInInt64()
 	user.DateUpdated = ts
 	updatedFields = append(updatedFields, dateUpdatedFieldName)
 
@@ -184,7 +184,7 @@ func (p *PostgresPersister) updateDBQueryBuffer(updatedFields []string, tableNam
 	queryBuf.WriteString(tableName) // nolint: gosec
 	queryBuf.WriteString(" SET ")   // nolint: gosec
 	for idx, field := range updatedFields {
-		dbFieldName, err := processorpg.DbFieldNameFromModelName(dbModelStruct, field)
+		dbFieldName, err := cpostgres.DbFieldNameFromModelName(dbModelStruct, field)
 		if err != nil {
 			return queryBuf, fmt.Errorf("Error getting %s from %s table DB struct tag: %v", field, tableName, err)
 		}
@@ -216,6 +216,7 @@ func CreateKycUserTableQuery(tableName string) string {
 			kyc_status TEXT,
 			quiz_payload JSONB,
 			quiz_status TEXT,
+			newsroom_data JSONB,
 			date_created INT,
 			date_updated INT
         );

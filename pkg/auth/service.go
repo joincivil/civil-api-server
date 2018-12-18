@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	"github.com/joincivil/go-common/pkg/email"
 
 	"github.com/joincivil/civil-api-server/pkg/users"
 	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
@@ -28,11 +28,11 @@ const (
 type Service struct {
 	userService    *users.UserService
 	tokenGenerator *JwtTokenGenerator
-	emailer        *utils.Emailer
+	emailer        *email.Emailer
 }
 
 // NewAuthService creates a new AuthService instance
-func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGenerator, emailer *utils.Emailer) *Service {
+func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGenerator, emailer *email.Emailer) *Service {
 	return &Service{
 		userService,
 		tokenGenerator,
@@ -162,10 +162,10 @@ func (s *Service) sendEmailToken(emailAddress string, templateID string) error {
 		return err
 	}
 
-	templateData := utils.TemplateData{}
+	templateData := email.TemplateData{}
 	templateData["email_token"] = emailToken
 
-	emailReq := &utils.SendTemplateEmailRequest{
+	emailReq := &email.SendTemplateEmailRequest{
 		ToEmail:      emailAddress,
 		FromName:     "The Civil Media Company",
 		FromEmail:    "support@civil.co",

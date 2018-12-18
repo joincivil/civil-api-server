@@ -9,7 +9,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 	"github.com/joincivil/civil-api-server/pkg/users"
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	"github.com/joincivil/go-common/pkg/eth"
 )
 
 func TestSignupEth(t *testing.T) {
@@ -29,7 +29,7 @@ func TestSignupEth(t *testing.T) {
 		t.Fatalf("was not expecting an error %v", err)
 	}
 
-	address := utils.GetEthAddressFromPrivateKey(pk).Hex()
+	address := eth.GetEthAddressFromPrivateKey(pk).Hex()
 
 	input := &users.SignatureInput{
 		Message:     msg,

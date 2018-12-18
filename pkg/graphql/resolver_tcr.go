@@ -9,10 +9,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	crawlutils "github.com/joincivil/civil-events-crawler/pkg/utils"
-
 	model "github.com/joincivil/civil-events-processor/pkg/model"
-	putils "github.com/joincivil/civil-events-processor/pkg/utils"
+	"github.com/joincivil/go-common/pkg/bytes"
+	"github.com/joincivil/go-common/pkg/eth"
 
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )
@@ -161,7 +160,7 @@ func (r *charterResolver) Author(ctx context.Context, obj *model.Charter) (strin
 	return obj.Author().Hex(), nil
 }
 func (r *charterResolver) ContentHash(ctx context.Context, obj *model.Charter) (string, error) {
-	return putils.Byte32ToHexString(obj.ContentHash()), nil
+	return bytes.Byte32ToHexString(obj.ContentHash()), nil
 }
 func (r *charterResolver) Timestamp(ctx context.Context, obj *model.Charter) (int, error) {
 	return int(obj.Timestamp().Int64()), nil
@@ -404,7 +403,7 @@ func (r *queryResolver) TcrGovernanceEvents(ctx context.Context, addr *string, a
 	criteria.Count = r.criteriaCount(first)
 
 	if addr != nil && *addr != "" {
-		criteria.ListingAddress = crawlutils.NormalizeEthAddress(*addr)
+		criteria.ListingAddress = eth.NormalizeEthAddress(*addr)
 	}
 	if creationDate != nil {
 		if creationDate.Gt != nil {

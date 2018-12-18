@@ -10,7 +10,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
-	"github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
+
+	cstrings "github.com/joincivil/go-common/pkg/strings"
 )
 
 type ctxKeyType struct{ name string }
@@ -32,7 +33,7 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
 			fetch: func(keys []string) ([]*model.Listing, []error) {
-				addresses := postgres.ListStringToListCommonAddress(keys)
+				addresses := cstrings.ListStringToListCommonAddress(keys)
 				listings, err := g.listingPersister.ListingsByAddresses(addresses)
 				errors := []error{err}
 				return listings, errors

@@ -27,6 +27,8 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
+
+	cemail "github.com/joincivil/go-common/pkg/email"
 )
 
 const (
@@ -95,7 +97,7 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 
 	// TODO(dankins): building a new instance of tokenGenerator here, which is a little hacky.
 	jwtGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
-	emailer := utils.NewEmailer(config.SendgridKey)
+	emailer := cemail.NewEmailer(config.SendgridKey)
 	authService := auth.NewAuthService(userService, jwtGenerator, emailer)
 
 	return graphql.NewResolver(&graphql.ResolverConfig{
@@ -207,7 +209,7 @@ func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, er
 }
 
 func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
-	persister *invoicing.PostgresPersister, emailer *utils.Emailer, testMode bool) error {
+	persister *invoicing.PostgresPersister, emailer *cemail.Emailer, testMode bool) error {
 	invoicingConfig := &invoicing.SendInvoiceHandlerConfig{
 		CheckbookIOClient: client,
 		InvoicePersister:  persister,
@@ -243,7 +245,7 @@ func invoicingRouting(router chi.Router, client *invoicing.CheckbookIO,
 }
 
 func kycRouting(router chi.Router, config *utils.GraphQLConfig, onfido *kyc.OnfidoAPI,
-	emailer *utils.Emailer) error {
+	emailer *cemail.Emailer) error {
 
 	ofConfig := &kyc.OnfidoWebhookHandlerConfig{
 		OnfidoWebhookToken: config.OnfidoWebhookToken,
@@ -347,7 +349,7 @@ func main() {
 			log.Fatalf("Error setting up invoicing client: err: %v", cerr)
 		}
 
-		emailer := utils.NewEmailer(config.SendgridKey)
+		emailer := cemail.NewEmailer(config.SendgridKey)
 		err = invoicingRouting(router, checkbookIOClient, invoicePersister, emailer, config.CheckbookTest)
 		if err != nil {
 			log.Fatalf("Error setting up invoicing routing: err: %v", err)
@@ -379,7 +381,7 @@ func main() {
 			kyc.ProdAPIURL,
 			config.OnfidoKey,
 		)
-		emailer := utils.NewEmailer(config.SendgridKey)
+		emailer := cemail.NewEmailer(config.SendgridKey)
 		err = kycRouting(router, config, onfido, emailer)
 		if err != nil {
 			log.Fatalf("Error setting up KYC routing: err: %v", err)

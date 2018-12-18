@@ -8,10 +8,14 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
+
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
-	"github.com/joincivil/civil-events-crawler/pkg/utils"
+
 	pmodel "github.com/joincivil/civil-events-processor/pkg/model"
+
+	cstrings "github.com/joincivil/go-common/pkg/strings"
+	ctime "github.com/joincivil/go-common/pkg/time"
 )
 
 type testListingPersister struct {
@@ -123,19 +127,19 @@ func (t *testGovernanceEventPersister) DeleteGovernanceEvent(govEvent *pmodel.Go
 func getTestListings(t *testing.T) []*pmodel.Listing {
 	listings := []*pmodel.Listing{}
 	for i := 0; i < 54; i++ {
-		rand1, err := utils.RandomHexStr(32)
+		rand1, err := cstrings.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
 		}
-		rand2, err := utils.RandomHexStr(32)
+		rand2, err := cstrings.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
 		}
-		rand3, err := utils.RandomHexStr(32)
+		rand3, err := cstrings.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
 		}
-		rand4, err := utils.RandomHexStr(32)
+		rand4, err := cstrings.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
 		}
@@ -165,7 +169,7 @@ func getTestListings(t *testing.T) []*pmodel.Listing {
 
 // Generates a random list of gov events for a single address
 func getTestGovEvents(t *testing.T) ([]*pmodel.GovernanceEvent, common.Address) {
-	listingAddress1, err := utils.RandomHexStr(32)
+	listingAddress1, err := cstrings.RandomHexStr(32)
 	if err != nil {
 		t.Logf("Error getting random hex str: err: %v", err)
 	}
@@ -175,15 +179,15 @@ func getTestGovEvents(t *testing.T) ([]*pmodel.GovernanceEvent, common.Address) 
 	events := []*pmodel.GovernanceEvent{}
 
 	for i := 0; i < numEvents; i++ {
-		rand3, err := utils.RandomHexStr(32)
+		rand3, err := cstrings.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
 		}
-		rand4, err := utils.RandomHexStr(32)
+		rand4, err := cstrings.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
 		}
-		rand5, err := utils.RandomHexStr(32)
+		rand5, err := cstrings.RandomHexStr(32)
 		if err != nil {
 			t.Logf("Error getting random hex str: err: %v", err)
 		}
@@ -198,8 +202,8 @@ func getTestGovEvents(t *testing.T) ([]*pmodel.GovernanceEvent, common.Address) 
 			addr,
 			pmodel.Metadata{},
 			govStates[rand.Intn(len(govStates))],
-			utils.CurrentEpochSecsInInt64(),
-			utils.CurrentEpochSecsInInt64(),
+			ctime.CurrentEpochSecsInInt64(),
+			ctime.CurrentEpochSecsInInt64(),
 			rand3,
 			uint64(1000),
 			common.HexToHash(rand4),
