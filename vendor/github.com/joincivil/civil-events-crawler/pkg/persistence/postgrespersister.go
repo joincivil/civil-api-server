@@ -5,16 +5,20 @@ package persistence // import "github.com/joincivil/civil-events-crawler/pkg/per
 import (
 	"bytes"
 	"fmt"
-	log "github.com/golang/glog"
 	"strings"
+
+	log "github.com/golang/glog"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
+
 	// driver for postgresql
 	_ "github.com/lib/pq"
 
 	"github.com/joincivil/civil-events-crawler/pkg/model"
 	"github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
+
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
 const (
@@ -117,13 +121,14 @@ func (p *PostgresPersister) CreateIndices() error {
 }
 
 func (p *PostgresPersister) saveEventsToTable(events []*model.Event, tableName string) error {
-	queryString := postgres.InsertIntoDBQueryString(tableName, postgres.Event{})
+	queryString := cpostgres.InsertIntoDBQueryString(tableName, postgres.Event{})
 	// There is no way to batch insert using sqlx, so doing a loop here
 	for _, event := range events {
 		err := p.saveEventToTable(queryString, event)
 		if err != nil {
 			return err
 		}
+		log.Infof("saveEventsToTable: saved: %v, %v", event.EventType(), event.TxHash().Hex()) // Debug, remove later
 	}
 	return nil
 }
@@ -153,7 +158,7 @@ func (p *PostgresPersister) retrieveEventsFromTable(tableName string, criteria *
 
 func (p *PostgresPersister) retrieveEventsQuery(tableName string, criteria *model.RetrieveEventsCriteria) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
-	fields, _ := postgres.StructFieldsForQuery(postgres.Event{}, false)
+	fields, _ := cpostgres.StructFieldsForQuery(postgres.Event{}, false, "")
 	queryBuf.WriteString(fields)    // nolint: gosec
 	queryBuf.WriteString(" FROM ")  // nolint: gosec
 	queryBuf.WriteString(tableName) // nolint: gosec
@@ -191,6 +196,7 @@ func (p *PostgresPersister) saveEventToTable(query string, event *model.Event) e
 	if err != nil {
 		return fmt.Errorf("Error saving event to table: err %v: event: %T", err, dbEvent.LogPayload["Data"])
 	}
+	log.Infof("saveEventToTable: done") // Debug, remove later
 	return nil
 }
 

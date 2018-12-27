@@ -2,7 +2,8 @@ package testutils
 
 import (
 	"github.com/joincivil/civil-api-server/pkg/users"
-	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
+
+	cpersist "github.com/joincivil/go-common/pkg/persistence"
 )
 
 // InMemoryUserPersister is an implementation of users.UserPersister for testing
@@ -31,7 +32,7 @@ func (r *InMemoryUserPersister) User(criteria *users.UserCriteria) (*users.User,
 	}
 
 	if u == nil {
-		return nil, processormodel.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 
 	return u, nil

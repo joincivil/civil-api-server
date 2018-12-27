@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-events-processor/pkg/model"
-	"math/big"
+	"github.com/joincivil/go-common/pkg/numbers"
 )
 
 const (
@@ -81,17 +83,17 @@ func NewChallenge(challengeData *model.Challenge) *Challenge {
 	challenge.Resolved = challengeData.Resolved()
 	challenge.LastUpdatedDateTs = challengeData.LastUpdatedDateTs()
 	if challengeData.RewardPool() != nil {
-		challenge.RewardPool = BigIntToFloat64(challengeData.RewardPool())
+		challenge.RewardPool = numbers.BigIntToFloat64(challengeData.RewardPool())
 	} else {
 		challenge.RewardPool = 0
 	}
 	if challengeData.Stake() != nil {
-		challenge.Stake = BigIntToFloat64(challengeData.Stake())
+		challenge.Stake = numbers.BigIntToFloat64(challengeData.Stake())
 	} else {
 		challenge.Stake = 0
 	}
 	if challengeData.TotalTokens() != nil {
-		challenge.TotalTokens = BigIntToFloat64(challengeData.TotalTokens())
+		challenge.TotalTokens = numbers.BigIntToFloat64(challengeData.TotalTokens())
 	} else {
 		challenge.TotalTokens = 0
 	}
@@ -107,10 +109,10 @@ func NewChallenge(challengeData *model.Challenge) *Challenge {
 func (c *Challenge) DbToChallengeData() *model.Challenge {
 	challengeID := new(big.Int).SetUint64(c.ChallengeID)
 	listingAddress := common.HexToAddress(c.ListingAddress)
-	rewardPool := Float64ToBigInt(c.RewardPool)
+	rewardPool := numbers.Float64ToBigInt(c.RewardPool)
 	challenger := common.HexToAddress(c.Challenger)
-	stake := Float64ToBigInt(c.Stake)
-	totalTokens := Float64ToBigInt(c.TotalTokens)
+	stake := numbers.Float64ToBigInt(c.Stake)
+	totalTokens := numbers.Float64ToBigInt(c.TotalTokens)
 	return model.NewChallenge(challengeID, listingAddress, c.Statement, rewardPool, challenger, c.Resolved,
 		stake, totalTokens, big.NewInt(c.RequestAppealExpiry), c.LastUpdatedDateTs)
 }

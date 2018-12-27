@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-events-processor/pkg/model"
-	"math/big"
+	"github.com/joincivil/go-common/pkg/numbers"
 )
 
 const (
@@ -73,7 +75,7 @@ func NewAppeal(appealData *model.Appeal) *Appeal {
 	appeal := &Appeal{}
 	appeal.OriginalChallengeID = appealData.OriginalChallengeID().Int64()
 	appeal.Requester = appealData.Requester().Hex()
-	appeal.AppealFeePaid = BigIntToFloat64(appealData.AppealFeePaid())
+	appeal.AppealFeePaid = numbers.BigIntToFloat64(appealData.AppealFeePaid())
 	appeal.AppealPhaseExpiry = appealData.AppealPhaseExpiry().Int64()
 	appeal.AppealGranted = appealData.AppealGranted()
 	appeal.LastUpdatedDateTs = appealData.LastUpdatedDateTs()
@@ -99,7 +101,7 @@ func (a *Appeal) DbToAppealData() *model.Appeal {
 	appeal := model.NewAppeal(
 		big.NewInt(a.OriginalChallengeID),
 		common.HexToAddress(a.Requester),
-		Float64ToBigInt(a.AppealFeePaid),
+		numbers.Float64ToBigInt(a.AppealFeePaid),
 		big.NewInt(a.AppealPhaseExpiry),
 		a.AppealGranted,
 		a.Statement,

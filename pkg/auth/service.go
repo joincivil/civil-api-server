@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/joincivil/go-common/pkg/email"
+	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
 	"github.com/joincivil/civil-api-server/pkg/users"
-	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
 )
 
 const (
@@ -104,7 +104,7 @@ func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) 
 
 	identifier := users.UserCriteria{EthAddress: input.Signer}
 	user, err := s.userService.GetUser(identifier)
-	if err != nil && err == processormodel.ErrPersisterNoResults {
+	if err != nil && err == cpersist.ErrPersisterNoResults {
 		return nil, fmt.Errorf("User does not exist")
 	} else if err != nil {
 		return nil, err

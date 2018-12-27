@@ -10,8 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
+
 	"github.com/joincivil/go-common/pkg/bytes"
 	"github.com/joincivil/go-common/pkg/eth"
+	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )
@@ -305,7 +307,7 @@ func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing)
 	challenges, err := loaders.challengeAddressesLoader.Load(listingAddress)
 
 	// No 0 challenges found, return nil
-	if err == model.ErrPersisterNoResults || challenges == nil {
+	if err == cpersist.ErrPersisterNoResults || challenges == nil {
 		return nil, nil
 	}
 	if err != nil {

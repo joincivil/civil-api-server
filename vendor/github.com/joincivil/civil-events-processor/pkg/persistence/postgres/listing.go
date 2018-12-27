@@ -9,8 +9,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	crawlerpg "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 	"github.com/joincivil/civil-events-processor/pkg/model"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
+	cstrings "github.com/joincivil/go-common/pkg/strings"
 )
 
 const (
@@ -76,7 +77,7 @@ type Listing struct {
 
 	URL string `db:"url"`
 
-	Charter crawlerpg.JsonbPayload `db:"charter"`
+	Charter cpostgres.JsonbPayload `db:"charter"`
 
 	// OwnerAddresses is a comma delimited string
 	OwnerAddresses string `db:"owner_addresses"`
@@ -102,8 +103,8 @@ type Listing struct {
 
 // NewListing constructs a listing for DB from a model.Listing
 func NewListing(listing *model.Listing) *Listing {
-	ownerAddresses := ListCommonAddressesToString(listing.OwnerAddresses())
-	contributorAddresses := ListCommonAddressesToString(listing.ContributorAddresses())
+	ownerAddresses := cstrings.ListCommonAddressesToString(listing.OwnerAddresses())
+	contributorAddresses := cstrings.ListCommonAddressesToString(listing.ContributorAddresses())
 	lastGovernanceState := int(listing.LastGovernanceState())
 	owner := listing.Owner().Hex()
 
@@ -122,9 +123,9 @@ func NewListing(listing *model.Listing) *Listing {
 	} else {
 		challengeID = nilChallengeID
 	}
-	var charter crawlerpg.JsonbPayload
+	var charter cpostgres.JsonbPayload
 	if listing.Charter() != nil {
-		charter = crawlerpg.JsonbPayload(listing.Charter().AsMap())
+		charter = cpostgres.JsonbPayload(listing.Charter().AsMap())
 	}
 
 	return &Listing{
@@ -151,8 +152,8 @@ func NewListing(listing *model.Listing) *Listing {
 func (l *Listing) DbToListingData() *model.Listing {
 	contractAddress := common.HexToAddress(l.ContractAddress)
 	governanceState := model.GovernanceState(l.LastGovernanceState)
-	ownerAddresses := StringToCommonAddressesList(l.OwnerAddresses)
-	contributorAddresses := StringToCommonAddressesList(l.ContributorAddresses)
+	ownerAddresses := cstrings.StringToCommonAddressesList(l.OwnerAddresses)
+	contributorAddresses := cstrings.StringToCommonAddressesList(l.ContributorAddresses)
 	ownerAddress := common.HexToAddress(l.Owner)
 	appExpiry := big.NewInt(l.AppExpiry)
 	unstakedDeposit := new(big.Int)
