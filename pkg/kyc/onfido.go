@@ -321,7 +321,6 @@ func (o *OnfidoAPI) GenerateSDKToken(applicantID string, referrer string) (strin
 		ApplicantID: applicantID,
 		Referrer:    referrer,
 	}
-
 	bys, err := o.rest.SendRequest(endpointURI, http.MethodPost, nil, tokenRequestInput)
 	if err != nil {
 		return "", err
