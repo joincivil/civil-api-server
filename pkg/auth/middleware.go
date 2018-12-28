@@ -3,6 +3,8 @@ package auth
 import (
 	"context"
 	"net/http"
+
+	log "github.com/golang/glog"
 )
 
 // A private key for context that only this package can access. This is important
@@ -24,12 +26,14 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 
 			// Allow unauthenticated users in
 			if authHeader == "" {
+				log.Infof("No authorization header")
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			token, err := validateDecodeToken(jwt, authHeader)
 			if err != nil {
+				log.Infof("validateDecodeToken err = %v", err)
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusForbidden)
 				_, _ = w.Write([]byte("{\"err\": \"Invalid authorization header\"}")) // nolint: gosec

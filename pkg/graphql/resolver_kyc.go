@@ -4,6 +4,8 @@ import (
 	context "context"
 	"fmt"
 
+	log "github.com/golang/glog"
+
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
@@ -66,6 +68,7 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 
 	returnedApplicant, err := r.onfidoAPI.CreateApplicant(newApplicant)
 	if err != nil {
+		log.Errorf("err = %v", err)
 		return nil, err
 	}
 
@@ -106,7 +109,6 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 			// *kyc.WatchlistKycReport,
 		},
 	}
-
 	returnedCheck, err := r.onfidoAPI.CreateCheck(applicantID, newCheck)
 	if err != nil {
 		return nil, err
@@ -126,10 +128,14 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 }
 
 func (r *mutationResolver) KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error) {
-	token, err := r.onfidoAPI.GenerateSDKToken(applicantID, r.onfidoTokenReferrer)
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, fmt.Errorf("Access denied")
+	}
+	onfidoToken, err := r.onfidoAPI.GenerateSDKToken(applicantID, r.onfidoTokenReferrer)
 	if err != nil {
 		return nil, err
 	}
 
-	return &token, err
+	return &onfidoToken, err
 }
