@@ -52,6 +52,7 @@ jobs:
             - Makefile
             - vendor
             - cmd
+            - scripts
             - .gometalinter.json
 
   lint:
