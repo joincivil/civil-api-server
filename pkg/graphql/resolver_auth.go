@@ -29,6 +29,16 @@ func (r *mutationResolver) AuthSignupEmailSend(ctx context.Context, emailAddress
 	return &result, nil
 }
 
+func (r *mutationResolver) AuthSignupEmailSendForApplication(ctx context.Context, emailAddress string,
+	application auth.ApplicationEnum) (*string, error) {
+	result, err := r.authService.SignupEmailSendForApplication(emailAddress, application)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (r *mutationResolver) AuthSignupEmailConfirm(ctx context.Context, signupJWT string) (*auth.LoginResponse, error) {
 	response, err := r.authService.SignupEmailConfirm(signupJWT)
 	if err != nil {
@@ -54,6 +64,17 @@ func (r *mutationResolver) AuthLoginEmailSend(ctx context.Context, emailAddress 
 
 	return &result, nil
 }
+
+func (r *mutationResolver) AuthLoginEmailSendForApplication(ctx context.Context, emailAddress string,
+	application auth.ApplicationEnum) (*string, error) {
+	result, err := r.authService.LoginEmailSendForApplication(emailAddress, application)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
+}
+
 func (r *mutationResolver) AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error) {
 	response, err := r.authService.LoginEmailConfirm(loginJWT)
 	if err != nil {
