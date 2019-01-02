@@ -20,6 +20,8 @@ resolver:
 models:
   AuthLoginResponse:
     model: github.com/joincivil/civil-api-server/pkg/auth.LoginResponse
+  AuthApplicationEnum:
+    model: github.com/joincivil/civil-api-server/pkg/auth.ApplicationEnum
   Listing:
     model: github.com/joincivil/civil-events-processor/pkg/model.Listing
   Charter:

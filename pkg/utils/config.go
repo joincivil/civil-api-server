@@ -27,6 +27,9 @@ type GraphQLConfig struct {
 
 	JwtSecret string `split_words:"true" desc:"Secret used to encode JWT tokens"`
 
+	AuthEmailSignupTemplates map[string]string `split_words:"true" required:"false" desc:"<appname>:<template id>,..."`
+	AuthEmailLoginTemplates  map[string]string `split_words:"true" required:"false" desc:"<appname>:<template id>,..."`
+
 	SendgridKey string `split_words:"true" desc:"The SendGrid API key"`
 
 	OnfidoKey          string `split_words:"true" desc:"The Onfido API key"`
@@ -97,6 +100,11 @@ func (c *GraphQLConfig) PopulateFromEnv() error {
 		return err
 	}
 
+	err = c.populateAuthEmailTemplates()
+	if err != nil {
+		return err
+	}
+
 	return c.validatePersister()
 }
 
@@ -118,6 +126,10 @@ func (c *GraphQLConfig) validatePersister() error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (c *GraphQLConfig) populateAuthEmailTemplates() error {
 	return nil
 }
 
