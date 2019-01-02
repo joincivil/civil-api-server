@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"fmt"
-	"github.com/joincivil/civil-events-processor/pkg/model"
 	"math/big"
+
+	"github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/go-common/pkg/numbers"
 )
 
 const (
@@ -68,8 +70,8 @@ func NewPoll(pollData *model.Poll) *Poll {
 	poll.CommitEndDate = pollData.CommitEndDate().Int64()
 	poll.RevealEndDate = pollData.RevealEndDate().Int64()
 	poll.VoteQuorum = pollData.VoteQuorum().Uint64()
-	poll.VotesFor = BigIntToFloat64(pollData.VotesFor())
-	poll.VotesAgainst = BigIntToFloat64(pollData.VotesAgainst())
+	poll.VotesFor = numbers.BigIntToFloat64(pollData.VotesFor())
+	poll.VotesAgainst = numbers.BigIntToFloat64(pollData.VotesAgainst())
 	poll.LastUpdatedDateTs = pollData.LastUpdatedDateTs()
 	return poll
 }
@@ -81,8 +83,8 @@ func (p *Poll) DbToPollData() *model.Poll {
 		big.NewInt(p.CommitEndDate),
 		big.NewInt(p.RevealEndDate),
 		new(big.Int).SetUint64(p.VoteQuorum),
-		Float64ToBigInt(p.VotesFor),
-		Float64ToBigInt(p.VotesAgainst),
+		numbers.Float64ToBigInt(p.VotesFor),
+		numbers.Float64ToBigInt(p.VotesAgainst),
 		p.LastUpdatedDateTs,
 	)
 }

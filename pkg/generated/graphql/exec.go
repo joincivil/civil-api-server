@@ -196,17 +196,19 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AuthSignupEth          func(childComplexity int, input users.SignatureInput) int
-		AuthSignupEmailSend    func(childComplexity int, emailAddress string) int
-		AuthSignupEmailConfirm func(childComplexity int, signupJWT string) int
-		AuthLoginEth           func(childComplexity int, input users.SignatureInput) int
-		AuthLoginEmailSend     func(childComplexity int, emailAddress string) int
-		AuthLoginEmailConfirm  func(childComplexity int, loginJWT string) int
-		KycCreateApplicant     func(childComplexity int, applicant KycCreateApplicantInput) int
-		KycCreateCheck         func(childComplexity int, applicantID string, facialVariant *string) int
-		KycGenerateSdkToken    func(childComplexity int, applicantID string) int
-		UserSetEthAddress      func(childComplexity int, input users.SignatureInput) int
-		UserUpdate             func(childComplexity int, uid *string, input *users.UserUpdateInput) int
+		AuthSignupEth                     func(childComplexity int, input users.SignatureInput) int
+		AuthSignupEmailSend               func(childComplexity int, emailAddress string) int
+		AuthSignupEmailSendForApplication func(childComplexity int, emailAddress string, application auth.ApplicationEnum) int
+		AuthSignupEmailConfirm            func(childComplexity int, signupJWT string) int
+		AuthLoginEth                      func(childComplexity int, input users.SignatureInput) int
+		AuthLoginEmailSend                func(childComplexity int, emailAddress string) int
+		AuthLoginEmailSendForApplication  func(childComplexity int, emailAddress string, application auth.ApplicationEnum) int
+		AuthLoginEmailConfirm             func(childComplexity int, loginJWT string) int
+		KycCreateApplicant                func(childComplexity int, applicant KycCreateApplicantInput) int
+		KycCreateCheck                    func(childComplexity int, applicantID string, facialVariant *string) int
+		KycGenerateSdkToken               func(childComplexity int, applicantID string) int
+		UserSetEthAddress                 func(childComplexity int, input users.SignatureInput) int
+		UserUpdate                        func(childComplexity int, uid *string, input *users.UserUpdateInput) int
 	}
 
 	PageInfo struct {
@@ -325,9 +327,11 @@ type ListingResolver interface {
 type MutationResolver interface {
 	AuthSignupEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error)
 	AuthSignupEmailSend(ctx context.Context, emailAddress string) (*string, error)
+	AuthSignupEmailSendForApplication(ctx context.Context, emailAddress string, application auth.ApplicationEnum) (*string, error)
 	AuthSignupEmailConfirm(ctx context.Context, signupJWT string) (*auth.LoginResponse, error)
 	AuthLoginEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error)
 	AuthLoginEmailSend(ctx context.Context, emailAddress string) (*string, error)
+	AuthLoginEmailSendForApplication(ctx context.Context, emailAddress string, application auth.ApplicationEnum) (*string, error)
 	AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error)
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
@@ -392,6 +396,30 @@ func field_Mutation_authSignupEmailSend_args(rawArgs map[string]interface{}) (ma
 
 }
 
+func field_Mutation_authSignupEmailSendForApplication_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["emailAddress"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["emailAddress"] = arg0
+	var arg1 auth.ApplicationEnum
+	if tmp, ok := rawArgs["application"]; ok {
+		var err error
+		err = (&arg1).UnmarshalGQL(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["application"] = arg1
+	return args, nil
+
+}
+
 func field_Mutation_authSignupEmailConfirm_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 string
@@ -433,6 +461,30 @@ func field_Mutation_authLoginEmailSend_args(rawArgs map[string]interface{}) (map
 		}
 	}
 	args["emailAddress"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_authLoginEmailSendForApplication_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["emailAddress"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["emailAddress"] = arg0
+	var arg1 auth.ApplicationEnum
+	if tmp, ok := rawArgs["application"]; ok {
+		var err error
+		err = (&arg1).UnmarshalGQL(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["application"] = arg1
 	return args, nil
 
 }
@@ -1811,6 +1863,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AuthSignupEmailSend(childComplexity, args["emailAddress"].(string)), true
 
+	case "Mutation.authSignupEmailSendForApplication":
+		if e.complexity.Mutation.AuthSignupEmailSendForApplication == nil {
+			break
+		}
+
+		args, err := field_Mutation_authSignupEmailSendForApplication_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AuthSignupEmailSendForApplication(childComplexity, args["emailAddress"].(string), args["application"].(auth.ApplicationEnum)), true
+
 	case "Mutation.authSignupEmailConfirm":
 		if e.complexity.Mutation.AuthSignupEmailConfirm == nil {
 			break
@@ -1846,6 +1910,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AuthLoginEmailSend(childComplexity, args["emailAddress"].(string)), true
+
+	case "Mutation.authLoginEmailSendForApplication":
+		if e.complexity.Mutation.AuthLoginEmailSendForApplication == nil {
+			break
+		}
+
+		args, err := field_Mutation_authLoginEmailSendForApplication_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AuthLoginEmailSendForApplication(childComplexity, args["emailAddress"].(string), args["application"].(auth.ApplicationEnum)), true
 
 	case "Mutation.authLoginEmailConfirm":
 		if e.complexity.Mutation.AuthLoginEmailConfirm == nil {
@@ -5974,12 +6050,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_authSignupEth(ctx, field)
 		case "authSignupEmailSend":
 			out.Values[i] = ec._Mutation_authSignupEmailSend(ctx, field)
+		case "authSignupEmailSendForApplication":
+			out.Values[i] = ec._Mutation_authSignupEmailSendForApplication(ctx, field)
 		case "authSignupEmailConfirm":
 			out.Values[i] = ec._Mutation_authSignupEmailConfirm(ctx, field)
 		case "authLoginEth":
 			out.Values[i] = ec._Mutation_authLoginEth(ctx, field)
 		case "authLoginEmailSend":
 			out.Values[i] = ec._Mutation_authLoginEmailSend(ctx, field)
+		case "authLoginEmailSendForApplication":
+			out.Values[i] = ec._Mutation_authLoginEmailSendForApplication(ctx, field)
 		case "authLoginEmailConfirm":
 			out.Values[i] = ec._Mutation_authLoginEmailConfirm(ctx, field)
 		case "kycCreateApplicant":
@@ -6058,6 +6138,40 @@ func (ec *executionContext) _Mutation_authSignupEmailSend(ctx context.Context, f
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AuthSignupEmailSend(rctx, args["emailAddress"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_authSignupEmailSendForApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_authSignupEmailSendForApplication_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AuthSignupEmailSendForApplication(rctx, args["emailAddress"].(string), args["application"].(auth.ApplicationEnum))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -6162,6 +6276,40 @@ func (ec *executionContext) _Mutation_authLoginEmailSend(ctx context.Context, fi
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AuthLoginEmailSend(rctx, args["emailAddress"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_authLoginEmailSendForApplication(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_authLoginEmailSendForApplication_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AuthLoginEmailSendForApplication(rctx, args["emailAddress"].(string), args["application"].(auth.ApplicationEnum))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -9654,9 +9802,11 @@ type Mutation {
   # Auth Mutations
   authSignupEth(input: UserSignatureInput!): AuthLoginResponse
   authSignupEmailSend(emailAddress: String!): String
+  authSignupEmailSendForApplication(emailAddress: String! application: AuthApplicationEnum!): String
   authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
   authLoginEth(input: UserSignatureInput!): AuthLoginResponse
   authLoginEmailSend(emailAddress: String!): String
+  authLoginEmailSendForApplication(emailAddress: String!, application: AuthApplicationEnum!): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
 
   # KYC Mutations
@@ -9667,6 +9817,12 @@ type Mutation {
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
+}
+
+enum AuthApplicationEnum {
+  DEFAULT
+  NEWSROOM
+  STOREFRONT
 }
 
 ## Auth object schemas

@@ -15,7 +15,7 @@ import (
 	// driver for postgresql
 	_ "github.com/lib/pq"
 
-	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
+	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 	ctime "github.com/joincivil/go-common/pkg/time"
 )
@@ -100,7 +100,7 @@ func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName stri
 		return nil, fmt.Errorf("Error retrieving user from table: %v", err)
 	}
 	if len(kycUsers) == 0 {
-		return nil, processormodel.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 	return kycUsers[0], err
 }

@@ -18,15 +18,17 @@ import (
 	// driver for postgresql
 	_ "github.com/lib/pq"
 
-	crawlerutils "github.com/joincivil/civil-events-crawler/pkg/utils"
-
 	"github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
+
+	cpersist "github.com/joincivil/go-common/pkg/persistence"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
+	cstrings "github.com/joincivil/go-common/pkg/strings"
+
+	ctime "github.com/joincivil/go-common/pkg/time"
 )
 
-// TODO(IS): take out sql.ErrNoRows
-// TODO(IS): Actually use model.ErrPersisterNoresults for its intended use. Currently this is only
-// triggered when an empty list is queried for.
+// NOTE(IS): cpersist.ErrPersisterNoResults is only returned for single queries
 
 const (
 	listingTableName   = "listing"
@@ -142,21 +144,6 @@ func (p *PostgresPersister) GovernanceEventsByTxHash(txHash common.Hash) ([]*mod
 	return p.governanceEventsByTxHashFromTable(txHash, govEventTableName)
 }
 
-// GovernanceEventByChallengeID retrieves challenge by challengeID
-func (p *PostgresPersister) GovernanceEventByChallengeID(challengeID int) (*model.GovernanceEvent, error) {
-	challengeIDs := []int{challengeID}
-	govEvents, err := p.govEventsByChallengeIDsFromTable(challengeIDs, govEventTableName)
-	if err != nil {
-		return nil, err
-	}
-	return govEvents[0], err
-}
-
-// GovernanceEventsByChallengeIDs retrieves challenges by challengeIDs
-func (p *PostgresPersister) GovernanceEventsByChallengeIDs(challengeIDs []int) ([]*model.GovernanceEvent, error) {
-	return p.govEventsByChallengeIDsFromTable(challengeIDs, govEventTableName)
-}
-
 // CreateGovernanceEvent creates a new governance event
 func (p *PostgresPersister) CreateGovernanceEvent(govEvent *model.GovernanceEvent) error {
 	return p.createGovernanceEventInTable(govEvent, govEventTableName)
@@ -199,11 +186,7 @@ func (p *PostgresPersister) ChallengesByChallengeIDs(challengeIDs []int) ([]*mod
 
 // ChallengeByChallengeID gets a challenge by challengeID
 func (p *PostgresPersister) ChallengeByChallengeID(challengeID int) (*model.Challenge, error) {
-	challenges, err := p.challengesByChallengeIDsInTableInOrder([]int{challengeID}, challengeTableName)
-	if err != nil {
-		return nil, err
-	}
-	return challenges[0], nil
+	return p.challengeByChallengeIDFromTable(challengeID, challengeTableName)
 }
 
 // ChallengesByListingAddresses gets slice of challenges for a each listing address in order of addresses
@@ -218,11 +201,7 @@ func (p *PostgresPersister) ChallengesByListingAddress(addr common.Address) ([]*
 
 // PollByPollID gets a poll by pollID
 func (p *PostgresPersister) PollByPollID(pollID int) (*model.Poll, error) {
-	polls, err := p.pollsByPollIDsInTableInOrder([]int{pollID}, pollTableName)
-	if err != nil {
-		return nil, err
-	}
-	return polls[0], nil
+	return p.pollByPollIDFromTable(pollID)
 }
 
 // PollsByPollIDs returns a slice of polls in order based on poll IDs
@@ -242,11 +221,7 @@ func (p *PostgresPersister) UpdatePoll(poll *model.Poll, updatedFields []string)
 
 // AppealByChallengeID gets an appeal by challengeID
 func (p *PostgresPersister) AppealByChallengeID(challengeID int) (*model.Appeal, error) {
-	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, appealTableName)
-	if err != nil {
-		return nil, err
-	}
-	return appeals[0], nil
+	return p.appealByChallengeIDFromTable(challengeID)
 }
 
 // AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
@@ -342,7 +317,7 @@ func (p *PostgresPersister) CreateIndices() error {
 }
 
 func (p *PostgresPersister) insertIntoDBQueryString(tableName string, dbModelStruct interface{}) string {
-	fieldNames, fieldNamesColon := postgres.StructFieldsForQuery(dbModelStruct, true, "")
+	fieldNames, fieldNamesColon := cpostgres.StructFieldsForQuery(dbModelStruct, true, "")
 	queryString := fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s);", tableName, fieldNames, fieldNamesColon) // nolint: gosec
 	return queryString
 }
@@ -353,7 +328,7 @@ func (p *PostgresPersister) updateDBQueryBuffer(updatedFields []string, tableNam
 	queryBuf.WriteString(tableName) // nolint: gosec
 	queryBuf.WriteString(" SET ")   // nolint: gosec
 	for idx, field := range updatedFields {
-		dbFieldName, err := postgres.DbFieldNameFromModelName(dbModelStruct, field)
+		dbFieldName, err := cpostgres.DbFieldNameFromModelName(dbModelStruct, field)
 		if err != nil {
 			return queryBuf, fmt.Errorf("Error getting %s from %s table DB struct tag: %v", field, tableName, err)
 		}
@@ -388,38 +363,13 @@ func (p *PostgresPersister) listingsByCriteriaFromTable(criteria *model.ListingC
 	return listings, nil
 }
 
-func (p *PostgresPersister) listingsByAddressesFromTable(addresses []common.Address, tableName string) ([]*model.Listing, error) {
-	stringAddresses := postgres.ListCommonAddressToListString(addresses)
-	queryString := p.listingByAddressesQuery(tableName)
-	query, args, err := sqlx.In(queryString, stringAddresses)
-	if err != nil {
-		return nil, fmt.Errorf("Error preparing 'IN' statement for listings by address query: %v", err)
-	}
-	query = p.db.Rebind(query)
-	rows, err := p.db.Queryx(query, args...)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
-	}
-
-	listings := []*model.Listing{}
-	for rows.Next() {
-		var dbListing postgres.Listing
-		err = rows.StructScan(&dbListing)
-		if err != nil {
-			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
-		}
-		listings = append(listings, dbListing.DbToListingData())
-	}
-	return listings, nil
-}
-
 func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []common.Address,
 	tableName string) ([]*model.Listing, error) {
 	if len(addresses) == 0 {
-		return nil, model.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 
-	stringAddresses := postgres.ListCommonAddressToListString(addresses)
+	stringAddresses := cstrings.ListCommonAddressToListString(addresses)
 	queryString := p.listingByAddressesQuery(tableName)
 	query, args, err := sqlx.In(queryString, stringAddresses)
 	if err != nil {
@@ -459,8 +409,11 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 }
 
 func (p *PostgresPersister) listingByAddressFromTable(address common.Address, tableName string) (*model.Listing, error) {
-	listings, err := p.listingsByAddressesFromTable([]common.Address{address}, tableName)
+	listings, err := p.listingsByAddressesFromTableInOrder([]common.Address{address}, tableName)
 	if len(listings) > 0 {
+		if listings[0] == nil {
+			err = cpersist.ErrPersisterNoResults
+		}
 		return listings[0], err
 	}
 	return nil, err
@@ -472,9 +425,9 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 	queryBuf := bytes.NewBufferString("SELECT ")
 	var fieldNames string
 	if criteria.ActiveChallenge && criteria.CurrentApplication {
-		fieldNames, _ = postgres.StructFieldsForQuery(postgres.Listing{}, false, "l")
+		fieldNames, _ = cpostgres.StructFieldsForQuery(postgres.Listing{}, false, "l")
 	} else {
-		fieldNames, _ = postgres.StructFieldsForQuery(postgres.Listing{}, false, "")
+		fieldNames, _ = cpostgres.StructFieldsForQuery(postgres.Listing{}, false, "")
 	}
 
 	queryBuf.WriteString(fieldNames) // nolint: gosec
@@ -527,7 +480,7 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 }
 
 func (p *PostgresPersister) listingByAddressesQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Listing{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Listing{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE contract_address IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
@@ -544,7 +497,7 @@ func (p *PostgresPersister) createListingForTable(listing *model.Listing, tableN
 
 func (p *PostgresPersister) updateListingInTable(listing *model.Listing, updatedFields []string, tableName string) error {
 	// Update the last updated timestamp
-	listing.SetLastUpdatedDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	listing.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
 	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
 
 	queryString, err := p.updateListingQuery(updatedFields, tableName)
@@ -599,16 +552,19 @@ func (p *PostgresPersister) contentRevisionFromTable(address common.Address, con
 	err := p.db.Get(&dbContRev, queryString, address.Hex(), contentID.Int64(), revisionID.Int64())
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, model.ErrPersisterNoResults
+			return nil, cpersist.ErrPersisterNoResults
 		}
 		return nil, fmt.Errorf("Wasn't able to get ContentRevision from postgres table: %v", err)
 	}
 	contRev := dbContRev.DbToContentRevisionData()
+	if contRev == nil {
+		return contRev, cpersist.ErrPersisterNoResults
+	}
 	return contRev, err
 }
 
 func (p *PostgresPersister) contentRevisionQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.ContentRevision{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.ContentRevision{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE (listing_address=$1 AND contract_content_id=$2 AND contract_revision_id=$3)", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
@@ -628,7 +584,7 @@ func (p *PostgresPersister) contentRevisionsFromTable(address common.Address, co
 }
 
 func (p *PostgresPersister) contentRevisionsQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.ContentRevision{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.ContentRevision{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE (listing_address=$1 AND contract_content_id=$2)", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
@@ -657,7 +613,7 @@ func (p *PostgresPersister) contentRevisionsByCriteriaFromTable(criteria *model.
 func (p *PostgresPersister) contentRevisionsByCriteriaQuery(criteria *model.ContentRevisionCriteria,
 	tableName string) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.ContentRevision{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.ContentRevision{}, false, "")
 	queryBuf.WriteString(fieldNames) // nolint: gosec
 	queryBuf.WriteString(" FROM ")   // nolint: gosec
 	queryBuf.WriteString(tableName)  // nolint: gosec
@@ -735,9 +691,6 @@ func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address co
 	dbGovEvents := []postgres.GovernanceEvent{}
 	err := p.db.Select(&dbGovEvents, queryString, address.Hex())
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, model.ErrPersisterNoResults
-		}
 		return govEvents, fmt.Errorf("Error retrieving governance events from table: %v", err)
 	}
 	// retrieved correctly
@@ -756,42 +709,6 @@ func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash
 	return p.scanGovEvents(rows)
 }
 
-func (p *PostgresPersister) govEventsByChallengeIDsFromTable(challengeIDs []int, tableName string) ([]*model.GovernanceEvent, error) {
-	if len(challengeIDs) <= 0 {
-		return nil, model.ErrPersisterNoResults
-	}
-
-	queryString := p.govEventsByChallengeIDQuery(tableName, challengeIDs)
-	rows, err := p.db.Queryx(queryString)
-	if err != nil {
-		return nil, fmt.Errorf("Error retrieving governance events from table: %v", err)
-	}
-
-	govEventsMap := map[int]*model.GovernanceEvent{}
-	for rows.Next() {
-		var dbGovEvent postgres.GovernanceEvent
-		err = rows.StructScan(&dbGovEvent)
-		if err != nil {
-			return nil, fmt.Errorf("Error scanning governance_event row from IN query: %v", err)
-		}
-		modelGovEvent := dbGovEvent.DbToGovernanceData()
-		challengeID := int(modelGovEvent.Metadata()["ChallengeID"].(float64))
-		govEventsMap[challengeID] = modelGovEvent
-	}
-
-	// Return govEvents in order
-	modelGovEvents := make([]*model.GovernanceEvent, len(challengeIDs))
-	for i, id := range challengeIDs {
-		retrievedGovEvent, ok := govEventsMap[id]
-		if ok {
-			modelGovEvents[i] = retrievedGovEvent
-		} else {
-			modelGovEvents[i] = nil
-		}
-	}
-	return modelGovEvents, err
-}
-
 func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceEvent, error) {
 	govEvents := []*model.GovernanceEvent{}
 	govEvent := postgres.GovernanceEvent{}
@@ -806,7 +723,7 @@ func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceE
 }
 
 func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
 	queryString := fmt.Sprintf( // nolint: gosec
 		"SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }'",
 		fieldNames,
@@ -817,26 +734,8 @@ func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, ta
 }
 
 func (p *PostgresPersister) govEventsQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE listing_address=$1", fieldNames, tableName) // nolint: gosec
-	return queryString
-}
-
-func (p *PostgresPersister) govEventsByChallengeIDQuery(tableName string, challengeIDs []int) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
-	var idbuf bytes.Buffer
-	for _, id := range challengeIDs {
-		idbuf.WriteString(fmt.Sprintf("'%d',", id)) // nolint: gosec
-	}
-	// take out extra comma
-	idbuf.Truncate(idbuf.Len() - 1)
-	ids := idbuf.String()
-	queryString := fmt.Sprintf( // nolint: gosec
-		"SELECT %s FROM %s WHERE gov_event_type='Challenge' AND metadata ->>'ChallengeID' IN (%s);",
-		fieldNames,
-		tableName,
-		ids,
-	)
 	return queryString
 }
 
@@ -873,7 +772,7 @@ func (p *PostgresPersister) governanceEventsByCriteriaFromTable(criteria *model.
 func (p *PostgresPersister) governanceEventsByCriteriaQuery(criteria *model.GovernanceEventCriteria,
 	tableName string) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
 	queryBuf.WriteString(fieldNames) // nolint: gosec
 	queryBuf.WriteString(" FROM ")   // nolint: gosec
 	queryBuf.WriteString(tableName)  // nolint: gosec
@@ -901,7 +800,7 @@ func (p *PostgresPersister) governanceEventsByCriteriaQuery(criteria *model.Gove
 
 func (p *PostgresPersister) updateGovernanceEventInTable(govEvent *model.GovernanceEvent, updatedFields []string, tableName string) error {
 	// Update the last updated timestamp
-	govEvent.SetLastUpdatedDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	govEvent.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
 	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
 
 	queryString, err := p.updateGovEventsQuery(updatedFields, tableName)
@@ -953,7 +852,7 @@ func (p *PostgresPersister) createChallengeInTable(challenge *model.Challenge, t
 func (p *PostgresPersister) updateChallengeInTable(challenge *model.Challenge, updatedFields []string,
 	tableName string) error {
 	// Update the last updated timestamp
-	challenge.SetLastUpdateDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	challenge.SetLastUpdateDateTs(ctime.CurrentEpochSecsInInt64())
 	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
 
 	queryString, err := p.updateChallengeQuery(updatedFields, tableName)
@@ -978,13 +877,24 @@ func (p *PostgresPersister) updateChallengeQuery(updatedFields []string, tableNa
 	return queryString.String(), nil
 }
 
+func (p *PostgresPersister) challengeByChallengeIDFromTable(challengeID int, tableName string) (*model.Challenge, error) {
+	challenges, err := p.challengesByChallengeIDsInTableInOrder([]int{challengeID}, challengeTableName)
+	if err != nil {
+		return nil, err
+	}
+	if challenges[0] == nil {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+	return challenges[0], nil
+}
+
 func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs []int,
 	tableName string) ([]*model.Challenge, error) {
 	if len(challengeIDs) <= 0 {
-		return nil, model.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 
-	challengeIDsString := postgres.ListIntToListString(challengeIDs)
+	challengeIDsString := cstrings.ListIntToListString(challengeIDs)
 	queryString := p.challengesByChallengeIDsQuery(tableName)
 
 	query, args, err := sqlx.In(queryString, challengeIDsString)
@@ -1025,7 +935,7 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 }
 
 func (p *PostgresPersister) challengesByChallengeIDsQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Challenge{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE challenge_id IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
@@ -1033,10 +943,10 @@ func (p *PostgresPersister) challengesByChallengeIDsQuery(tableName string) stri
 func (p *PostgresPersister) challengesByListingAddressesInTable(addrs []common.Address,
 	tableName string) ([][]*model.Challenge, error) {
 	if len(addrs) <= 0 {
-		return nil, model.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 
-	listingAddrs := postgres.ListCommonAddressToListString(addrs)
+	listingAddrs := cstrings.ListCommonAddressToListString(addrs)
 	queryString := p.challengesByListingAddressesQuery(tableName)
 
 	query, args, err := sqlx.In(queryString, listingAddrs)
@@ -1085,7 +995,7 @@ func (p *PostgresPersister) challengesByListingAddressesInTable(addrs []common.A
 // challengesByListingAddressesQuery returns the query string to retrieved a list of
 // challenges for a list of listing addresses
 func (p *PostgresPersister) challengesByListingAddressesQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Challenge{}, false, "")
 	queryString := fmt.Sprintf( // nolint: gosec
 		"SELECT %s FROM %s WHERE listing_address IN (?)",
 		fieldNames,
@@ -1108,7 +1018,7 @@ func (p *PostgresPersister) challengesByListingAddressInTable(addr common.Addres
 	}
 
 	if len(dbChallenges) == 0 {
-		return nil, model.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 
 	for _, dbChallenge := range dbChallenges {
@@ -1121,7 +1031,7 @@ func (p *PostgresPersister) challengesByListingAddressInTable(addr common.Addres
 // challengesByListingAddressQuery returns the query string to retrieved a list of
 // challenges for a listing sorted by challenge_id
 func (p *PostgresPersister) challengesByListingAddressQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Challenge{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Challenge{}, false, "")
 	queryString := fmt.Sprintf( // nolint: gosec
 		"SELECT %s FROM %s WHERE listing_address = $1 ORDER BY challenge_id;",
 		fieldNames,
@@ -1143,7 +1053,7 @@ func (p *PostgresPersister) createPollInTable(poll *model.Poll, tableName string
 func (p *PostgresPersister) updatePollInTable(poll *model.Poll, updatedFields []string,
 	tableName string) error {
 	// Update the last updated timestamp
-	poll.SetLastUpdatedDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	poll.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
 	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
 
 	queryString, err := p.updatePollQuery(updatedFields, tableName)
@@ -1167,12 +1077,23 @@ func (p *PostgresPersister) updatePollQuery(updatedFields []string, tableName st
 	return queryString.String(), nil
 }
 
+func (p *PostgresPersister) pollByPollIDFromTable(pollID int) (*model.Poll, error) {
+	polls, err := p.pollsByPollIDsInTableInOrder([]int{pollID}, pollTableName)
+	if err != nil {
+		return nil, err
+	}
+	if polls[0] == nil {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+	return polls[0], nil
+}
+
 func (p *PostgresPersister) pollsByPollIDsInTableInOrder(pollIDs []int, pollTableName string) ([]*model.Poll, error) {
 	if len(pollIDs) <= 0 {
-		return nil, model.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 
-	pollIDsString := postgres.ListIntToListString(pollIDs)
+	pollIDsString := cstrings.ListIntToListString(pollIDs)
 	queryString := p.pollByPollIDsQuery(pollTableName)
 	query, args, err := sqlx.In(queryString, pollIDsString)
 	if err != nil {
@@ -1210,7 +1131,7 @@ func (p *PostgresPersister) pollsByPollIDsInTableInOrder(pollIDs []int, pollTabl
 }
 
 func (p *PostgresPersister) pollByPollIDsQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Poll{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Poll{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE poll_id IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
@@ -1228,7 +1149,7 @@ func (p *PostgresPersister) createAppealInTable(appeal *model.Appeal, tableName 
 func (p *PostgresPersister) updateAppealInTable(appeal *model.Appeal, updatedFields []string,
 	tableName string) error {
 	// Update the last updated timestamp
-	appeal.SetLastUpdatedDateTs(crawlerutils.CurrentEpochSecsInInt64())
+	appeal.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
 	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
 
 	queryString, err := p.updateAppealQuery(updatedFields, tableName)
@@ -1253,12 +1174,23 @@ func (p *PostgresPersister) updateAppealQuery(updatedFields []string, tableName 
 	return queryString.String(), nil
 }
 
+func (p *PostgresPersister) appealByChallengeIDFromTable(challengeID int) (*model.Appeal, error) {
+	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, appealTableName)
+	if err != nil {
+		return nil, err
+	}
+	if appeals[0] == nil {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+	return appeals[0], nil
+}
+
 func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []int, tableName string) ([]*model.Appeal, error) {
 	if len(challengeIDs) <= 0 {
-		return nil, model.ErrPersisterNoResults
+		return nil, cpersist.ErrPersisterNoResults
 	}
 
-	challengeIDsString := postgres.ListIntToListString(challengeIDs)
+	challengeIDsString := cstrings.ListIntToListString(challengeIDs)
 	queryString := p.appealsByChallengeIDsQuery(tableName)
 	query, args, err := sqlx.In(queryString, challengeIDsString)
 	if err != nil {
@@ -1296,7 +1228,7 @@ func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []i
 }
 
 func (p *PostgresPersister) appealsByChallengeIDsQuery(tableName string) string {
-	fieldNames, _ := postgres.StructFieldsForQuery(postgres.Appeal{}, false, "")
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Appeal{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE original_challenge_id IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
@@ -1316,14 +1248,14 @@ func (p *PostgresPersister) lastCronTimestampFromTable(tableName string) (int64,
 		}
 		return timestampInt, fmt.Errorf("Wasn't able to get listing from postgres table: %v", err)
 	}
-	timestampInt, err = postgres.StringToTimestamp(timestampString)
+	timestampInt, err = ctime.StringToTimestamp(timestampString)
 	return timestampInt, err
 }
 
 func (p *PostgresPersister) updateCronTimestampInTable(timestamp int64, tableName string) error {
 	// Check if timestamp row exists
 	timestampExists := true
-	cronData := postgres.NewCronData(postgres.TimestampToString(timestamp), postgres.TimestampDataType)
+	cronData := postgres.NewCronData(ctime.TimestampToString(timestamp), postgres.TimestampDataType)
 
 	_, err := p.typeExistsInCronTable(tableName, cronData.DataType)
 	if err != nil {

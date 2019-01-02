@@ -5,7 +5,8 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 	"github.com/joincivil/civil-api-server/pkg/users"
-	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
+
+	cpersist "github.com/joincivil/go-common/pkg/persistence"
 )
 
 func buildService() *users.UserService {
@@ -31,7 +32,7 @@ func TestGetUser(t *testing.T) {
 
 	criteria = users.UserCriteria{Email: "nonexistent@bar.com"}
 	_, err = svc.GetUser(criteria)
-	if err != processormodel.ErrPersisterNoResults {
+	if err != cpersist.ErrPersisterNoResults {
 		t.Fatalf("should have an error")
 	}
 }

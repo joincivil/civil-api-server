@@ -2,22 +2,14 @@
 package model // import "github.com/joincivil/civil-events-processor/pkg/model"
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
-var (
-	// ErrPersisterNoResults is an error that represents no results from
-	// the persister on queries.  Should be returned by the persisters
-	// on event of no results in retrieval queries
-	ErrPersisterNoResults = errors.New("No results from persister")
-)
-
 // errors must not be returned in valid conditions, such as when there is no
 // record for a query.  In this case, return the empty value for the return
-// type. errors must be reserved for actual internal errors.
+// type. errors must be reserved for actual internal errors.  Use ErrPersisterNoResults.
 
 // ListingCriteria contains the retrieval criteria for the ListingsByCriteria
 // query. Only one of WhitelistedOnly, RejectedOnly, ActiveChallenge, CurrentApplication can
@@ -105,10 +97,6 @@ type GovernanceEventPersister interface {
 	GovernanceEventsByCriteria(criteria *GovernanceEventCriteria) ([]*GovernanceEvent, error)
 	// GovernanceEventsByListingAddress retrieves governance events based on listing address
 	GovernanceEventsByListingAddress(address common.Address) ([]*GovernanceEvent, error)
-	// GovernanceEventByChallengeID retrieves challenge by challengeID
-	GovernanceEventByChallengeID(challengeID int) (*GovernanceEvent, error)
-	// GovernanceEventsByChallengeIDs retrieves challenges by challengeIDs
-	GovernanceEventsByChallengeIDs(challengeIDs []int) ([]*GovernanceEvent, error)
 	// CreateGovernanceEvent creates a new governance event
 	CreateGovernanceEvent(govEvent *GovernanceEvent) error
 	// UpdateGovernanceEvent updates fields on an existing governance event

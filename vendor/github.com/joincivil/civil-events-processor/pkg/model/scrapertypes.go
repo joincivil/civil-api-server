@@ -3,6 +3,8 @@ package model // import "github.com/joincivil/civil-events-processor/pkg/model"
 
 import (
 	"encoding/json"
+
+	log "github.com/golang/glog"
 )
 
 // MetadataScraper is the interface for implementations of metadata scraper
@@ -107,13 +109,13 @@ func (s *ScraperCivilMetadata) SchemaVersion() string {
 	return s.metadata.SchemaVersion
 }
 
-// Authors returns the schema authors field in the metadata
-func (s *ScraperCivilMetadata) Authors() []*ScraperCivilMetadataAuthor {
-	authors := []*ScraperCivilMetadataAuthor{}
-	for _, author := range s.metadata.Authors {
-		authors = append(authors, &ScraperCivilMetadataAuthor{author: author})
+// Contributors returns the schema contributors field in the metadata
+func (s *ScraperCivilMetadata) Contributors() []*ScraperCivilMetadataContributor {
+	contributors := []*ScraperCivilMetadataContributor{}
+	for _, contributor := range s.metadata.Contributors {
+		contributors = append(contributors, &ScraperCivilMetadataContributor{contributor: contributor})
 	}
-	return authors
+	return contributors
 }
 
 // Images returns the images field in the metadata
@@ -127,39 +129,69 @@ func (s *ScraperCivilMetadata) Images() []*ScraperCivilMetadataImage {
 
 // CredibilityIndicators returns the credibility indicators field in the metadata
 func (s *ScraperCivilMetadata) CredibilityIndicators() *ScraperCivilMetadataCredibility {
-	return &ScraperCivilMetadataCredibility{cred: s.metadata.CredIndicators}
+	switch val := s.metadata.CredIndicators.(type) {
+	case map[string]interface{}:
+		bys, err := json.Marshal(val)
+		if err == nil {
+			md := &scraperCivilMetadataCredibility{}
+			err := json.Unmarshal(bys, md)
+			if err == nil {
+				return &ScraperCivilMetadataCredibility{cred: md}
+			}
+		}
+	}
+	log.Errorf("Returning an empty set of credibility indicators")
+	return &ScraperCivilMetadataCredibility{cred: &scraperCivilMetadataCredibility{}}
 }
 
 type scraperCivilMetadata struct {
-	Title               string                           `json:"title"`
-	RevisionContentHash string                           `json:"revisionContentHash"`
-	RevisionContentURL  string                           `json:"revisionContentUrl"`
-	CanonicalURL        string                           `json:"canonicalUrl"`
-	Slug                string                           `json:"slug"`
-	Description         string                           `json:"description"`
-	Authors             []*scraperCivilMetadataAuthor    `json:"authors"`
-	Images              []*scraperCivilMetadataImage     `json:"images"`
-	Tags                []string                         `json:"tags"`
-	PrimaryTag          string                           `json:"primaryTag"`
-	RevisionDate        string                           `json:"revisionDate"`
-	OriginalPublishDate string                           `json:"originalPublishDate"`
-	CredIndicators      *scraperCivilMetadataCredibility `json:"credibilityIndicators"`
-	Opinion             bool                             `json:"opinion"`
-	SchemaVersion       string                           `json:"civilSchemaVersion"`
+	Title               string                             `json:"title"`
+	RevisionContentHash string                             `json:"revisionContentHash"`
+	RevisionContentURL  string                             `json:"revisionContentUrl"`
+	CanonicalURL        string                             `json:"canonicalUrl"`
+	Slug                string                             `json:"slug"`
+	Description         string                             `json:"description"`
+	Contributors        []*scraperCivilMetadataContributor `json:"contributors"`
+	Images              []*scraperCivilMetadataImage       `json:"images"`
+	Tags                []string                           `json:"tags"`
+	PrimaryTag          string                             `json:"primaryTag"`
+	RevisionDate        string                             `json:"revisionDate"`
+	OriginalPublishDate string                             `json:"originalPublishDate"`
+	CredIndicators      interface{}                        `json:"credibilityIndicators"`
+	Opinion             bool                               `json:"opinion"`
+	SchemaVersion       string                             `json:"civilSchemaVersion"`
 }
 
-// ScraperCivilMetadataAuthor represents an author in the Civil article metadata
-type ScraperCivilMetadataAuthor struct {
-	author *scraperCivilMetadataAuthor
+// ScraperCivilMetadataContributor represents a contributor in the Civil article metadata
+type ScraperCivilMetadataContributor struct {
+	contributor *scraperCivilMetadataContributor
 }
 
-// Byline returns the byline for this author
-func (s *ScraperCivilMetadataAuthor) Byline() string {
-	return s.author.Byline
+// Role returns the role for this contributor
+func (s *ScraperCivilMetadataContributor) Role() string {
+	return s.contributor.Role
 }
 
-type scraperCivilMetadataAuthor struct {
-	Byline string `json:"byline"`
+// Name returns the name for this contributor
+func (s *ScraperCivilMetadataContributor) Name() string {
+	return s.contributor.Name
+}
+
+// Address returns the address for this contributor
+func (s *ScraperCivilMetadataContributor) Address() string {
+	return s.contributor.Address
+}
+
+// Signature returns the signature for this contributor
+func (s *ScraperCivilMetadataContributor) Signature() string {
+	return s.contributor.Signature
+}
+
+type scraperCivilMetadataContributor struct {
+	Role      string `json:"role"`
+	Name      string `json:"name"`
+	Address   string `json:"address"`
+	Signature string `json:"signature"`
 }
 
 // ScraperCivilMetadataImage represents an image in the Civil article metadata

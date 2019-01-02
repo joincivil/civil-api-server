@@ -2,9 +2,10 @@ package postgres
 
 import (
 	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
-	crawlerpostgres "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 	"github.com/joincivil/civil-events-processor/pkg/model"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
 const (
@@ -25,7 +26,7 @@ func CreateGovernanceEventTableQueryString(tableName string) string {
             gov_event_type TEXT,
             creation_date INT,
             last_updated INT,
-            event_hash TEXT,
+            event_hash TEXT UNIQUE,
             block_data JSONB
         );
     `, tableName)
@@ -50,12 +51,12 @@ func CreateGovernanceEventTableIndicesString(tableName string) string {
 func NewGovernanceEvent(governanceEvent *model.GovernanceEvent) *GovernanceEvent {
 	govEvent := &GovernanceEvent{}
 	govEvent.ListingAddress = governanceEvent.ListingAddress().Hex()
-	govEvent.Metadata = crawlerpostgres.JsonbPayload(governanceEvent.Metadata())
+	govEvent.Metadata = cpostgres.JsonbPayload(governanceEvent.Metadata())
 	govEvent.GovernanceEventType = governanceEvent.GovernanceEventType()
 	govEvent.CreationDateTs = governanceEvent.CreationDateTs()
 	govEvent.LastUpdatedDateTs = governanceEvent.LastUpdatedDateTs()
 	govEvent.EventHash = governanceEvent.EventHash()
-	govEvent.BlockData = make(crawlerpostgres.JsonbPayload)
+	govEvent.BlockData = make(cpostgres.JsonbPayload)
 	govEvent.fillBlockData(governanceEvent.BlockData())
 	return govEvent
 }
@@ -64,7 +65,7 @@ func NewGovernanceEvent(governanceEvent *model.GovernanceEvent) *GovernanceEvent
 type GovernanceEvent struct {
 	ListingAddress string `db:"listing_address"`
 
-	Metadata crawlerpostgres.JsonbPayload `db:"metadata"`
+	Metadata cpostgres.JsonbPayload `db:"metadata"`
 
 	GovernanceEventType string `db:"gov_event_type"`
 
@@ -74,7 +75,7 @@ type GovernanceEvent struct {
 
 	EventHash string `db:"event_hash"`
 
-	BlockData crawlerpostgres.JsonbPayload `db:"block_data"`
+	BlockData cpostgres.JsonbPayload `db:"block_data"`
 }
 
 // DbToGovernanceData creates a model.GovernanceEvent from postgres.GovernanceEvent

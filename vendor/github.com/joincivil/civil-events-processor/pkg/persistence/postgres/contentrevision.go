@@ -2,10 +2,11 @@ package postgres // import "github.com/joincivil/civil-events-processor/pkg/pers
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	crawlerpostgres "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
-	"github.com/joincivil/civil-events-processor/pkg/model"
 	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/joincivil/civil-events-processor/pkg/model"
+	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
 const (
@@ -51,20 +52,20 @@ func CreateContentRevisionTableIndicesString(tableName string) string {
 // ContentRevision is the model for content_revision table in db
 // Make IDs strings?
 type ContentRevision struct {
-	ListingAddress     string                       `db:"listing_address"`
-	ArticlePayload     crawlerpostgres.JsonbPayload `db:"article_payload"`
-	ArticlePayloadHash string                       `db:"article_payload_hash"`
-	EditorAddress      string                       `db:"editor_address"`
-	ContractContentID  int64                        `db:"contract_content_id"`
-	ContractRevisionID int64                        `db:"contract_revision_id"`
-	RevisionURI        string                       `db:"revision_uri"`
-	RevisionDateTs     int64                        `db:"revision_timestamp"`
+	ListingAddress     string                 `db:"listing_address"`
+	ArticlePayload     cpostgres.JsonbPayload `db:"article_payload"`
+	ArticlePayloadHash string                 `db:"article_payload_hash"`
+	EditorAddress      string                 `db:"editor_address"`
+	ContractContentID  int64                  `db:"contract_content_id"`
+	ContractRevisionID int64                  `db:"contract_revision_id"`
+	RevisionURI        string                 `db:"revision_uri"`
+	RevisionDateTs     int64                  `db:"revision_timestamp"`
 }
 
 // NewContentRevision constructs a content_revision for DB from a model.ContentRevision
 func NewContentRevision(contentRevision *model.ContentRevision) *ContentRevision {
 	listingAddress := contentRevision.ListingAddress().Hex()
-	articlePayload := crawlerpostgres.JsonbPayload(contentRevision.Payload())
+	articlePayload := cpostgres.JsonbPayload(contentRevision.Payload())
 	editorAddress := contentRevision.EditorAddress().Hex()
 	contractContentID := contentRevision.ContractContentID().Int64()
 	contractRevisionID := contentRevision.ContractRevisionID().Int64()

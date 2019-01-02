@@ -3,7 +3,7 @@ package users
 import (
 	"errors"
 
-	processormodel "github.com/joincivil/civil-events-processor/pkg/model"
+	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
@@ -34,7 +34,7 @@ func (s *UserService) GetUser(identifier UserCriteria) (*User, error) {
 func (s *UserService) MaybeGetUser(identifier UserCriteria) (*User, error) {
 
 	user, err := s.GetUser(identifier)
-	if err == processormodel.ErrPersisterNoResults {
+	if err == cpersist.ErrPersisterNoResults {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
