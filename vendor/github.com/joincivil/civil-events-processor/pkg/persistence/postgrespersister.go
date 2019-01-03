@@ -42,9 +42,9 @@ const (
 	lastUpdatedDateDBModelName = "LastUpdatedDateTs"
 
 	// Could make this configurable later if needed
-	maxOpenConns    = 20
-	maxIdleConns    = 5
-	connMaxLifetime = time.Nanosecond
+	maxOpenConns    = 50
+	maxIdleConns    = 10
+	connMaxLifetime = time.Second * 1800 // 30 mins
 )
 
 // NewPostgresPersister creates a new postgres persister
