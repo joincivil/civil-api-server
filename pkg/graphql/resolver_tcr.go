@@ -78,6 +78,9 @@ func (r *appealResolver) AppealChallenge(ctx context.Context, obj *model.Appeal)
 	challengeID := int(obj.AppealChallengeID().Int64())
 	challenge, err := r.challengePersister.ChallengeByChallengeID(challengeID)
 	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return challenge, nil
@@ -131,6 +134,9 @@ func (r *challengeResolver) Poll(ctx context.Context, obj *model.Challenge) (*mo
 
 	poll, err := r.pollPersister.PollByPollID(challengeID)
 	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -141,6 +147,9 @@ func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*
 
 	appeal, err := r.appealPersister.AppealByChallengeID(challengeID)
 	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
@@ -645,6 +654,9 @@ func (r *queryResolver) TcrListing(ctx context.Context, addr string) (*model.Lis
 	address := common.HexToAddress(addr)
 	listing, err := r.listingPersister.ListingByAddress(address)
 	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return listing, nil
