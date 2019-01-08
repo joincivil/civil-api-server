@@ -274,6 +274,13 @@ func kycRouting(router chi.Router, config *utils.GraphQLConfig, onfido *kyc.Onfi
 	return nil
 }
 
+func healthCheckRouting(router chi.Router) error {
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK")) // nolint: errcheck
+	})
+	return nil
+}
+
 func main() {
 	config := &utils.GraphQLConfig{}
 	flag.Usage = func() {
@@ -353,7 +360,6 @@ func main() {
 
 	// Invoicing REST endpoints
 	if config.EnableInvoicing {
-
 		checkbookIOClient, cerr := invoiceCheckbookIO(config)
 		if cerr != nil {
 			log.Fatalf("Error setting up invoicing client: err: %v", cerr)
@@ -401,6 +407,12 @@ func main() {
 			port,
 			invoicingVersion,
 		)
+	}
+
+	// Health REST endpoint
+	err = healthCheckRouting(router)
+	if err != nil {
+		log.Fatalf("Error setting up health check: err: %v", err)
 	}
 
 	err = http.ListenAndServe(":"+port, router)
