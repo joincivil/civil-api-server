@@ -23,6 +23,7 @@ import (
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	graphql "github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
+	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -78,6 +79,11 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		log.Errorf("Error w pollPersister: err: %v", err)
 		return nil, err
 	}
+	jsonbPersister, err := initJsonbPersister(config)
+	if err != nil {
+		log.Errorf("Error w jsonbPersister: err: %v", err)
+		return nil, err
+	}
 	onfido := kyc.NewOnfidoAPI(
 		kyc.ProdAPIURL,
 		config.OnfidoKey,
@@ -124,6 +130,7 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		OnfidoTokenReferrer: config.OnfidoReferrer,
 		TokenFoundry:        tokenFoundry,
 		UserService:         userService,
+		JsonbPersister:      jsonbPersister,
 	}), nil
 }
 
@@ -193,6 +200,28 @@ func initUserPersister(config *utils.GraphQLConfig) (*users.PostgresPersister, e
 		return nil, fmt.Errorf("Error creating indices: err: %v", err)
 	}
 	return persister, nil
+}
+
+func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, error) {
+	jsonbPersister, err := jsonstore.NewPostgresPersister(
+		config.PostgresAddress(),
+		config.PostgresPort(),
+		config.PostgresUser(),
+		config.PostgresPw(),
+		config.PostgresDbname(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = jsonbPersister.CreateTables()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating tables: err: %v", err)
+	}
+	err = jsonbPersister.CreateIndices()
+	if err != nil {
+		return nil, fmt.Errorf("Error creating indices: err: %v", err)
+	}
+	return jsonbPersister, nil
 }
 
 func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, error) {

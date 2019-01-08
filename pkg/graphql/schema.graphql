@@ -52,6 +52,9 @@ type Query {
 
   # User Queries
   currentUser: User
+
+  # JSONb Store Query
+  jsonb(id: String): [Jsonb]!
 }
 
 type Mutation {
@@ -64,6 +67,9 @@ type Mutation {
   authLoginEmailSend(emailAddress: String!): String
   authLoginEmailSendForApplication(emailAddress: String!, application: AuthApplicationEnum!): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+
+  # JSONb Store Mutations
+  jsonbSave(input: JsonbInput!): Jsonb!
 
   # KYC Mutations
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
@@ -302,6 +308,27 @@ input UserUpdateInput {
   quizStatus: String
 }
 
+## JSONb Store object schemas
+
+type JsonField {
+  key: String!
+  value: JsonFieldValue!
+}
+
+input JsonbInput {
+  id: String!
+  jsonStr: String!
+}
+
+type Jsonb {
+  id: String!
+  hash: String!
+  createdDate: Time!
+  lastUpdatedDate: Time!
+  rawJson: String!
+  json: [JsonField!]!
+}
+
 ## Common object schemas
 
 input DateRange {
@@ -317,4 +344,6 @@ type PageInfo {
 ## Scalars
 
 scalar ArticlePayloadValue
+scalar JsonFieldValue
 scalar RawObject
+scalar Time

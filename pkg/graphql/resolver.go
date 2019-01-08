@@ -7,11 +7,12 @@
 package graphql
 
 import (
-	model "github.com/joincivil/civil-events-processor/pkg/model"
+	pmodel "github.com/joincivil/civil-events-processor/pkg/model"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
+	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -21,17 +22,18 @@ import (
 type ResolverConfig struct {
 	AuthService         *auth.Service
 	InvoicePersister    *invoicing.PostgresPersister
-	ListingPersister    model.ListingPersister
-	GovEventPersister   model.GovernanceEventPersister
-	RevisionPersister   model.ContentRevisionPersister
-	ChallengePersister  model.ChallengePersister
-	AppealPersister     model.AppealPersister
-	PollPersister       model.PollPersister
+	ListingPersister    pmodel.ListingPersister
+	GovEventPersister   pmodel.GovernanceEventPersister
+	RevisionPersister   pmodel.ContentRevisionPersister
+	ChallengePersister  pmodel.ChallengePersister
+	AppealPersister     pmodel.AppealPersister
+	PollPersister       pmodel.PollPersister
 	UserPersister       users.UserPersister
 	OnfidoAPI           *kyc.OnfidoAPI
 	OnfidoTokenReferrer string
 	TokenFoundry        *tokenfoundry.API
 	UserService         *users.UserService
+	JsonbPersister      jsonstore.JsonbPersister
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -50,6 +52,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
 		tokenFoundry:        config.TokenFoundry,
 		userService:         config.UserService,
+		jsonbPersister:      config.JsonbPersister,
 	}
 }
 
@@ -57,17 +60,18 @@ func NewResolver(config *ResolverConfig) *Resolver {
 type Resolver struct {
 	authService         *auth.Service
 	invoicePersister    *invoicing.PostgresPersister
-	listingPersister    model.ListingPersister
-	revisionPersister   model.ContentRevisionPersister
-	govEventPersister   model.GovernanceEventPersister
-	challengePersister  model.ChallengePersister
-	appealPersister     model.AppealPersister
-	pollPersister       model.PollPersister
+	listingPersister    pmodel.ListingPersister
+	revisionPersister   pmodel.ContentRevisionPersister
+	govEventPersister   pmodel.GovernanceEventPersister
+	challengePersister  pmodel.ChallengePersister
+	appealPersister     pmodel.AppealPersister
+	pollPersister       pmodel.PollPersister
 	userPersister       users.UserPersister
 	onfidoAPI           *kyc.OnfidoAPI
 	onfidoTokenReferrer string
 	tokenFoundry        *tokenfoundry.API
 	userService         *users.UserService
+	jsonbPersister      jsonstore.JsonbPersister
 }
 
 // Query is the resolver for the Query type

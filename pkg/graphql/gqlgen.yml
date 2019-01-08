@@ -50,3 +50,9 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/users.SignatureInput
   UserUpdateInput:
     model: github.com/joincivil/civil-api-server/pkg/users.UserUpdateInput
+  JsonFieldValue:
+    model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONFieldValue
+  JsonField:
+    model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONField
+  Jsonb:
+    model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb
