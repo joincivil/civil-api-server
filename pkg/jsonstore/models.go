@@ -72,8 +72,9 @@ type JSONField struct {
 
 // JSONb represents a JSON blob to be stored and retrieved
 type JSONb struct {
-	ID              string       `json:"id"`
+	Key             string       `json:"key"`
 	Hash            string       `json:"hash"`
+	ID              string       `json:"id"`
 	CreatedDate     time.Time    `json:"createdDate"`
 	LastUpdatedDate time.Time    `json:"lastUpdatedDate"`
 	RawJSON         string       `json:"rawJson"`
@@ -118,7 +119,7 @@ func (j *JSONb) RawJSONToFields() error {
 	return nil
 }
 
-// HashIDRawJSON takes the RawJSON and ID, creates a hash of it, and sets
+// HashIDRawJSON takes the ID, RawJSON and CreatedDate, creates a hash of it, and sets
 // it as the Hash field
 func (j *JSONb) HashIDRawJSON() error {
 	if j.RawJSON == "" {
@@ -128,7 +129,7 @@ func (j *JSONb) HashIDRawJSON() error {
 	if err != nil {
 		return err
 	}
-	strToHash := fmt.Sprintf("%v|%v", j.ID, j.RawJSON)
+	strToHash := fmt.Sprintf("%v|%v|%v", j.Key, j.RawJSON, j.CreatedDate)
 	h := sha256.New()
 	_, err = h.Write([]byte(strToHash))
 	if err != nil {

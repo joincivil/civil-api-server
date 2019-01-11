@@ -82,16 +82,16 @@ func (p *PostgresPersister) CreateIndices() error {
 	return p.createJsonbIndicesForTable(defaultJsonbTableName)
 }
 
-func (p *PostgresPersister) jsonbFromTable(id string, hash string, tableName string) (
+func (p *PostgresPersister) jsonbFromTable(key string, hash string, tableName string) (
 	[]*JSONb, error) {
-	queryString := retrieveJsonbQuery(tableName, id, hash)
+	queryString := retrieveJsonbQuery(tableName, key, hash)
 	jsonbs := []*PostgresJSONb{}
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
 		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
 	}
 	criteria := map[string]interface{}{
-		"id":   id,
+		"key":  key,
 		"hash": hash,
 	}
 	err = nstmt.Select(&jsonbs, criteria)
@@ -161,7 +161,7 @@ func (p *PostgresPersister) appendOnConflictQueryClause(tableName string, queryS
 
 	// Upsert clause to the query when there is an existing extry with the same ID
 	queryBuf := bytes.NewBufferString(queryString)
-	queryBuf.WriteString(" ON CONFLICT (id)")
+	queryBuf.WriteString(" ON CONFLICT (key)")
 	queryBuf.WriteString(" DO UPDATE")
 	queryBuf.WriteString(" SET raw_json = EXCLUDED.raw_json, hash = EXCLUDED.hash,")
 	// Make sure the created_date stays the same but the last updated is updated
@@ -175,7 +175,7 @@ func (p *PostgresPersister) appendReturningQueryClause(queryString string) strin
 	queryString = splitQueryStrs[0]
 
 	queryBuf := bytes.NewBufferString(queryString)
-	queryBuf.WriteString(" RETURNING id, hash, created_date, last_updated_date, raw_json;")
+	queryBuf.WriteString(" RETURNING key, hash, id, created_date, last_updated_date, raw_json;")
 	return queryBuf.String()
 }
 
@@ -189,8 +189,9 @@ func (p *PostgresPersister) createJsonbIndicesForTable(tableName string) error {
 func CreateJsonbTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
-            id TEXT PRIMARY KEY UNIQUE,
-            hash TEXT,
+            key TEXT PRIMARY KEY UNIQUE,
+			hash TEXT,
+			id TEXT,
             created_date BIGINT,
             last_updated_date BIGINT,
             raw_json JSONB
@@ -216,14 +217,14 @@ func addWhereAnd(buf *bytes.Buffer) {
 	}
 }
 
-func retrieveJsonbQuery(tableName string, id string, hash string) string {
+func retrieveJsonbQuery(tableName string, key string, hash string) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
 	fields, _ := cpostgres.StructFieldsForQuery(PostgresJSONb{}, false, "")
 	queryBuf.WriteString(fields)    // nolint: gosec
 	queryBuf.WriteString(" FROM ")  // nolint: gosec
 	queryBuf.WriteString(tableName) // nolint: gosec
-	if id != "" {
-		queryBuf.WriteString(" WHERE id = :id") // nolint: gosec
+	if key != "" {
+		queryBuf.WriteString(" WHERE key = :key") // nolint: gosec
 	}
 	if hash != "" {
 		addWhereAnd(queryBuf)
@@ -245,6 +246,7 @@ func NewPostgresJSONbFromJSONb(jsonb *JSONb) (*PostgresJSONb, error) {
 	return &PostgresJSONb{
 		Hash:            jsonb.Hash,
 		ID:              jsonb.ID,
+		Key:             jsonb.Key,
 		CreatedDate:     createdTs,
 		LastUpdatedDate: lastUpdatedTs,
 		JSONb:           *jsonbPayload,
@@ -253,9 +255,11 @@ func NewPostgresJSONbFromJSONb(jsonb *JSONb) (*PostgresJSONb, error) {
 
 // PostgresJSONb is the Postgresql model for the JSONb data model.
 type PostgresJSONb struct {
-	ID string `db:"id"`
+	Key string `db:"key"`
 
 	Hash string `db:"hash"`
+
+	ID string `db:"id"`
 
 	CreatedDate int64 `db:"created_date"`
 
@@ -276,6 +280,7 @@ func (p *PostgresJSONb) JSONbStr() (string, error) {
 // PostgresJSONbToJSONb returns this postgres specific struct as a JSONb struct
 func (p *PostgresJSONb) PostgresJSONbToJSONb() (*JSONb, error) {
 	jsonb := &JSONb{}
+	jsonb.Key = p.Key
 	jsonb.Hash = p.Hash
 	jsonb.ID = p.ID
 	jsonb.CreatedDate = ctime.SecsFromEpochToTime(p.CreatedDate)

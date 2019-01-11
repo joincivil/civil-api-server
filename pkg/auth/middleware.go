@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	log "github.com/golang/glog"
@@ -54,6 +55,10 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 func validateDecodeToken(jwt *JwtTokenGenerator, authHeader string) (*Token, error) {
 
 	tokenRune := []rune(authHeader)
+
+	if len(tokenRune) < 7 {
+		return nil, fmt.Errorf("Token length is invalid")
+	}
 
 	// Start after "Bearer "
 	tokenStr := string(tokenRune[7:])

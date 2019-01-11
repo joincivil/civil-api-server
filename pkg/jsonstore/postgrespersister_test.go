@@ -5,6 +5,8 @@ package jsonstore
 import (
 	"fmt"
 	"testing"
+
+	"github.com/joincivil/civil-api-server/pkg/auth"
 )
 
 const (
@@ -16,8 +18,14 @@ const (
 )
 
 var (
+	testToken = &auth.Token{
+		Sub:     "peter@civil.co",
+		IsAdmin: false,
+	}
+	testID         = "thisisavalidid"
 	validTestJSONb = &JSONb{
-		ID: "thisisavalidid",
+		Key: "",
+		ID:  testID,
 		RawJSON: `{
 			"test": "value",
 			"test1": 1000,
@@ -154,11 +162,15 @@ func TestSaveJsonb(t *testing.T) {
 	}
 	defer deleteTestTable(persister, tableName)
 
-	jsonb := validTestJSONb
-	jsonb.HashIDRawJSON()
-	jsonb.RawJSONToFields()
+	newJsonb := validTestJSONb
+	newJsonb.Key, err = TokenPlusIDHashKey(testToken, testID)
+	if err != nil {
+		t.Error("Should not have failed creating the key")
+	}
+	newJsonb.HashIDRawJSON()
+	newJsonb.RawJSONToFields()
 
-	_, err = persister.saveJsonbForTable(jsonb, tableName)
+	_, err = persister.saveJsonbForTable(newJsonb, tableName)
 	if err != nil {
 		t.Errorf("Should not have received an error saving jsonb: err: %v", err)
 	}
@@ -189,6 +201,10 @@ func TestRetrieveJsonb(t *testing.T) {
 	}
 
 	newJsonb := validTestJSONb
+	newJsonb.Key, err = TokenPlusIDHashKey(testToken, testID)
+	if err != nil {
+		t.Error("Should not have failed creating the key")
+	}
 	newJsonb.HashIDRawJSON()
 	newJsonb.RawJSONToFields()
 	_, err = persister.saveJsonbForTable(newJsonb, tableName)
@@ -196,7 +212,7 @@ func TestRetrieveJsonb(t *testing.T) {
 		t.Errorf("Should not have received an error saving jsonb: err: %v", err)
 	}
 
-	retrievedJsonb, err := persister.jsonbFromTable(newJsonb.ID, "", tableName)
+	retrievedJsonb, err := persister.jsonbFromTable(newJsonb.Key, "", tableName)
 	if err != nil {
 		t.Error("Should have not failed since there should be value in table")
 	}
@@ -226,7 +242,7 @@ func TestRetrieveJsonb(t *testing.T) {
 		t.Error("Should have matching Hashes")
 	}
 
-	retrievedJsonb, err = persister.jsonbFromTable(newJsonb.ID, newJsonb.Hash, tableName)
+	retrievedJsonb, err = persister.jsonbFromTable(newJsonb.Key, newJsonb.Hash, tableName)
 	if err != nil {
 		t.Error("Should have not failed since there should be value in table")
 	}
