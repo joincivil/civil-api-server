@@ -34,6 +34,11 @@ type GovernanceEventResultCursor struct {
 	PageInfo PageInfo               `json:"pageInfo"`
 }
 
+type JsonbInput struct {
+	ID      string `json:"id"`
+	JSONStr string `json:"jsonStr"`
+}
+
 type KycCreateApplicantInput struct {
 	FirstName          string  `json:"firstName"`
 	LastName           string  `json:"lastName"`

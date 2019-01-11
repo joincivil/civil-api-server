@@ -8,11 +8,13 @@ import (
 	"errors"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
+	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-events-processor/pkg/model"
@@ -159,6 +161,20 @@ type ComplexityRoot struct {
 		EmailState    func(childComplexity int) int
 	}
 
+	JsonField struct {
+		Key   func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
+	Jsonb struct {
+		Id              func(childComplexity int) int
+		Hash            func(childComplexity int) int
+		CreatedDate     func(childComplexity int) int
+		LastUpdatedDate func(childComplexity int) int
+		RawJson         func(childComplexity int) int
+		Json            func(childComplexity int) int
+	}
+
 	Listing struct {
 		Name                 func(childComplexity int) int
 		ContractAddress      func(childComplexity int) int
@@ -204,6 +220,7 @@ type ComplexityRoot struct {
 		AuthLoginEmailSend                func(childComplexity int, emailAddress string) int
 		AuthLoginEmailSendForApplication  func(childComplexity int, emailAddress string, application auth.ApplicationEnum) int
 		AuthLoginEmailConfirm             func(childComplexity int, loginJWT string) int
+		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		KycCreateApplicant                func(childComplexity int, applicant KycCreateApplicantInput) int
 		KycCreateCheck                    func(childComplexity int, applicantID string, facialVariant *string) int
 		KycGenerateSdkToken               func(childComplexity int, applicantID string) int
@@ -238,6 +255,7 @@ type ComplexityRoot struct {
 		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) int
 		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string) int
 		CurrentUser               func(childComplexity int) int
+		Jsonb                     func(childComplexity int, id *string) int
 	}
 
 	User struct {
@@ -333,6 +351,7 @@ type MutationResolver interface {
 	AuthLoginEmailSend(ctx context.Context, emailAddress string) (*string, error)
 	AuthLoginEmailSendForApplication(ctx context.Context, emailAddress string, application auth.ApplicationEnum) (*string, error)
 	AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error)
+	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
 	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
@@ -360,6 +379,7 @@ type QueryResolver interface {
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) (*ListingResultCursor, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
+	Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSONb, error)
 }
 type UserResolver interface {
 	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
@@ -500,6 +520,21 @@ func field_Mutation_authLoginEmailConfirm_args(rawArgs map[string]interface{}) (
 		}
 	}
 	args["loginJWT"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_jsonbSave_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 JsonbInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalJsonbInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 
 }
@@ -1102,6 +1137,26 @@ func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[stri
 
 }
 
+func field_Query_jsonb_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+
+}
+
 func field_Query___type_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1671,6 +1726,62 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Invoice.EmailState(childComplexity), true
 
+	case "JsonField.key":
+		if e.complexity.JsonField.Key == nil {
+			break
+		}
+
+		return e.complexity.JsonField.Key(childComplexity), true
+
+	case "JsonField.value":
+		if e.complexity.JsonField.Value == nil {
+			break
+		}
+
+		return e.complexity.JsonField.Value(childComplexity), true
+
+	case "Jsonb.id":
+		if e.complexity.Jsonb.Id == nil {
+			break
+		}
+
+		return e.complexity.Jsonb.Id(childComplexity), true
+
+	case "Jsonb.hash":
+		if e.complexity.Jsonb.Hash == nil {
+			break
+		}
+
+		return e.complexity.Jsonb.Hash(childComplexity), true
+
+	case "Jsonb.createdDate":
+		if e.complexity.Jsonb.CreatedDate == nil {
+			break
+		}
+
+		return e.complexity.Jsonb.CreatedDate(childComplexity), true
+
+	case "Jsonb.lastUpdatedDate":
+		if e.complexity.Jsonb.LastUpdatedDate == nil {
+			break
+		}
+
+		return e.complexity.Jsonb.LastUpdatedDate(childComplexity), true
+
+	case "Jsonb.rawJson":
+		if e.complexity.Jsonb.RawJson == nil {
+			break
+		}
+
+		return e.complexity.Jsonb.RawJson(childComplexity), true
+
+	case "Jsonb.json":
+		if e.complexity.Jsonb.Json == nil {
+			break
+		}
+
+		return e.complexity.Jsonb.Json(childComplexity), true
+
 	case "Listing.name":
 		if e.complexity.Listing.Name == nil {
 			break
@@ -1935,6 +2046,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AuthLoginEmailConfirm(childComplexity, args["loginJWT"].(string)), true
 
+	case "Mutation.jsonbSave":
+		if e.complexity.Mutation.JsonbSave == nil {
+			break
+		}
+
+		args, err := field_Mutation_jsonbSave_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.JsonbSave(childComplexity, args["input"].(JsonbInput)), true
+
 	case "Mutation.kycCreateApplicant":
 		if e.complexity.Mutation.KycCreateApplicant == nil {
 			break
@@ -2194,6 +2317,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.CurrentUser(childComplexity), true
+
+	case "Query.jsonb":
+		if e.complexity.Query.Jsonb == nil {
+			break
+		}
+
+		args, err := field_Query_jsonb_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Jsonb(childComplexity, args["id"].(*string)), true
 
 	case "User.uid":
 		if e.complexity.User.Uid == nil {
@@ -5053,6 +5188,359 @@ func (ec *executionContext) _Invoice_emailState(ctx context.Context, field graph
 	return graphql.MarshalInt(res)
 }
 
+var jsonFieldImplementors = []string{"JsonField"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _JsonField(ctx context.Context, sel ast.SelectionSet, obj *jsonstore.JSONField) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, jsonFieldImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JsonField")
+		case "key":
+			out.Values[i] = ec._JsonField_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "value":
+			out.Values[i] = ec._JsonField_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _JsonField_key(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "JsonField",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _JsonField_value(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "JsonField",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*jsonstore.JSONFieldValue)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return *res
+}
+
+var jsonbImplementors = []string{"Jsonb"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Jsonb(ctx context.Context, sel ast.SelectionSet, obj *jsonstore.JSONb) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, jsonbImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Jsonb")
+		case "id":
+			out.Values[i] = ec._Jsonb_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "hash":
+			out.Values[i] = ec._Jsonb_hash(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "createdDate":
+			out.Values[i] = ec._Jsonb_createdDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "lastUpdatedDate":
+			out.Values[i] = ec._Jsonb_lastUpdatedDate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "rawJson":
+			out.Values[i] = ec._Jsonb_rawJson(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "json":
+			out.Values[i] = ec._Jsonb_json(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Jsonb_id(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Jsonb",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Jsonb_hash(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Jsonb",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Hash, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Jsonb_createdDate(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Jsonb",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedDate, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Jsonb_lastUpdatedDate(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Jsonb",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastUpdatedDate, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Jsonb_rawJson(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Jsonb",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RawJSON, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Jsonb_json(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONb) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Jsonb",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.JSON, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*jsonstore.JSONField)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					if !ec.HasError(rctx) {
+						ec.Errorf(ctx, "must not be null")
+					}
+					return graphql.Null
+				}
+
+				return ec._JsonField(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
 var listingImplementors = []string{"Listing"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -6062,6 +6550,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_authLoginEmailSendForApplication(ctx, field)
 		case "authLoginEmailConfirm":
 			out.Values[i] = ec._Mutation_authLoginEmailConfirm(ctx, field)
+		case "jsonbSave":
+			out.Values[i] = ec._Mutation_jsonbSave(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "kycCreateApplicant":
 			out.Values[i] = ec._Mutation_kycCreateApplicant(ctx, field)
 		case "kycCreateCheck":
@@ -6357,6 +6850,40 @@ func (ec *executionContext) _Mutation_authLoginEmailConfirm(ctx context.Context,
 	}
 
 	return ec._AuthLoginResponse(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_jsonbSave(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_jsonbSave_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().JsonbSave(rctx, args["input"].(JsonbInput))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(jsonstore.JSONb)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._Jsonb(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -6936,6 +7463,15 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_currentUser(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "jsonb":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_jsonb(ctx, field)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "__type":
@@ -7586,6 +8122,76 @@ func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphq
 	}
 
 	return ec._User(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_jsonb(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_jsonb_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Jsonb(rctx, args["id"].(*string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*jsonstore.JSONb)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._Jsonb(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 // nolint: vetshadow
@@ -9466,6 +10072,30 @@ func UnmarshalDateRange(v interface{}) (DateRange, error) {
 	return it, nil
 }
 
+func UnmarshalJsonbInput(v interface{}) (JsonbInput, error) {
+	var it JsonbInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "jsonStr":
+			var err error
+			it.JSONStr, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalKycCreateApplicantInput(v interface{}) (KycCreateApplicantInput, error) {
 	var it KycCreateApplicantInput
 	var asMap = v.(map[string]interface{})
@@ -9796,6 +10426,9 @@ type Query {
 
   # User Queries
   currentUser: User
+
+  # JSONb Store Query
+  jsonb(id: String): [Jsonb]!
 }
 
 type Mutation {
@@ -9808,6 +10441,9 @@ type Mutation {
   authLoginEmailSend(emailAddress: String!): String
   authLoginEmailSendForApplication(emailAddress: String!, application: AuthApplicationEnum!): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+
+  # JSONb Store Mutations
+  jsonbSave(input: JsonbInput!): Jsonb!
 
   # KYC Mutations
   kycCreateApplicant(applicant: KycCreateApplicantInput!): String
@@ -10046,6 +10682,27 @@ input UserUpdateInput {
   quizStatus: String
 }
 
+## JSONb Store object schemas
+
+type JsonField {
+  key: String!
+  value: JsonFieldValue!
+}
+
+input JsonbInput {
+  id: String!
+  jsonStr: String!
+}
+
+type Jsonb {
+  id: String!
+  hash: String!
+  createdDate: Time!
+  lastUpdatedDate: Time!
+  rawJson: String!
+  json: [JsonField!]!
+}
+
 ## Common object schemas
 
 input DateRange {
@@ -10061,6 +10718,8 @@ type PageInfo {
 ## Scalars
 
 scalar ArticlePayloadValue
+scalar JsonFieldValue
 scalar RawObject
+scalar Time
 `},
 )
