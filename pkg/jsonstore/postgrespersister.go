@@ -125,7 +125,6 @@ func (p *PostgresPersister) saveJsonbForTable(jsonb *JSONb, tableName string) (*
 	}
 
 	rows, err := p.db.NamedQuery(queryString, postgresJsonb)
-	// _, err := p.db.NamedExec(queryString, postgresJsonb)
 	if err != nil {
 		return nil, fmt.Errorf("Error saving JSONb to table: err: %v", err)
 	}
