@@ -2,6 +2,8 @@ package jsonstore
 
 import (
 	"time"
+
+	log "github.com/golang/glog"
 )
 
 const (
@@ -32,12 +34,23 @@ func (s *Service) RetrieveJSONb(id string, namespace string, salt string) (
 		return nil, err
 	}
 
-	jsonb, err := s.jsonbPersister.RetrieveJsonb(key, "")
+	jsonbs, err := s.jsonbPersister.RetrieveJsonb(key, "")
 	if err != nil {
 		return nil, err
 	}
 
-	return jsonb, nil
+	// Ensure we populate the field values if they haven't been by the
+	// persister.
+	for _, jsonb := range jsonbs {
+		if len(jsonb.JSON) == 0 {
+			err := jsonb.RawJSONToFields()
+			if err != nil {
+				log.Errorf("Error converting JSON to fields: err: %v", err)
+			}
+		}
+	}
+
+	return jsonbs, nil
 }
 
 // SaveRawJSONb stores a raw JSON string to a key derived from the ID.
