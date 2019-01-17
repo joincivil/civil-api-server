@@ -163,7 +163,7 @@ func TestSaveJsonb(t *testing.T) {
 	defer deleteTestTable(persister, tableName)
 
 	newJsonb := validTestJSONb
-	newJsonb.Key, err = TokenPlusIDHashKey(testToken, testID)
+	newJsonb.Key, err = NamespacePlusIDHashKey(testToken.Sub, testID)
 	if err != nil {
 		t.Error("Should not have failed creating the key")
 	}
@@ -201,7 +201,7 @@ func TestRetrieveJsonb(t *testing.T) {
 	}
 
 	newJsonb := validTestJSONb
-	newJsonb.Key, err = TokenPlusIDHashKey(testToken, testID)
+	newJsonb.Key, err = NamespacePlusIDHashKey(testToken.Sub, testID)
 	if err != nil {
 		t.Error("Should not have failed creating the key")
 	}
