@@ -79,11 +79,6 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		log.Errorf("Error w pollPersister: err: %v", err)
 		return nil, err
 	}
-	jsonbPersister, err := initJsonbPersister(config)
-	if err != nil {
-		log.Errorf("Error w jsonbPersister: err: %v", err)
-		return nil, err
-	}
 	onfido := kyc.NewOnfidoAPI(
 		kyc.ProdAPIURL,
 		config.OnfidoKey,
@@ -116,6 +111,13 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		return nil, err
 	}
 
+	jsonbPersister, err := initJsonbPersister(config)
+	if err != nil {
+		log.Errorf("Error w jsonbPersister: err: %v", err)
+		return nil, err
+	}
+	jsonbService := jsonstore.NewJsonbService(jsonbPersister)
+
 	return graphql.NewResolver(&graphql.ResolverConfig{
 		AuthService:         authService,
 		InvoicePersister:    invoicePersister,
@@ -130,7 +132,7 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		OnfidoTokenReferrer: config.OnfidoReferrer,
 		TokenFoundry:        tokenFoundry,
 		UserService:         userService,
-		JsonbPersister:      jsonbPersister,
+		JSONbService:        jsonbService,
 	}), nil
 }
 

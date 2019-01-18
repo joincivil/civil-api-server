@@ -33,7 +33,7 @@ type ResolverConfig struct {
 	OnfidoTokenReferrer string
 	TokenFoundry        *tokenfoundry.API
 	UserService         *users.UserService
-	JsonbPersister      jsonstore.JsonbPersister
+	JSONbService        *jsonstore.Service
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -52,7 +52,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
 		tokenFoundry:        config.TokenFoundry,
 		userService:         config.UserService,
-		jsonbPersister:      config.JsonbPersister,
+		jsonbService:        config.JSONbService,
 	}
 }
 
@@ -71,7 +71,7 @@ type Resolver struct {
 	onfidoTokenReferrer string
 	tokenFoundry        *tokenfoundry.API
 	userService         *users.UserService
-	jsonbPersister      jsonstore.JsonbPersister
+	jsonbService        *jsonstore.Service
 }
 
 // Query is the resolver for the Query type
