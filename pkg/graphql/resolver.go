@@ -1,5 +1,3 @@
-//go:generate gorunpkg github.com/99designs/gqlgen
-
 // NOTE(PN): gqlgen does not update this file if major updates to the schema are made.
 // To completely update, need to move this file and run gqlgen again and replace
 // the code.  Fixed when gqlgen matures a bit more?
@@ -14,6 +12,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
+	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
@@ -34,6 +33,7 @@ type ResolverConfig struct {
 	TokenFoundry        *tokenfoundry.API
 	UserService         *users.UserService
 	JSONbService        *jsonstore.Service
+	NrsignupService     *nrsignup.Service
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -53,6 +53,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		tokenFoundry:        config.TokenFoundry,
 		userService:         config.UserService,
 		jsonbService:        config.JSONbService,
+		nrsignupService:     config.NrsignupService,
 	}
 }
 
@@ -72,6 +73,7 @@ type Resolver struct {
 	tokenFoundry        *tokenfoundry.API
 	userService         *users.UserService
 	jsonbService        *jsonstore.Service
+	nrsignupService     *nrsignup.Service
 }
 
 // Query is the resolver for the Query type

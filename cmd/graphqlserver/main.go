@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+
 	log "github.com/golang/glog"
 
 	"github.com/99designs/gqlgen/handler"
@@ -118,6 +120,18 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 	}
 	jsonbService := jsonstore.NewJsonbService(jsonbPersister)
 
+	nrsignupService, err := nrsignup.NewNewsroomSignupService(
+		emailer,
+		userService,
+		jsonbService,
+		jwtGenerator,
+		"http://localhost:8080",
+	)
+	if err != nil {
+		log.Errorf("Error w nrsignupService: err: %v", err)
+		return nil, err
+	}
+
 	return graphql.NewResolver(&graphql.ResolverConfig{
 		AuthService:         authService,
 		InvoicePersister:    invoicePersister,
@@ -133,6 +147,7 @@ func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.Postg
 		TokenFoundry:        tokenFoundry,
 		UserService:         userService,
 		JSONbService:        jsonbService,
+		NrsignupService:     nrsignupService,
 	}), nil
 }
 

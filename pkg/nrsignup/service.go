@@ -13,6 +13,16 @@ import (
 )
 
 const (
+	// ApprovedSubValue is the value embedded in the token sub value to indicate
+	// approval
+	ApprovedSubValue = "app"
+
+	// RejectedSubValue is the value embedded in the token sub value to indicate
+	// rejection
+	RejectedSubValue = "rej"
+)
+
+const (
 	approvalLinkExpirySecs = 60 * 60 * 24 * 14 // 14 days
 	rejectLinkExpirySecs   = 60 * 60 * 24 * 14 // 14 days
 
@@ -23,10 +33,10 @@ const (
 	grantApprovalUserEmailTemplateID = ""
 	// grantApprovalCouncilEmailTemplateID = ""
 
-	foundationEmailName    = "The Civil Council"
-	foundationEmailAddress = "foundation@civil.co"
-	// foundationEmailAddress = "peter@civil.co"
-	councilEmailName = "The Civil Council"
+	foundationEmailName = "The Civil Council"
+	// foundationEmailAddress = "foundation@civil.co"
+	foundationEmailAddress = "peter@civil.co"
+	councilEmailName       = "The Civil Council"
 
 	registryEmailName   = "The Civil Registry"
 	noreplyEmailAddress = "noreply@civil.co"
@@ -211,10 +221,10 @@ func (s *Service) buildGrantDecisionLink(newsroomOwnerUID string, approved bool)
 	var sub string
 	var expiry int
 	if approved {
-		sub = fmt.Sprintf("%v:a", newsroomOwnerUID)
+		sub = fmt.Sprintf("%v:%v", newsroomOwnerUID, ApprovedSubValue)
 		expiry = approvalLinkExpirySecs
 	} else {
-		sub = fmt.Sprintf("%v:r", newsroomOwnerUID)
+		sub = fmt.Sprintf("%v:%v", newsroomOwnerUID, RejectedSubValue)
 		expiry = rejectLinkExpirySecs
 	}
 
