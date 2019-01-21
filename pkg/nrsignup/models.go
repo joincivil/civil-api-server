@@ -106,7 +106,7 @@ func (c *CharterSocialURL) AsMap() map[string]interface{} {
 
 // SignupUserJSONData represents the data being stored by the client into
 // the JSON store.  To be unmarshaled/marshalled to/from a JSON string.
-// TODO(PN): Ensure this is in sync with the client team otherwise we f-ed.
+// TODO(PN): Ensure this is in sync with the client team.
 type SignupUserJSONData struct {
 	WalletAddress      string   `json:"walletAddress"`
 	Email              string   `json:"email"`

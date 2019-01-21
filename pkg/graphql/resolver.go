@@ -27,7 +27,6 @@ type ResolverConfig struct {
 	ChallengePersister  pmodel.ChallengePersister
 	AppealPersister     pmodel.AppealPersister
 	PollPersister       pmodel.PollPersister
-	UserPersister       users.UserPersister
 	OnfidoAPI           *kyc.OnfidoAPI
 	OnfidoTokenReferrer string
 	TokenFoundry        *tokenfoundry.API
@@ -47,7 +46,6 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		challengePersister:  config.ChallengePersister,
 		appealPersister:     config.AppealPersister,
 		pollPersister:       config.PollPersister,
-		userPersister:       config.UserPersister,
 		onfidoAPI:           config.OnfidoAPI,
 		onfidoTokenReferrer: config.OnfidoTokenReferrer,
 		tokenFoundry:        config.TokenFoundry,
@@ -67,7 +65,6 @@ type Resolver struct {
 	challengePersister  pmodel.ChallengePersister
 	appealPersister     pmodel.AppealPersister
 	pollPersister       pmodel.PollPersister
-	userPersister       users.UserPersister
 	onfidoAPI           *kyc.OnfidoAPI
 	onfidoTokenReferrer string
 	tokenFoundry        *tokenfoundry.API

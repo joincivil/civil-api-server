@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	log "github.com/golang/glog"
+
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -20,6 +22,9 @@ const (
 	// RejectedSubValue is the value embedded in the token sub value to indicate
 	// rejection
 	RejectedSubValue = "rej"
+
+	// DefaultJsonbID is the default ID value for user data in the JSONb store.
+	DefaultJsonbID = "nrsignup"
 )
 
 const (
@@ -30,13 +35,13 @@ const (
 	requestGrantUserEmailTemplateID    = "d-f17d8ba462ce4ac9ab24e447d9ee099d"
 	requestGrantCouncilEmailTemplateID = "d-2ffc71848ea743b0a5b56a7c0d6b9ac3"
 
-	grantApprovalUserEmailTemplateID = ""
+	grantApprovalUserEmailTemplateID = "d-f363c4aa8d404bd39e7c14f527318d4f"
 	// grantApprovalCouncilEmailTemplateID = ""
 
-	foundationEmailName = "The Civil Council"
-	// foundationEmailAddress = "foundation@civil.co"
-	foundationEmailAddress = "peter@civil.co"
-	councilEmailName       = "The Civil Council"
+	foundationEmailName    = "The Civil Council"
+	foundationEmailAddress = "foundation@civil.co"
+	// foundationEmailAddress = "peter@civil.co"
+	councilEmailName = "The Civil Council"
 
 	registryEmailName   = "The Civil Registry"
 	noreplyEmailAddress = "noreply@civil.co"
@@ -85,7 +90,9 @@ func (s *Service) SendWelcomeEmail(newsroomOwnerUID string) error {
 		return fmt.Errorf("No user found: uid: %v", newsroomOwnerUID)
 	}
 
-	tmplData := email.TemplateData{}
+	tmplData := email.TemplateData{
+		"name": user.Email,
+	}
 	tmplReq := &email.SendTemplateEmailRequest{
 		ToName:       user.Email,
 		ToEmail:      user.Email,
@@ -119,6 +126,7 @@ func (s *Service) RequestGrant(newsroomOwnerUID string, newsroomData *Newsroom) 
 	if err != nil {
 		return err
 	}
+	log.Infof("set grant requested flag")
 
 	// Email to council with charter info
 	tmplData := email.TemplateData{}
@@ -140,8 +148,9 @@ func (s *Service) RequestGrant(newsroomOwnerUID string, newsroomData *Newsroom) 
 	err1 := s.emailer.SendTemplateEmail(tmplReq)
 
 	// Email to newsroom owner to tell them to wait for a response
-	// TODO(PN): Do we need any other data for this template?
-	tmplData = email.TemplateData{}
+	tmplData = email.TemplateData{
+		"name": user.Email,
+	}
 	tmplReq = &email.SendTemplateEmailRequest{
 		ToName:       user.Email,
 		ToEmail:      user.Email,
@@ -185,7 +194,14 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 	// TODO(PN): Do we need any other data for this template?
 	// TODO(PN): Will the foundation send this email manually?
 	tmplData := email.TemplateData{}
+	tmplData["name"] = user.Email
 	tmplData["nr_grant_approved"] = approved
+	if approved {
+		tmplData["nr_grant_approval_str"] = "approved"
+	} else {
+		tmplData["nr_grant_approval_str"] = "rejected"
+	}
+	log.Infof("grant approved = %v", approved)
 
 	tmplReq := &email.SendTemplateEmailRequest{
 		ToName:       user.Email,
@@ -233,7 +249,7 @@ func (s *Service) buildGrantDecisionLink(newsroomOwnerUID string, approved bool)
 		return "", err
 	}
 
-	link := fmt.Sprintf("%v/%v?t=%v", s.grantLandingProtoHost, grantApprovalURI, token)
+	link := fmt.Sprintf("%v/%v/%v", s.grantLandingProtoHost, grantApprovalURI, token)
 	return link, nil
 }
 
@@ -255,7 +271,7 @@ func (s *Service) buildGrantDecisionLinksIntoTemplate(tmplData email.TemplateDat
 	tmplData["nr_grant_reject_link"] = rejectLink
 	tmplData["nr_grant_reject_markup"] = fmt.Sprintf(
 		"<a href=\"%v\">Reject</a>",
-		approveLink,
+		rejectLink,
 	)
 	return tmplData, nil
 }
@@ -296,31 +312,34 @@ func (s *Service) buildLogoURLMarkup(logoURL string) string {
 }
 
 func (s *Service) setGrantRequestedFlag(newsroomOwnerUID string, requested bool) error {
-	grantRequestedUpdateFn := func(d *SignupUserJSONData) *SignupUserJSONData {
+	grantRequestedUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
 		d.GrantRequested = requested
-		return d
+		return d, nil
 	}
 	return s.alterUserDataInJSONStore(newsroomOwnerUID, grantRequestedUpdateFn)
 }
 
 func (s *Service) setGrantApprovedFlag(newsroomOwnerUID string, approved bool) error {
-	grantApproveUpdateFn := func(d *SignupUserJSONData) *SignupUserJSONData {
+	grantApproveUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
+		if !d.GrantRequested {
+			return nil, fmt.Errorf("Grant was not requested, failing approval")
+		}
 		d.GrantApproved = approved
-		return d
+		return d, nil
 	}
 	return s.alterUserDataInJSONStore(newsroomOwnerUID, grantApproveUpdateFn)
 }
 
-type userDataUpdateFn func(*SignupUserJSONData) *SignupUserJSONData
+type userDataUpdateFn func(*SignupUserJSONData) (*SignupUserJSONData, error)
 
 func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn userDataUpdateFn) error {
 	s.alterMutex.Lock()
 	defer s.alterMutex.Unlock()
 
 	// Set both the namespace and ID as the newsroom owner ID
-	// TODO(PN): Confirm this as the key with the client developers.
 	jsonbs, err := s.jsonbService.RetrieveJSONb(
-		newsroomOwnerUID,
+		DefaultJsonbID,
+		jsonstore.DefaultJsonbGraphqlNs,
 		newsroomOwnerUID,
 	)
 	if err != nil {
@@ -339,7 +358,10 @@ func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn use
 		return err
 	}
 
-	signupData = updateFn(signupData)
+	signupData, err = updateFn(signupData)
+	if err != nil {
+		return err
+	}
 
 	bys, err := json.Marshal(signupData)
 	if err != nil {
@@ -347,7 +369,8 @@ func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn use
 	}
 
 	_, err = s.jsonbService.SaveRawJSONb(
-		newsroomOwnerUID,
+		DefaultJsonbID,
+		jsonstore.DefaultJsonbGraphqlNs,
 		newsroomOwnerUID,
 		string(bys),
 	)

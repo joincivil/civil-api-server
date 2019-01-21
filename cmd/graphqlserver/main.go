@@ -49,105 +49,64 @@ var (
 	}
 )
 
-func initResolver(config *utils.GraphQLConfig, invoicePersister *invoicing.PostgresPersister,
-	userPersister *users.PostgresPersister) (*graphql.Resolver, error) {
-	listingPersister, err := helpers.ListingPersister(config)
+type resolverConfig struct {
+	config           *utils.GraphQLConfig
+	invoicePersister *invoicing.PostgresPersister
+	authService      *auth.Service
+	userService      *users.UserService
+	jsonbService     *jsonstore.Service
+	nrsignupService  *nrsignup.Service
+	tokenFoundry     *tokenfoundry.API
+	onfido           *kyc.OnfidoAPI
+}
+
+func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
+	listingPersister, err := helpers.ListingPersister(rconfig.config)
 	if err != nil {
 		log.Errorf("Error w listingPersister: err: %v", err)
 		return nil, err
 	}
-	contentRevisionPersister, err := helpers.ContentRevisionPersister(config)
+	contentRevisionPersister, err := helpers.ContentRevisionPersister(rconfig.config)
 	if err != nil {
 		log.Errorf("Error w contentRevisionPersister: err: %v", err)
 		return nil, err
 	}
-	governanceEventPersister, err := helpers.GovernanceEventPersister(config)
+	governanceEventPersister, err := helpers.GovernanceEventPersister(rconfig.config)
 	if err != nil {
 		log.Errorf("Error w governanceEventPersister: err: %v", err)
 		return nil, err
 	}
-	challengePersister, err := helpers.ChallengePersister(config)
+	challengePersister, err := helpers.ChallengePersister(rconfig.config)
 	if err != nil {
 		log.Errorf("Error w challengePersister: err: %v", err)
 		return nil, err
 	}
-	appealPersister, err := helpers.AppealPersister(config)
+	appealPersister, err := helpers.AppealPersister(rconfig.config)
 	if err != nil {
 		log.Errorf("Error w appealPersister: err: %v", err)
 		return nil, err
 	}
-	pollPersister, err := helpers.PollPersister(config)
+	pollPersister, err := helpers.PollPersister(rconfig.config)
 	if err != nil {
 		log.Errorf("Error w pollPersister: err: %v", err)
 		return nil, err
 	}
-	onfido := kyc.NewOnfidoAPI(
-		kyc.ProdAPIURL,
-		config.OnfidoKey,
-	)
-
-	tokenFoundry := tokenfoundry.NewAPI(
-		"https://tokenfoundry.com",
-		config.TokenFoundryUser,
-		config.TokenFoundryPassword,
-	)
-
-	userService := users.NewUserService(userPersister)
-	if err != nil {
-		log.Errorf("Error w userService: err: %v", err)
-		return nil, err
-	}
-
-	// TODO(dankins): building a new instance of tokenGenerator here, which is a little hacky.
-	jwtGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
-	emailer := cemail.NewEmailer(config.SendgridKey)
-	authService, err := auth.NewAuthService(
-		userService,
-		jwtGenerator,
-		emailer,
-		config.AuthEmailSignupTemplates,
-		config.AuthEmailLoginTemplates,
-	)
-	if err != nil {
-		log.Errorf("Error w authService: err: %v", err)
-		return nil, err
-	}
-
-	jsonbPersister, err := initJsonbPersister(config)
-	if err != nil {
-		log.Errorf("Error w jsonbPersister: err: %v", err)
-		return nil, err
-	}
-	jsonbService := jsonstore.NewJsonbService(jsonbPersister)
-
-	nrsignupService, err := nrsignup.NewNewsroomSignupService(
-		emailer,
-		userService,
-		jsonbService,
-		jwtGenerator,
-		"http://localhost:8080",
-	)
-	if err != nil {
-		log.Errorf("Error w nrsignupService: err: %v", err)
-		return nil, err
-	}
 
 	return graphql.NewResolver(&graphql.ResolverConfig{
-		AuthService:         authService,
-		InvoicePersister:    invoicePersister,
+		AuthService:         rconfig.authService,
+		InvoicePersister:    rconfig.invoicePersister,
 		ListingPersister:    listingPersister,
 		RevisionPersister:   contentRevisionPersister,
 		GovEventPersister:   governanceEventPersister,
 		ChallengePersister:  challengePersister,
 		AppealPersister:     appealPersister,
 		PollPersister:       pollPersister,
-		UserPersister:       userPersister,
-		OnfidoAPI:           onfido,
-		OnfidoTokenReferrer: config.OnfidoReferrer,
-		TokenFoundry:        tokenFoundry,
-		UserService:         userService,
-		JSONbService:        jsonbService,
-		NrsignupService:     nrsignupService,
+		OnfidoAPI:           rconfig.onfido,
+		OnfidoTokenReferrer: rconfig.config.OnfidoReferrer,
+		TokenFoundry:        rconfig.tokenFoundry,
+		UserService:         rconfig.userService,
+		JSONbService:        rconfig.jsonbService,
+		NrsignupService:     rconfig.nrsignupService,
 	}), nil
 }
 
@@ -157,21 +116,23 @@ func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {
 		fmt.Sprintf("/%v/%v", graphQLVersion, graphQlEndpoint)))
 }
 
-func graphQLRouting(router chi.Router, config *utils.GraphQLConfig, invoicePersister *invoicing.PostgresPersister,
-	userPersister *users.PostgresPersister) error {
-	resolver, rErr := initResolver(config, invoicePersister, userPersister)
+func graphQLRouting(router chi.Router, rconfig *resolverConfig) error {
+	resolver, rErr := initResolver(rconfig)
 	if rErr != nil {
 		log.Fatalf("Error retrieving resolver: err: %v", rErr)
 		return rErr
 	}
+
 	queryHandler := handler.GraphQL(
 		graphqlgen.NewExecutableSchema(
 			graphqlgen.Config{Resolvers: resolver},
 		),
 	)
+
 	router.Handle(
 		fmt.Sprintf("/%v/query", graphQLVersion),
 		graphql.DataloaderMiddleware(resolver, queryHandler))
+
 	return nil
 }
 
@@ -219,6 +180,23 @@ func initUserPersister(config *utils.GraphQLConfig) (*users.PostgresPersister, e
 	return persister, nil
 }
 
+func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresPersister) (
+	*users.UserService, error) {
+	if userPersister == nil {
+		var perr error
+		userPersister, perr = initUserPersister(config)
+		if perr != nil {
+			return nil, perr
+		}
+	}
+	userService := users.NewUserService(userPersister)
+	if userService == nil {
+		return nil, fmt.Errorf("User service was not initialized")
+	}
+	return userService, nil
+
+}
+
 func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, error) {
 	jsonbPersister, err := jsonstore.NewPostgresPersister(
 		config.PostgresAddress(),
@@ -239,6 +217,50 @@ func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, 
 		return nil, fmt.Errorf("Error creating indices: err: %v", err)
 	}
 	return jsonbPersister, nil
+}
+
+func initJsonbService(config *utils.GraphQLConfig, jsonbPersister jsonstore.JsonbPersister) (
+	*jsonstore.Service, error) {
+	if jsonbPersister == nil {
+		var perr error
+		jsonbPersister, perr = initJsonbPersister(config)
+		if perr != nil {
+			return nil, perr
+		}
+	}
+	jsonbService := jsonstore.NewJsonbService(jsonbPersister)
+	return jsonbService, nil
+}
+
+func initNrsignupService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
+	userService *users.UserService, jsonbService *jsonstore.Service,
+	jwtGenerator *auth.JwtTokenGenerator) (*nrsignup.Service, error) {
+	nrsignupService, err := nrsignup.NewNewsroomSignupService(
+		emailer,
+		userService,
+		jsonbService,
+		jwtGenerator,
+		config.ApproveGrantProtoHost,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return nrsignupService, nil
+}
+
+func initTokenFoundryAPI(config *utils.GraphQLConfig) *tokenfoundry.API {
+	return tokenfoundry.NewAPI(
+		"https://tokenfoundry.com",
+		config.TokenFoundryUser,
+		config.TokenFoundryPassword,
+	)
+}
+
+func initOnfidoAPI(config *utils.GraphQLConfig) *kyc.OnfidoAPI {
+	return kyc.NewOnfidoAPI(
+		kyc.ProdAPIURL,
+		config.OnfidoKey,
+	)
 }
 
 func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, error) {
@@ -320,75 +342,87 @@ func kycRouting(router chi.Router, config *utils.GraphQLConfig, onfido *kyc.Onfi
 	return nil
 }
 
-func healthCheckRouting(router chi.Router) error {
-	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK")) // nolint: errcheck
+func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
+	nrsignupService *nrsignup.Service, tokenGenerator *auth.JwtTokenGenerator) error {
+
+	grantApproveConfig := &nrsignup.NewsroomSignupApproveGrantConfig{
+		NrsignupService: nrsignupService,
+		TokenGenerator:  tokenGenerator,
+	}
+
+	// Set some rate limiters for the invoice handlers
+	limiter := tollbooth.NewLimiter(2, nil) // 2 req/sec max
+	limiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
+	limiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	router.Route(fmt.Sprintf("/%v/nrsignup", invoicingVersion), func(r chi.Router) {
+		r.Route(fmt.Sprintf("/grantapprove/{%v}", nrsignup.GrantApproveTokenURLParam), func(r chi.Router) {
+			r.Use(tollbooth_chi.LimitHandler(limiter))
+			r.Get("/", nrsignup.NewsroomSignupApproveGrantHandler(grantApproveConfig))
+		})
 	})
 	return nil
 }
 
-func main() {
-	config := &utils.GraphQLConfig{}
-	flag.Usage = func() {
-		config.OutputUsage()
-		os.Exit(0)
-	}
-	flag.Parse()
-
-	err := config.PopulateFromEnv()
-	if err != nil {
-		config.OutputUsage()
-		log.Errorf("Invalid graphql config: err: %v\n", err)
-		os.Exit(2)
-	}
-
-	port := strconv.Itoa(config.Port)
-	if port == "" {
-		port = defaultPort
-	}
-
-	router := chi.NewRouter()
-
-	// Some middleware bits for tracking
-	router.Use(middleware.RequestID)
-	router.Use(middleware.RealIP)
-	router.Use(middleware.Logger)
-	router.Use(middleware.Recoverer)
-
-	cors := cors.New(cors.Options{
-		AllowedOrigins:   validCorsOrigins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		AllowCredentials: true,
-		MaxAge:           300,
-		Debug:            true,
-	})
-	router.Use(cors.Handler)
-
+func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port string) error {
+	var err error
 	tokenGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
+
+	// Enable authentication/authorization handling
 	router.Use(auth.Middleware(tokenGenerator))
 
-	// set up persisters
+	// set up persisters/services/common stuff
 	var invoicePersister *invoicing.PostgresPersister
-	var userPersister *users.PostgresPersister
-	var perr error
+	var userService *users.UserService
+	var authService *auth.Service
+	var jsonbService *jsonstore.Service
+	var nrsignupService *nrsignup.Service
+
+	emailer := cemail.NewEmailer(config.SendgridKey)
+	jwtGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
 
 	if config.EnableInvoicing || config.EnableGraphQL {
-		invoicePersister, perr = initInvoicePersister(config)
-		if perr != nil {
-			log.Fatalf("Error setting up invoicing persister: err: %v", perr)
+		invoicePersister, err = initInvoicePersister(config)
+		if err != nil {
+			log.Fatalf("Error setting up invoicing persister: err: %v", err)
+			return err
 		}
 	}
 	if config.EnableKYC || config.EnableGraphQL {
-		userPersister, perr = initUserPersister(config)
-		if perr != nil {
-			log.Fatalf("Error setting up user persister: err: %v", perr)
+		userService, err = initUserService(config, nil)
+		if err != nil {
+			log.Fatalf("Error w init userService: err: %v", err)
+			return err
 		}
 	}
+	jsonbService, err = initJsonbService(config, nil)
+	if err != nil {
+		log.Fatalf("Error w init jsonbService: err: %v", err)
+		return err
+	}
+	nrsignupService, err = initNrsignupService(
+		config,
+		emailer,
+		userService,
+		jsonbService,
+		jwtGenerator,
+	)
+	tokenFoundry := initTokenFoundryAPI(config)
+	onfido := initOnfidoAPI(config)
 
 	// GraphQL Query Endpoint (Crawler/KYC)
 	if config.EnableGraphQL {
-		err = graphQLRouting(router, config, invoicePersister, userPersister)
+		rconfig := &resolverConfig{
+			config:           config,
+			invoicePersister: invoicePersister,
+			authService:      authService,
+			userService:      userService,
+			jsonbService:     jsonbService,
+			nrsignupService:  nrsignupService,
+			tokenFoundry:     tokenFoundry,
+			onfido:           onfido,
+		}
+		err = graphQLRouting(router, rconfig)
 		if err != nil {
 			log.Fatalf("Error setting up graphql routing: err: %v", err)
 		}
@@ -434,7 +468,6 @@ func main() {
 			checkbookUpdaterRunFreqSecs,
 		)
 		go updater.Run()
-
 	}
 
 	// KYC REST endpoints
@@ -453,6 +486,72 @@ func main() {
 			port,
 			invoicingVersion,
 		)
+	}
+
+	// Newsroom Signup REST endpoints
+	err = nrsignupRouting(router, config, nrsignupService, jwtGenerator)
+	if err != nil {
+		log.Fatalf("Error setting up newsroom signup routing: err: %v", err)
+	}
+	log.Infof(
+		"Connect to http://localhost:%v/%v/nrsignup/grantapprove for grant approval webhook\n",
+		port,
+		invoicingVersion,
+	)
+
+	return nil
+}
+
+func healthCheckRouting(router chi.Router) error {
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK")) // nolint: errcheck
+	})
+	return nil
+}
+
+func main() {
+	config := &utils.GraphQLConfig{}
+	flag.Usage = func() {
+		config.OutputUsage()
+		os.Exit(0)
+	}
+	flag.Parse()
+
+	err := config.PopulateFromEnv()
+	if err != nil {
+		config.OutputUsage()
+		log.Errorf("Invalid graphql config: err: %v\n", err)
+		os.Exit(2)
+	}
+
+	log.Infof("proto %v", config.ApproveGrantProtoHost)
+	port := strconv.Itoa(config.Port)
+	if port == "" {
+		port = defaultPort
+	}
+
+	router := chi.NewRouter()
+
+	// Some middleware bits for tracking
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+
+	cors := cors.New(cors.Options{
+		AllowedOrigins:   validCorsOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300,
+		Debug:            true,
+	})
+	router.Use(cors.Handler)
+
+	// Setup the API services
+	err = enableAPIServices(router, config, port)
+	if err != nil {
+		log.Fatalf("Error setting up services: err: %v", err)
 	}
 
 	// Health REST endpoint

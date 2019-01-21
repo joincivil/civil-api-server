@@ -124,9 +124,11 @@ func buildJsonbService(t *testing.T) *jsonstore.Service {
 		t.Errorf("Should have returned json data: err: %v", err)
 		rawJson = ""
 	}
-	namespace := "1"
-	ID := "1"
-	key, _ := jsonstore.NamespacePlusIDHashKey(namespace, ID)
+	namespace := jsonstore.DefaultJsonbGraphqlNs
+	ID := "nrsignup"
+	salt := "1" // Faking the ID
+
+	key, _ := jsonstore.NamespaceIDSaltHashKey(namespace, ID, salt)
 	json := &jsonstore.JSONb{
 		Key:     key,
 		ID:      ID,
@@ -210,7 +212,11 @@ func TestRequestGrant(t *testing.T) {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
 
-	jsonbs, err := jsonbService.RetrieveJSONb("1", "1")
+	jsonbs, err := jsonbService.RetrieveJSONb(
+		nrsignup.DefaultJsonbID,
+		jsonstore.DefaultJsonbGraphqlNs,
+		"1",
+	)
 	if err != nil {
 		t.Fatalf("Should have retrieved jsonb: err: %v", err)
 	}
@@ -266,12 +272,21 @@ func TestApproveGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
+	err = signup.RequestGrant("1", buildTestNewsroom())
+	if err != nil {
+		t.Fatalf("Should not have error requesting grant: err: %v", err)
+	}
+
 	err = signup.ApproveGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
 
-	jsonbs, err := jsonbService.RetrieveJSONb("1", "1")
+	jsonbs, err := jsonbService.RetrieveJSONb(
+		nrsignup.DefaultJsonbID,
+		jsonstore.DefaultJsonbGraphqlNs,
+		"1",
+	)
 	if err != nil {
 		t.Fatalf("Should have retrieved jsonb: err: %v", err)
 	}
@@ -309,12 +324,21 @@ func TestRejectGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
+	err = signup.RequestGrant("1", buildTestNewsroom())
+	if err != nil {
+		t.Fatalf("Should not have error requesting grant: err: %v", err)
+	}
+
 	err = signup.ApproveGrant("1", false)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
 
-	jsonbs, err := jsonbService.RetrieveJSONb("1", "1")
+	jsonbs, err := jsonbService.RetrieveJSONb(
+		nrsignup.DefaultJsonbID,
+		jsonstore.DefaultJsonbGraphqlNs,
+		"1",
+	)
 	if err != nil {
 		t.Fatalf("Should have retrieved jsonb: err: %v", err)
 	}

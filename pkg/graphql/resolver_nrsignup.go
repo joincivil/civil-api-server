@@ -55,20 +55,22 @@ func (r *mutationResolver) NrsignupApproveGrant(ctx context.Context, approved bo
 	return nrsignupNotImplemented, nil
 }
 
+// Not implemented yet
 func (r *mutationResolver) NrsignupPollNewsroomDeploy(ctx context.Context,
 	txHash string) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return "", fmt.Errorf("Access denied")
 	}
-	return "", nil
+	return nrsignupNotImplemented, nil
 }
 
+// Not implemented yet
 func (r *mutationResolver) NrsignupPollTcrApplication(ctx context.Context,
 	txHash string) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return "", fmt.Errorf("Access denied")
 	}
-	return "", nil
+	return nrsignupNotImplemented, nil
 }
