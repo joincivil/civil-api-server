@@ -123,10 +123,7 @@ func NewListing(listing *model.Listing) *Listing {
 	} else {
 		challengeID = nilChallengeID
 	}
-	var charter cpostgres.JsonbPayload
-	if listing.Charter() != nil {
-		charter = cpostgres.JsonbPayload(listing.Charter().AsMap())
-	}
+	charter := cpostgres.JsonbPayload(listing.Charter().AsMap())
 
 	return &Listing{
 		Name:                 listing.Name(),
