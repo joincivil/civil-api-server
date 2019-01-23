@@ -67,7 +67,7 @@ type PostgresPersister struct {
 	db *sqlx.DB
 }
 
-// ListingsByCriteria returns a slice of Listings by ListingCriteria sorted by creation ts
+// ListingsByCriteria returns a slice of Listings by ListingCriteria sorted by creation timestamp
 func (p *PostgresPersister) ListingsByCriteria(criteria *model.ListingCriteria) ([]*model.Listing, error) {
 	return p.listingsByCriteriaFromTable(criteria, listingTableName, challengeTableName)
 }
@@ -108,13 +108,13 @@ func (p *PostgresPersister) ContentRevision(address common.Address, contentID *b
 	return p.contentRevisionFromTable(address, contentID, revisionID, contRevTableName)
 }
 
-// ContentRevisionsByCriteria returns a list of ContentRevision by ContentRevisionCriteria
+// ContentRevisionsByCriteria returns a list of ContentRevision by ContentRevisionCriteria sorted by revision timestamp
 func (p *PostgresPersister) ContentRevisionsByCriteria(criteria *model.ContentRevisionCriteria) (
 	[]*model.ContentRevision, error) {
 	return p.contentRevisionsByCriteriaFromTable(criteria, contRevTableName)
 }
 
-// ContentRevisions retrieves the revisions for content on a listing
+// ContentRevisions retrieves the revisions for content on a listing sorted by revision timestamp
 func (p *PostgresPersister) ContentRevisions(address common.Address, contentID *big.Int) ([]*model.ContentRevision, error) {
 	return p.contentRevisionsFromTable(address, contentID, contRevTableName)
 }
@@ -129,7 +129,7 @@ func (p *PostgresPersister) DeleteContentRevision(revision *model.ContentRevisio
 	return p.deleteContentRevisionFromTable(revision, contRevTableName)
 }
 
-// GovernanceEventsByCriteria retrieves governance events based on criteria
+// GovernanceEventsByCriteria retrieves governance events based on criteria sorted by revision timestamp
 func (p *PostgresPersister) GovernanceEventsByCriteria(criteria *model.GovernanceEventCriteria) ([]*model.GovernanceEvent, error) {
 	return p.governanceEventsByCriteriaFromTable(criteria, govEventTableName)
 }
@@ -139,7 +139,7 @@ func (p *PostgresPersister) GovernanceEventsByListingAddress(address common.Addr
 	return p.governanceEventsByListingAddressFromTable(address, govEventTableName)
 }
 
-// GovernanceEventsByTxHash retrieves governance events based on TxHash
+// GovernanceEventsByTxHash retrieves governance events based on TxHash sorted by revision timestamp
 func (p *PostgresPersister) GovernanceEventsByTxHash(txHash common.Hash) ([]*model.GovernanceEvent, error) {
 	return p.governanceEventsByTxHashFromTable(txHash, govEventTableName)
 }
@@ -179,7 +179,7 @@ func (p *PostgresPersister) UpdateChallenge(challenge *model.Challenge, updatedF
 	return p.updateChallengeInTable(challenge, updatedFields, challengeTableName)
 }
 
-// ChallengesByChallengeIDs returns a slice of challenges based on challenge IDs
+// ChallengesByChallengeIDs returns a slice of challenges based on challenge IDs. Returns order of given challengeIDs
 func (p *PostgresPersister) ChallengesByChallengeIDs(challengeIDs []int) ([]*model.Challenge, error) {
 	return p.challengesByChallengeIDsInTableInOrder(challengeIDs, challengeTableName)
 }
@@ -189,7 +189,7 @@ func (p *PostgresPersister) ChallengeByChallengeID(challengeID int) (*model.Chal
 	return p.challengeByChallengeIDFromTable(challengeID, challengeTableName)
 }
 
-// ChallengesByListingAddresses gets slice of challenges for a each listing address in order of addresses
+// ChallengesByListingAddresses gets slice of challenges for a each listing address in order of given addresses
 func (p *PostgresPersister) ChallengesByListingAddresses(addrs []common.Address) ([][]*model.Challenge, error) {
 	return p.challengesByListingAddressesInTable(addrs, challengeTableName)
 }
@@ -466,7 +466,6 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 		queryBuf.WriteString(" creation_timestamp < :created_beforets") // nolint: gosec
 	}
 
-	// Always sort them by creation_timestamp
 	queryBuf.WriteString(" ORDER BY creation_timestamp") // nolint: gosec
 
 	if criteria.Offset > 0 {
@@ -585,7 +584,7 @@ func (p *PostgresPersister) contentRevisionsFromTable(address common.Address, co
 
 func (p *PostgresPersister) contentRevisionsQuery(tableName string) string {
 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.ContentRevision{}, false, "")
-	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE (listing_address=$1 AND contract_content_id=$2)", fieldNames, tableName) // nolint: gosec
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE (listing_address=$1 AND contract_content_id=$2) ORDER BY revision_timestamp", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
 
@@ -639,6 +638,7 @@ func (p *PostgresPersister) contentRevisionsByCriteriaQuery(criteria *model.Cont
 			queryBuf.WriteString(" r1.revision_timestamp < :beforets") // nolint: gosec
 		}
 	}
+	queryBuf.WriteString(" ORDER BY revision_timestamp") // nolint: gosec
 	if criteria.Offset > 0 {
 		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
 	}
@@ -725,7 +725,7 @@ func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceE
 func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, tableName string) string {
 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
 	queryString := fmt.Sprintf( // nolint: gosec
-		"SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }'",
+		"SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }' ORDER BY creation_date",
 		fieldNames,
 		tableName,
 		txHash.Hex(),
@@ -789,6 +789,7 @@ func (p *PostgresPersister) governanceEventsByCriteriaQuery(criteria *model.Gove
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(" r1.creation_date < :created_beforets") // nolint: gosec
 	}
+	queryBuf.WriteString(" ORDER BY creation_date") // nolint: gosec
 	if criteria.Offset > 0 {
 		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
 	}

@@ -66,6 +66,19 @@ const (
 	timestampMapStr   = "timestamp"
 )
 
+// NewEmptyCharter is a convenience function to create a new empty Charter struct
+func NewEmptyCharter() *Charter {
+	return &Charter{
+		uri:         "",
+		contentID:   big.NewInt(0),
+		revisionID:  big.NewInt(0),
+		signature:   []byte{},
+		author:      common.Address{},
+		contentHash: [32]byte{},
+		timestamp:   big.NewInt(0),
+	}
+}
+
 // Charter represents data for the newsroom/listing charter
 type Charter struct {
 	uri string
