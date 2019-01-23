@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	log "github.com/golang/glog"
-
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -195,18 +193,22 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 		return err
 	}
 
+	signupData, err := s.retrieveUserJSONData(newsroomOwnerUID)
+	if err != nil {
+		return err
+	}
+
 	// Email to newsroom owner to tell them to wait for a response
-	// TODO(PN): Do we need any other data for this template?
 	// TODO(PN): Will the foundation send this email manually?
 	tmplData := email.TemplateData{}
 	tmplData["name"] = user.Email
+	tmplData["nr_name"] = signupData.NewsroomName
 	tmplData["nr_grant_approved"] = approved
 	if approved {
 		tmplData["nr_grant_approval_str"] = "approved"
 	} else {
 		tmplData["nr_grant_approval_str"] = "rejected"
 	}
-	log.Infof("grant approved = %v", approved)
 
 	tmplReq := &email.SendTemplateEmailRequest{
 		ToName:       user.Email,

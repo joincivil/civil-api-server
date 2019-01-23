@@ -101,7 +101,6 @@ func HandleGrantApproval(token string, tokenGenerator *auth.JwtTokenGenerator,
 	var approvedErr error
 	var approved bool
 
-	// Based on approval value, call ApproveGrant with approved or not
 	if approvedVal == ApprovedSubValue {
 		approved = true
 
@@ -113,6 +112,7 @@ func HandleGrantApproval(token string, tokenGenerator *auth.JwtTokenGenerator,
 		return GrantApprovalStatusInvalidToken, false
 	}
 
+	// Approve/reject the grant
 	approvedErr = nrsignupService.ApproveGrant(newsroomOwnerUID, approved)
 	if approvedErr != nil {
 		log.Errorf("Error approving/rejecting the grant: err: %v", approvedErr)

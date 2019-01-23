@@ -60,16 +60,19 @@ func (c *CharterRosterMember) AsMap() map[string]interface{} {
 	member["name"] = c.Name
 	member["role"] = c.Role
 	member["bio"] = c.Bio
-	member["ethAddress"] = c.EthAddress
-	member["avatarUrl"] = c.AvatarURL
+	member["eth_address"] = c.EthAddress
+	member["avatar_url"] = c.AvatarURL
 	member["signature"] = c.Signature
+	member["social_urls"] = nil
 
-	member["socialUrls"] = map[string]string{
-		"twitter":   c.SocialURLs.Twitter,
-		"facebook":  c.SocialURLs.Facebook,
-		"instagram": c.SocialURLs.Instagram,
-		"linkedin":  c.SocialURLs.Linkedin,
-		"youtube":   c.SocialURLs.Youtube,
+	if c.SocialURLs != nil {
+		member["social_urls"] = map[string]string{
+			"twitter":   c.SocialURLs.Twitter,
+			"facebook":  c.SocialURLs.Facebook,
+			"instagram": c.SocialURLs.Instagram,
+			"linkedin":  c.SocialURLs.Linkedin,
+			"youtube":   c.SocialURLs.Youtube,
+		}
 	}
 
 	return member
@@ -114,7 +117,6 @@ func (c *CharterSocialURLs) AsMap() map[string]interface{} {
 
 // SignupUserJSONData represents the data being stored by the client into
 // the JSON store.  To be unmarshaled/marshalled to/from a JSON string.
-// TODO(PN): Ensure this is in sync with the client team.
 type SignupUserJSONData struct {
 	OnboardedTs        int      `json:"onboardedTimestamp,omitempty"`
 	Charter            *Charter `json:"charter,omitempty"`
