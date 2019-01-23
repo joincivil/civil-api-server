@@ -6,30 +6,30 @@ import (
 
 // Newsroom represents data about a newsroom, including the charter
 type Newsroom struct {
-	Name    string   `json:"name"`
-	Charter *Charter `json:"charter"`
+	Name    string   `json:"name,omitempty"`
+	Charter *Charter `json:"charter,omitempty"`
 }
 
 // Charter represents charter data for a newsroom, mirrors structure from the
 // FE client store as defined here
 // https://github.com/joincivil/Civil/blob/master/packages/core/src/types.ts#L73-L87
 type Charter struct {
-	LogoURL     string                          `json:"logoUrl"`
-	NewsroomURL string                          `json:"newsroomUrl"`
-	Tagline     string                          `json:"tagline"`
-	Roster      []*CharterRosterMember          `json:"roster"`
-	Signatures  []*CharterConstitutionSignature `json:"signatures"`
-	Mission     *CharterMission                 `json:"mission"`
-	SocialURLs  []*CharterSocialURL             `json:"socialUrls"`
+	LogoURL     string                          `json:"logoUrl,omitempty"`
+	NewsroomURL string                          `json:"newsroomUrl,omitempty"`
+	Tagline     string                          `json:"tagline,omitempty"`
+	Roster      []*CharterRosterMember          `json:"roster,omitempty"`
+	Signatures  []*CharterConstitutionSignature `json:"signatures,omitempty"`
+	Mission     *CharterMission                 `json:"mission,omitempty"`
+	SocialURLs  *CharterSocialURLs              `json:"socialUrls,omitempty"`
 }
 
 // CharterMission represents mission statements for a charter
 type CharterMission struct {
-	Purpose       string `json:"purpose"`
-	Structure     string `json:"structure"`
-	Revenue       string `json:"revenue"`
-	Encumbrances  string `json:"encumbrances"`
-	Miscellaneous string `json:"miscellaneous"`
+	Purpose       string `json:"purpose,omitempty"`
+	Structure     string `json:"structure,omitempty"`
+	Revenue       string `json:"revenue,omitempty"`
+	Encumbrances  string `json:"encumbrances,omitempty"`
+	Miscellaneous string `json:"miscellaneous,omitempty"`
 }
 
 // AsMap converts the CharterMission to a map
@@ -45,13 +45,13 @@ func (c *CharterMission) AsMap() map[string]interface{} {
 
 // CharterRosterMember represents a member of a newsroom roster
 type CharterRosterMember struct {
-	Name       string              `json:"name"`
-	Role       string              `json:"role"`
-	Bio        string              `json:"bio"`
-	EthAddress string              `json:"ethAddress"`
-	SocialURLs []*CharterSocialURL `json:"socialUrls"`
-	AvatarURL  string              `json:"avatarUrl"`
-	Signature  string              `json:"signature"`
+	Name       string             `json:"name,omitempty"`
+	Role       string             `json:"role,omitempty"`
+	Bio        string             `json:"bio,omitempty"`
+	EthAddress string             `json:"ethAddress,omitempty"`
+	SocialURLs *CharterSocialURLs `json:"socialUrls,omitempty"`
+	AvatarURL  string             `json:"avatarUrl,omitempty"`
+	Signature  string             `json:"signature,omitempty"`
 }
 
 // AsMap converts the CharterRosterMember to a map
@@ -64,11 +64,13 @@ func (c *CharterRosterMember) AsMap() map[string]interface{} {
 	member["avatarUrl"] = c.AvatarURL
 	member["signature"] = c.Signature
 
-	socials := []map[string]interface{}{}
-	for _, social := range c.SocialURLs {
-		socials = append(socials, social.AsMap())
+	member["socialUrls"] = map[string]string{
+		"twitter":   c.SocialURLs.Twitter,
+		"facebook":  c.SocialURLs.Facebook,
+		"instagram": c.SocialURLs.Instagram,
+		"linkedin":  c.SocialURLs.Linkedin,
+		"youtube":   c.SocialURLs.Youtube,
 	}
-	member["socialUrls"] = socials
 
 	return member
 }
@@ -76,9 +78,9 @@ func (c *CharterRosterMember) AsMap() map[string]interface{} {
 // CharterConstitutionSignature represents the signing of the constitution for a
 // newsroom
 type CharterConstitutionSignature struct {
-	Signer    string `json:"signer"`
-	Signature string `json:"signature"`
-	Message   string `json:"message"`
+	Signer    string `json:"signer,omitempty"`
+	Signature string `json:"signature,omitempty"`
+	Message   string `json:"message,omitempty"`
 }
 
 // AsMap converts the CharterConstitutionSignature to a map
@@ -90,17 +92,23 @@ func (c *CharterConstitutionSignature) AsMap() map[string]interface{} {
 	return member
 }
 
-// CharterSocialURL represents a social URL in the charter
-type CharterSocialURL struct {
-	Service string `json:"service"`
-	URL     string `json:"url"`
+// CharterSocialURLs represents a social URL in the charter
+type CharterSocialURLs struct {
+	Twitter   string `json:"twitter,omitempty"`
+	Facebook  string `json:"facebook,omitempty"`
+	Instagram string `json:"instagram,omitempty"`
+	Linkedin  string `json:"linkedin,omitempty"`
+	Youtube   string `json:"youtube,omitempty"`
 }
 
 // AsMap converts the CharterSocialURL to a map
-func (c *CharterSocialURL) AsMap() map[string]interface{} {
+func (c *CharterSocialURLs) AsMap() map[string]interface{} {
 	social := map[string]interface{}{}
-	social["service"] = c.Service
-	social["url"] = c.URL
+	social["twitter"] = c.Twitter
+	social["facebook"] = c.Facebook
+	social["instagram"] = c.Instagram
+	social["linkedin"] = c.Linkedin
+	social["youtube"] = c.Youtube
 	return social
 }
 
@@ -108,16 +116,15 @@ func (c *CharterSocialURL) AsMap() map[string]interface{} {
 // the JSON store.  To be unmarshaled/marshalled to/from a JSON string.
 // TODO(PN): Ensure this is in sync with the client team.
 type SignupUserJSONData struct {
-	WalletAddress      string   `json:"walletAddress"`
-	Email              string   `json:"email"`
-	OnboardedTs        int      `json:"onboardedTimestamp"`
-	Charter            *Charter `json:"charter"`
-	CharterLastUpdated int      `json:"charterLastUpdated"`
-	GrantRequested     bool     `json:"grantRequested"`
-	GrantApproved      bool     `json:"grantApproved"`
-	NewsroomDeployTx   string   `json:"newsroomDeployTx"`
-	NewsroomAddress    string   `json:"newsroomAddress"`
-	TcrApplyTx         string   `json:"tcrApplyTx"`
+	OnboardedTs        int      `json:"onboardedTimestamp,omitempty"`
+	Charter            *Charter `json:"charter,omitempty"`
+	CharterLastUpdated int      `json:"charterLastUpdated,omitempty"`
+	GrantRequested     *bool    `json:"grantRequested,omitempty"`
+	GrantApproved      *bool    `json:"grantApproved,omitempty"`
+	NewsroomDeployTx   string   `json:"newsroomDeployTx,omitempty"`
+	NewsroomAddress    string   `json:"newsroomAddress,omitempty"`
+	NewsroomName       string   `json:"newsroomName,omitempty"`
+	TcrApplyTx         string   `json:"tcrApplyTx,omitempty"`
 }
 
 // AsJSONStr is a convenience method to return this struct as a JSON string

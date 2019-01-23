@@ -15,7 +15,6 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
-	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-events-processor/pkg/model"
@@ -226,7 +225,7 @@ type ComplexityRoot struct {
 		KycCreateCheck                    func(childComplexity int, applicantID string, facialVariant *string) int
 		KycGenerateSdkToken               func(childComplexity int, applicantID string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
-		NrsignupRequestGrant              func(childComplexity int, newsroomData nrsignup.Newsroom) int
+		NrsignupRequestGrant              func(childComplexity int) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
@@ -362,7 +361,7 @@ type MutationResolver interface {
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
 	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
-	NrsignupRequestGrant(ctx context.Context, newsroomData nrsignup.Newsroom) (string, error)
+	NrsignupRequestGrant(ctx context.Context) (string, error)
 	NrsignupApproveGrant(ctx context.Context, approved bool, newsroomOwnerUID string) (string, error)
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
@@ -605,21 +604,6 @@ func field_Mutation_kycGenerateSdkToken_args(rawArgs map[string]interface{}) (ma
 		}
 	}
 	args["applicantID"] = arg0
-	return args, nil
-
-}
-
-func field_Mutation_nrsignupRequestGrant_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 nrsignup.Newsroom
-	if tmp, ok := rawArgs["newsroomData"]; ok {
-		var err error
-		arg0, err = UnmarshalSignupNewsroom(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["newsroomData"] = arg0
 	return args, nil
 
 }
@@ -2186,12 +2170,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := field_Mutation_nrsignupRequestGrant_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.NrsignupRequestGrant(childComplexity, args["newsroomData"].(nrsignup.Newsroom)), true
+		return e.complexity.Mutation.NrsignupRequestGrant(childComplexity), true
 
 	case "Mutation.nrsignupApproveGrant":
 		if e.complexity.Mutation.NrsignupApproveGrant == nil {
@@ -7179,22 +7158,16 @@ func (ec *executionContext) _Mutation_nrsignupSendWelcomeEmail(ctx context.Conte
 func (ec *executionContext) _Mutation_nrsignupRequestGrant(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Mutation_nrsignupRequestGrant_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
 	rctx := &graphql.ResolverContext{
 		Object: "Mutation",
-		Args:   args,
+		Args:   nil,
 		Field:  field,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().NrsignupRequestGrant(rctx, args["newsroomData"].(nrsignup.Newsroom))
+		return ec.resolvers.Mutation().NrsignupRequestGrant(rctx)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -10571,304 +10544,6 @@ func UnmarshalKycCreateApplicantInput(v interface{}) (KycCreateApplicantInput, e
 	return it, nil
 }
 
-func UnmarshalSignupCharter(v interface{}) (nrsignup.Charter, error) {
-	var it nrsignup.Charter
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "logoUrl":
-			var err error
-			it.LogoURL, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "newsroomUrl":
-			var err error
-			it.NewsroomURL, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "tagline":
-			var err error
-			it.Tagline, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "roster":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.Roster = make([]*nrsignup.CharterRosterMember, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 nrsignup.CharterRosterMember
-				if rawIf1[idx1] != nil {
-					ptr2, err = UnmarshalSignupCharterRosterMember(rawIf1[idx1])
-					it.Roster[idx1] = &ptr2
-				}
-			}
-			if err != nil {
-				return it, err
-			}
-		case "signatures":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.Signatures = make([]*nrsignup.CharterConstitutionSignature, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 nrsignup.CharterConstitutionSignature
-				if rawIf1[idx1] != nil {
-					ptr2, err = UnmarshalSignupCharterConstitutionSignature(rawIf1[idx1])
-					it.Signatures[idx1] = &ptr2
-				}
-			}
-			if err != nil {
-				return it, err
-			}
-		case "mission":
-			var err error
-			var ptr1 nrsignup.CharterMission
-			if v != nil {
-				ptr1, err = UnmarshalSignupCharterMission(v)
-				it.Mission = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "socialUrls":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.SocialURLs = make([]*nrsignup.CharterSocialURL, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 nrsignup.CharterSocialURL
-				if rawIf1[idx1] != nil {
-					ptr2, err = UnmarshalSignupCharterSocialUrl(rawIf1[idx1])
-					it.SocialURLs[idx1] = &ptr2
-				}
-			}
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func UnmarshalSignupCharterConstitutionSignature(v interface{}) (nrsignup.CharterConstitutionSignature, error) {
-	var it nrsignup.CharterConstitutionSignature
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "signer":
-			var err error
-			it.Signer, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "signature":
-			var err error
-			it.Signature, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "message":
-			var err error
-			it.Message, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func UnmarshalSignupCharterMission(v interface{}) (nrsignup.CharterMission, error) {
-	var it nrsignup.CharterMission
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "purpose":
-			var err error
-			it.Purpose, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "structure":
-			var err error
-			it.Structure, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "revenue":
-			var err error
-			it.Revenue, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "encumbrances":
-			var err error
-			it.Encumbrances, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "miscellaneous":
-			var err error
-			it.Miscellaneous, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func UnmarshalSignupCharterRosterMember(v interface{}) (nrsignup.CharterRosterMember, error) {
-	var it nrsignup.CharterRosterMember
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "role":
-			var err error
-			it.Role, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "bio":
-			var err error
-			it.Bio, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "ethAddress":
-			var err error
-			it.EthAddress, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "socialUrls":
-			var err error
-			var rawIf1 []interface{}
-			if v != nil {
-				if tmp1, ok := v.([]interface{}); ok {
-					rawIf1 = tmp1
-				} else {
-					rawIf1 = []interface{}{v}
-				}
-			}
-			it.SocialURLs = make([]*nrsignup.CharterSocialURL, len(rawIf1))
-			for idx1 := range rawIf1 {
-				var ptr2 nrsignup.CharterSocialURL
-				if rawIf1[idx1] != nil {
-					ptr2, err = UnmarshalSignupCharterSocialUrl(rawIf1[idx1])
-					it.SocialURLs[idx1] = &ptr2
-				}
-			}
-			if err != nil {
-				return it, err
-			}
-		case "avatarUrl":
-			var err error
-			it.AvatarURL, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "signature":
-			var err error
-			it.Signature, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func UnmarshalSignupCharterSocialUrl(v interface{}) (nrsignup.CharterSocialURL, error) {
-	var it nrsignup.CharterSocialURL
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "service":
-			var err error
-			it.Service, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "url":
-			var err error
-			it.URL, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func UnmarshalSignupNewsroom(v interface{}) (nrsignup.Newsroom, error) {
-	var it nrsignup.Newsroom
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "name":
-			var err error
-			it.Name, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "charter":
-			var err error
-			var ptr1 nrsignup.Charter
-			if v != nil {
-				ptr1, err = UnmarshalSignupCharter(v)
-				it.Charter = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func UnmarshalUserSignatureInput(v interface{}) (users.SignatureInput, error) {
 	var it users.SignatureInput
 	var asMap = v.(map[string]interface{})
@@ -11069,7 +10744,7 @@ type Mutation {
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String! 
-  nrsignupRequestGrant(newsroomData: SignupNewsroom!): String! 
+  nrsignupRequestGrant: String! 
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String! 
   nrsignupPollTcrApplication(txHash: String!): String! 
@@ -11250,54 +10925,6 @@ input KycCreateApplicantInput {
   state: String
   zipcode: String
 }
-
-
-## Newsroom Signup object schemas
-
-input SignupNewsroom {
-    name: String!
-    charter: SignupCharter!
-}
-
-input SignupCharter {
-  logoUrl: String!
-  newsroomUrl: String!
-  tagline: String!
-  roster: [SignupCharterRosterMember!]!
-  signatures: [SignupCharterConstitutionSignature!]!
-  mission: SignupCharterMission!
-  socialUrls: [SignupCharterSocialUrl]
-}
-
-input SignupCharterMission {
-  purpose: String
-  structure: String
-  revenue: String
-  encumbrances: String
-  miscellaneous: String
-}
-
-input SignupCharterRosterMember {
-  name: String!
-  role: String!
-  bio: String!
-  ethAddress: String
-  socialUrls: [SignupCharterSocialUrl]
-  avatarUrl: String
-  signature: String
-}
-
-input SignupCharterConstitutionSignature {
-  signer: String!
-  signature: String!
-  message: String!
-}
-
-input SignupCharterSocialUrl {
-  service: String!
-  url: String!
-}
-
 
 ## User object schemas
 

@@ -31,11 +31,8 @@ func buildTestNewsroom() *nrsignup.Newsroom {
 		Role:       "Chief Banana Man",
 		Bio:        "Part of the Bluth family",
 		EthAddress: "thisissomehexaddress",
-		SocialURLs: []*nrsignup.CharterSocialURL{
-			{
-				Service: "twitter",
-				URL:     "http://twitter.com/mbluth",
-			},
+		SocialURLs: &nrsignup.CharterSocialURLs{
+			Twitter: "http://twitter.com/mbluth",
 		},
 		AvatarURL: "",
 		Signature: "",
@@ -46,11 +43,8 @@ func buildTestNewsroom() *nrsignup.Newsroom {
 		Role:       "Magic Man",
 		Bio:        "Part of the Bluth family",
 		EthAddress: "thisissomehexaddress2",
-		SocialURLs: []*nrsignup.CharterSocialURL{
-			{
-				Service: "twitter",
-				URL:     "http://twitter.com/thenotoriousgob",
-			},
+		SocialURLs: &nrsignup.CharterSocialURLs{
+			Twitter: "http://twitter.com/thenotoriousgob",
 		},
 		AvatarURL: "",
 		Signature: "",
@@ -58,11 +52,8 @@ func buildTestNewsroom() *nrsignup.Newsroom {
 
 	roster := []*nrsignup.CharterRosterMember{member1, member2}
 
-	social_urls := []*nrsignup.CharterSocialURL{
-		{
-			Service: "Twitter",
-			URL:     "http://twitter.com/testnewsroom",
-		},
+	social_urls := &nrsignup.CharterSocialURLs{
+		Twitter: "http://twitter.com/testnewsroom",
 	}
 	signatures := []*nrsignup.CharterConstitutionSignature{
 		{
@@ -107,14 +98,14 @@ func buildUserService() *users.UserService {
 
 func buildJsonbService(t *testing.T) *jsonstore.Service {
 	testNewsroom := buildTestNewsroom()
+	grantRequested := false
+	grantApproved := false
 	jsonData := &nrsignup.SignupUserJSONData{
-		WalletAddress:      "address1",
-		Email:              "foo@bar.com",
 		OnboardedTs:        1547827105,
 		Charter:            testNewsroom.Charter,
 		CharterLastUpdated: 1547827105,
-		GrantRequested:     false,
-		GrantApproved:      false,
+		GrantRequested:     &grantRequested,
+		GrantApproved:      &grantApproved,
 		NewsroomDeployTx:   "",
 		NewsroomAddress:    "",
 		TcrApplyTx:         "",
@@ -207,7 +198,7 @@ func TestRequestGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("1", buildTestNewsroom())
+	err = signup.RequestGrant("1")
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -254,7 +245,7 @@ func TestRequestGrantNoUser(t *testing.T) {
 		t.Fatalf("Error init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("2", buildTestNewsroom())
+	err = signup.RequestGrant("2")
 	if err == nil {
 		t.Fatalf("Should have failed to return with invalid user")
 	}
@@ -272,7 +263,7 @@ func TestApproveGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("1", buildTestNewsroom())
+	err = signup.RequestGrant("1")
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -324,7 +315,7 @@ func TestRejectGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("1", buildTestNewsroom())
+	err = signup.RequestGrant("1")
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}

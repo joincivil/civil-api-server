@@ -78,7 +78,7 @@ type Mutation {
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String! 
-  nrsignupRequestGrant(newsroomData: SignupNewsroom!): String! 
+  nrsignupRequestGrant: String! 
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String! 
   nrsignupPollTcrApplication(txHash: String!): String! 
@@ -259,54 +259,6 @@ input KycCreateApplicantInput {
   state: String
   zipcode: String
 }
-
-
-## Newsroom Signup object schemas
-
-input SignupNewsroom {
-    name: String!
-    charter: SignupCharter!
-}
-
-input SignupCharter {
-  logoUrl: String!
-  newsroomUrl: String!
-  tagline: String!
-  roster: [SignupCharterRosterMember!]!
-  signatures: [SignupCharterConstitutionSignature!]!
-  mission: SignupCharterMission!
-  socialUrls: [SignupCharterSocialUrl]
-}
-
-input SignupCharterMission {
-  purpose: String
-  structure: String
-  revenue: String
-  encumbrances: String
-  miscellaneous: String
-}
-
-input SignupCharterRosterMember {
-  name: String!
-  role: String!
-  bio: String!
-  ethAddress: String
-  socialUrls: [SignupCharterSocialUrl]
-  avatarUrl: String
-  signature: String
-}
-
-input SignupCharterConstitutionSignature {
-  signer: String!
-  signature: String!
-  message: String!
-}
-
-input SignupCharterSocialUrl {
-  service: String!
-  url: String!
-}
-
 
 ## User object schemas
 

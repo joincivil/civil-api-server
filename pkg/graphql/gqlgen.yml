@@ -56,15 +56,3 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONField
   Jsonb:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb
-  SignupNewsroom:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.Newsroom
-  SignupCharter:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.Charter
-  SignupCharterMission:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterMission
-  SignupCharterRosterMember:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterRosterMember
-  SignupCharterConstitutionSignature:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterConstitutionSignature
-  SignupCharterSocialUrl:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterSocialURL

@@ -7,7 +7,6 @@ import (
 	log "github.com/golang/glog"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
-	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 )
 
 const (
@@ -30,14 +29,13 @@ func (r *mutationResolver) NrsignupSendWelcomeEmail(ctx context.Context) (string
 	return nrsignupOKResponse, nil
 }
 
-func (r *mutationResolver) NrsignupRequestGrant(ctx context.Context,
-	newsroomData nrsignup.Newsroom) (string, error) {
+func (r *mutationResolver) NrsignupRequestGrant(ctx context.Context) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return "", fmt.Errorf("Access denied")
 	}
 
-	err := r.nrsignupService.RequestGrant(token.Sub, &newsroomData)
+	err := r.nrsignupService.RequestGrant(token.Sub)
 	if err != nil {
 		return "", err
 	}
