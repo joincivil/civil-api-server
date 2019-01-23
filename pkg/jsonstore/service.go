@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+const (
+	// DefaultJsonbGraphqlNs is the default value for the GraphQL Jsonb service
+	// namespace
+	DefaultJsonbGraphqlNs = "qqlJsonb"
+)
+
 // NewJsonbService is a convenience function to init a new JSONb Service struct
 func NewJsonbService(jsonbPersister JsonbPersister) *Service {
 	return &Service{

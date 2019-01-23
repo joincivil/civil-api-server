@@ -9,10 +9,6 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 )
 
-const (
-	jsonbGraphqlNs = "graphqlJsonb"
-)
-
 func (r *queryResolver) Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSONb, error) {
 	// Needs to have a valid auth token
 	token := auth.ForContext(ctx)
@@ -25,8 +21,11 @@ func (r *queryResolver) Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSO
 		idVal = *id
 	}
 
-	// token sub as salt
-	jsonb, err := r.jsonbService.RetrieveJSONb(idVal, jsonbGraphqlNs, token.Sub)
+	jsonb, err := r.jsonbService.RetrieveJSONb(
+		idVal,
+		jsonstore.DefaultNamespaceValue,
+		token.Sub, // token sub as salt
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +42,7 @@ func (r *mutationResolver) JsonbSave(ctx context.Context, input graphql.JsonbInp
 
 	updatedJSONb, err := r.jsonbService.SaveRawJSONb(
 		input.ID,
-		jsonbGraphqlNs,
+		jsonstore.DefaultJsonbGraphqlNs,
 		token.Sub, // token sub as salt
 		input.JSONStr,
 	)
