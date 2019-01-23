@@ -6,15 +6,26 @@ import (
 	"encoding/json"
 )
 
-// NamespacePlusIDHashKey generates a unique hash of a namespace with an arbitrary ID.
-// Namespace used as to prevent from overwriting other keys.
-func NamespacePlusIDHashKey(namespace string, ID string) (string, error) {
+const (
+	// NoSaltValue is just a nice placeholder for an empty salt value
+	NoSaltValue = ""
+
+	// DefaultNamespaceValue is just a nice placeholder for an empty namespace value
+	DefaultNamespaceValue = "default"
+)
+
+// NamespaceIDSaltHashKey generates a unique hash of an arbitrary ID. A namespace
+// value can be optionally added to the hash. Adding a salt helps to add uniqueness
+// within a namespace but is optional.
+func NamespaceIDSaltHashKey(namespace string, ID string, salt string) (string, error) {
 	val := struct {
-		NS string
-		ID string
+		NS   string
+		ID   string
+		Salt string
 	}{
-		NS: namespace,
-		ID: ID,
+		NS:   namespace,
+		ID:   ID,
+		Salt: salt,
 	}
 
 	bys, err := json.Marshal(val)

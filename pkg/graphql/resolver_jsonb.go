@@ -21,7 +21,11 @@ func (r *queryResolver) Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSO
 		idVal = *id
 	}
 
-	jsonb, err := r.jsonbService.RetrieveJSONb(idVal, token.Sub)
+	jsonb, err := r.jsonbService.RetrieveJSONb(
+		idVal,
+		jsonstore.DefaultJsonbGraphqlNs,
+		token.Sub, // token sub as salt
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +40,11 @@ func (r *mutationResolver) JsonbSave(ctx context.Context, input graphql.JsonbInp
 		return jsonstore.JSONb{}, fmt.Errorf("Access denied")
 	}
 
-	updatedJSONb, err := r.jsonbService.SaveRawJSONb(input.ID, token.Sub, input.JSONStr)
+	updatedJSONb, err := r.jsonbService.SaveRawJSONb(
+		input.ID,
+		jsonstore.DefaultJsonbGraphqlNs,
+		token.Sub, // token sub as salt
+		input.JSONStr,
+	)
 	return *updatedJSONb, err
 }

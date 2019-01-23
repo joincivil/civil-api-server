@@ -38,21 +38,6 @@ const (
 	}`
 )
 
-func TestNoNamespace(t *testing.T) {
-	persister := &testutils.InMemoryJSONbPersister{
-		Store: map[string]*jsonstore.JSONb{},
-	}
-	jsonbService := jsonstore.NewJsonbService(persister)
-	_, err := jsonbService.RetrieveJSONb("testID", "")
-	if err == nil {
-		t.Errorf("Should have failed with empty namespace")
-	}
-	_, err = jsonbService.SaveRawJSONb("testID", "", testJSONStr)
-	if err == nil {
-		t.Errorf("Should have failed with empty namespace")
-	}
-}
-
 func TestSaveRetrieveJSONb(t *testing.T) {
 	persister := &testutils.InMemoryJSONbPersister{
 		Store: map[string]*jsonstore.JSONb{},
@@ -62,7 +47,8 @@ func TestSaveRetrieveJSONb(t *testing.T) {
 	testID := "testid"
 	namespace := "somenamespaceid"
 
-	jsonb, err := jsonbService.SaveRawJSONb(testID, namespace, testJSONStr)
+	jsonb, err := jsonbService.SaveRawJSONb(testID, namespace,
+		jsonstore.NoSaltValue, testJSONStr)
 	if err != nil {
 		t.Errorf("Should have saved to the JSONb store: err: %v", err)
 	}
@@ -74,7 +60,7 @@ func TestSaveRetrieveJSONb(t *testing.T) {
 		t.Errorf("Should have returned the exact raw JSON string")
 	}
 
-	jsonbs, err := jsonbService.RetrieveJSONb(testID, namespace)
+	jsonbs, err := jsonbService.RetrieveJSONb(testID, namespace, jsonstore.NoSaltValue)
 	if err != nil {
 		t.Errorf("Should have retrieved from the JSONb store: err: %v", err)
 	}
@@ -90,11 +76,20 @@ func TestSaveRetrieveJSONb(t *testing.T) {
 	if retrievedJson.CreatedDate != jsonb.CreatedDate {
 		t.Errorf("Should have seen the same item creation dates")
 	}
+	if retrievedJson.Key != jsonb.Key {
+		t.Errorf("Should have seen the same key")
+	}
 	if retrievedJson.ID != jsonb.ID {
 		t.Errorf("Should have seen the same item id")
 	}
 	if retrievedJson.RawJSON != jsonb.RawJSON {
 		t.Errorf("Should have seen the same item raw json")
+	}
+	if retrievedJson.Namespace != jsonb.Namespace {
+		t.Errorf("Should have been the correct namespace")
+	}
+	if retrievedJson.Namespace != namespace {
+		t.Errorf("Should have been the correct namespace")
 	}
 
 }
@@ -108,12 +103,13 @@ func TestInvalidJSONStr(t *testing.T) {
 	testID := "testid"
 	namespace := "somenamespaceid"
 
-	_, err := jsonbService.SaveRawJSONb(testID, namespace, testInvalidJSONStr)
+	_, err := jsonbService.SaveRawJSONb(testID, namespace, jsonstore.NoSaltValue,
+		testInvalidJSONStr)
 	if err == nil {
 		t.Errorf("Should have received error with invalid JSON: err: %v", err)
 	}
 
-	_, err = jsonbService.SaveRawJSONb(testID, namespace, "")
+	_, err = jsonbService.SaveRawJSONb(testID, namespace, jsonstore.NoSaltValue, "")
 	if err == nil {
 		t.Errorf("Should have received error with empty JSON: err: %v", err)
 	}
