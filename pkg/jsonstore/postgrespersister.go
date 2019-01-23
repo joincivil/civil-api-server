@@ -191,6 +191,7 @@ func CreateJsonbTableQuery(tableName string) string {
             key TEXT PRIMARY KEY UNIQUE,
 			hash TEXT,
 			id TEXT,
+			namespace TEXT,
             created_date BIGINT,
             last_updated_date BIGINT,
             raw_json JSONB
@@ -246,6 +247,7 @@ func NewPostgresJSONbFromJSONb(jsonb *JSONb) (*PostgresJSONb, error) {
 		Hash:            jsonb.Hash,
 		ID:              jsonb.ID,
 		Key:             jsonb.Key,
+		Namespace:       jsonb.Namespace,
 		CreatedDate:     createdTs,
 		LastUpdatedDate: lastUpdatedTs,
 		JSONb:           *jsonbPayload,
@@ -259,6 +261,8 @@ type PostgresJSONb struct {
 	Hash string `db:"hash"`
 
 	ID string `db:"id"`
+
+	Namespace string `db:"namespace"`
 
 	CreatedDate int64 `db:"created_date"`
 
@@ -282,6 +286,7 @@ func (p *PostgresJSONb) PostgresJSONbToJSONb() (*JSONb, error) {
 	jsonb.Key = p.Key
 	jsonb.Hash = p.Hash
 	jsonb.ID = p.ID
+	jsonb.Namespace = p.Namespace
 	jsonb.CreatedDate = ctime.SecsFromEpochToTime(p.CreatedDate)
 	jsonb.LastUpdatedDate = ctime.SecsFromEpochToTime(p.LastUpdatedDate)
 	jsonStr, err := p.JSONbStr()

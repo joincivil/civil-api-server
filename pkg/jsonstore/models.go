@@ -75,6 +75,7 @@ type JSONb struct {
 	Key             string       `json:"key"`
 	Hash            string       `json:"hash"`
 	ID              string       `json:"id"`
+	Namespace       string       `json:"namespace"`
 	CreatedDate     time.Time    `json:"createdDate"`
 	LastUpdatedDate time.Time    `json:"lastUpdatedDate"`
 	RawJSON         string       `json:"rawJson"`
