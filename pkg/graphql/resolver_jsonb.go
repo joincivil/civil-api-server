@@ -23,7 +23,7 @@ func (r *queryResolver) Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSO
 
 	jsonb, err := r.jsonbService.RetrieveJSONb(
 		idVal,
-		jsonstore.DefaultNamespaceValue,
+		jsonstore.DefaultJsonbGraphqlNs,
 		token.Sub, // token sub as salt
 	)
 	if err != nil {
