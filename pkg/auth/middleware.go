@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	middlewareInvalidTokenCode = 500
-	middlewareExpiredTokenCode = 501
+	middlewareInvalidTokenCode = "INVALID_TOKEN"
+	middlewareExpiredTokenCode = "EXPIRED_TOKEN"
 )
 
 const (
@@ -49,9 +49,8 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 				code, msg := parseValidationErrorToCodeMsg(err)
 
 				w.Header().Set("Content-Type", "application/json")
-				// Should this be 401 unauthorized?
-				w.WriteHeader(http.StatusForbidden)
-				respBody := fmt.Sprintf("{\"errCode\": %v, \"err\": \"%v\"}", code, msg)
+				w.WriteHeader(http.StatusUnauthorized)
+				respBody := fmt.Sprintf("{\"errCode\": \"%v\", \"err\": \"%v\"}", code, msg)
 				_, _ = w.Write([]byte(respBody)) // nolint: gosec
 				return
 			}
@@ -67,7 +66,7 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 	}
 }
 
-func parseValidationErrorToCodeMsg(err error) (int, string) {
+func parseValidationErrorToCodeMsg(err error) (string, string) {
 	// Default to invalid token
 	code := middlewareInvalidTokenCode
 	msg := middlewareInvalidTokenMsg
