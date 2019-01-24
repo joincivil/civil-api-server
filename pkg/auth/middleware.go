@@ -49,8 +49,9 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 				code, msg := parseValidationErrorToCodeMsg(err)
 
 				w.Header().Set("Content-Type", "application/json")
+				// Should this be 401 unauthorized?
 				w.WriteHeader(http.StatusForbidden)
-				respBody := fmt.Sprintf("{\"errCode\": \"%v\", \"err\": \"%v\"}", code, msg)
+				respBody := fmt.Sprintf("{\"errCode\": %v, \"err\": \"%v\"}", code, msg)
 				_, _ = w.Write([]byte(respBody)) // nolint: gosec
 				return
 			}
