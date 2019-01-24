@@ -6,6 +6,18 @@ import (
 	"net/http"
 
 	log "github.com/golang/glog"
+
+	jwtgo "github.com/dgrijalva/jwt-go"
+)
+
+const (
+	middlewareInvalidTokenCode = "INVALID_TOKEN"
+	middlewareExpiredTokenCode = "EXPIRED_TOKEN"
+)
+
+const (
+	middlewareInvalidTokenMsg = "Invalid authorization header"
+	middlewareExpiredTokenMsg = "Authorization has expired"
 )
 
 // A private key for context that only this package can access. This is important
@@ -34,10 +46,12 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 
 			token, err := validateDecodeToken(jwt, authHeader)
 			if err != nil {
-				log.Infof("validateDecodeToken err = %v", err)
+				code, msg := parseValidationErrorToCodeMsg(err)
+
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusForbidden)
-				_, _ = w.Write([]byte("{\"err\": \"Invalid authorization header\"}")) // nolint: gosec
+				w.WriteHeader(http.StatusUnauthorized)
+				respBody := fmt.Sprintf("{\"errCode\": \"%v\", \"err\": \"%v\"}", code, msg)
+				_, _ = w.Write([]byte(respBody)) // nolint: gosec
 				return
 			}
 
@@ -50,6 +64,25 @@ func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func parseValidationErrorToCodeMsg(err error) (string, string) {
+	// Default to invalid token
+	code := middlewareInvalidTokenCode
+	msg := middlewareInvalidTokenMsg
+
+	ve, ok := err.(*jwtgo.ValidationError)
+
+	// If the token is valid, but expired
+	// If there is a validation error that isn't an expiration, log it
+	if ok && ve.Errors&jwtgo.ValidationErrorExpired != 0 {
+		code = middlewareExpiredTokenCode
+		msg = middlewareExpiredTokenMsg
+
+	} else {
+		log.Infof("token validation error: err: %v", err)
+	}
+	return code, msg
 }
 
 func validateDecodeToken(jwt *JwtTokenGenerator, authHeader string) (*Token, error) {
