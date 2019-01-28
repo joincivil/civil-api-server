@@ -11,7 +11,7 @@ import (
 
 const (
 	// number of seconds that a JWT token has until it expires
-	defaultJWTExpiration = 60 * 60 * 24
+	defaultJWTExpiration = 60 * 60 * 24 * 60 // 60 days
 	// number of seconds that a JWT token sent for login or signup is valid
 	defaultJWTEmailExpiration = 60 * 60 * 24 * 10
 	// number of seconds for a signature challenge
