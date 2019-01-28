@@ -233,7 +233,6 @@ func initResolver(t *testing.T) (*graphql.Resolver, common.Address) {
 		ChallengePersister:  nil,
 		AppealPersister:     nil,
 		PollPersister:       nil,
-		UserPersister:       nil,
 		OnfidoAPI:           nil,
 		OnfidoTokenReferrer: "",
 		TokenFoundry:        nil,

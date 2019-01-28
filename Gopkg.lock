@@ -93,6 +93,14 @@
   revision = "6ab5f3083f3d925e1944d58cdaebf43bbbff9238"
 
 [[projects]]
+  digest = "1:edb569dd02419a41ddd98768cc0e7aec922ef19dae139731e5ca750afcf6f4c5"
+  name = "github.com/edsrzf/mmap-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "188cc3b666ba704534fa4f96e9e61f21f1e1ba7c"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:87fa9f2d71fd2516e6c0d906b7eb58886c8b4fcc6ee8cada0553a0e50bfeef3a"
   name = "github.com/ethereum/go-ethereum"
   packages = [
@@ -100,22 +108,38 @@
     "accounts",
     "accounts/abi",
     "accounts/abi/bind",
+    "accounts/abi/bind/backends",
     "accounts/keystore",
     "common",
+    "common/bitutil",
     "common/hexutil",
     "common/math",
     "common/mclock",
     "common/prque",
+    "consensus",
+    "consensus/ethash",
+    "consensus/misc",
+    "core",
+    "core/bloombits",
+    "core/rawdb",
+    "core/state",
     "core/types",
+    "core/vm",
     "crypto",
+    "crypto/bn256",
+    "crypto/bn256/cloudflare",
+    "crypto/bn256/google",
     "crypto/secp256k1",
     "crypto/sha3",
+    "eth/filters",
     "ethdb",
     "event",
     "log",
     "metrics",
+    "p2p/netutil",
     "params",
     "rlp",
+    "rpc",
     "trie",
   ]
   pruneopts = "T"
@@ -247,7 +271,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b64f175dbdfdcf6323b74966f819876b84811734ce3c2ef07db989e079be4009"
+  digest = "1:b6d6e64df92f56f0345f5642793c59af55ca15623217d3fc569a1b0b9f35f851"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -263,7 +287,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "d6e7f06dd2c0851a35e8e0e5d609122f03d3e47b"
+  revision = "6c6d10efab52786cfaed114d2001e9229dd395f0"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -322,6 +346,14 @@
   pruneopts = "UT"
   revision = "b41be1df696709bb6395fe435af20370037c0b4c"
   version = "v1.1"
+
+[[projects]]
+  digest = "1:b0c25f00bad20d783d259af2af8666969e2fc343fa0dc9efe52936bbd67fb758"
+  name = "github.com/rs/cors"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9a47f48565a795472d43519dd49aac781f3034fb"
+  version = "v1.6.0"
 
 [[projects]]
   digest = "1:ff6b0586c0621a76832cf783eee58cbb9d9795d2ce8acbc199a4131db11c42a9"
@@ -395,10 +427,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:29672ea8ec3ef342d345f668d47666e45366b7691080ee4c07bf4851f4fa8864"
+  digest = "1:230a66be994ebe110710c86b4c475b9050f4872ef04937b290d9c9db20436005"
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
+    "ripemd160",
     "scrypt",
   ]
   pruneopts = "UT"
@@ -406,17 +439,24 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:76ee51c3f468493aff39dbacc401e8831fbb765104cbf613b89bef01cf4bad70"
+  digest = "1:290b8002a96a5f5c1bd8316884f6e2414f5fb1e46a22bbd5a1ff0d45dc944cb3"
   name = "golang.org/x/net"
-  packages = ["context"]
+  packages = [
+    "context",
+    "websocket",
+  ]
   pruneopts = "UT"
   revision = "f04abc6bdfa7a0171a8a0c9fd2ada9391044d056"
 
 [[projects]]
   branch = "master"
-  digest = "1:d773e525476aefa22ea944a5425a9bfb99819b2e67eeb9b1966454fd57522bbf"
+  digest = "1:1da9d2022068957b5a7080b0f94d3d81bdba624a5ce7467912bd6d4330ba2c3f"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "cpu",
+    "unix",
+    "windows",
+  ]
   pruneopts = "UT"
   revision = "1b2967e3c290b7c545b3db0deeda16e9be4f98a2"
 
@@ -441,6 +481,14 @@
   ]
   pruneopts = "UT"
   revision = "d600f31f815368e57b551e524b0169bd175f7edb"
+
+[[projects]]
+  branch = "v2"
+  digest = "1:3d3f9391ab615be8655ae0d686a1564f3fec413979bb1aaf018bac1ec1bb1cc7"
+  name = "gopkg.in/natefinch/npipe.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
 
 [[projects]]
   digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"

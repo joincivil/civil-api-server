@@ -76,6 +76,13 @@ type Mutation {
   kycCreateCheck(applicantID: String!, facialVariant: String): String
   kycGenerateSdkToken(applicantID: String!): String
 
+  # Newsroom Signup Mutations
+  nrsignupSendWelcomeEmail: String! 
+  nrsignupRequestGrant: String! 
+  nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
+  nrsignupPollNewsroomDeploy(txHash: String!): String! 
+  nrsignupPollTcrApplication(txHash: String!): String! 
+
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
