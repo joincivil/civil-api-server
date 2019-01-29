@@ -3,6 +3,8 @@ package auth
 import (
 	"fmt"
 
+	log "github.com/golang/glog"
+
 	"github.com/joincivil/go-common/pkg/email"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
@@ -221,6 +223,7 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 
 // SignupTemplateIDForApplication returns the signup email template ID for the given application enum
 func (s *Service) SignupTemplateIDForApplication(application ApplicationEnum) (string, error) {
+	log.Infof("templates %v", s)
 	templateID, ok := s.signupEmailTemplateIDs[application]
 	if !ok || templateID == "" {
 		return "", fmt.Errorf("Application signup %v template not found", application.String())
