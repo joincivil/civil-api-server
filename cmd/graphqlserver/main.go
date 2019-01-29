@@ -364,63 +364,112 @@ func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
 	return nil
 }
 
-func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port string) error {
+type dependencies struct {
+	emailer          *cemail.Emailer
+	jwtGenerator     *auth.JwtTokenGenerator
+	invoicePersister *invoicing.PostgresPersister
+	checkbookIO      *invoicing.CheckbookIO
+	userService      *users.UserService
+	authService      *auth.Service
+	jsonbService     *jsonstore.Service
+	nrsignupService  *nrsignup.Service
+	tokenFoundry     *tokenfoundry.API
+	onfido           *kyc.OnfidoAPI
+}
+
+func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	var err error
-	tokenGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
 
-	// Enable authentication/authorization handling
-	router.Use(auth.Middleware(tokenGenerator))
+	var checkbookIO *invoicing.CheckbookIO
+	if config.EnableInvoicing {
+		checkbookIO, err = invoiceCheckbookIO(config)
+		if err != nil {
+			log.Fatalf("Error setting up invoicing client: err: %v", err)
+		}
+	}
 
-	// set up persisters/services/common stuff
-	var invoicePersister *invoicing.PostgresPersister
-	var userService *users.UserService
-	var authService *auth.Service
-	var jsonbService *jsonstore.Service
-	var nrsignupService *nrsignup.Service
+	invoicePersister, err := initInvoicePersister(config)
+	if err != nil {
+		log.Fatalf("Error setting up invoicing persister: err: %v", err)
+		return nil, err
+	}
 
-	emailer := cemail.NewEmailer(config.SendgridKey)
 	jwtGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
+	emailer := cemail.NewEmailer(config.SendgridKey)
+	tokenFoundry := initTokenFoundryAPI(config)
+	onfido := initOnfidoAPI(config)
 
-	if config.EnableInvoicing || config.EnableGraphQL {
-		invoicePersister, err = initInvoicePersister(config)
-		if err != nil {
-			log.Fatalf("Error setting up invoicing persister: err: %v", err)
-			return err
-		}
+	userService, err := initUserService(config, nil)
+	if err != nil {
+		log.Fatalf("Error w init userService: err: %v", err)
+		return nil, err
 	}
-	if config.EnableKYC || config.EnableGraphQL {
-		userService, err = initUserService(config, nil)
-		if err != nil {
-			log.Fatalf("Error w init userService: err: %v", err)
-			return err
-		}
-	}
-	jsonbService, err = initJsonbService(config, nil)
+
+	jsonbService, err := initJsonbService(config, nil)
 	if err != nil {
 		log.Fatalf("Error w init jsonbService: err: %v", err)
-		return err
+		return nil, err
 	}
-	nrsignupService, err = initNrsignupService(
+	nrsignupService, err := initNrsignupService(
 		config,
 		emailer,
 		userService,
 		jsonbService,
 		jwtGenerator,
 	)
-	tokenFoundry := initTokenFoundryAPI(config)
-	onfido := initOnfidoAPI(config)
+	if err != nil {
+		log.Fatalf("Error w init newsroom signup service: err: %v", err)
+		return nil, err
+	}
+
+	authService, err := auth.NewAuthService(
+		userService,
+		jwtGenerator,
+		emailer,
+		config.AuthEmailSignupTemplates,
+		config.AuthEmailLoginTemplates,
+	)
+	if err != nil {
+		log.Fatalf("Error w init auth service: err: %v", err)
+		return nil, err
+	}
+
+	return &dependencies{
+		emailer:          emailer,
+		jwtGenerator:     jwtGenerator,
+		invoicePersister: invoicePersister,
+		checkbookIO:      checkbookIO,
+		userService:      userService,
+		authService:      authService,
+		jsonbService:     jsonbService,
+		nrsignupService:  nrsignupService,
+		tokenFoundry:     tokenFoundry,
+		onfido:           onfido,
+	}, nil
+
+}
+
+func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port string) error {
+	deps, err := initDependencies(config)
+	if err != nil {
+		log.Fatalf("Error initializing dependencies: err: %v", err)
+		return err
+	}
+
+	// Enable authentication/authorization handling
+	router.Use(auth.Middleware(deps.jwtGenerator))
 
 	// GraphQL Query Endpoint (Crawler/KYC)
 	if config.EnableGraphQL {
 		rconfig := &resolverConfig{
 			config:           config,
-			invoicePersister: invoicePersister,
-			authService:      authService,
-			userService:      userService,
-			jsonbService:     jsonbService,
-			nrsignupService:  nrsignupService,
-			tokenFoundry:     tokenFoundry,
-			onfido:           onfido,
+			invoicePersister: deps.invoicePersister,
+			authService:      deps.authService,
+			userService:      deps.userService,
+			jsonbService:     deps.jsonbService,
+			nrsignupService:  deps.nrsignupService,
+			tokenFoundry:     deps.tokenFoundry,
+			onfido:           deps.onfido,
 		}
 		err = graphQLRouting(router, rconfig)
 		if err != nil {
@@ -440,13 +489,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 
 	// Invoicing REST endpoints
 	if config.EnableInvoicing {
-		checkbookIOClient, cerr := invoiceCheckbookIO(config)
-		if cerr != nil {
-			log.Fatalf("Error setting up invoicing client: err: %v", cerr)
-		}
-
-		emailer := cemail.NewEmailer(config.SendgridKey)
-		err = invoicingRouting(router, checkbookIOClient, invoicePersister, emailer, config.CheckbookTest)
+		err = invoicingRouting(router, deps.checkbookIO, deps.invoicePersister, deps.emailer, config.CheckbookTest)
 		if err != nil {
 			log.Fatalf("Error setting up invoicing routing: err: %v", err)
 		}
@@ -462,9 +505,9 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 		)
 
 		updater := invoicing.NewCheckoutIOUpdater(
-			checkbookIOClient,
-			invoicePersister,
-			emailer,
+			deps.checkbookIO,
+			deps.invoicePersister,
+			deps.emailer,
 			checkbookUpdaterRunFreqSecs,
 		)
 		go updater.Run()
@@ -472,12 +515,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 
 	// KYC REST endpoints
 	if config.EnableKYC {
-		onfido := kyc.NewOnfidoAPI(
-			kyc.ProdAPIURL,
-			config.OnfidoKey,
-		)
-		emailer := cemail.NewEmailer(config.SendgridKey)
-		err = kycRouting(router, config, onfido, emailer)
+		err = kycRouting(router, config, deps.onfido, deps.emailer)
 		if err != nil {
 			log.Fatalf("Error setting up KYC routing: err: %v", err)
 		}
@@ -489,7 +527,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 	}
 
 	// Newsroom Signup REST endpoints
-	err = nrsignupRouting(router, config, nrsignupService, jwtGenerator)
+	err = nrsignupRouting(router, config, deps.nrsignupService, deps.jwtGenerator)
 	if err != nil {
 		log.Fatalf("Error setting up newsroom signup routing: err: %v", err)
 	}
