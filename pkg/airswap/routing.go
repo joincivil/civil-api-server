@@ -15,8 +15,7 @@ func EnableAirswapRouting(router chi.Router) {
 	totalRaiseUSD := 20000000.0
 	startingPrice := 0.2
 	pricingManager := NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
-	// TOOD(dankins): change this to be dynamic
-	pairPricing := &StaticPairPricing{PriceOfETH: 104.4}
+	pairPricing := NewKrakenPairPricing(30)
 
 	handlers := &Handlers{Pricing: pricingManager, Conversion: pairPricing}
 
