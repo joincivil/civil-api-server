@@ -31,6 +31,7 @@ type GraphQLConfig struct {
 	AuthEmailLoginTemplates  map[string]string `split_words:"true" required:"false" desc:"<appname>:<template id>,..."`
 
 	ApproveGrantProtoHost string `split_words:"true" desc:"Newsroom signup grant approval landing proto/host" required:"false"`
+	SignupLoginProtoHost  string `split_words:"true" desc:"Signup/login proto/host" required:"false"`
 
 	SendgridKey string `split_words:"true" desc:"The SendGrid API key"`
 

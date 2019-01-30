@@ -21,7 +21,7 @@ func (r *mutationResolver) AuthSignupEth(ctx context.Context, input users.Signat
 }
 
 func (r *mutationResolver) AuthSignupEmailSend(ctx context.Context, emailAddress string) (*string, error) {
-	result, err := r.authService.SignupEmailSend(emailAddress)
+	result, _, err := r.authService.SignupEmailSend(emailAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (r *mutationResolver) AuthSignupEmailSend(ctx context.Context, emailAddress
 
 func (r *mutationResolver) AuthSignupEmailSendForApplication(ctx context.Context, emailAddress string,
 	application auth.ApplicationEnum) (*string, error) {
-	result, err := r.authService.SignupEmailSendForApplication(emailAddress, application)
+	result, _, err := r.authService.SignupEmailSendForApplication(emailAddress, application)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (r *mutationResolver) AuthLoginEth(ctx context.Context, input users.Signatu
 	return response, nil
 }
 func (r *mutationResolver) AuthLoginEmailSend(ctx context.Context, emailAddress string) (*string, error) {
-	result, err := r.authService.LoginEmailSend(emailAddress)
+	result, _, err := r.authService.LoginEmailSend(emailAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +67,7 @@ func (r *mutationResolver) AuthLoginEmailSend(ctx context.Context, emailAddress 
 
 func (r *mutationResolver) AuthLoginEmailSendForApplication(ctx context.Context, emailAddress string,
 	application auth.ApplicationEnum) (*string, error) {
-	result, err := r.authService.LoginEmailSendForApplication(emailAddress, application)
+	result, _, err := r.authService.LoginEmailSendForApplication(emailAddress, application)
 	if err != nil {
 		return nil, err
 	}

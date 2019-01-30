@@ -41,6 +41,9 @@ func (r *InMemoryUserPersister) User(criteria *users.UserCriteria) (*users.User,
 
 // SaveUser saves user instances
 func (r *InMemoryUserPersister) SaveUser(user *users.User) error {
+	if user.UID == "" {
+		user.GenerateUID() // nolint: errcheck
+	}
 	r.Users[user.UID] = user
 
 	return nil

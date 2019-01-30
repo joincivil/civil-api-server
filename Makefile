@@ -117,6 +117,10 @@ test-integration: ## Runs tagged integration tests
 cover: test ## Runs unit tests, code coverage, and runs HTML coverage tool.
 	@$(GOCOVER) -html=coverage.txt
 
+.PHONY: cover-integration
+cover-integration: test-integration ## Runs unit tests, code coverage, and runs HTML coverage tool.
+	@$(GOCOVER) -html=coverage.txt
+
 .PHONY: clean
 clean: ## go clean and clean up of artifacts
 	@$(GOCLEAN) ./... || true
