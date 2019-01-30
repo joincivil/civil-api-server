@@ -1,6 +1,6 @@
 package airswap
 
-// PairPricing provides an interace to return the price of a currency pair
+// PairPricing provides an interface to return the price of a currency pair
 type PairPricing interface {
 	USDToETH() float64
 }

@@ -2,6 +2,7 @@ package airswap
 
 import (
 	"encoding/json"
+	"errors"
 	"math/big"
 	"math/rand"
 	"net/http"
@@ -54,44 +55,23 @@ func (h *Handlers) GetOrder(w http.ResponseWriter, r *http.Request) {
 
 	// MakerAmount is the number of tokens (in wei) that the person wants to receive in the trade (buy or sell)
 	if request.MakerAmount != "" {
-		// parse the amount of CVL they want to receive from the request
-		requestedAmount, ok := new(big.Float).SetString(request.MakerAmount)
-		if !ok {
-			log.Errorf("bad makerAmount format: %s", err)
+		takerAmount, err := h.ConvertMakerAmtToTakerAmt(request.MakerAmount)
+		if err != nil {
+			log.Errorf("error converting maker amount: %s", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
 		// set how long the offer is valid for
 		expiration := time.Now().Add(5 * time.Minute).Unix()
 		// a random nonce to prevent replay attacks
 		nonce := uint32(rand.Intn(99999))
 
-		// requests are in wei, not the full unit
-		wei, ok := new(big.Float).SetString("0.0000000000000000001")
-		if !ok {
-			log.Errorf("could not make wei: %s", err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		var makerFloat float64
-		makerFloat, _ = requestedAmount.Mul(requestedAmount, wei).Float64()
-		priceInUSD := h.Pricing.GetQuote(makerFloat)
-		price := priceInUSD * h.Conversion.USDToETH()
-
-		// takerAmount is the # of tokens (in wei) the maker will receive for the order
-		// this is just a fancy way of saying what the price is
-		takerAmount := new(big.Float).SetFloat64(price)
-		// price is in ETH, but we need it in wei
-		takerAmount.Quo(takerAmount, wei)
-		// return a big.Int instead of float
-		takerInt, _ := takerAmount.Int(nil)
-
 		order := GetOrderResponse{
 			MakerToken:  request.MakerToken,
 			TakerToken:  request.TakerToken,
 			MakerAmount: request.MakerAmount,
-			TakerAmount: takerInt.String(),
+			TakerAmount: takerAmount,
 			Expiration:  expiration,
 			Nonce:       nonce,
 		}
@@ -110,9 +90,39 @@ func (h *Handlers) GetOrder(w http.ResponseWriter, r *http.Request) {
 		}
 	} else if request.TakerAmount != "" {
 		log.Infof("not handling taker amount: %v", request.TakerAmount)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	} else {
 		log.Errorf("bad request: no maker or taker amount supplied")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+}
+
+// ConvertMakerAmtToTakerAmt takes the amount of tokens requested and returns a price in ETH (wei)
+func (h *Handlers) ConvertMakerAmtToTakerAmt(makerAmount string) (string, error) {
+	// parse the amount of CVL they want to receive from the request
+	requestedAmount, ok := new(big.Float).SetString(makerAmount)
+	if !ok {
+		return "", errors.New("bad makerAmount format: %s")
+	}
+
+	// convert the requestedAmount from wei to eth (ie, 1e18 wei to 1 eth)
+	requestedAmount.Quo(requestedAmount, big.NewFloat(1e18))
+
+	// convert from big.Float to float64
+	var requestedAmountFloat float64
+	requestedAmountFloat, _ = requestedAmount.Float64()
+	priceInUSD := h.Pricing.GetQuote(requestedAmountFloat)
+	price := priceInUSD * h.Conversion.USDToETH()
+
+	// takerAmount is the # of tokens (in eth) the maker will receive for the order
+	// this is just a fancy way of saying what the price is
+	takerAmount := new(big.Float).SetFloat64(price)
+	// price is in ETH, but we need it in wei
+	takerAmount.Mul(takerAmount, big.NewFloat(1e18))
+	// return a big.Int instead of float
+	takerInt, _ := takerAmount.Int(nil)
+
+	return takerInt.String(), nil
 }

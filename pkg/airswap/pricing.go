@@ -7,20 +7,18 @@ import (
 
 // PricingManager provides utilities to price tokens along a linear curve
 type PricingManager struct {
-	TotalOffering float64
-	TotalRaiseUSD float64
-	StartingPrice float64
-	TokensSold    float64
+	TotalOffering       float64 // the total number of tokens being sold
+	TotalRaiseTargetUSD float64 // the amount in USD that will be raised from selling `TotalOffering` tokens
+	StartingPrice       float64 // the price of the first token sold
+	TokensSold          float64 // TokensSold how far along the price slope we are
 }
 
 // NewPricingManager returns an instance of PricingManager
 func NewPricingManager(totalOffering float64, totalRaiseUSD float64, startingPrice float64) *PricingManager {
-	const ()
-
 	return &PricingManager{
-		TotalOffering: totalOffering,
-		TotalRaiseUSD: totalRaiseUSD,
-		StartingPrice: startingPrice,
+		TotalOffering:       totalOffering,
+		TotalRaiseTargetUSD: totalRaiseUSD,
+		StartingPrice:       startingPrice,
 	}
 }
 
@@ -71,16 +69,16 @@ func (m *PricingManager) CalculateSlope() float64 {
 	// area of rectangle is the total amount raised if we kept the price the same for all tokens
 	aR := m.TotalOffering * m.StartingPrice
 	// area of triangle is the amount raised from the increase in token price from the start
-	aT := m.TotalRaiseUSD - aR
+	aT := m.TotalRaiseTargetUSD - aR
 
-	// priceIncrease is the change in height from the StartingPrice to the LastPrice
+	// totalPriceIncrease is the change in height from the StartingPrice to the LastPrice
 	// another way to look at it is the height of aT
 	// area of triangle (a) = 1/2(b*h)
 	// h = 2a / b
-	priceIncrease := (2.0 * aT) / m.TotalOffering
+	totalPriceIncrease := (2.0 * aT) / m.TotalOffering
 
 	// slope is the change in price over the number of tokens on offer
-	return priceIncrease / m.TotalOffering
+	return totalPriceIncrease / m.TotalOffering
 }
 
 // CalculatePriceAtX returns the starting price after X tokens sold
