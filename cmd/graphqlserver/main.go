@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 
 	log "github.com/golang/glog"
@@ -535,6 +536,13 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 		"Connect to http://localhost:%v/%v/nrsignup/grantapprove for grant approval webhook\n",
 		port,
 		invoicingVersion,
+	)
+
+	// airswap REST endpoints
+	airswap.EnableAirswapRouting(router)
+	log.Infof(
+		"Connect to http://localhost:%v/airswap for airswap\n",
+		port,
 	)
 
 	return nil
