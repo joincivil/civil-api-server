@@ -19,6 +19,11 @@ var (
 	ErrStalePrice = errors.New("price data is too old")
 )
 
+const (
+	// stalePriceTimeSecs is the number of seconds a conversion rate is valid
+	stalePriceTimeSecs = 120
+)
+
 // PairPricing provides an interace to return the price of a currency pair
 type PairPricing interface {
 	USDToETH() (float64, error)
@@ -36,9 +41,9 @@ func (s *StaticPairPricing) USDToETH() (float64, error) {
 
 // KrakenPairPricing is a PairPricing that is periodically updated by the Kraken API
 type KrakenPairPricing struct {
-	LastestETHUSD *KrakenPriceUpdate
-	UpdateTicker  *time.Ticker
-	KrakenURL     string
+	LatestETHUSD *KrakenPriceUpdate
+	UpdateTicker *time.Ticker
+	KrakenURL    string
 }
 
 // NewKrakenPairPricing returns a new KrakenPairPricing that updates the price every `frequencySeconds`
@@ -126,8 +131,8 @@ func (k *KrakenPairPricing) UpdatePrice() error {
 		return err
 	}
 
-	k.LastestETHUSD = &KrakenPriceUpdate{Price: math.Round(price*10000) / 10000, LastUpdate: time.Now()}
-	log.Infof("Updated ETHUSD Price: %v\n", k.LastestETHUSD.Price)
+	k.LatestETHUSD = &KrakenPriceUpdate{Price: RoundFloat(price, 5), LastUpdate: time.Now()}
+	log.Infof("Updated ETHUSD Price: %v\n", k.LatestETHUSD.Price)
 
 	return nil
 
@@ -135,12 +140,17 @@ func (k *KrakenPairPricing) UpdatePrice() error {
 
 // USDToETH returns the latest price update
 func (k *KrakenPairPricing) USDToETH() (float64, error) {
-	if k.LastestETHUSD == nil {
+	if k.LatestETHUSD == nil {
 		return 0, ErrNoPrice
 	}
-	if time.Since(k.LastestETHUSD.LastUpdate) > (120 * time.Second) {
+	if time.Since(k.LatestETHUSD.LastUpdate) > (stalePriceTimeSecs * time.Second) {
 		return 0, ErrStalePrice
 	}
 
-	return math.Round((1/k.LastestETHUSD.Price)*10000) / 10000, nil
+	return RoundFloat(1/k.LatestETHUSD.Price, 5), nil
+}
+
+// RoundFloat rounds a float to the specified number of decimals
+func RoundFloat(num float64, places int) float64 {
+	return math.Round(num*math.Pow10(places)) / math.Pow10(places)
 }

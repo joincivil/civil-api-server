@@ -36,7 +36,7 @@ func TestUSDToETH(t *testing.T) {
 		t.Fatalf("expecting error to be `ErrNoPrice`")
 	}
 
-	conversion.LastestETHUSD = &airswap.KrakenPriceUpdate{
+	conversion.LatestETHUSD = &airswap.KrakenPriceUpdate{
 		Price:      100.0,
 		LastUpdate: time.Now(),
 	}
@@ -49,7 +49,7 @@ func TestUSDToETH(t *testing.T) {
 		t.Fatalf("expecting price to be 0.01 but is %v", price)
 	}
 
-	conversion.LastestETHUSD = &airswap.KrakenPriceUpdate{
+	conversion.LatestETHUSD = &airswap.KrakenPriceUpdate{
 		Price:      100.0,
 		LastUpdate: time.Now().Add(-1 * time.Hour),
 	}
@@ -82,11 +82,11 @@ func TestUpdatePrice(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if price != 0.0093 {
-		t.Fatalf("expecting price to be 107.9 but it is %v", price)
+	if price != 0.00927 {
+		t.Fatalf("expecting price to be 0.0093 but it is %v", price)
 	}
 
-	price = conversion.LastestETHUSD.Price
+	price = conversion.LatestETHUSD.Price
 	if price != 107.9 {
 		t.Fatalf("expecting price to be 107.9 but it is %v", price)
 	}
@@ -108,7 +108,23 @@ func TestUpdatePriceError(t *testing.T) {
 		t.Fatal("expecting error to be ErrNoPrice")
 	}
 
-	if conversion.LastestETHUSD != nil {
-		t.Fatal("expecting LastestETHUSD to be nil")
+	if conversion.LatestETHUSD != nil {
+		t.Fatal("expecting LatestETHUSD to be nil")
+	}
+}
+
+func TestRoundFloat(t *testing.T) {
+
+	if airswap.RoundFloat(1.18888888, 0) != 1.0 {
+		t.Fatal("expecting 1")
+	}
+	if airswap.RoundFloat(1.18888888, 1) != 1.2 {
+		t.Fatal("expecting 1.2")
+	}
+	if airswap.RoundFloat(1.18888888, 2) != 1.19 {
+		t.Fatalf("expecting 1.19")
+	}
+	if airswap.RoundFloat(1.18888888, 3) != 1.189 {
+		t.Fatalf("expecting 1.189")
 	}
 }
