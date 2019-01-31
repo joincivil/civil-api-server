@@ -3,8 +3,6 @@ package auth
 import (
 	"fmt"
 
-	log "github.com/golang/glog"
-
 	"github.com/joincivil/go-common/pkg/email"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
@@ -24,6 +22,9 @@ const (
 	// defaultSignupEmailConfirmTemplateID = "d-88f731b52a524e6cafc308d0359b84a6"
 	// sendgrid template ID for login that sends a JWT encoded with the email address
 	// defaultLoginEmailConfirmTemplateID = "d-a228aa83fed8476b82d4c97288df20d5"
+
+	defaultSignupVerifyURI = "account/auth/signup/verify-token"
+	defaultLoginVerifyURI  = "account/auth/login/verify-token"
 )
 
 // ApplicationEmailTemplateMap represents a mapping of the ApplicationEnum to it's email
@@ -65,12 +66,13 @@ type Service struct {
 	emailer                *email.Emailer
 	signupEmailTemplateIDs ApplicationEmailTemplateMap
 	loginEmailTemplateIDs  ApplicationEmailTemplateMap
+	signupLoginProtoHost   string
 }
 
 // NewAuthService creates a new AuthService instance
 func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGenerator,
 	emailer *email.Emailer, signupTemplateIDs map[string]string,
-	loginTemplateIDs map[string]string) (*Service, error) {
+	loginTemplateIDs map[string]string, signupLoginProtoHost string) (*Service, error) {
 	var signupIDs ApplicationEmailTemplateMap
 	if signupTemplateIDs != nil {
 		signupIDs = ApplicationEmailTemplateMap{}
@@ -93,6 +95,7 @@ func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGene
 		emailer:                emailer,
 		signupEmailTemplateIDs: signupIDs,
 		loginEmailTemplateIDs:  loginIDs,
+		signupLoginProtoHost:   signupLoginProtoHost,
 	}, nil
 }
 
@@ -120,23 +123,26 @@ func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error)
 }
 
 // SignupEmailSend sends an email to allow the user to confirm before creating the User
-func (s *Service) SignupEmailSend(emailAddress string) (string, error) {
+// Returns the repsonse code, the token generated for the email, and a potential error
+func (s *Service) SignupEmailSend(emailAddress string) (string, string, error) {
 	return s.SignupEmailSendForApplication(emailAddress, ApplicationEnumDefault)
 }
 
 // SignupEmailSendForApplication sends an email for the given application to allow the user
 // to confirm before creating the User
-func (s *Service) SignupEmailSendForApplication(emailAddress string, application ApplicationEnum) (string, error) {
+// Returns the repsonse code, the token generated for the email, and a potential error
+func (s *Service) SignupEmailSendForApplication(emailAddress string,
+	application ApplicationEnum) (string, string, error) {
 	templateID, err := s.SignupTemplateIDForApplication(application)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	err = s.sendEmailToken(emailAddress, templateID)
+	token, err := s.sendEmailToken(emailAddress, templateID, defaultSignupVerifyURI)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return OkResponse, nil
+	return OkResponse, token, nil
 }
 
 // SignupEmailConfirm validates the JWT token emailed to the user and creates the User account
@@ -181,23 +187,26 @@ func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) 
 }
 
 // LoginEmailSend sends an email to allow the user to confirm before creating the User
-func (s *Service) LoginEmailSend(emailAddress string) (string, error) {
+// Returns the repsonse code, the token generated for the email, and a potential error
+func (s *Service) LoginEmailSend(emailAddress string) (string, string, error) {
 	return s.LoginEmailSendForApplication(emailAddress, ApplicationEnumDefault)
 }
 
 // LoginEmailSendForApplication sends an email for the given application to allow
 // the user to confirm before creating the User
-func (s *Service) LoginEmailSendForApplication(emailAddress string, application ApplicationEnum) (string, error) {
+// Returns the repsonse code, the token generated for the email, and a potential error
+func (s *Service) LoginEmailSendForApplication(emailAddress string,
+	application ApplicationEnum) (string, string, error) {
 	templateID, err := s.LoginTemplateIDForApplication(application)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	err = s.sendEmailToken(emailAddress, templateID)
+	token, err := s.sendEmailToken(emailAddress, templateID, defaultLoginVerifyURI)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return OkResponse, nil
+	return OkResponse, token, nil
 }
 
 // LoginEmailConfirm validates the JWT token emailed to the user and creates the User account
@@ -223,7 +232,6 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 
 // SignupTemplateIDForApplication returns the signup email template ID for the given application enum
 func (s *Service) SignupTemplateIDForApplication(application ApplicationEnum) (string, error) {
-	log.Infof("templates %v", s)
 	templateID, ok := s.signupEmailTemplateIDs[application]
 	if !ok || templateID == "" {
 		return "", fmt.Errorf("Application signup %v template not found", application.String())
@@ -249,21 +257,40 @@ func (s *Service) buildLoginResponse(user *users.User) (*LoginResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return &LoginResponse{UID: user.UID, Token: jwt, RefreshToken: refreshToken}, nil
 }
 
-func (s *Service) sendEmailToken(emailAddress string, templateID string) error {
+func (s *Service) buildSignupLoginConfirmLink(emailToken string, verifyURI string) string {
+	link := fmt.Sprintf("%v/%v/%v", s.signupLoginProtoHost, verifyURI, emailToken)
+	return link
+}
+
+func (s *Service) buildSignupLoginConfirmMarkup(confirmLink string) string {
+	return fmt.Sprintf("<a href=\"%v\">Confirm your email address</a>", confirmLink)
+}
+
+func (s *Service) sendEmailToken(emailAddress string, templateID string,
+	verifyURI string) (string, error) {
 	if s.emailer == nil {
-		return fmt.Errorf("Emailer is nil, disabling email of magic link")
+		return "", fmt.Errorf("Emailer is nil, disabling email of magic link")
 	}
-	emailToken, err := s.tokenGenerator.GenerateToken(emailAddress, defaultJWTEmailExpiration)
-	if err != nil {
-		return err
+	if s.signupLoginProtoHost == "" {
+		return "", fmt.Errorf("No signup/login host for confirmation email")
 	}
 
+	emailToken, err := s.tokenGenerator.GenerateToken(emailAddress, defaultJWTEmailExpiration)
+	if err != nil {
+		return "", err
+	}
+
+	verifyLink := s.buildSignupLoginConfirmLink(emailToken, verifyURI)
+	verifyMarkup := s.buildSignupLoginConfirmMarkup(verifyLink)
+
 	templateData := email.TemplateData{}
+	templateData["host_proto"] = s.signupLoginProtoHost
 	templateData["email_token"] = emailToken
+	templateData["verify_link"] = verifyLink
+	templateData["verify_markup"] = verifyMarkup
 
 	emailReq := &email.SendTemplateEmailRequest{
 		ToEmail:      emailAddress,
@@ -273,5 +300,5 @@ func (s *Service) sendEmailToken(emailAddress string, templateID string) error {
 		TemplateData: templateData,
 		AsmGroupID:   7395,
 	}
-	return s.emailer.SendTemplateEmail(emailReq)
+	return emailToken, s.emailer.SendTemplateEmail(emailReq)
 }

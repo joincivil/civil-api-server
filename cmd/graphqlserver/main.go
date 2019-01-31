@@ -249,6 +249,18 @@ func initNrsignupService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 	return nrsignupService, nil
 }
 
+func initAuthService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
+	userService *users.UserService, jwtGenerator *auth.JwtTokenGenerator) (*auth.Service, error) {
+	return auth.NewAuthService(
+		userService,
+		jwtGenerator,
+		emailer,
+		config.AuthEmailSignupTemplates,
+		config.AuthEmailLoginTemplates,
+		config.SignupLoginProtoHost,
+	)
+}
+
 func initTokenFoundryAPI(config *utils.GraphQLConfig) *tokenfoundry.API {
 	return tokenfoundry.NewAPI(
 		"https://tokenfoundry.com",
@@ -423,12 +435,11 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
-	authService, err := auth.NewAuthService(
+	authService, err := initAuthService(
+		config,
+		emailer,
 		userService,
 		jwtGenerator,
-		emailer,
-		config.AuthEmailSignupTemplates,
-		config.AuthEmailLoginTemplates,
 	)
 	if err != nil {
 		log.Fatalf("Error w init auth service: err: %v", err)
