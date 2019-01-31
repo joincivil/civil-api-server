@@ -114,7 +114,11 @@ func (h *Handlers) ConvertMakerAmtToTakerAmt(makerAmount string) (string, error)
 	var requestedAmountFloat float64
 	requestedAmountFloat, _ = requestedAmount.Float64()
 	priceInUSD := h.Pricing.GetQuote(requestedAmountFloat)
-	price := priceInUSD * h.Conversion.USDToETH()
+	conversionRate, err := h.Conversion.USDToETH()
+	if err != nil {
+		return "", err
+	}
+	price := priceInUSD * conversionRate
 
 	// takerAmount is the # of tokens (in eth) the maker will receive for the order
 	// this is just a fancy way of saying what the price is

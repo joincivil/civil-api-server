@@ -7,6 +7,9 @@ import (
 	"github.com/go-chi/chi"
 )
 
+// defaultKrakenPollFreqSecs is the how often the price will get updated in seconds
+const defaultKrakenPollFreqSecs = 30
+
 // EnableAirswapRouting adds Airswap routes
 func EnableAirswapRouting(router chi.Router) {
 
@@ -15,8 +18,7 @@ func EnableAirswapRouting(router chi.Router) {
 	totalRaiseUSD := 20000000.0
 	startingPrice := 0.2
 	pricingManager := NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
-	// TOOD(dankins): change this to be dynamic
-	pairPricing := &StaticPairPricing{PriceOfETH: 104.4}
+	pairPricing := NewKrakenPairPricing(defaultKrakenPollFreqSecs)
 
 	handlers := &Handlers{Pricing: pricingManager, Conversion: pairPricing}
 
