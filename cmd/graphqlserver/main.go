@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/joincivil/go-common/pkg/eth"
+
 	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 
@@ -276,6 +278,26 @@ func initOnfidoAPI(config *utils.GraphQLConfig) *kyc.OnfidoAPI {
 	)
 }
 
+func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
+	if config.EthAPIURL != "" {
+		// todo(dankins): we don't actually need any private keys yet, but we will for CIVIL-5
+		accounts := map[string]string{}
+		ethHelper, err := eth.NewETHClientHelper(config.EthAPIURL, accounts)
+		if err != nil {
+			return nil, err
+		}
+		log.Infof("Connected to Ethereum using %v\n", config.EthAPIURL)
+		return ethHelper, nil
+	}
+
+	ethHelper, err := eth.NewSimulatedBackendHelper()
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("Connected to Ethereum using Simulated Backend\n")
+	return ethHelper, nil
+}
+
 func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, error) {
 	key := config.CheckbookKey
 	secret := config.CheckbookSecret
@@ -388,6 +410,7 @@ type dependencies struct {
 	nrsignupService  *nrsignup.Service
 	tokenFoundry     *tokenfoundry.API
 	onfido           *kyc.OnfidoAPI
+	ethHelper        *eth.Helper
 }
 
 func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
@@ -446,6 +469,12 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
+	ethHelper, err := initETHHelper(config)
+	if err != nil {
+		log.Fatalf("Error w init ETH Helper: err: %v", err)
+		return nil, err
+	}
+
 	return &dependencies{
 		emailer:          emailer,
 		jwtGenerator:     jwtGenerator,
@@ -457,6 +486,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		nrsignupService:  nrsignupService,
 		tokenFoundry:     tokenFoundry,
 		onfido:           onfido,
+		ethHelper:        ethHelper,
 	}, nil
 
 }
@@ -550,11 +580,15 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 	)
 
 	// airswap REST endpoints
-	airswap.EnableAirswapRouting(router)
-	log.Infof(
-		"Connect to http://localhost:%v/airswap for airswap\n",
-		port,
-	)
+	err = airswap.EnableAirswapRouting(router, config, deps.ethHelper)
+	if err != nil {
+		log.Infof("Unable to initialize Airswap routing, so routes will be disabled. err: %v", err)
+	} else {
+		log.Infof(
+			"Connect to http://localhost:%v/airswap for airswap\n",
+			port,
+		)
+	}
 
 	return nil
 }

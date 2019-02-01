@@ -1,6 +1,8 @@
 package airswap_test
 
 import (
+	"math"
+	"math/rand"
 	"testing"
 
 	"github.com/joincivil/civil-api-server/pkg/airswap"
@@ -76,4 +78,47 @@ func TestGetTokensToBuy(t *testing.T) {
 		t.Fatalf("expected the sum of q1 and q2 to be the same as qT %v | %v | %v | %v", qT, q1, q2, q1+q2)
 	}
 
+}
+
+func TestSellOut(t *testing.T) {
+	totalOffering := 34000000.0
+	totalRaiseUSD := 20000000.0
+	startingPrice := 0.2
+	manager := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+
+	raised := 0.0
+	for raised < totalRaiseUSD {
+		var offer float64
+		if totalRaiseUSD-raised < 100000 {
+			offer = totalRaiseUSD - raised
+		} else {
+			offer = rand.Float64() * 100000
+		}
+
+		raised += offer
+		tokens := manager.GetTokensToBuy(offer)
+		manager.IncreaseTokensSold(tokens)
+		// log.Printf("Tokens sold: %v, $ Raised: %v, This sale: %v", fmt.Sprintf("%.5f", manager.TokensSold), fmt.Sprintf("%.5f", raised), tokens)
+	}
+
+	if raised != totalRaiseUSD {
+		t.Fatalf("expecting `raised` to equal `totalRaiseUSD`")
+	}
+
+	if math.Round(manager.TokensSold) != manager.TotalOffering {
+		t.Fatalf("expecting `manager.TokensSold` to equal `manager.TotalOffering`")
+	}
+}
+
+func TestFinalPrice(t *testing.T) {
+	totalOffering := 34000000.0
+	totalRaiseUSD := 19400000.0
+	startingPrice := 0.2
+	manager := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+
+	price := manager.CalculatePriceAtX(totalOffering)
+
+	if price != 0.9411764705882353 {
+		t.Fatalf("expected final price to be %v", price)
+	}
 }
