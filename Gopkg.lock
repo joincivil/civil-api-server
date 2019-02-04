@@ -132,6 +132,7 @@
     "crypto/secp256k1",
     "crypto/sha3",
     "eth/filters",
+    "ethclient",
     "ethdb",
     "event",
     "log",
@@ -271,7 +272,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b6d6e64df92f56f0345f5642793c59af55ca15623217d3fc569a1b0b9f35f851"
+  digest = "1:f9db00c5030b6b9d426f63236a3abdfcd2655a2d309227acc99c2c7ad1f21075"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -280,6 +281,7 @@
     "pkg/eth",
     "pkg/generated/contract",
     "pkg/http",
+    "pkg/jobs",
     "pkg/numbers",
     "pkg/persistence",
     "pkg/persistence/postgres",
@@ -287,7 +289,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "6c6d10efab52786cfaed114d2001e9229dd395f0"
+  revision = "f4251ce704bafccf23363e4ac4ee26fcd0783d61"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -510,6 +512,8 @@
     "github.com/dgrijalva/jwt-go",
     "github.com/didip/tollbooth",
     "github.com/didip/tollbooth_chi",
+    "github.com/ethereum/go-ethereum/accounts/abi/bind",
+    "github.com/ethereum/go-ethereum/accounts/abi/bind/backends",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/hexutil",
     "github.com/ethereum/go-ethereum/crypto",
@@ -526,6 +530,7 @@
     "github.com/joincivil/go-common/pkg/config",
     "github.com/joincivil/go-common/pkg/email",
     "github.com/joincivil/go-common/pkg/eth",
+    "github.com/joincivil/go-common/pkg/generated/contract",
     "github.com/joincivil/go-common/pkg/http",
     "github.com/joincivil/go-common/pkg/persistence",
     "github.com/joincivil/go-common/pkg/persistence/postgres",

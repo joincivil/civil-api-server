@@ -132,7 +132,7 @@ func (k *KrakenPairPricing) UpdatePrice() error {
 	}
 
 	k.LatestETHUSD = &KrakenPriceUpdate{Price: RoundFloat(price, 5), LastUpdate: time.Now()}
-	log.Infof("Updated ETHUSD Price: %v\n", k.LatestETHUSD.Price)
+	log.V(3).Infof("Updated ETHUSD Price: %v\n", k.LatestETHUSD.Price)
 
 	return nil
 
