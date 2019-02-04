@@ -1,4 +1,4 @@
-package airswap
+package storefront
 
 import (
 	"math"

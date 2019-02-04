@@ -1,4 +1,4 @@
-package airswap
+package storefront
 
 import (
 	"encoding/json"
@@ -24,31 +24,37 @@ const (
 	stalePriceTimeSecs = 120
 )
 
-// PairPricing provides an interace to return the price of a currency pair
-type PairPricing interface {
+// CurrencyConversion provides an interace to return the price of a currency pair
+type CurrencyConversion interface {
 	USDToETH() (float64, error)
+	ETHToUSD() (float64, error)
 }
 
-// StaticPairPricing implements StaticPairPricing that returns a static conversion rate
-type StaticPairPricing struct {
+// StaticCurrencyConversion implements StaticCurrencyConversion that returns a static conversion rate
+type StaticCurrencyConversion struct {
 	PriceOfETH float64
 }
 
 // USDToETH returns the price of 1 USD in ETH
-func (s *StaticPairPricing) USDToETH() (float64, error) {
+func (s *StaticCurrencyConversion) USDToETH() (float64, error) {
 	return 1.0 / s.PriceOfETH, nil
 }
 
-// KrakenPairPricing is a PairPricing that is periodically updated by the Kraken API
-type KrakenPairPricing struct {
+// ETHToUSD returns the price of 1 ETH in USD
+func (s *StaticCurrencyConversion) ETHToUSD() (float64, error) {
+	return s.PriceOfETH, nil
+}
+
+// KrakenCurrencyConversion is a CurrencyConversion that is periodically updated by the Kraken API
+type KrakenCurrencyConversion struct {
 	LatestETHUSD *KrakenPriceUpdate
 	UpdateTicker *time.Ticker
 	KrakenURL    string
 }
 
-// NewKrakenPairPricing returns a new KrakenPairPricing that updates the price every `frequencySeconds`
-func NewKrakenPairPricing(frequencySeconds uint) *KrakenPairPricing {
-	k := &KrakenPairPricing{KrakenURL: "https://api.kraken.com/0/public/Ticker"}
+// NewKrakenCurrencyConversion returns a new KrakenCurrencyConversion that updates the price every `frequencySeconds`
+func NewKrakenCurrencyConversion(frequencySeconds uint) *KrakenCurrencyConversion {
+	k := &KrakenCurrencyConversion{KrakenURL: "https://api.kraken.com/0/public/Ticker"}
 	if frequencySeconds > 0 {
 		k.PricePolling(frequencySeconds)
 	} else {
@@ -88,7 +94,7 @@ type KrakenTickerResult struct {
 }
 
 // PricePolling calls UpdatePrice at the specified interval
-func (k *KrakenPairPricing) PricePolling(frequencySeconds uint) {
+func (k *KrakenCurrencyConversion) PricePolling(frequencySeconds uint) {
 	err := k.UpdatePrice()
 	if err != nil {
 		log.Errorf("Error with Kraken UpdatePrice %v", err)
@@ -105,7 +111,7 @@ func (k *KrakenPairPricing) PricePolling(frequencySeconds uint) {
 }
 
 // UpdatePrice queries the kraken API and updates the price
-func (k *KrakenPairPricing) UpdatePrice() error {
+func (k *KrakenCurrencyConversion) UpdatePrice() error {
 	res, err := http.Get(k.KrakenURL + "?pair=XETHZUSD")
 	if err != nil {
 		return err
@@ -139,7 +145,7 @@ func (k *KrakenPairPricing) UpdatePrice() error {
 }
 
 // USDToETH returns the latest price update
-func (k *KrakenPairPricing) USDToETH() (float64, error) {
+func (k *KrakenCurrencyConversion) USDToETH() (float64, error) {
 	if k.LatestETHUSD == nil {
 		return 0, ErrNoPrice
 	}
@@ -148,6 +154,18 @@ func (k *KrakenPairPricing) USDToETH() (float64, error) {
 	}
 
 	return RoundFloat(1/k.LatestETHUSD.Price, 5), nil
+}
+
+// ETHToUSD returns the latest price update
+func (k *KrakenCurrencyConversion) ETHToUSD() (float64, error) {
+	if k.LatestETHUSD == nil {
+		return 0, ErrNoPrice
+	}
+	if time.Since(k.LatestETHUSD.LastUpdate) > (stalePriceTimeSecs * time.Second) {
+		return 0, ErrStalePrice
+	}
+
+	return RoundFloat(k.LatestETHUSD.Price, 5), nil
 }
 
 // RoundFloat rounds a float to the specified number of decimals

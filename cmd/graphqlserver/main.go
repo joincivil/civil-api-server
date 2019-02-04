@@ -12,6 +12,7 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 
 	log "github.com/golang/glog"
 
@@ -53,14 +54,15 @@ var (
 )
 
 type resolverConfig struct {
-	config           *utils.GraphQLConfig
-	invoicePersister *invoicing.PostgresPersister
-	authService      *auth.Service
-	userService      *users.UserService
-	jsonbService     *jsonstore.Service
-	nrsignupService  *nrsignup.Service
-	tokenFoundry     *tokenfoundry.API
-	onfido           *kyc.OnfidoAPI
+	config            *utils.GraphQLConfig
+	invoicePersister  *invoicing.PostgresPersister
+	authService       *auth.Service
+	userService       *users.UserService
+	jsonbService      *jsonstore.Service
+	nrsignupService   *nrsignup.Service
+	tokenFoundry      *tokenfoundry.API
+	onfido            *kyc.OnfidoAPI
+	storefrontService *storefront.Service
 }
 
 func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
@@ -110,6 +112,7 @@ func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
 		UserService:         rconfig.userService,
 		JSONbService:        rconfig.jsonbService,
 		NrsignupService:     rconfig.nrsignupService,
+		StorefrontService:   rconfig.storefrontService,
 	}), nil
 }
 
@@ -400,17 +403,18 @@ func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
 }
 
 type dependencies struct {
-	emailer          *cemail.Emailer
-	jwtGenerator     *auth.JwtTokenGenerator
-	invoicePersister *invoicing.PostgresPersister
-	checkbookIO      *invoicing.CheckbookIO
-	userService      *users.UserService
-	authService      *auth.Service
-	jsonbService     *jsonstore.Service
-	nrsignupService  *nrsignup.Service
-	tokenFoundry     *tokenfoundry.API
-	onfido           *kyc.OnfidoAPI
-	ethHelper        *eth.Helper
+	emailer           *cemail.Emailer
+	jwtGenerator      *auth.JwtTokenGenerator
+	invoicePersister  *invoicing.PostgresPersister
+	checkbookIO       *invoicing.CheckbookIO
+	userService       *users.UserService
+	authService       *auth.Service
+	jsonbService      *jsonstore.Service
+	nrsignupService   *nrsignup.Service
+	tokenFoundry      *tokenfoundry.API
+	onfido            *kyc.OnfidoAPI
+	ethHelper         *eth.Helper
+	storefrontService *storefront.Service
 }
 
 func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
@@ -475,18 +479,25 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
+	storefrontService, err := storefront.NewService(config, ethHelper)
+	if err != nil {
+		log.Fatalf("Error w init Storefront Service: err: %v", err)
+		return nil, err
+	}
+
 	return &dependencies{
-		emailer:          emailer,
-		jwtGenerator:     jwtGenerator,
-		invoicePersister: invoicePersister,
-		checkbookIO:      checkbookIO,
-		userService:      userService,
-		authService:      authService,
-		jsonbService:     jsonbService,
-		nrsignupService:  nrsignupService,
-		tokenFoundry:     tokenFoundry,
-		onfido:           onfido,
-		ethHelper:        ethHelper,
+		emailer:           emailer,
+		jwtGenerator:      jwtGenerator,
+		invoicePersister:  invoicePersister,
+		checkbookIO:       checkbookIO,
+		userService:       userService,
+		authService:       authService,
+		jsonbService:      jsonbService,
+		nrsignupService:   nrsignupService,
+		tokenFoundry:      tokenFoundry,
+		onfido:            onfido,
+		ethHelper:         ethHelper,
+		storefrontService: storefrontService,
 	}, nil
 
 }
@@ -504,14 +515,15 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 	// GraphQL Query Endpoint (Crawler/KYC)
 	if config.EnableGraphQL {
 		rconfig := &resolverConfig{
-			config:           config,
-			invoicePersister: deps.invoicePersister,
-			authService:      deps.authService,
-			userService:      deps.userService,
-			jsonbService:     deps.jsonbService,
-			nrsignupService:  deps.nrsignupService,
-			tokenFoundry:     deps.tokenFoundry,
-			onfido:           deps.onfido,
+			config:            config,
+			invoicePersister:  deps.invoicePersister,
+			authService:       deps.authService,
+			userService:       deps.userService,
+			jsonbService:      deps.jsonbService,
+			nrsignupService:   deps.nrsignupService,
+			tokenFoundry:      deps.tokenFoundry,
+			onfido:            deps.onfido,
+			storefrontService: deps.storefrontService,
 		}
 		err = graphQLRouting(router, rconfig)
 		if err != nil {
@@ -580,15 +592,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 	)
 
 	// airswap REST endpoints
-	err = airswap.EnableAirswapRouting(router, config, deps.ethHelper)
-	if err != nil {
-		log.Infof("Unable to initialize Airswap routing, so routes will be disabled. err: %v", err)
-	} else {
-		log.Infof(
-			"Connect to http://localhost:%v/airswap for airswap\n",
-			port,
-		)
-	}
+	airswap.EnableAirswapRouting(router, deps.storefrontService)
 
 	return nil
 }
