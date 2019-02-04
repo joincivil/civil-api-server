@@ -60,7 +60,7 @@ func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.Si
 		return nil, err
 	}
 
-	user, err := r.userService.SetEthAddress(users.UserCriteria{Email: token.Sub}, input.Signer)
+	user, err := r.userService.SetEthAddress(users.UserCriteria{UID: token.Sub}, input.Signer)
 	if err != nil {
 		return nil, err
 	}
