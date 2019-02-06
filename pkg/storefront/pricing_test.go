@@ -1,18 +1,18 @@
-package airswap_test
+package storefront_test
 
 import (
 	"math"
 	"math/rand"
 	"testing"
 
-	"github.com/joincivil/civil-api-server/pkg/airswap"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 )
 
 func TestGetQuote(t *testing.T) {
 	totalOffering := 34000000.0
 	totalRaiseUSD := 20000000.0
 	startingPrice := 0.2
-	manager := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+	manager := storefront.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
 
 	// buying 0 tokens should return 0
 	quote := manager.GetQuote(0.0)
@@ -48,7 +48,7 @@ func TestGetTokensToBuy(t *testing.T) {
 	totalOffering := 34000000.0
 	totalRaiseUSD := 20000000.0
 	startingPrice := 0.2
-	manager := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+	manager := storefront.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
 
 	// spending $0 should result in 0 tokens
 	tokens := manager.GetTokensToBuy(0.0)
@@ -84,7 +84,7 @@ func TestSellOut(t *testing.T) {
 	totalOffering := 34000000.0
 	totalRaiseUSD := 20000000.0
 	startingPrice := 0.2
-	manager := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+	manager := storefront.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
 
 	raised := 0.0
 	for raised < totalRaiseUSD {
@@ -114,7 +114,7 @@ func TestFinalPrice(t *testing.T) {
 	totalOffering := 34000000.0
 	totalRaiseUSD := 19400000.0
 	startingPrice := 0.2
-	manager := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+	manager := storefront.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
 
 	price := manager.CalculatePriceAtX(totalOffering)
 

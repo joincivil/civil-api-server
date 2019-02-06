@@ -1,4 +1,4 @@
-package airswap_test
+package storefront_test
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/joincivil/go-common/pkg/eth"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/joincivil/civil-api-server/pkg/airswap"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/go-common/pkg/generated/contract"
 )
 
@@ -62,7 +62,7 @@ func TestSupply(t *testing.T) {
 	totalOffering := 1000000.0 // one million tokens for sale
 	totalRaiseUSD := 10.0
 	startingPrice := 0.2
-	pricing := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+	pricing := storefront.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
 
 	// configure the wallets that will hold the CVL for the token sale
 	tokenSaleAddresses := []common.Address{
@@ -71,7 +71,7 @@ func TestSupply(t *testing.T) {
 	}
 
 	// initialize a SupplyManager
-	supplyManager, err := airswap.NewSupplyManager(cvlTokenAddress, helper.Blockchain, pricing, tokenSaleAddresses, 0)
+	supplyManager, err := storefront.NewSupplyManager(cvlTokenAddress, helper.Blockchain, pricing, tokenSaleAddresses, 0)
 	if err != nil {
 		t.Fatalf("error getting SupplyManager %v", err)
 	}

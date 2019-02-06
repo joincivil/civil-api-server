@@ -53,6 +53,12 @@ type Query {
   # User Queries
   currentUser: User
 
+  # Storefront
+  storefrontEthPrice: Float
+  storefrontCvlPrice: Float
+  StorefrontCvlQuoteUsd(usdToSpend: Float!): Float
+  StorefrontCvlQuoteTokens(tokensToBuy: Float!): Float
+
   # JSONb Store Query
   jsonb(id: String): [Jsonb]!
 }
@@ -61,11 +67,17 @@ type Mutation {
   # Auth Mutations
   authSignupEth(input: UserSignatureInput!): AuthLoginResponse
   authSignupEmailSend(emailAddress: String!): String
-  authSignupEmailSendForApplication(emailAddress: String! application: AuthApplicationEnum!): String
+  authSignupEmailSendForApplication(
+    emailAddress: String!
+    application: AuthApplicationEnum!
+  ): String
   authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
   authLoginEth(input: UserSignatureInput!): AuthLoginResponse
   authLoginEmailSend(emailAddress: String!): String
-  authLoginEmailSendForApplication(emailAddress: String!, application: AuthApplicationEnum!): String
+  authLoginEmailSendForApplication(
+    emailAddress: String!
+    application: AuthApplicationEnum!
+  ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
 
   # JSONb Store Mutations
@@ -77,11 +89,11 @@ type Mutation {
   kycGenerateSdkToken(applicantID: String!): String
 
   # Newsroom Signup Mutations
-  nrsignupSendWelcomeEmail: String! 
-  nrsignupRequestGrant: String! 
+  nrsignupSendWelcomeEmail: String!
+  nrsignupRequestGrant: String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
-  nrsignupPollNewsroomDeploy(txHash: String!): String! 
-  nrsignupPollTcrApplication(txHash: String!): String! 
+  nrsignupPollNewsroomDeploy(txHash: String!): String!
+  nrsignupPollTcrApplication(txHash: String!): String!
 
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
@@ -149,7 +161,6 @@ type Charter {
   contentHash: String!
   timestamp: Int!
 }
-
 
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {

@@ -260,6 +260,10 @@ type ComplexityRoot struct {
 		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) int
 		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string) int
 		CurrentUser               func(childComplexity int) int
+		StorefrontEthPrice        func(childComplexity int) int
+		StorefrontCvlPrice        func(childComplexity int) int
+		StorefrontCvlQuoteUsd     func(childComplexity int, usdToSpend float64) int
+		StorefrontCvlQuoteTokens  func(childComplexity int, tokensToBuy float64) int
 		Jsonb                     func(childComplexity int, id *string) int
 	}
 
@@ -389,6 +393,10 @@ type QueryResolver interface {
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) (*ListingResultCursor, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
+	StorefrontEthPrice(ctx context.Context) (*float64, error)
+	StorefrontCvlPrice(ctx context.Context) (*float64, error)
+	StorefrontCvlQuoteUsd(ctx context.Context, usdToSpend float64) (*float64, error)
+	StorefrontCvlQuoteTokens(ctx context.Context, tokensToBuy float64) (*float64, error)
 	Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSONb, error)
 }
 type UserResolver interface {
@@ -1197,6 +1205,36 @@ func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[stri
 		}
 	}
 	args["after"] = arg2
+	return args, nil
+
+}
+
+func field_Query_StorefrontCvlQuoteUsd_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 float64
+	if tmp, ok := rawArgs["usdToSpend"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalFloat(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["usdToSpend"] = arg0
+	return args, nil
+
+}
+
+func field_Query_StorefrontCvlQuoteTokens_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 float64
+	if tmp, ok := rawArgs["tokensToBuy"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalFloat(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tokensToBuy"] = arg0
 	return args, nil
 
 }
@@ -2431,6 +2469,44 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.CurrentUser(childComplexity), true
+
+	case "Query.storefrontEthPrice":
+		if e.complexity.Query.StorefrontEthPrice == nil {
+			break
+		}
+
+		return e.complexity.Query.StorefrontEthPrice(childComplexity), true
+
+	case "Query.storefrontCvlPrice":
+		if e.complexity.Query.StorefrontCvlPrice == nil {
+			break
+		}
+
+		return e.complexity.Query.StorefrontCvlPrice(childComplexity), true
+
+	case "Query.StorefrontCvlQuoteUsd":
+		if e.complexity.Query.StorefrontCvlQuoteUsd == nil {
+			break
+		}
+
+		args, err := field_Query_StorefrontCvlQuoteUsd_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.StorefrontCvlQuoteUsd(childComplexity, args["usdToSpend"].(float64)), true
+
+	case "Query.StorefrontCvlQuoteTokens":
+		if e.complexity.Query.StorefrontCvlQuoteTokens == nil {
+			break
+		}
+
+		args, err := field_Query_StorefrontCvlQuoteTokens_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.StorefrontCvlQuoteTokens(childComplexity, args["tokensToBuy"].(float64)), true
 
 	case "Query.jsonb":
 		if e.complexity.Query.Jsonb == nil {
@@ -7757,6 +7833,30 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				out.Values[i] = ec._Query_currentUser(ctx, field)
 				wg.Done()
 			}(i, field)
+		case "storefrontEthPrice":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_storefrontEthPrice(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "storefrontCvlPrice":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_storefrontCvlPrice(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "StorefrontCvlQuoteUsd":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_StorefrontCvlQuoteUsd(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "StorefrontCvlQuoteTokens":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_StorefrontCvlQuoteTokens(ctx, field)
+				wg.Done()
+			}(i, field)
 		case "jsonb":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -8414,6 +8514,130 @@ func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphq
 	}
 
 	return ec._User(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_storefrontEthPrice(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().StorefrontEthPrice(rctx)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalFloat(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_storefrontCvlPrice(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().StorefrontCvlPrice(rctx)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalFloat(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_StorefrontCvlQuoteUsd(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_StorefrontCvlQuoteUsd_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().StorefrontCvlQuoteUsd(rctx, args["usdToSpend"].(float64))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalFloat(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_StorefrontCvlQuoteTokens(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_StorefrontCvlQuoteTokens_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().StorefrontCvlQuoteTokens(rctx, args["tokensToBuy"].(float64))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalFloat(*res)
 }
 
 // nolint: vetshadow
@@ -10719,6 +10943,12 @@ type Query {
   # User Queries
   currentUser: User
 
+  # Storefront
+  storefrontEthPrice: Float
+  storefrontCvlPrice: Float
+  StorefrontCvlQuoteUsd(usdToSpend: Float!): Float
+  StorefrontCvlQuoteTokens(tokensToBuy: Float!): Float
+
   # JSONb Store Query
   jsonb(id: String): [Jsonb]!
 }
@@ -10727,11 +10957,17 @@ type Mutation {
   # Auth Mutations
   authSignupEth(input: UserSignatureInput!): AuthLoginResponse
   authSignupEmailSend(emailAddress: String!): String
-  authSignupEmailSendForApplication(emailAddress: String! application: AuthApplicationEnum!): String
+  authSignupEmailSendForApplication(
+    emailAddress: String!
+    application: AuthApplicationEnum!
+  ): String
   authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
   authLoginEth(input: UserSignatureInput!): AuthLoginResponse
   authLoginEmailSend(emailAddress: String!): String
-  authLoginEmailSendForApplication(emailAddress: String!, application: AuthApplicationEnum!): String
+  authLoginEmailSendForApplication(
+    emailAddress: String!
+    application: AuthApplicationEnum!
+  ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
 
   # JSONb Store Mutations
@@ -10743,11 +10979,11 @@ type Mutation {
   kycGenerateSdkToken(applicantID: String!): String
 
   # Newsroom Signup Mutations
-  nrsignupSendWelcomeEmail: String! 
-  nrsignupRequestGrant: String! 
+  nrsignupSendWelcomeEmail: String!
+  nrsignupRequestGrant: String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
-  nrsignupPollNewsroomDeploy(txHash: String!): String! 
-  nrsignupPollTcrApplication(txHash: String!): String! 
+  nrsignupPollNewsroomDeploy(txHash: String!): String!
+  nrsignupPollTcrApplication(txHash: String!): String!
 
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
@@ -10815,7 +11051,6 @@ type Charter {
   contentHash: String!
   timestamp: Int!
 }
-
 
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {

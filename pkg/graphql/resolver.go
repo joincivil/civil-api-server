@@ -13,6 +13,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
@@ -33,6 +34,7 @@ type ResolverConfig struct {
 	UserService         *users.UserService
 	JSONbService        *jsonstore.Service
 	NrsignupService     *nrsignup.Service
+	StorefrontService   *storefront.Service
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -52,6 +54,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		userService:         config.UserService,
 		jsonbService:        config.JSONbService,
 		nrsignupService:     config.NrsignupService,
+		storefrontService:   config.StorefrontService,
 	}
 }
 
@@ -71,6 +74,7 @@ type Resolver struct {
 	userService         *users.UserService
 	jsonbService        *jsonstore.Service
 	nrsignupService     *nrsignup.Service
+	storefrontService   *storefront.Service
 }
 
 // Query is the resolver for the Query type

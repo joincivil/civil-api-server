@@ -9,12 +9,12 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 )
 
 // Handlers implement http routes for the airswap order server
 type Handlers struct {
-	Pricing    *PricingManager
-	Conversion PairPricing
+	StorefrontService *storefront.Service
 }
 
 // GetOrderRequest is an incoming POST request from the client server
@@ -113,8 +113,8 @@ func (h *Handlers) ConvertMakerAmtToTakerAmt(makerAmount string) (string, error)
 	// convert from big.Float to float64
 	var requestedAmountFloat float64
 	requestedAmountFloat, _ = requestedAmount.Float64()
-	priceInUSD := h.Pricing.GetQuote(requestedAmountFloat)
-	conversionRate, err := h.Conversion.USDToETH()
+	priceInUSD := h.StorefrontService.GetQuote(requestedAmountFloat)
+	conversionRate, err := h.StorefrontService.ConvertUSDToETH()
 	if err != nil {
 		return "", err
 	}

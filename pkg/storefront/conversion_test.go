@@ -1,4 +1,4 @@
-package airswap_test
+package storefront_test
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joincivil/civil-api-server/pkg/airswap"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 )
 
 const krakenTickerString = `{"error":[],"result":{"XETHZUSD":{"a":["107.90000","243","243.000"],"b":["107.89000","44","44.000"],"c":["107.90000","0.00173880"],"v":["127159.90887629","158785.69230958"],"p":["106.27483","105.94236"],"t":[8592,11132],"l":["102.91000","102.91000"],"h":["109.89000","109.89000"],"o":"103.79000"}}}`
@@ -27,16 +27,16 @@ func buildTestKraken(t *testing.T, sendError bool) *httptest.Server {
 }
 
 func TestUSDToETH(t *testing.T) {
-	conversion := airswap.KrakenPairPricing{
+	conversion := storefront.KrakenCurrencyConversion{
 		KrakenURL: "x",
 	}
 
 	_, err := conversion.USDToETH()
-	if err != airswap.ErrNoPrice {
+	if err != storefront.ErrNoPrice {
 		t.Fatalf("expecting error to be `ErrNoPrice`")
 	}
 
-	conversion.LatestETHUSD = &airswap.KrakenPriceUpdate{
+	conversion.LatestETHUSD = &storefront.KrakenPriceUpdate{
 		Price:      100.0,
 		LastUpdate: time.Now(),
 	}
@@ -49,13 +49,13 @@ func TestUSDToETH(t *testing.T) {
 		t.Fatalf("expecting price to be 0.01 but is %v", price)
 	}
 
-	conversion.LatestETHUSD = &airswap.KrakenPriceUpdate{
+	conversion.LatestETHUSD = &storefront.KrakenPriceUpdate{
 		Price:      100.0,
 		LastUpdate: time.Now().Add(-1 * time.Hour),
 	}
 
 	_, err = conversion.USDToETH()
-	if err != airswap.ErrStalePrice {
+	if err != storefront.ErrStalePrice {
 		t.Fatalf("expecting error to be `ErrStalePrice`")
 	}
 
@@ -67,12 +67,12 @@ func TestUpdatePrice(t *testing.T) {
 	defer ts.Close()
 
 	// construct an instance using the test server
-	conversion := airswap.KrakenPairPricing{
+	conversion := storefront.KrakenCurrencyConversion{
 		KrakenURL: ts.URL,
 	}
 
 	_, err := conversion.USDToETH()
-	if err != airswap.ErrNoPrice {
+	if err != storefront.ErrNoPrice {
 		t.Fatal("expecting error to be ErrNoPrice ")
 	}
 
@@ -98,13 +98,13 @@ func TestUpdatePriceError(t *testing.T) {
 	defer ts.Close()
 
 	// construct an instance using the test server
-	conversion := airswap.KrakenPairPricing{
+	conversion := storefront.KrakenCurrencyConversion{
 		KrakenURL: ts.URL,
 	}
 
 	conversion.UpdatePrice()
 	_, err := conversion.USDToETH()
-	if err != airswap.ErrNoPrice {
+	if err != storefront.ErrNoPrice {
 		t.Fatal("expecting error to be ErrNoPrice")
 	}
 
@@ -115,16 +115,16 @@ func TestUpdatePriceError(t *testing.T) {
 
 func TestRoundFloat(t *testing.T) {
 
-	if airswap.RoundFloat(1.18888888, 0) != 1.0 {
+	if storefront.RoundFloat(1.18888888, 0) != 1.0 {
 		t.Fatal("expecting 1")
 	}
-	if airswap.RoundFloat(1.18888888, 1) != 1.2 {
+	if storefront.RoundFloat(1.18888888, 1) != 1.2 {
 		t.Fatal("expecting 1.2")
 	}
-	if airswap.RoundFloat(1.18888888, 2) != 1.19 {
+	if storefront.RoundFloat(1.18888888, 2) != 1.19 {
 		t.Fatalf("expecting 1.19")
 	}
-	if airswap.RoundFloat(1.18888888, 3) != 1.189 {
+	if storefront.RoundFloat(1.18888888, 3) != 1.189 {
 		t.Fatalf("expecting 1.189")
 	}
 }

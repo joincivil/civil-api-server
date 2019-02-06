@@ -5,17 +5,19 @@ import (
 	"testing"
 
 	"github.com/joincivil/civil-api-server/pkg/airswap"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 )
 
 func TestSetConvertMakerAmtToTakerAmt(t *testing.T) {
 	totalOffering := 34000000.0
 	totalRaiseUSD := 20000000.0
 	startingPrice := 0.2
-	pricingManager := airswap.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
+	pricingManager := storefront.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
 	// set 1 ETH = 1 USD to make it easier to think about
-	pairPricing := &airswap.StaticPairPricing{PriceOfETH: 1.0}
+	currencyConversion := &storefront.StaticCurrencyConversion{PriceOfETH: 1.0}
+	storefrontService := storefront.BuildService(pricingManager, currencyConversion)
 
-	handlers := &airswap.Handlers{Pricing: pricingManager, Conversion: pairPricing}
+	handlers := &airswap.Handlers{StorefrontService: storefrontService}
 
 	// looking to buy 1 CVL
 	result, err := handlers.ConvertMakerAmtToTakerAmt(big.NewInt(1e18 * 1).String())
