@@ -21,6 +21,7 @@ func EnableAirswapRouting(router chi.Router, storefrontService *storefront.Servi
 }
 
 // InternalOnlyMiddleware returns 403 Forbidden if it receives traffic from the Load Balancer
+// todo(dankins): this should be moved to go-common
 func InternalOnlyMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

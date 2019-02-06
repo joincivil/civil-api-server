@@ -113,8 +113,8 @@ func (h *Handlers) ConvertMakerAmtToTakerAmt(makerAmount string) (string, error)
 	// convert from big.Float to float64
 	var requestedAmountFloat float64
 	requestedAmountFloat, _ = requestedAmount.Float64()
-	priceInUSD := h.StorefrontService.Pricing.GetQuote(requestedAmountFloat)
-	conversionRate, err := h.StorefrontService.CurrencyConversion.USDToETH()
+	priceInUSD := h.StorefrontService.GetQuote(requestedAmountFloat)
+	conversionRate, err := h.StorefrontService.ConvertUSDToETH()
 	if err != nil {
 		return "", err
 	}
