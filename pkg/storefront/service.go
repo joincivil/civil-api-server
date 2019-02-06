@@ -74,6 +74,14 @@ func NewService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*Service, e
 	}, nil
 }
 
+// BuildService makes a Service with the specified parameters
+func BuildService(pricingManager *PricingManager, currencyConversion CurrencyConversion) *Service {
+	return &Service{
+		pricing:            pricingManager,
+		currencyConversion: currencyConversion,
+	}
+}
+
 // GetQuote returns the price in USD to buy `numTokens` of CVL
 func (s *Service) GetQuote(numTokens float64) float64 {
 	return s.pricing.GetQuote(numTokens)

@@ -15,7 +15,7 @@ func TestSetConvertMakerAmtToTakerAmt(t *testing.T) {
 	pricingManager := storefront.NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
 	// set 1 ETH = 1 USD to make it easier to think about
 	currencyConversion := &storefront.StaticCurrencyConversion{PriceOfETH: 1.0}
-	storefrontService := &storefront.Service{Pricing: pricingManager, CurrencyConversion: currencyConversion}
+	storefrontService := storefront.BuildService(pricingManager, currencyConversion)
 
 	handlers := &airswap.Handlers{StorefrontService: storefrontService}
 
