@@ -1209,7 +1209,7 @@ func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[stri
 
 }
 
-func field_Query_StorefrontCvlQuoteUsd_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func field_Query_storefrontCvlQuoteUsd_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 float64
 	if tmp, ok := rawArgs["usdToSpend"]; ok {
@@ -1224,7 +1224,7 @@ func field_Query_StorefrontCvlQuoteUsd_args(rawArgs map[string]interface{}) (map
 
 }
 
-func field_Query_StorefrontCvlQuoteTokens_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func field_Query_storefrontCvlQuoteTokens_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 float64
 	if tmp, ok := rawArgs["tokensToBuy"]; ok {
@@ -2484,24 +2484,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.StorefrontCvlPrice(childComplexity), true
 
-	case "Query.StorefrontCvlQuoteUsd":
+	case "Query.storefrontCvlQuoteUsd":
 		if e.complexity.Query.StorefrontCvlQuoteUsd == nil {
 			break
 		}
 
-		args, err := field_Query_StorefrontCvlQuoteUsd_args(rawArgs)
+		args, err := field_Query_storefrontCvlQuoteUsd_args(rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
 		return e.complexity.Query.StorefrontCvlQuoteUsd(childComplexity, args["usdToSpend"].(float64)), true
 
-	case "Query.StorefrontCvlQuoteTokens":
+	case "Query.storefrontCvlQuoteTokens":
 		if e.complexity.Query.StorefrontCvlQuoteTokens == nil {
 			break
 		}
 
-		args, err := field_Query_StorefrontCvlQuoteTokens_args(rawArgs)
+		args, err := field_Query_storefrontCvlQuoteTokens_args(rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -7845,16 +7845,16 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				out.Values[i] = ec._Query_storefrontCvlPrice(ctx, field)
 				wg.Done()
 			}(i, field)
-		case "StorefrontCvlQuoteUsd":
+		case "storefrontCvlQuoteUsd":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Query_StorefrontCvlQuoteUsd(ctx, field)
+				out.Values[i] = ec._Query_storefrontCvlQuoteUsd(ctx, field)
 				wg.Done()
 			}(i, field)
-		case "StorefrontCvlQuoteTokens":
+		case "storefrontCvlQuoteTokens":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Query_StorefrontCvlQuoteTokens(ctx, field)
+				out.Values[i] = ec._Query_storefrontCvlQuoteTokens(ctx, field)
 				wg.Done()
 			}(i, field)
 		case "jsonb":
@@ -8573,11 +8573,11 @@ func (ec *executionContext) _Query_storefrontCvlPrice(ctx context.Context, field
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Query_StorefrontCvlQuoteUsd(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_storefrontCvlQuoteUsd(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Query_StorefrontCvlQuoteUsd_args(rawArgs)
+	args, err := field_Query_storefrontCvlQuoteUsd_args(rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -8607,11 +8607,11 @@ func (ec *executionContext) _Query_StorefrontCvlQuoteUsd(ctx context.Context, fi
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Query_StorefrontCvlQuoteTokens(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_storefrontCvlQuoteTokens(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Query_StorefrontCvlQuoteTokens_args(rawArgs)
+	args, err := field_Query_storefrontCvlQuoteTokens_args(rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -10946,8 +10946,8 @@ type Query {
   # Storefront
   storefrontEthPrice: Float
   storefrontCvlPrice: Float
-  StorefrontCvlQuoteUsd(usdToSpend: Float!): Float
-  StorefrontCvlQuoteTokens(tokensToBuy: Float!): Float
+  storefrontCvlQuoteUsd(usdToSpend: Float!): Float
+  storefrontCvlQuoteTokens(tokensToBuy: Float!): Float
 
   # JSONb Store Query
   jsonb(id: String): [Jsonb]!
