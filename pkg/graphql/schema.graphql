@@ -56,8 +56,8 @@ type Query {
   # Storefront
   storefrontEthPrice: Float
   storefrontCvlPrice: Float
-  StorefrontCvlQuoteUsd(usdToSpend: Float!): Float
-  StorefrontCvlQuoteTokens(tokensToBuy: Float!): Float
+  storefrontCvlQuoteUsd(usdToSpend: Float!): Float
+  storefrontCvlQuoteTokens(tokensToBuy: Float!): Float
 
   # JSONb Store Query
   jsonb(id: String): [Jsonb]!
