@@ -4,12 +4,13 @@ import (
 	context "context"
 	"fmt"
 
+	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 )
 
-func (r *queryResolver) Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSONb, error) {
+func (r *queryResolver) Jsonb(ctx context.Context, id *string) (*jsonstore.JSONb, error) {
 	// Needs to have a valid auth token
 	token := auth.ForContext(ctx)
 	if token == nil {
@@ -29,7 +30,11 @@ func (r *queryResolver) Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSO
 	if err != nil {
 		return nil, err
 	}
-	return jsonb, nil
+	if len(jsonb) > 1 {
+		log.Errorf("Warning: More than one JSONb for id: %v", idVal)
+	}
+
+	return jsonb[0], nil
 }
 
 func (r *mutationResolver) JsonbSave(ctx context.Context, input graphql.JsonbInput) (

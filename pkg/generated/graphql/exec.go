@@ -397,7 +397,7 @@ type QueryResolver interface {
 	StorefrontCvlPrice(ctx context.Context) (*float64, error)
 	StorefrontCvlQuoteUsd(ctx context.Context, usdToSpend float64) (*float64, error)
 	StorefrontCvlQuoteTokens(ctx context.Context, tokensToBuy float64) (*float64, error)
-	Jsonb(ctx context.Context, id *string) ([]*jsonstore.JSONb, error)
+	Jsonb(ctx context.Context, id *string) (*jsonstore.JSONb, error)
 }
 type UserResolver interface {
 	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
@@ -7861,9 +7861,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_jsonb(ctx, field)
-				if out.Values[i] == graphql.Null {
-					invalid = true
-				}
 				wg.Done()
 			}(i, field)
 		case "__type":
@@ -8662,52 +8659,17 @@ func (ec *executionContext) _Query_jsonb(ctx context.Context, field graphql.Coll
 		return ec.resolvers.Query().Jsonb(rctx, args["id"].(*string))
 	})
 	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.([]*jsonstore.JSONb)
+	res := resTmp.(*jsonstore.JSONb)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
-	arr1 := make(graphql.Array, len(res))
-	var wg sync.WaitGroup
-
-	isLen1 := len(res) == 1
-	if !isLen1 {
-		wg.Add(len(res))
+	if res == nil {
+		return graphql.Null
 	}
 
-	for idx1 := range res {
-		idx1 := idx1
-		rctx := &graphql.ResolverContext{
-			Index:  &idx1,
-			Result: res[idx1],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(idx1 int) {
-			if !isLen1 {
-				defer wg.Done()
-			}
-			arr1[idx1] = func() graphql.Marshaler {
-
-				if res[idx1] == nil {
-					return graphql.Null
-				}
-
-				return ec._Jsonb(ctx, field.Selections, res[idx1])
-			}()
-		}
-		if isLen1 {
-			f(idx1)
-		} else {
-			go f(idx1)
-		}
-
-	}
-	wg.Wait()
-	return arr1
+	return ec._Jsonb(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -10950,7 +10912,7 @@ type Query {
   storefrontCvlQuoteTokens(tokensToBuy: Float!): Float
 
   # JSONb Store Query
-  jsonb(id: String): [Jsonb]!
+  jsonb(id: String): Jsonb
 }
 
 type Mutation {
