@@ -60,7 +60,7 @@ type Query {
   storefrontCvlQuoteTokens(tokensToBuy: Float!): Float
 
   # JSONb Store Query
-  jsonb(id: String): [Jsonb]!
+  jsonb(id: String): Jsonb
 }
 
 type Mutation {
