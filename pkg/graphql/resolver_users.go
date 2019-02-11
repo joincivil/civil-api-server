@@ -73,7 +73,10 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *u
 	if token == nil {
 		return nil, fmt.Errorf("Access denied")
 	}
-
+	// If UID is not passed, use the UID in the token
+	if uid == nil {
+		uid = &token.Sub
+	}
 	user, err := r.userService.UpdateUser(token.Sub, *uid, input)
 	if err != nil {
 		return nil, err
