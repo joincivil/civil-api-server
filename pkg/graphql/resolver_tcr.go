@@ -4,6 +4,7 @@ import (
 	context "context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/iancoleman/strcase"
 
@@ -92,7 +93,7 @@ func (r *challengeResolver) ChallengeID(ctx context.Context, obj *model.Challeng
 	return int(obj.ChallengeID().Uint64()), nil
 }
 func (r *challengeResolver) ListingAddress(ctx context.Context, obj *model.Challenge) (string, error) {
-	return obj.ListingAddress().Hex(), nil
+	return strings.ToLower(obj.ListingAddress().Hex()), nil
 }
 func (r *challengeResolver) RewardPool(ctx context.Context, obj *model.Challenge) (string, error) {
 	rewardPool := obj.RewardPool()
@@ -180,7 +181,7 @@ func (r *charterResolver) Timestamp(ctx context.Context, obj *model.Charter) (in
 type governanceEventResolver struct{ *Resolver }
 
 func (r *governanceEventResolver) ListingAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error) {
-	return obj.ListingAddress().Hex(), nil
+	return strings.ToLower(obj.ListingAddress().Hex()), nil
 }
 
 func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.GovernanceEvent) ([]graphql.Metadata, error) {
@@ -242,7 +243,7 @@ func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.Govern
 type listingResolver struct{ *Resolver }
 
 func (r *listingResolver) ContractAddress(ctx context.Context, obj *model.Listing) (string, error) {
-	return obj.ContractAddress().Hex(), nil
+	return strings.ToLower(obj.ContractAddress().Hex()), nil
 }
 func (r *listingResolver) LastGovState(ctx context.Context, obj *model.Listing) (string, error) {
 	return obj.LastGovernanceStateString(), nil
@@ -251,7 +252,7 @@ func (r *listingResolver) OwnerAddresses(ctx context.Context, obj *model.Listing
 	addrs := obj.OwnerAddresses()
 	ownerAddrs := make([]string, len(addrs))
 	for index, addr := range addrs {
-		ownerAddrs[index] = addr.Hex()
+		ownerAddrs[index] = strings.ToLower(addr.Hex())
 	}
 	return ownerAddrs, nil
 }
@@ -262,7 +263,7 @@ func (r *listingResolver) ContributorAddresses(ctx context.Context, obj *model.L
 	addrs := obj.ContributorAddresses()
 	ownerAddrs := make([]string, len(addrs))
 	for index, addr := range addrs {
-		ownerAddrs[index] = addr.Hex()
+		ownerAddrs[index] = strings.ToLower(addr.Hex())
 	}
 	return ownerAddrs, nil
 }
