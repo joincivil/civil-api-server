@@ -22,6 +22,7 @@ type loaders struct {
 	listingLoader            *ListingLoader
 	challengeLoader          *ChallengeLoader
 	challengeAddressesLoader *ChallengeSliceByAddressesLoader
+	appealLoader             *AppealLoader
 }
 
 // DataloaderMiddleware defines the listingLoader
@@ -63,6 +64,16 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 				challengeEvents, err := g.challengePersister.ChallengesByListingAddresses(addrKeys)
 				errors := []error{err}
 				return challengeEvents, errors
+			},
+		}
+
+		ldrs.appealLoader = &AppealLoader{
+			maxBatch: 100,
+			wait:     100 * time.Millisecond,
+			fetch: func(keys []int) ([]*model.Appeal, []error) {
+				appeals, err := g.appealPersister.AppealsByChallengeIDs(keys)
+				errors := []error{err}
+				return appeals, errors
 			},
 		}
 
