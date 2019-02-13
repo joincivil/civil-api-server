@@ -30,7 +30,8 @@ func CreateAppealTableQueryString(tableName string) string {
             appeal_open_to_challenge_expiry INT,
             statement TEXT,
             appeal_challenge_id INT,
-            last_updated_timestamp INT
+            last_updated_timestamp INT,
+            appeal_granted_statement_uri TEXT
         );
     `, tableName)
 	return queryString
@@ -63,6 +64,8 @@ type Appeal struct {
 
 	AppealOpenToChallengeExpiry int64 `db:"appeal_open_to_challenge_expiry"`
 
+	AppealGrantedStatementURI string `db:"appeal_granted_statement_uri"`
+
 	Statement string `db:"statement"`
 
 	AppealChallengeID uint64 `db:"appeal_challenge_id"`
@@ -80,7 +83,7 @@ func NewAppeal(appealData *model.Appeal) *Appeal {
 	appeal.AppealGranted = appealData.AppealGranted()
 	appeal.LastUpdatedDateTs = appealData.LastUpdatedDateTs()
 	appeal.Statement = appealData.Statement()
-
+	appeal.AppealGrantedStatementURI = appealData.AppealGrantedStatementURI()
 	// NOTE(IS): following fields can be nil so set to 0
 	if appealData.AppealOpenToChallengeExpiry() != nil {
 		appeal.AppealOpenToChallengeExpiry = appealData.AppealOpenToChallengeExpiry().Int64()
@@ -106,6 +109,7 @@ func (a *Appeal) DbToAppealData() *model.Appeal {
 		a.AppealGranted,
 		a.Statement,
 		a.LastUpdatedDateTs,
+		a.AppealGrantedStatementURI,
 	)
 
 	appeal.SetAppealChallengeID(new(big.Int).SetUint64(a.AppealChallengeID))

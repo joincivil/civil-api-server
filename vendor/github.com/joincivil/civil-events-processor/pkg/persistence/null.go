@@ -123,6 +123,16 @@ func (n *NullPersister) UpdateTimestampForCron(timestamp int64) error {
 	return nil
 }
 
+// EventHashesOfLastTimestampForCron returns the event hashes processed for the last timestamp from cron
+func (n *NullPersister) EventHashesOfLastTimestampForCron() ([]string, error) {
+	return []string{}, nil
+}
+
+// UpdateEventHashesForCron updates the eventHashes saved in cron table
+func (n *NullPersister) UpdateEventHashesForCron(eventHashes []string) error {
+	return nil
+}
+
 // ChallengeByChallengeID gets a challenge by challengeID
 func (n *NullPersister) ChallengeByChallengeID(challengeID int) (*model.Challenge, error) {
 	return &model.Challenge{}, nil
