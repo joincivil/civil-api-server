@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
 	// log "github.com/golang/glog"
 	"math/big"
 	"strings"
@@ -164,9 +163,19 @@ func (p *PostgresPersister) TimestampOfLastEventForCron() (int64, error) {
 	return p.lastCronTimestampFromTable(cronTableName)
 }
 
+// EventHashesOfLastTimestampForCron returns the event hashes processed for the last timestamp from cron
+func (p *PostgresPersister) EventHashesOfLastTimestampForCron() ([]string, error) {
+	return p.lastEventHashesFromTable(cronTableName)
+}
+
 // UpdateTimestampForCron updates the timestamp saved in cron table
 func (p *PostgresPersister) UpdateTimestampForCron(timestamp int64) error {
 	return p.updateCronTimestampInTable(timestamp, cronTableName)
+}
+
+// UpdateEventHashesForCron updates the eventHashes saved in cron table
+func (p *PostgresPersister) UpdateEventHashesForCron(eventHashes []string) error {
+	return p.updateEventHashesInTable(eventHashes, cronTableName)
 }
 
 // CreateChallenge creates a new challenge
@@ -1253,34 +1262,55 @@ func (p *PostgresPersister) lastCronTimestampFromTable(tableName string) (int64,
 	return timestampInt, err
 }
 
-func (p *PostgresPersister) updateCronTimestampInTable(timestamp int64, tableName string) error {
-	// Check if timestamp row exists
-	timestampExists := true
-	cronData := postgres.NewCronData(ctime.TimestampToString(timestamp), postgres.TimestampDataType)
+func (p *PostgresPersister) lastEventHashesFromTable(tableName string) ([]string, error) {
+	lastHashesString, err := p.typeExistsInCronTable(tableName, postgres.EventHashesDataType)
+	if err != nil {
+		noLastHash := []string{}
+		if err == sql.ErrNoRows {
+			// If row doesn't exist, create row with nil value
+			updateErr := p.updateEventHashesInTable(noLastHash, tableName)
+			if updateErr != nil {
+				return noLastHash, fmt.Errorf("No row in %s with hash. Error updating table, %v", tableName, updateErr)
+			}
+			return noLastHash, nil
+		}
+		return noLastHash, fmt.Errorf("Wasn't able to get listing from postgres table: %v", err)
+	}
+	return strings.Split(lastHashesString, ","), nil
+}
 
+func (p *PostgresPersister) updateCronTimestampInTable(timestamp int64, tableName string) error {
+	cronData := postgres.NewCronData(ctime.TimestampToString(timestamp), postgres.TimestampDataType)
+	return p.updateCronTable(cronData, tableName)
+}
+
+func (p *PostgresPersister) updateEventHashesInTable(eventHashes []string, tableName string) error {
+	cronData := postgres.NewCronData(strings.Join(eventHashes, ","), postgres.EventHashesDataType)
+	return p.updateCronTable(cronData, tableName)
+}
+
+func (p *PostgresPersister) updateCronTable(cronData *postgres.CronData, tableName string) error {
+	typeExists := true
 	_, err := p.typeExistsInCronTable(tableName, cronData.DataType)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			timestampExists = false
+			typeExists = false
 		} else {
 			return fmt.Errorf("Error checking DB for cron row, %v", err)
 		}
 	}
-
 	var queryString string
-	if timestampExists {
-		// update query
+	if typeExists {
 		updatedFields := []string{postgres.DataPersistedModelName}
 		queryBuff, errBuff := p.updateDBQueryBuffer(updatedFields, tableName, postgres.CronData{})
 		if errBuff != nil {
 			return err
 		}
+		queryBuff.WriteString(" WHERE data_type=:data_type;") // nolint: gosec
 		queryString = queryBuff.String()
 	} else {
-		//insert query
 		queryString = p.insertIntoDBQueryString(tableName, postgres.CronData{})
 	}
-
 	_, err = p.db.NamedExec(queryString, cronData)
 	if err != nil {
 		return fmt.Errorf("Error updating fields in db: %v", err)

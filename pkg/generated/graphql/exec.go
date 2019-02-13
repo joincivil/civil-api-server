@@ -64,6 +64,7 @@ type ComplexityRoot struct {
 		Statement                   func(childComplexity int) int
 		AppealChallengeId           func(childComplexity int) int
 		AppealChallenge             func(childComplexity int) int
+		AppealGrantedStatementUri   func(childComplexity int) int
 	}
 
 	ArticlePayload struct {
@@ -1372,6 +1373,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Appeal.AppealChallenge(childComplexity), true
+
+	case "Appeal.appealGrantedStatementURI":
+		if e.complexity.Appeal.AppealGrantedStatementUri == nil {
+			break
+		}
+
+		return e.complexity.Appeal.AppealGrantedStatementUri(childComplexity), true
 
 	case "ArticlePayload.key":
 		if e.complexity.ArticlePayload.Key == nil {
@@ -2712,6 +2720,11 @@ func (ec *executionContext) _Appeal(ctx context.Context, sel ast.SelectionSet, o
 				out.Values[i] = ec._Appeal_appealChallenge(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "appealGrantedStatementURI":
+			out.Values[i] = ec._Appeal_appealGrantedStatementURI(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2939,6 +2952,33 @@ func (ec *executionContext) _Appeal_appealChallenge(ctx context.Context, field g
 	}
 
 	return ec._Challenge(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Appeal_appealGrantedStatementURI(ctx context.Context, field graphql.CollectedField, obj *model.Appeal) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Appeal",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AppealGrantedStatementURI(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var articlePayloadImplementors = []string{"ArticlePayload"}
@@ -10977,6 +11017,7 @@ type Appeal {
   statement: String!
   appealChallengeID: Int!
   appealChallenge: Challenge
+  appealGrantedStatementURI: String!
 }
 
 # A type that reflects block data in model.BlockData

@@ -2,12 +2,13 @@ package postgres // import "github.com/joincivil/civil-events-processor/pkg/pers
 
 import (
 	"fmt"
-	"strconv"
 )
 
 const (
-	// TimestampDataType is the value for data type of a persisted timestamp for the cron table
+	// TimestampDataType is the value for a persisted timestamp in the cron table
 	TimestampDataType = "timestamp"
+	// EventHashesDataType is the value for persisted event hashes for timestamp in the cron table
+	EventHashesDataType = "event_hashes"
 	// DataPersistedModelName is the string name of DataPersisted field in CronData
 	DataPersistedModelName = "DataPersisted"
 
@@ -36,18 +37,4 @@ type CronData struct {
 // NewCronData creates a CronData model for DB with data to save
 func NewCronData(dataPersisted string, dataType string) *CronData {
 	return &CronData{DataPersisted: dataPersisted, DataType: dataType}
-}
-
-// TimestampToString converts an int64 timestamp to string
-func TimestampToString(timestamp int64) string {
-	return strconv.FormatInt(timestamp, 10)
-}
-
-// StringToTimestamp converts a string timestamp to int64
-func StringToTimestamp(timestamp string) (int64, error) {
-	i, err := strconv.ParseInt(timestamp, 10, 64)
-	if err != nil {
-		return i, fmt.Errorf("Could not convert timestamp from string to int64: %v", err)
-	}
-	return i, nil
 }

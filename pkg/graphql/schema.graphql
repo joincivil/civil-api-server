@@ -125,6 +125,7 @@ type Appeal {
   statement: String!
   appealChallengeID: Int!
   appealChallenge: Challenge
+  appealGrantedStatementURI: String!
 }
 
 # A type that reflects block data in model.BlockData

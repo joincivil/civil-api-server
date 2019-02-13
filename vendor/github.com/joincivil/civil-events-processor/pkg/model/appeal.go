@@ -23,6 +23,8 @@ type Appeal struct {
 
 	statement string // this is type ContentData in dapp
 
+	appealGrantedStatementURI string
+
 	appealChallengeID *big.Int
 
 	lastUpdatedDateTs int64
@@ -30,15 +32,17 @@ type Appeal struct {
 
 // NewAppeal creates a new appeal object
 func NewAppeal(originalChallengeID *big.Int, requester common.Address, appealFeePaid *big.Int,
-	appealPhaseExpiry *big.Int, appealGranted bool, statement string, lastUpdatedTs int64) *Appeal {
+	appealPhaseExpiry *big.Int, appealGranted bool, statement string, lastUpdatedTs int64,
+	appealGrantedStatementURI string) *Appeal {
 	return &Appeal{
-		originalChallengeID: originalChallengeID,
-		requester:           requester,
-		appealFeePaid:       appealFeePaid,
-		appealPhaseExpiry:   appealPhaseExpiry,
-		appealGranted:       appealGranted,
-		statement:           statement,
-		lastUpdatedDateTs:   lastUpdatedTs,
+		originalChallengeID:       originalChallengeID,
+		requester:                 requester,
+		appealFeePaid:             appealFeePaid,
+		appealPhaseExpiry:         appealPhaseExpiry,
+		appealGranted:             appealGranted,
+		statement:                 statement,
+		lastUpdatedDateTs:         lastUpdatedTs,
+		appealGrantedStatementURI: appealGrantedStatementURI,
 	}
 }
 
@@ -110,4 +114,14 @@ func (a *Appeal) LastUpdatedDateTs() int64 {
 // SetLastUpdatedDateTs updates the lastUpdatedTs
 func (a *Appeal) SetLastUpdatedDateTs(lastUpdatedTs int64) {
 	a.lastUpdatedDateTs = lastUpdatedTs
+}
+
+// AppealGrantedStatementURI is the uri of the appeal granted statement
+func (a *Appeal) AppealGrantedStatementURI() string {
+	return a.appealGrantedStatementURI
+}
+
+// SetAppealGrantedStatementURI updates the appealGrantedStatementUri
+func (a *Appeal) SetAppealGrantedStatementURI(uri string) {
+	a.appealGrantedStatementURI = uri
 }

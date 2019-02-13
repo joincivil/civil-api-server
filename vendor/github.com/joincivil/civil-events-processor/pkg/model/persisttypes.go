@@ -111,6 +111,10 @@ type CronPersister interface {
 	TimestampOfLastEventForCron() (int64, error)
 	// UpdateTimestampForCron updates the timestamp of the last event seen by the cron
 	UpdateTimestampForCron(timestamp int64) error
+	// EventHashesOfLastTimestampForCron returns the event hashes processed for the last timestamp from cron
+	EventHashesOfLastTimestampForCron() ([]string, error)
+	// UpdateEventHashesForCron updates the eventHashes saved in cron table
+	UpdateEventHashesForCron(eventHashes []string) error
 }
 
 // ChallengePersister is the interface to store ChallengeData
