@@ -36,12 +36,12 @@ const (
 	grantApprovalUserEmailTemplateID = "d-f363c4aa8d404bd39e7c14f527318d4f"
 	// grantApprovalCouncilEmailTemplateID = ""
 
-	foundationEmailName    = "The Civil Council"
-	foundationEmailAddress = "foundation@civil.co"
+	foundationEmailName    = "Civil Foundation"
+	foundationEmailAddress = "foundation@civilfound.org"
 	// foundationEmailAddress = "peter@civil.co"
-	councilEmailName = "The Civil Council"
+	councilEmailName = "Civil Foundation"
 
-	registryEmailName   = "The Civil Registry"
+	registryEmailName   = "Civil Media Company"
 	noreplyEmailAddress = "noreply@civil.co"
 
 	defaultFromEmailName    = foundationEmailName
@@ -131,7 +131,7 @@ func (s *Service) RequestGrant(newsroomOwnerUID string) error {
 		return err
 	}
 
-	// Email to council with charter info
+	// Email to council with charter info via pipedrive
 	tmplData := email.TemplateData{}
 	s.buildCharterDataIntoTemplate(tmplData, signupData)
 	_, err = s.buildGrantDecisionLinksIntoTemplate(tmplData, newsroomOwnerUID)
