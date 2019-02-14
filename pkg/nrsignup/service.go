@@ -193,36 +193,8 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 		return err
 	}
 
-	signupData, err := s.retrieveUserJSONData(newsroomOwnerUID)
-	if err != nil {
-		return err
-	}
+	// NOTE(PN): Email to newsroom owner will be sent by the foundation via pipedrive.
 
-	// Email to newsroom owner to tell them to wait for a response
-	// TODO(PN): Will the foundation send this email manually?
-	tmplData := email.TemplateData{}
-	tmplData["name"] = user.Email
-	tmplData["nr_name"] = signupData.NewsroomName
-	tmplData["nr_grant_approved"] = approved
-	if approved {
-		tmplData["nr_grant_approval_str"] = "approved"
-	} else {
-		tmplData["nr_grant_approval_str"] = "rejected"
-	}
-
-	tmplReq := &email.SendTemplateEmailRequest{
-		ToName:       user.Email,
-		ToEmail:      user.Email,
-		FromName:     defaultFromEmailName,
-		FromEmail:    defaultFromEmailAddress,
-		TemplateID:   grantApprovalUserEmailTemplateID,
-		TemplateData: tmplData,
-		AsmGroupID:   defaultAsmGroupID,
-	}
-	err = s.emailer.SendTemplateEmail(tmplReq)
-	if err != nil {
-		return fmt.Errorf("Failed to send grant approval user email: err: %v", err)
-	}
 	return nil
 }
 
