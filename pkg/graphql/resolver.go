@@ -6,6 +6,7 @@ package graphql
 
 import (
 	pmodel "github.com/joincivil/civil-events-processor/pkg/model"
+	"strings"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -35,6 +36,7 @@ type ResolverConfig struct {
 	JSONbService        *jsonstore.Service
 	NrsignupService     *nrsignup.Service
 	StorefrontService   *storefront.Service
+	LowercaseAddr       *bool
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -55,6 +57,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		jsonbService:        config.JSONbService,
 		nrsignupService:     config.NrsignupService,
 		storefrontService:   config.StorefrontService,
+		lowercaseAddr:       config.LowercaseAddr,
 	}
 }
 
@@ -75,6 +78,7 @@ type Resolver struct {
 	jsonbService        *jsonstore.Service
 	nrsignupService     *nrsignup.Service
 	storefrontService   *storefront.Service
+	lowercaseAddr       *bool
 }
 
 // Query is the resolver for the Query type
@@ -85,6 +89,14 @@ func (r *Resolver) Query() graphql.QueryResolver {
 // Mutation is the resolver for the Mutation type
 func (r *Resolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
+}
+
+// DetermineAddrCase determines the case of an address
+func (r *Resolver) DetermineAddrCase(addr string) string {
+	if *r.lowercaseAddr {
+		return strings.ToLower(addr)
+	}
+	return addr
 }
 
 type queryResolver struct{ *Resolver }

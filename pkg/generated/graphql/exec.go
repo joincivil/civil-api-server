@@ -249,16 +249,16 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Articles                  func(childComplexity int, addr *string, first *int, after *string) int
-		Challenge                 func(childComplexity int, id int) int
-		GovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int) int
-		GovernanceEventsTxHash    func(childComplexity int, txHash string) int
-		Listing                   func(childComplexity int, addr string) int
-		Listings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) int
-		TcrChallenge              func(childComplexity int, id int) int
-		TcrGovernanceEvents       func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int) int
-		TcrGovernanceEventsTxHash func(childComplexity int, txHash string) int
-		TcrListing                func(childComplexity int, addr string) int
-		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) int
+		Challenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
+		GovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		GovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		Listing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
+		Listings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) int
+		TcrChallenge              func(childComplexity int, id int, lowercaseAddr *bool) int
+		TcrGovernanceEvents       func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		TcrGovernanceEventsTxHash func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		TcrListing                func(childComplexity int, addr string, lowercaseAddr *bool) int
+		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) int
 		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string) int
 		CurrentUser               func(childComplexity int) int
 		StorefrontEthPrice        func(childComplexity int) int
@@ -382,16 +382,16 @@ type PollResolver interface {
 }
 type QueryResolver interface {
 	Articles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
-	Challenge(ctx context.Context, id int) (*model.Challenge, error)
-	GovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int) ([]model.GovernanceEvent, error)
-	GovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
-	Listing(ctx context.Context, addr string) (*model.Listing, error)
-	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) ([]model.Listing, error)
-	TcrChallenge(ctx context.Context, id int) (*model.Challenge, error)
-	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int) (*GovernanceEventResultCursor, error)
-	TcrGovernanceEventsTxHash(ctx context.Context, txHash string) ([]model.GovernanceEvent, error)
-	TcrListing(ctx context.Context, addr string) (*model.Listing, error)
-	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool) (*ListingResultCursor, error)
+	Challenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
+	GovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
+	GovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
+	Listing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
+	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) ([]model.Listing, error)
+	TcrChallenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
+	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) (*GovernanceEventResultCursor, error)
+	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
+	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
+	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) (*ListingResultCursor, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string) ([]model.ContentRevision, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
@@ -779,6 +779,20 @@ func field_Query_challenge_args(rawArgs map[string]interface{}) (map[string]inte
 		}
 	}
 	args["id"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg1
 	return args, nil
 
 }
@@ -841,6 +855,20 @@ func field_Query_governanceEvents_args(rawArgs map[string]interface{}) (map[stri
 		}
 	}
 	args["first"] = arg3
+	var arg4 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg4
 	return args, nil
 
 }
@@ -856,6 +884,20 @@ func field_Query_governanceEventsTxHash_args(rawArgs map[string]interface{}) (ma
 		}
 	}
 	args["txHash"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg1
 	return args, nil
 
 }
@@ -871,6 +913,20 @@ func field_Query_listing_args(rawArgs map[string]interface{}) (map[string]interf
 		}
 	}
 	args["addr"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg1
 	return args, nil
 
 }
@@ -961,6 +1017,20 @@ func field_Query_listings_args(rawArgs map[string]interface{}) (map[string]inter
 		}
 	}
 	args["currentApplication"] = arg5
+	var arg6 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg6 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg6
 	return args, nil
 
 }
@@ -976,6 +1046,20 @@ func field_Query_tcrChallenge_args(rawArgs map[string]interface{}) (map[string]i
 		}
 	}
 	args["id"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg1
 	return args, nil
 
 }
@@ -1038,6 +1122,20 @@ func field_Query_tcrGovernanceEvents_args(rawArgs map[string]interface{}) (map[s
 		}
 	}
 	args["first"] = arg3
+	var arg4 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg4
 	return args, nil
 
 }
@@ -1053,6 +1151,20 @@ func field_Query_tcrGovernanceEventsTxHash_args(rawArgs map[string]interface{}) 
 		}
 	}
 	args["txHash"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg1
 	return args, nil
 
 }
@@ -1068,6 +1180,20 @@ func field_Query_tcrListing_args(rawArgs map[string]interface{}) (map[string]int
 		}
 	}
 	args["addr"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg1
 	return args, nil
 
 }
@@ -1158,6 +1284,20 @@ func field_Query_tcrListings_args(rawArgs map[string]interface{}) (map[string]in
 		}
 	}
 	args["currentApplication"] = arg5
+	var arg6 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg6 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg6
 	return args, nil
 
 }
@@ -2349,7 +2489,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Challenge(childComplexity, args["id"].(int)), true
+		return e.complexity.Query.Challenge(childComplexity, args["id"].(int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.governanceEvents":
 		if e.complexity.Query.GovernanceEvents == nil {
@@ -2361,7 +2501,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GovernanceEvents(childComplexity, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int)), true
+		return e.complexity.Query.GovernanceEvents(childComplexity, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.governanceEventsTxHash":
 		if e.complexity.Query.GovernanceEventsTxHash == nil {
@@ -2373,7 +2513,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GovernanceEventsTxHash(childComplexity, args["txHash"].(string)), true
+		return e.complexity.Query.GovernanceEventsTxHash(childComplexity, args["txHash"].(string), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.listing":
 		if e.complexity.Query.Listing == nil {
@@ -2385,7 +2525,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Listing(childComplexity, args["addr"].(string)), true
+		return e.complexity.Query.Listing(childComplexity, args["addr"].(string), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.listings":
 		if e.complexity.Query.Listings == nil {
@@ -2397,7 +2537,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Listings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool)), true
+		return e.complexity.Query.Listings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.tcrChallenge":
 		if e.complexity.Query.TcrChallenge == nil {
@@ -2409,7 +2549,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrChallenge(childComplexity, args["id"].(int)), true
+		return e.complexity.Query.TcrChallenge(childComplexity, args["id"].(int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.tcrGovernanceEvents":
 		if e.complexity.Query.TcrGovernanceEvents == nil {
@@ -2421,7 +2561,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrGovernanceEvents(childComplexity, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int)), true
+		return e.complexity.Query.TcrGovernanceEvents(childComplexity, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.tcrGovernanceEventsTxHash":
 		if e.complexity.Query.TcrGovernanceEventsTxHash == nil {
@@ -2433,7 +2573,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrGovernanceEventsTxHash(childComplexity, args["txHash"].(string)), true
+		return e.complexity.Query.TcrGovernanceEventsTxHash(childComplexity, args["txHash"].(string), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.tcrListing":
 		if e.complexity.Query.TcrListing == nil {
@@ -2445,7 +2585,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrListing(childComplexity, args["addr"].(string)), true
+		return e.complexity.Query.TcrListing(childComplexity, args["addr"].(string), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.tcrListings":
 		if e.complexity.Query.TcrListings == nil {
@@ -2457,7 +2597,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrListings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool)), true
+		return e.complexity.Query.TcrListings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.newsroomArticles":
 		if e.complexity.Query.NewsroomArticles == nil {
@@ -8003,7 +8143,7 @@ func (ec *executionContext) _Query_challenge(ctx context.Context, field graphql.
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Challenge(rctx, args["id"].(int))
+		return ec.resolvers.Query().Challenge(rctx, args["id"].(int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -8038,7 +8178,7 @@ func (ec *executionContext) _Query_governanceEvents(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GovernanceEvents(rctx, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int))
+		return ec.resolvers.Query().GovernanceEvents(rctx, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8104,7 +8244,7 @@ func (ec *executionContext) _Query_governanceEventsTxHash(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GovernanceEventsTxHash(rctx, args["txHash"].(string))
+		return ec.resolvers.Query().GovernanceEventsTxHash(rctx, args["txHash"].(string), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8170,7 +8310,7 @@ func (ec *executionContext) _Query_listing(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Listing(rctx, args["addr"].(string))
+		return ec.resolvers.Query().Listing(rctx, args["addr"].(string), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -8205,7 +8345,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Listings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool))
+		return ec.resolvers.Query().Listings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8271,7 +8411,7 @@ func (ec *executionContext) _Query_tcrChallenge(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrChallenge(rctx, args["id"].(int))
+		return ec.resolvers.Query().TcrChallenge(rctx, args["id"].(int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -8306,7 +8446,7 @@ func (ec *executionContext) _Query_tcrGovernanceEvents(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrGovernanceEvents(rctx, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int))
+		return ec.resolvers.Query().TcrGovernanceEvents(rctx, args["addr"].(*string), args["after"].(*string), args["creationDate"].(*DateRange), args["first"].(*int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -8341,7 +8481,7 @@ func (ec *executionContext) _Query_tcrGovernanceEventsTxHash(ctx context.Context
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrGovernanceEventsTxHash(rctx, args["txHash"].(string))
+		return ec.resolvers.Query().TcrGovernanceEventsTxHash(rctx, args["txHash"].(string), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8407,7 +8547,7 @@ func (ec *executionContext) _Query_tcrListing(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrListing(rctx, args["addr"].(string))
+		return ec.resolvers.Query().TcrListing(rctx, args["addr"].(string), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -8442,7 +8582,7 @@ func (ec *executionContext) _Query_tcrListings(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrListings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool))
+		return ec.resolvers.Query().TcrListings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -10902,15 +11042,16 @@ type Query {
   # TODO(PN): Temporary keep these until migrated over to new naming
   # Just calls the properly named versions
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
-  challenge(id: Int!): Challenge
+  challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   governanceEvents(
     addr: String
     after: String
     creationDate: DateRange
     first: Int
+    lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  listing(addr: String!): Listing
+  governanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  listing(addr: String!, lowercaseAddr: Boolean = True): Listing
   listings(
     first: Int
     after: String
@@ -10918,18 +11059,20 @@ type Query {
     rejectedOnly: Boolean
     activeChallenge: Boolean
     currentApplication: Boolean
+    lowercaseAddr: Boolean = True
   ): [Listing!]!
 
   # TCR Queries
-  tcrChallenge(id: Int!): Challenge
+  tcrChallenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   tcrGovernanceEvents(
     addr: String
     after: String
     creationDate: DateRange
     first: Int
+    lowercaseAddr: Boolean = True
   ): GovernanceEventResultCursor
-  tcrGovernanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  tcrListing(addr: String!): Listing
+  tcrGovernanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
     after: String
@@ -10937,6 +11080,7 @@ type Query {
     rejectedOnly: Boolean
     activeChallenge: Boolean
     currentApplication: Boolean
+    lowercaseAddr: Boolean = True
   ): ListingResultCursor
 
   # Newsroom Queries
