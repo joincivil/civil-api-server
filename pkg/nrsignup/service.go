@@ -33,16 +33,16 @@ const (
 	requestGrantUserEmailTemplateID    = "d-f17d8ba462ce4ac9ab24e447d9ee099d"
 	requestGrantCouncilEmailTemplateID = "d-2ffc71848ea743b0a5b56a7c0d6b9ac3"
 
-	grantApprovalUserEmailTemplateID = "d-f363c4aa8d404bd39e7c14f527318d4f"
+	// grantApprovalUserEmailTemplateID = "d-f363c4aa8d404bd39e7c14f527318d4f"
 	// grantApprovalCouncilEmailTemplateID = ""
 
 	foundationEmailName    = "Civil Foundation"
 	foundationEmailAddress = "foundation@civilfound.org"
 	// foundationEmailAddress = "peter@civil.co"
-	councilEmailName = "Civil Foundation"
-
-	registryEmailName   = "Civil Media Company"
-	noreplyEmailAddress = "noreply@civil.co"
+	// councilEmailName = "Civil Foundation"
+	// registryEmailName   = "Civil Media Company"
+	// noreplyEmailAddress = "noreply@civil.co"
+	supportEmailAddress = "support@civil.co"
 
 	civilPipedriveEmail = "civil@pipedrivemail.com"
 
@@ -144,8 +144,8 @@ func (s *Service) RequestGrant(newsroomOwnerUID string) error {
 	tmplReq := &email.SendTemplateEmailRequest{
 		ToName:       civilPipedriveEmail,
 		ToEmail:      civilPipedriveEmail,
-		FromName:     noreplyEmailAddress,
-		FromEmail:    noreplyEmailAddress,
+		FromName:     supportEmailAddress,
+		FromEmail:    supportEmailAddress,
 		TemplateID:   requestGrantCouncilEmailTemplateID,
 		TemplateData: tmplData,
 		AsmGroupID:   defaultAsmGroupID,
@@ -189,15 +189,10 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 		return fmt.Errorf("No user found: uid: %v", newsroomOwnerUID)
 	}
 
-	// Set the grant requested flag to true for this user UID
-	err = s.setGrantApprovedFlag(newsroomOwnerUID, approved)
-	if err != nil {
-		return err
-	}
-
 	// NOTE(PN): Email to newsroom owner will be sent by the foundation via pipedrive.
 
-	return nil
+	// Set the grant requested flag to true for this user UID
+	return s.setGrantApprovedFlag(newsroomOwnerUID, approved)
 }
 
 // StartPollNewsroomDeployTx starts a polling process that detects when a newsroom

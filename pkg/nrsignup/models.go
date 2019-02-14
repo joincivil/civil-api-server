@@ -39,7 +39,7 @@ func (c *CharterMission) AsMap() map[string]interface{} {
 	mission["structure"] = c.Structure
 	mission["revenue"] = c.Revenue
 	mission["encumbrances"] = c.Encumbrances
-	mission["misc"] = c.Miscellaneous
+	mission["miscellaneous"] = c.Miscellaneous
 	return mission
 }
 
