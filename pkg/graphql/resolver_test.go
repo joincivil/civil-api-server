@@ -247,7 +247,7 @@ func TestResolverTcrListings(t *testing.T) {
 	queries := resolver.Query()
 
 	first := 54
-	cursor, err := queries.TcrListings(context.Background(), &first, nil, nil, nil, nil, nil)
+	cursor, err := queries.TcrListings(context.Background(), &first, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Errorf("Should have gotten a cursor: err: %v", err)
 	}
@@ -280,7 +280,7 @@ func TestResolverTcrListingsPagination(t *testing.T) {
 
 Loop:
 	for {
-		cursor, err := queries.TcrListings(context.Background(), &first, &after, nil, nil, nil, nil)
+		cursor, err := queries.TcrListings(context.Background(), &first, &after, nil, nil, nil, nil, nil)
 		if err != nil {
 			t.Errorf("Should have gotten a cursor: err: %v", err)
 		}
@@ -316,6 +316,7 @@ func TestResolverTcrGovernanceEvents(t *testing.T) {
 		nil,
 		nil,
 		&first,
+		nil,
 	)
 	if err != nil {
 		t.Errorf("Should have gotten a cursor: err: %v", err)
@@ -356,6 +357,7 @@ Loop:
 			&after,
 			nil,
 			&first,
+			nil,
 		)
 		if err != nil {
 			t.Errorf("Should have gotten a cursor: err: %v", err)

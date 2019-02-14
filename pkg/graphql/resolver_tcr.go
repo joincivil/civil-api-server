@@ -93,7 +93,10 @@ func (r *challengeResolver) ChallengeID(ctx context.Context, obj *model.Challeng
 	return int(obj.ChallengeID().Uint64()), nil
 }
 func (r *challengeResolver) ListingAddress(ctx context.Context, obj *model.Challenge) (string, error) {
-	return strings.ToLower(obj.ListingAddress().Hex()), nil
+	if *r.Resolver.lowercaseAddr {
+		return strings.ToLower(obj.ListingAddress().Hex()), nil
+	}
+	return obj.ListingAddress().Hex(), nil
 }
 func (r *challengeResolver) RewardPool(ctx context.Context, obj *model.Challenge) (string, error) {
 	rewardPool := obj.RewardPool()
@@ -181,7 +184,10 @@ func (r *charterResolver) Timestamp(ctx context.Context, obj *model.Charter) (in
 type governanceEventResolver struct{ *Resolver }
 
 func (r *governanceEventResolver) ListingAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error) {
-	return strings.ToLower(obj.ListingAddress().Hex()), nil
+	if *r.Resolver.lowercaseAddr {
+		return strings.ToLower(obj.ListingAddress().Hex()), nil
+	}
+	return obj.ListingAddress().Hex(), nil
 }
 
 func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.GovernanceEvent) ([]graphql.Metadata, error) {
@@ -243,7 +249,10 @@ func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.Govern
 type listingResolver struct{ *Resolver }
 
 func (r *listingResolver) ContractAddress(ctx context.Context, obj *model.Listing) (string, error) {
-	return strings.ToLower(obj.ContractAddress().Hex()), nil
+	if *r.Resolver.lowercaseAddr {
+		return strings.ToLower(obj.ContractAddress().Hex()), nil
+	}
+	return obj.ContractAddress().Hex(), nil
 }
 func (r *listingResolver) LastGovState(ctx context.Context, obj *model.Listing) (string, error) {
 	return obj.LastGovernanceStateString(), nil
@@ -252,7 +261,11 @@ func (r *listingResolver) OwnerAddresses(ctx context.Context, obj *model.Listing
 	addrs := obj.OwnerAddresses()
 	ownerAddrs := make([]string, len(addrs))
 	for index, addr := range addrs {
-		ownerAddrs[index] = strings.ToLower(addr.Hex())
+		val := addr.Hex()
+		if *r.Resolver.lowercaseAddr {
+			val = strings.ToLower(val)
+		}
+		ownerAddrs[index] = val
 	}
 	return ownerAddrs, nil
 }
@@ -263,7 +276,11 @@ func (r *listingResolver) ContributorAddresses(ctx context.Context, obj *model.L
 	addrs := obj.ContributorAddresses()
 	ownerAddrs := make([]string, len(addrs))
 	for index, addr := range addrs {
-		ownerAddrs[index] = strings.ToLower(addr.Hex())
+		val := addr.Hex()
+		if *r.Resolver.lowercaseAddr {
+			val = strings.ToLower(val)
+		}
+		ownerAddrs[index] = val
 	}
 	return ownerAddrs, nil
 }
@@ -368,12 +385,14 @@ func (r *pollResolver) VotesAgainst(ctx context.Context, obj *model.Poll) (strin
 
 // QUERIES
 
-func (r *queryResolver) Challenge(ctx context.Context, id int) (*model.Challenge, error) {
-	return r.TcrChallenge(ctx, id)
+func (r *queryResolver) Challenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
+	return r.TcrChallenge(ctx, id, lowercaseAddr)
 }
 
-func (r *queryResolver) TcrChallenge(ctx context.Context, id int) (*model.Challenge, error) {
+func (r *queryResolver) TcrChallenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error) {
 	loaders := ctxLoaders(ctx)
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	challenge, err := loaders.challengeLoader.Load(id)
 	if err != nil {
 		return nil, err
@@ -382,8 +401,9 @@ func (r *queryResolver) TcrChallenge(ctx context.Context, id int) (*model.Challe
 }
 
 func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, after *string,
-	creationDate *graphql.DateRange, first *int) ([]model.GovernanceEvent, error) {
-	resultCursor, err := r.TcrGovernanceEvents(ctx, addr, after, creationDate, first)
+	creationDate *graphql.DateRange, first *int, lowercaseAddr *bool) ([]model.GovernanceEvent, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
+	resultCursor, err := r.TcrGovernanceEvents(ctx, addr, after, creationDate, first, lowercaseAddr)
 	if err != nil {
 		return []model.GovernanceEvent{}, nil
 	}
@@ -396,9 +416,9 @@ func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, afte
 }
 
 func (r *queryResolver) TcrGovernanceEvents(ctx context.Context, addr *string, after *string,
-	creationDate *graphql.DateRange, first *int) (*graphql.GovernanceEventResultCursor, error) {
+	creationDate *graphql.DateRange, first *int, lowercaseAddr *bool) (*graphql.GovernanceEventResultCursor, error) {
 	var err error
-
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	// The default pagination is by offset
 	// Only support sorted offset until we need other types
 	cursor := defaultPaginationCursor
@@ -503,12 +523,14 @@ func (r *queryResolver) govEventsEndCursor(edges []*graphql.GovernanceEventEdge)
 }
 
 func (r *queryResolver) GovernanceEventsTxHash(ctx context.Context,
-	txString string) ([]model.GovernanceEvent, error) {
-	return r.TcrGovernanceEventsTxHash(ctx, txString)
+	txString string, lowercaseAddr *bool) ([]model.GovernanceEvent, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
+	return r.TcrGovernanceEventsTxHash(ctx, txString, lowercaseAddr)
 }
 
 func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
-	txString string) ([]model.GovernanceEvent, error) {
+	txString string, lowercaseAddr *bool) ([]model.GovernanceEvent, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	txHash := common.HexToHash(txString)
 	events, err := r.govEventPersister.GovernanceEventsByTxHash(txHash)
 	if err != nil {
@@ -523,10 +545,10 @@ func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
 
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
-	currentApplication *bool) ([]model.Listing, error) {
-
+	currentApplication *bool, lowercaseAddr *bool) ([]model.Listing, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	resultCursor, err := r.TcrListings(ctx, first, after, whitelistedOnly, rejectedOnly,
-		activeChallenge, currentApplication)
+		activeChallenge, currentApplication, lowercaseAddr)
 	if err != nil {
 		return []model.Listing{}, err
 	}
@@ -540,7 +562,8 @@ func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 
 func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
-	currentApplication *bool) (*graphql.ListingResultCursor, error) {
+	currentApplication *bool, lowercaseAddr *bool) (*graphql.ListingResultCursor, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	var err error
 
 	// The default pagination is by offset
@@ -647,11 +670,13 @@ func (r *queryResolver) listingsEndCursor(modelEdges []*graphql.ListingEdge) *st
 	return endCursor
 }
 
-func (r *queryResolver) Listing(ctx context.Context, addr string) (*model.Listing, error) {
-	return r.TcrListing(ctx, addr)
+func (r *queryResolver) Listing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
+	return r.TcrListing(ctx, addr, lowercaseAddr)
 }
 
-func (r *queryResolver) TcrListing(ctx context.Context, addr string) (*model.Listing, error) {
+func (r *queryResolver) TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	address := common.HexToAddress(addr)
 	listing, err := r.listingPersister.ListingByAddress(address)
 	if err != nil {

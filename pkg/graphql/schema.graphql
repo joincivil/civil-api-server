@@ -10,15 +10,16 @@ type Query {
   # TODO(PN): Temporary keep these until migrated over to new naming
   # Just calls the properly named versions
   articles(addr: String, first: Int, after: String): [ContentRevision!]!
-  challenge(id: Int!): Challenge
+  challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   governanceEvents(
     addr: String
     after: String
     creationDate: DateRange
     first: Int
+    lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  governanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  listing(addr: String!): Listing
+  governanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  listing(addr: String!, lowercaseAddr: Boolean = True): Listing
   listings(
     first: Int
     after: String
@@ -26,18 +27,20 @@ type Query {
     rejectedOnly: Boolean
     activeChallenge: Boolean
     currentApplication: Boolean
+    lowercaseAddr: Boolean = True
   ): [Listing!]!
 
   # TCR Queries
-  tcrChallenge(id: Int!): Challenge
+  tcrChallenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   tcrGovernanceEvents(
     addr: String
     after: String
     creationDate: DateRange
     first: Int
+    lowercaseAddr: Boolean = True
   ): GovernanceEventResultCursor
-  tcrGovernanceEventsTxHash(txHash: String!): [GovernanceEvent!]!
-  tcrListing(addr: String!): Listing
+  tcrGovernanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
     after: String
@@ -45,6 +48,7 @@ type Query {
     rejectedOnly: Boolean
     activeChallenge: Boolean
     currentApplication: Boolean
+    lowercaseAddr: Boolean = True
   ): ListingResultCursor
 
   # Newsroom Queries

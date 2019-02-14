@@ -35,6 +35,7 @@ type ResolverConfig struct {
 	JSONbService        *jsonstore.Service
 	NrsignupService     *nrsignup.Service
 	StorefrontService   *storefront.Service
+	LowercaseAddr       *bool
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -55,6 +56,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		jsonbService:        config.JSONbService,
 		nrsignupService:     config.NrsignupService,
 		storefrontService:   config.StorefrontService,
+		lowercaseAddr:       config.LowercaseAddr,
 	}
 }
 
@@ -75,6 +77,7 @@ type Resolver struct {
 	jsonbService        *jsonstore.Service
 	nrsignupService     *nrsignup.Service
 	storefrontService   *storefront.Service
+	lowercaseAddr       *bool
 }
 
 // Query is the resolver for the Query type
