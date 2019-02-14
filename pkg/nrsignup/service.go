@@ -44,6 +44,8 @@ const (
 	registryEmailName   = "Civil Media Company"
 	noreplyEmailAddress = "noreply@civil.co"
 
+	civilPipedriveEmail = "civil@pipedrivemail.com"
+
 	defaultFromEmailName    = foundationEmailName
 	defaultFromEmailAddress = foundationEmailAddress
 
@@ -140,9 +142,9 @@ func (s *Service) RequestGrant(newsroomOwnerUID string) error {
 	}
 
 	tmplReq := &email.SendTemplateEmailRequest{
-		ToName:       councilEmailName,
-		ToEmail:      foundationEmailAddress,
-		FromName:     registryEmailName,
+		ToName:       civilPipedriveEmail,
+		ToEmail:      civilPipedriveEmail,
+		FromName:     noreplyEmailAddress,
 		FromEmail:    noreplyEmailAddress,
 		TemplateID:   requestGrantCouncilEmailTemplateID,
 		TemplateData: tmplData,
