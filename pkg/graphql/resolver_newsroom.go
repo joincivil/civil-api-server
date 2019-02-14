@@ -3,7 +3,6 @@ package graphql
 import (
 	context "context"
 	"strconv"
-	"strings"
 
 	"github.com/iancoleman/strcase"
 
@@ -23,10 +22,7 @@ func (r *Resolver) ContentRevision() graphql.ContentRevisionResolver {
 type contentRevisionResolver struct{ *Resolver }
 
 func (r *contentRevisionResolver) ListingAddress(ctx context.Context, obj *model.ContentRevision) (string, error) {
-	if *r.Resolver.lowercaseAddr {
-		return strings.ToLower(obj.ListingAddress().Hex()), nil
-	}
-	return obj.ListingAddress().Hex(), nil
+	return r.Resolver.DetermineAddrCase(obj.ListingAddress().Hex()), nil
 }
 func (r *contentRevisionResolver) Payload(ctx context.Context, obj *model.ContentRevision) ([]graphql.ArticlePayload, error) {
 	data := []graphql.ArticlePayload{}
@@ -41,10 +37,7 @@ func (r *contentRevisionResolver) Payload(ctx context.Context, obj *model.Conten
 	return data, nil
 }
 func (r *contentRevisionResolver) EditorAddress(ctx context.Context, obj *model.ContentRevision) (string, error) {
-	if *r.Resolver.lowercaseAddr {
-		return strings.ToLower(obj.ListingAddress().Hex()), nil
-	}
-	return obj.ListingAddress().Hex(), nil
+	return r.Resolver.DetermineAddrCase(obj.ListingAddress().Hex()), nil
 }
 func (r *contentRevisionResolver) ContractContentID(ctx context.Context, obj *model.ContentRevision) (int, error) {
 	bigInt := obj.ContractContentID()
