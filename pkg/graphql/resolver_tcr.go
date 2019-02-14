@@ -147,16 +147,12 @@ func (r *challengeResolver) Poll(ctx context.Context, obj *model.Challenge) (*mo
 	return poll, nil
 }
 func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error) {
+	loaders := ctxLoaders(ctx)
 	challengeID := int(obj.ChallengeID().Int64())
-
-	appeal, err := r.appealPersister.AppealByChallengeID(challengeID)
+	appeal, err := loaders.appealLoader.Load(challengeID)
 	if err != nil {
-		if err == cpersist.ErrPersisterNoResults {
-			return nil, nil
-		}
 		return nil, err
 	}
-
 	return appeal, nil
 }
 
