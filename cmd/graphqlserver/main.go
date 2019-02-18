@@ -254,6 +254,16 @@ func initNrsignupService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 	return nrsignupService, nil
 }
 
+func initStorefrontService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
+	userService *users.UserService) (*storefront.Service, error) {
+	return storefront.NewService(
+		config.ContractAddresses["CVLToken"],
+		config.TokenSaleAddresses,
+		ethHelper,
+		userService,
+	)
+}
+
 func initAuthService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 	userService *users.UserService, jwtGenerator *auth.JwtTokenGenerator) (*auth.Service, error) {
 	return auth.NewAuthService(
@@ -479,7 +489,11 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
-	storefrontService, err := storefront.NewService(config, ethHelper)
+	storefrontService, err := initStorefrontService(
+		config,
+		ethHelper,
+		userService,
+	)
 	if err != nil {
 		log.Fatalf("Error w init Storefront Service: err: %v", err)
 		return nil, err

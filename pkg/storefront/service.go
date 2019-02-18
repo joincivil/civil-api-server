@@ -2,10 +2,11 @@ package storefront
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang/glog"
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/go-common/pkg/eth"
 )
 
@@ -35,18 +36,20 @@ var (
 type Service struct {
 	currencyConversion CurrencyConversion
 	pricing            *PricingManager
+	userService        *users.UserService
 }
 
 // NewService constructs a new Service instance
-func NewService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*Service, error) {
+func NewService(cvlTokenAddr string, tokenSaleAddrs []common.Address, ethHelper *eth.Helper,
+	userService *users.UserService) (*Service, error) {
 
 	initSupplyManager := true
-	cvlTokenAddress := common.HexToAddress(config.ContractAddresses["CVLToken"])
+	cvlTokenAddress := common.HexToAddress(cvlTokenAddr)
 	if cvlTokenAddress == common.HexToAddress("") {
 		initSupplyManager = false
 		glog.Infof("Not initializing supply manager, err: %v", ErrNoCVLTokenAddress)
 
-	} else if config.TokenSaleAddresses == nil || len(config.TokenSaleAddresses) < 1 {
+	} else if tokenSaleAddrs == nil || len(tokenSaleAddrs) < 1 {
 		initSupplyManager = false
 		glog.Infof("Not initializing supply manager, err: %v", ErrNoTokenSaleAddresses)
 	}
@@ -59,18 +62,18 @@ func NewService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*Service, e
 			cvlTokenAddress,
 			ethHelper.Blockchain,
 			pricingManager,
-			config.TokenSaleAddresses,
+			tokenSaleAddrs,
 			tokenSupplyPollFreqSecs,
 		)
 		if err != nil {
 			return nil, ErrInvalidSupplyManager
 		}
-
 	}
 
 	return &Service{
 		pricing:            pricingManager,
 		currencyConversion: currencyConversion,
+		userService:        userService,
 	}, nil
 }
 
@@ -100,4 +103,41 @@ func (s *Service) ConvertUSDToETH() (float64, error) {
 // ConvertETHToUSD returns the price of 1 ETH in USD
 func (s *Service) ConvertETHToUSD() (float64, error) {
 	return s.currencyConversion.ETHToUSD()
+}
+
+// AirswapOnComplete handles the transaction hash from the Airswap onComplete when a sale
+// is completed
+func (s *Service) AirswapOnComplete(buyerUID string, txHash string) error {
+	user, err := s.userService.MaybeGetUser(users.UserCriteria{
+		UID: buyerUID,
+	})
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("No user found: uid: %v", buyerUID)
+	}
+
+	err = user.AddPurchaseTxHash(txHash)
+	if err != nil {
+		return err
+	}
+
+	update := &users.UserUpdateInput{
+		PurchaseTxHashesStr: user.PurchaseTxHashesStr,
+	}
+	_, err = s.userService.UpdateUser(buyerUID, update)
+	if err != nil {
+		return err
+	}
+
+	// Add user to the Mailchimp members list for marketing/growth team
+
+	return nil
+}
+
+// AirswapOnCancel handles the Airswap onCancel when a sale is cancelled
+func (s *Service) AirswapOnCancel(buyerUID string) error {
+	// Add user to the Mailchimp abandoned list for marketing/growth team
+	return nil
 }

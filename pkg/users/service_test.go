@@ -92,7 +92,7 @@ func TestUpdateUser(t *testing.T) {
 		OnfidoCheckID:     "test",
 		KycStatus:         "test",
 	}
-	user, err := svc.UpdateUser("1", "1", update)
+	user, err := svc.UpdateUser("1", update)
 
 	if err != nil {
 		t.Fatal(err)

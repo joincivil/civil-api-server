@@ -2,7 +2,6 @@ package graphql
 
 import (
 	context "context"
-	"fmt"
 
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -14,7 +13,7 @@ func (r *queryResolver) Jsonb(ctx context.Context, id *string) (*jsonstore.JSONb
 	// Needs to have a valid auth token
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+		return nil, ErrAccessDenied
 	}
 
 	idVal := ""
@@ -42,7 +41,7 @@ func (r *mutationResolver) JsonbSave(ctx context.Context, input graphql.JsonbInp
 	// Needs to have a valid auth token
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return jsonstore.JSONb{}, fmt.Errorf("Access denied")
+		return jsonstore.JSONb{}, ErrAccessDenied
 	}
 
 	updatedJSONb, err := r.jsonbService.SaveRawJSONb(
