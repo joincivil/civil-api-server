@@ -38,7 +38,7 @@ func (r *mutationResolver) StorefrontAirswapTxHash(ctx context.Context, txHash s
 		return "", ErrAccessDenied
 	}
 
-	err := r.storefrontService.AirswapOnComplete(token.Sub, txHash)
+	err := r.storefrontService.PurchaseTransactionComplete(token.Sub, txHash)
 	if err != nil {
 		return ResponseError, err
 	}
@@ -53,7 +53,7 @@ func (r *mutationResolver) StorefrontAirswapCancelled(ctx context.Context) (stri
 		return "", ErrAccessDenied
 	}
 
-	err := r.storefrontService.AirswapOnCancel(token.Sub)
+	err := r.storefrontService.PurchaseTransactionCancel(token.Sub)
 	if err != nil {
 		return ResponseError, err
 	}

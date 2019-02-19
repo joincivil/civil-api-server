@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/golang/glog"
-	"github.com/joincivil/civil-api-server/pkg/users"
+	log "github.com/golang/glog"
+
 	"github.com/joincivil/go-common/pkg/eth"
+
+	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
 const (
@@ -21,6 +23,17 @@ const (
 	totalRaiseUSD = 19400000.0
 	// startingPrice is the initialize price in USD of the first token we sell
 	startingPrice = 0.2
+)
+
+const (
+	// mailchimpMemberListID is the list id for the token holders/members list
+	mailchimpMemberListID = "96a8752688"
+	// mailchimpAbandonedListID is the list id for the abandoned token purchase list
+	mailchimpAbandonedListID = "843efbe924"
+
+	mailchimpAlreadySubErrSubstring = "already subscribed"
+	// mailchimpNoEmailRecordErrSubstring = "no record of the email address"
+	mailchimpNotSubscribedErrSubstring = "not subscribed"
 )
 
 var (
@@ -37,21 +50,22 @@ type Service struct {
 	currencyConversion CurrencyConversion
 	pricing            *PricingManager
 	userService        *users.UserService
+	emailLists         ServiceEmailLists
 }
 
 // NewService constructs a new Service instance
 func NewService(cvlTokenAddr string, tokenSaleAddrs []common.Address, ethHelper *eth.Helper,
-	userService *users.UserService) (*Service, error) {
+	userService *users.UserService, emailLists ServiceEmailLists) (*Service, error) {
 
 	initSupplyManager := true
 	cvlTokenAddress := common.HexToAddress(cvlTokenAddr)
 	if cvlTokenAddress == common.HexToAddress("") {
 		initSupplyManager = false
-		glog.Infof("Not initializing supply manager, err: %v", ErrNoCVLTokenAddress)
+		log.Infof("Not initializing supply manager, err: %v", ErrNoCVLTokenAddress)
 
 	} else if tokenSaleAddrs == nil || len(tokenSaleAddrs) < 1 {
 		initSupplyManager = false
-		glog.Infof("Not initializing supply manager, err: %v", ErrNoTokenSaleAddresses)
+		log.Infof("Not initializing supply manager, err: %v", ErrNoTokenSaleAddresses)
 	}
 
 	pricingManager := NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
@@ -74,6 +88,7 @@ func NewService(cvlTokenAddr string, tokenSaleAddrs []common.Address, ethHelper 
 		pricing:            pricingManager,
 		currencyConversion: currencyConversion,
 		userService:        userService,
+		emailLists:         emailLists,
 	}, nil
 }
 
@@ -105,9 +120,8 @@ func (s *Service) ConvertETHToUSD() (float64, error) {
 	return s.currencyConversion.ETHToUSD()
 }
 
-// AirswapOnComplete handles the transaction hash from the Airswap onComplete when a sale
-// is completed
-func (s *Service) AirswapOnComplete(buyerUID string, txHash string) error {
+// PurchaseTransactionComplete handles the transaction hash of a completed token sale
+func (s *Service) PurchaseTransactionComplete(buyerUID string, txHash string) error {
 	user, err := s.userService.MaybeGetUser(users.UserCriteria{
 		UID: buyerUID,
 	})
@@ -116,6 +130,12 @@ func (s *Service) AirswapOnComplete(buyerUID string, txHash string) error {
 	}
 	if user == nil {
 		return fmt.Errorf("No user found: uid: %v", buyerUID)
+	}
+
+	for _, hash := range user.PurchaseTxHashes() {
+		if hash == txHash {
+			return fmt.Errorf("TxHash already in the user hash list: %v", txHash)
+		}
 	}
 
 	err = user.AddPurchaseTxHash(txHash)
@@ -131,13 +151,28 @@ func (s *Service) AirswapOnComplete(buyerUID string, txHash string) error {
 		return err
 	}
 
-	// Add user to the Mailchimp members list for marketing/growth team
+	if s.emailLists != nil {
+		go s.emailLists.PurchaseCompleteAddToMembersList(user)
+	}
 
 	return nil
 }
 
-// AirswapOnCancel handles the Airswap onCancel when a sale is cancelled
-func (s *Service) AirswapOnCancel(buyerUID string) error {
-	// Add user to the Mailchimp abandoned list for marketing/growth team
+// PurchaseTransactionCancel handles the cancelled purchase transaction
+func (s *Service) PurchaseTransactionCancel(buyerUID string) error {
+	user, err := s.userService.MaybeGetUser(users.UserCriteria{
+		UID: buyerUID,
+	})
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("No user found: uid: %v", buyerUID)
+	}
+
+	if s.emailLists != nil {
+		go s.emailLists.PurchaseCancelRemoveFromAbandonedList(user)
+	}
+
 	return nil
 }

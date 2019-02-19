@@ -256,11 +256,18 @@ func initNrsignupService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 
 func initStorefrontService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 	userService *users.UserService) (*storefront.Service, error) {
+	var mailchimpAPI *cemail.MailchimpAPI
+	if config.MailchimpKey != "" {
+		mailchimpAPI = cemail.NewMailchimpAPI(config.MailchimpKey)
+	}
+	emailLists := storefront.NewMailchimpServiceEmailLists(mailchimpAPI)
+
 	return storefront.NewService(
 		config.ContractAddresses["CVLToken"],
 		config.TokenSaleAddresses,
 		ethHelper,
 		userService,
+		emailLists,
 	)
 }
 
