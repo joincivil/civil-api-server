@@ -25,6 +25,11 @@ const (
 
 	defaultSignupVerifyURI = "account/auth/signup/verify-token"
 	defaultLoginVerifyURI  = "account/auth/login/verify-token"
+
+	civilMediaName  = "Civil Media Company"
+	civilMediaEmail = "support@civil.co"
+
+	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
 // ApplicationEmailTemplateMap represents a mapping of the ApplicationEnum to it's email
@@ -294,11 +299,11 @@ func (s *Service) sendEmailToken(emailAddress string, templateID string,
 
 	emailReq := &email.SendTemplateEmailRequest{
 		ToEmail:      emailAddress,
-		FromName:     "The Civil Media Company",
-		FromEmail:    "support@civil.co",
+		FromName:     civilMediaName,
+		FromEmail:    civilMediaEmail,
 		TemplateID:   templateID,
 		TemplateData: templateData,
-		AsmGroupID:   7395,
+		AsmGroupID:   defaultAsmGroupID,
 	}
 	return emailToken, s.emailer.SendTemplateEmail(emailReq)
 }

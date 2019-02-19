@@ -9,7 +9,7 @@ type Query {
   # TCR / Crawler Queries (Legacy naming)
   # TODO(PN): Temporary keep these until migrated over to new naming
   # Just calls the properly named versions
-  articles(addr: String, first: Int, after: String): [ContentRevision!]!
+  articles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
   challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   governanceEvents(
     addr: String
@@ -52,7 +52,7 @@ type Query {
   ): ListingResultCursor
 
   # Newsroom Queries
-  newsroomArticles(addr: String, first: Int, after: String): [ContentRevision!]!
+  newsroomArticles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
 
   # User Queries
   currentUser: User

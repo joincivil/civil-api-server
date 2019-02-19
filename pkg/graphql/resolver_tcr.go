@@ -57,7 +57,7 @@ func (r *Resolver) Poll() graphql.PollResolver {
 type appealResolver struct{ *Resolver }
 
 func (r *appealResolver) Requester(ctx context.Context, obj *model.Appeal) (string, error) {
-	return obj.Requester().Hex(), nil
+	return r.Resolver.DetermineAddrCase(obj.Requester().Hex()), nil
 }
 func (r *appealResolver) AppealFeePaid(ctx context.Context, obj *model.Appeal) (string, error) {
 	return obj.AppealFeePaid().String(), nil
@@ -102,7 +102,7 @@ func (r *challengeResolver) RewardPool(ctx context.Context, obj *model.Challenge
 	return "", nil
 }
 func (r *challengeResolver) Challenger(ctx context.Context, obj *model.Challenge) (string, error) {
-	return obj.Challenger().Hex(), nil
+	return r.Resolver.DetermineAddrCase(obj.Challenger().Hex()), nil
 }
 func (r *challengeResolver) Stake(ctx context.Context, obj *model.Challenge) (string, error) {
 	stake := obj.Stake()
@@ -164,7 +164,7 @@ func (r *charterResolver) Signature(ctx context.Context, obj *model.Charter) (st
 	return string(obj.Signature()), nil
 }
 func (r *charterResolver) Author(ctx context.Context, obj *model.Charter) (string, error) {
-	return obj.Author().Hex(), nil
+	return r.Resolver.DetermineAddrCase(obj.Author().Hex()), nil
 }
 func (r *charterResolver) ContentHash(ctx context.Context, obj *model.Charter) (string, error) {
 	return bytes.Byte32ToHexString(obj.ContentHash()), nil
@@ -174,6 +174,15 @@ func (r *charterResolver) Timestamp(ctx context.Context, obj *model.Charter) (in
 }
 
 type governanceEventResolver struct{ *Resolver }
+
+func (r *governanceEventResolver) determineMetadataValueCase(meta graphql.Metadata) string {
+	switch meta.Key {
+	case "listingAddress", "applicant", "challenger":
+		return r.Resolver.DetermineAddrCase(meta.Value)
+	default:
+		return meta.Value
+	}
+}
 
 func (r *governanceEventResolver) ListingAddress(ctx context.Context, obj *model.GovernanceEvent) (string, error) {
 	return r.Resolver.DetermineAddrCase(obj.ListingAddress().Hex()), nil
@@ -200,7 +209,7 @@ func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.Gover
 		default:
 			meta.Value = v.(string)
 		}
-
+		meta.Value = r.determineMetadataValueCase(meta)
 		data[index] = meta
 		index++
 	}
@@ -252,7 +261,7 @@ func (r *listingResolver) OwnerAddresses(ctx context.Context, obj *model.Listing
 	return ownerAddrs, nil
 }
 func (r *listingResolver) Owner(ctx context.Context, obj *model.Listing) (string, error) {
-	return obj.Owner().Hex(), nil
+	return r.Resolver.DetermineAddrCase(obj.Owner().Hex()), nil
 }
 func (r *listingResolver) ContributorAddresses(ctx context.Context, obj *model.Listing) ([]string, error) {
 	addrs := obj.ContributorAddresses()
