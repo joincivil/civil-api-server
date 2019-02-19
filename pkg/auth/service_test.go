@@ -80,6 +80,14 @@ func TestSignupEmailSendForApplication(t *testing.T) {
 	if resp.UID == "" {
 		t.Errorf("Should have gotten a UID")
 	}
+
+	result, _, err = service.SignupEmailSendForApplication(testEmail, auth.ApplicationEnumNewsroom)
+	if err != nil {
+		t.Errorf("Should have not gotten an error sending signup email: err: %v", err)
+	}
+	if result != auth.EmailExistsResponse {
+		t.Errorf("Should have gotten the email exist response")
+	}
 }
 
 func TestSignupEmailSend(t *testing.T) {
@@ -121,6 +129,7 @@ func TestSignupEmailSend(t *testing.T) {
 		t.Errorf("Should have gotten a UID")
 	}
 }
+
 func TestLoginEmailSendForApplication(t *testing.T) {
 	sendGridKey := getSendGridKeyFromEnvVar()
 	if sendGridKey == "" {
@@ -158,6 +167,14 @@ func TestLoginEmailSendForApplication(t *testing.T) {
 	}
 	if resp.UID == "" {
 		t.Errorf("Should have gotten a UID")
+	}
+
+	result, _, err = service.LoginEmailSendForApplication("nonexistent@email.com", auth.ApplicationEnumNewsroom)
+	if err != nil {
+		t.Errorf("Should have not gotten an error sending signup email: err: %v", err)
+	}
+	if result != auth.EmailNotFoundResponse {
+		t.Errorf("Should have gotten the email not found response")
 	}
 
 	// Test for a user that does exist to make sure there is an error and a new
