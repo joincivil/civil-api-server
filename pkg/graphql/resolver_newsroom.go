@@ -54,12 +54,14 @@ func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.C
 // QUERIES
 
 func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
-	after *string) ([]model.ContentRevision, error) {
-	return r.NewsroomArticles(ctx, addr, first, after)
+	after *string, lowercaseAddr *bool) ([]model.ContentRevision, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
+	return r.NewsroomArticles(ctx, addr, first, after, lowercaseAddr)
 }
 
 func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, first *int,
-	after *string) ([]model.ContentRevision, error) {
+	after *string, lowercaseAddr *bool) ([]model.ContentRevision, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	criteria := &model.ContentRevisionCriteria{
 		LatestOnly: true,
 	}
