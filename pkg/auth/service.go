@@ -29,8 +29,8 @@ const (
 	// sendgrid template ID for login that sends a JWT encoded with the email address
 	// defaultLoginEmailConfirmTemplateID = "d-a228aa83fed8476b82d4c97288df20d5"
 
-	defaultSignupVerifyURI = "account/auth/signup/verify-token"
-	defaultLoginVerifyURI  = "account/auth/login/verify-token"
+	defaultSignupVerifyURI = "auth/signup/verify-token"
+	defaultLoginVerifyURI  = "auth/login/verify-token"
 
 	civilMediaName  = "Civil Media Company"
 	civilMediaEmail = "support@civil.co"
