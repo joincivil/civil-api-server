@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	testEmail = "peter@civil.co"
+	testEmail          = "PETER@civil.co"
+	testEmailWeirdCase = "PeTeR@civil.co"
 
 	testSignupLoginProtoHost = "http://localhost:8080"
 
@@ -81,7 +82,7 @@ func TestSignupEmailSendForApplication(t *testing.T) {
 		t.Errorf("Should have gotten a UID")
 	}
 
-	result, _, err = service.SignupEmailSendForApplication(testEmail, auth.ApplicationEnumNewsroom)
+	result, _, err = service.SignupEmailSendForApplication(testEmailWeirdCase, auth.ApplicationEnumNewsroom)
 	if err != nil {
 		t.Errorf("Should have not gotten an error sending signup email: err: %v", err)
 	}
