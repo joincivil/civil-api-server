@@ -7,6 +7,13 @@ import (
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
+// NewUserService instantiates a new DefaultUserService
+func NewUserService(userPersister UserPersister) *UserService {
+	return &UserService{
+		userPersister,
+	}
+}
+
 // UserService is an implementation of UserService that uses Postgres for persistence
 type UserService struct {
 	userPersister UserPersister
@@ -69,20 +76,16 @@ func (s *UserService) CreateUser(identifier UserCriteria) (*User, error) {
 
 // UserUpdateInput describes the input needed for UpdateUser
 type UserUpdateInput struct {
-	OnfidoApplicantID string                 `json:"onfidoApplicantID"`
-	OnfidoCheckID     string                 `json:"onfidoCheckID"`
-	KycStatus         string                 `json:"kycStatus"`
-	QuizPayload       cpostgres.JsonbPayload `json:"quizPayload"`
-	QuizStatus        string                 `json:"quizStatus"`
+	OnfidoApplicantID   string                 `json:"onfidoApplicantID"`
+	OnfidoCheckID       string                 `json:"onfidoCheckID"`
+	KycStatus           string                 `json:"kycStatus"`
+	QuizPayload         cpostgres.JsonbPayload `json:"quizPayload"`
+	QuizStatus          string                 `json:"quizStatus"`
+	PurchaseTxHashesStr string                 `json:"purchaseTxHashesStr"`
 }
 
 // UpdateUser updates a user
-func (s *UserService) UpdateUser(requestorUID string, uid string, input *UserUpdateInput) (*User, error) {
-
-	if uid != requestorUID {
-		return nil, errors.New("user is not authorized")
-	}
-
+func (s *UserService) UpdateUser(uid string, input *UserUpdateInput) (*User, error) {
 	user, err := s.GetUser(UserCriteria{UID: uid})
 	if err != nil {
 		return nil, err
@@ -109,6 +112,10 @@ func (s *UserService) UpdateUser(requestorUID string, uid string, input *UserUpd
 	if input.KycStatus != "" {
 		user.KycStatus = input.KycStatus
 		fields = append(fields, "KycStatus")
+	}
+	if input.PurchaseTxHashesStr != "" {
+		user.PurchaseTxHashesStr = input.PurchaseTxHashesStr
+		fields = append(fields, "PurchaseTxHashesStr")
 	}
 
 	err = s.userPersister.UpdateUser(user, fields)
@@ -144,12 +151,4 @@ func (s *UserService) SetEthAddress(identifier UserCriteria, address string) (*U
 		return nil, err
 	}
 	return user, nil
-}
-
-// NewUserService instantiates a new DefaultUserService
-func NewUserService(userPersister UserPersister) *UserService {
-
-	return &UserService{
-		userPersister,
-	}
 }

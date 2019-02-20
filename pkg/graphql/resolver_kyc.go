@@ -2,7 +2,6 @@ package graphql
 
 import (
 	context "context"
-	"fmt"
 
 	log "github.com/golang/glog"
 
@@ -17,7 +16,7 @@ import (
 func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant graphql.KycCreateApplicantInput) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+		return nil, ErrAccessDenied
 	}
 
 	newAddress := kyc.Address{}
@@ -66,6 +65,10 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 		return nil, err
 	}
 
+	if user.UID != token.Sub {
+		return nil, ErrUserNotAuthorized
+	}
+
 	returnedApplicant, err := r.onfidoAPI.CreateApplicant(newApplicant)
 	if err != nil {
 		log.Errorf("err = %v", err)
@@ -75,7 +78,7 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 	update := &users.UserUpdateInput{
 		OnfidoApplicantID: returnedApplicant.ID,
 	}
-	_, err = r.userService.UpdateUser(token.Sub, user.UID, update)
+	_, err = r.userService.UpdateUser(user.UID, update)
 	if err != nil {
 		return nil, err
 	}
@@ -86,12 +89,16 @@ func (r *mutationResolver) KycCreateApplicant(ctx context.Context, applicant gra
 func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+		return nil, ErrAccessDenied
 	}
 
 	user, err := r.userService.GetUser(users.UserCriteria{UID: token.Sub})
 	if err != nil {
 		return nil, err
+	}
+
+	if user.UID != token.Sub {
+		return nil, ErrUserNotAuthorized
 	}
 
 	var rep *kyc.Report
@@ -119,7 +126,7 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 		OnfidoCheckID: returnedCheck.ID,
 		KycStatus:     users.UserKycStatusInProgress,
 	}
-	_, err = r.userService.UpdateUser(token.Sub, user.UID, update)
+	_, err = r.userService.UpdateUser(user.UID, update)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +137,7 @@ func (r *mutationResolver) KycCreateCheck(ctx context.Context, applicantID strin
 func (r *mutationResolver) KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+		return nil, ErrAccessDenied
 	}
 	onfidoToken, err := r.onfidoAPI.GenerateSDKToken(applicantID, r.onfidoTokenReferrer)
 	if err != nil {

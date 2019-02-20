@@ -2,37 +2,28 @@ package graphql
 
 import (
 	context "context"
-	"fmt"
-
-	log "github.com/golang/glog"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
-)
-
-const (
-	nrsignupOKResponse     = "ok"
-	nrsignupNotImplemented = "not implemented"
 )
 
 func (r *mutationResolver) NrsignupSendWelcomeEmail(ctx context.Context) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return "", fmt.Errorf("Access denied")
+		return "", ErrAccessDenied
 	}
-	log.Infof("token sub = %v", token.Sub)
 
 	err := r.nrsignupService.SendWelcomeEmail(token.Sub)
 	if err != nil {
 		return "", err
 	}
 
-	return nrsignupOKResponse, nil
+	return ResponseOK, nil
 }
 
 func (r *mutationResolver) NrsignupRequestGrant(ctx context.Context) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return "", fmt.Errorf("Access denied")
+		return "", ErrAccessDenied
 	}
 
 	err := r.nrsignupService.RequestGrant(token.Sub)
@@ -40,7 +31,7 @@ func (r *mutationResolver) NrsignupRequestGrant(ctx context.Context) (string, er
 		return "", err
 	}
 
-	return nrsignupOKResponse, nil
+	return ResponseOK, nil
 }
 
 // Not implemented yet, use the REST endpoint instead.
@@ -48,9 +39,9 @@ func (r *mutationResolver) NrsignupApproveGrant(ctx context.Context, approved bo
 	newsroomOwnerUID string) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return "", fmt.Errorf("Access denied")
+		return "", ErrAccessDenied
 	}
-	return nrsignupNotImplemented, nil
+	return ResponseNotImplemented, nil
 }
 
 // Not implemented yet
@@ -58,9 +49,9 @@ func (r *mutationResolver) NrsignupPollNewsroomDeploy(ctx context.Context,
 	txHash string) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return "", fmt.Errorf("Access denied")
+		return "", ErrAccessDenied
 	}
-	return nrsignupNotImplemented, nil
+	return ResponseNotImplemented, nil
 }
 
 // Not implemented yet
@@ -68,7 +59,7 @@ func (r *mutationResolver) NrsignupPollTcrApplication(ctx context.Context,
 	txHash string) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return "", fmt.Errorf("Access denied")
+		return "", ErrAccessDenied
 	}
-	return nrsignupNotImplemented, nil
+	return ResponseNotImplemented, nil
 }

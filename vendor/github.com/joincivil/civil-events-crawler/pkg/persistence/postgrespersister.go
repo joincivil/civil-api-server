@@ -1,11 +1,11 @@
 // Package persistence contains components to interact with the DB
 package persistence // import "github.com/joincivil/civil-events-crawler/pkg/persistence"
-// NOTE(IS): Only tested with event wrappers around contracts implemented: civiltcr and newsroom
 
 import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	log "github.com/golang/glog"
 
@@ -23,6 +23,11 @@ import (
 
 const (
 	eventTableName = "event"
+
+	// Could make this configurable later if needed
+	maxOpenConns    = 50
+	maxIdleConns    = 10
+	connMaxLifetime = time.Second * 1800 // 30 mins
 )
 
 // NewPostgresPersister creates a new postgres persister
@@ -34,6 +39,9 @@ func NewPostgresPersister(host string, port int, user string, password string, d
 		return pgPersister, fmt.Errorf("Error connecting to sqlx: %v", err)
 	}
 	pgPersister.db = db
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetConnMaxLifetime(connMaxLifetime)
 	pgPersister.eventToBlockData = make(map[common.Address]map[string]PersisterBlockData)
 	return pgPersister, nil
 }
@@ -49,7 +57,7 @@ func (p *PostgresPersister) SaveEvents(events []*model.Event) error {
 	return p.saveEventsToTable(events, eventTableName)
 }
 
-// RetrieveEvents retrieves the Events given an offset, count, and asc/dec bool
+// RetrieveEvents retrieves the Events given an offset, count, and asc/dec bool. Ordered by db id.
 func (p *PostgresPersister) RetrieveEvents(criteria *model.RetrieveEventsCriteria) ([]*model.Event, error) {
 	return p.retrieveEventsFromTable(eventTableName, criteria)
 }
@@ -126,9 +134,9 @@ func (p *PostgresPersister) saveEventsToTable(events []*model.Event, tableName s
 	for _, event := range events {
 		err := p.saveEventToTable(queryString, event)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error saving %v to db, err: %v", event.Hash(), err)
 		}
-		log.Infof("saveEventsToTable: saved: %v, %v", event.EventType(), event.TxHash().Hex()) // Debug, remove later
+		log.Infof("saveEventsToTable: saved: %v, %v", event.EventType(), event.Hash()) // Debug, remove later
 	}
 	return nil
 }
@@ -158,32 +166,50 @@ func (p *PostgresPersister) retrieveEventsFromTable(tableName string, criteria *
 
 func (p *PostgresPersister) retrieveEventsQuery(tableName string, criteria *model.RetrieveEventsCriteria) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
-	fields, _ := cpostgres.StructFieldsForQuery(postgres.Event{}, false, "")
+	fields, _ := cpostgres.StructFieldsForQuery(postgres.Event{}, false, "e")
 	queryBuf.WriteString(fields)    // nolint: gosec
 	queryBuf.WriteString(" FROM ")  // nolint: gosec
 	queryBuf.WriteString(tableName) // nolint: gosec
-	if criteria.FromTs > 0 {
-		queryBuf.WriteString(" WHERE timestamp > :fromts") // nolint: gosec
-	}
-	if criteria.BeforeTs > 0 {
-		p.addWhereAnd(queryBuf)
-		queryBuf.WriteString(" timestamp < :beforets") // nolint: gosec
-	}
-	if criteria.EventType != "" {
-		p.addWhereAnd(queryBuf)
-		queryBuf.WriteString(" event_type = :eventtype") // nolint: gosec
-	}
-	if criteria.Reverse {
-		queryBuf.WriteString(" ORDER BY id DESC") // nolint: gosec
+	queryBuf.WriteString(" AS e ")  // nolint: gosec
+	if criteria.Hash != "" {
+		// If querying by hash, we don't need any other criteria
+		queryBuf.WriteString(" WHERE e.hash = :hash") // nolint: gosec
 	} else {
-		queryBuf.WriteString(" ORDER BY id") // nolint: gosec
+		if criteria.FromTs > 0 {
+			queryBuf.WriteString(" WHERE e.timestamp >= :fromts") // nolint: gosec
+		} else if criteria.BeforeTs > 0 {
+			p.addWhereAnd(queryBuf)
+			queryBuf.WriteString(" e.timestamp < :beforets") // nolint: gosec
+		}
+		if criteria.EventType != "" {
+			p.addWhereAnd(queryBuf)
+			queryBuf.WriteString(" e.event_type = :eventtype") // nolint: gosec
+		}
+		if criteria.ContractAddress != "" {
+			p.addWhereAnd(queryBuf)
+			queryBuf.WriteString(" e.contract_address = :contract_address") // nolint: gosec
+		}
+		//TODO(IS): the following query DOES NOT WORK
+		if len(criteria.ExcludeHashes) > 0 {
+			sFields, _ := cpostgres.StructFieldsForQuery(postgres.Event{}, false, "")
+			p.addWhereAnd(queryBuf)
+			notInQuery := fmt.Sprintf(" NOT EXISTS (SELECT %v FROM %v WHERE e.hash IN ('%v'))", sFields,
+				tableName, strings.Join(criteria.ExcludeHashes, "','"))
+			queryBuf.WriteString(notInQuery) // nolint: gosec
+		}
+		if criteria.Reverse {
+			queryBuf.WriteString(" ORDER BY e.id DESC") // nolint: gosec
+		} else {
+			queryBuf.WriteString(" ORDER BY e.id") // nolint: gosec
+		}
+		if criteria.Offset > 0 {
+			queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
+		}
+		if criteria.Count > 0 {
+			queryBuf.WriteString(" LIMIT :count") // nolint: gosec
+		}
 	}
-	if criteria.Offset > 0 {
-		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
-	}
-	if criteria.Count > 0 {
-		queryBuf.WriteString(" LIMIT :count") // nolint: gosec
-	}
+
 	return queryBuf.String()
 }
 

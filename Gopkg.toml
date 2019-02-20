@@ -40,4 +40,8 @@ required = ["github.com/99designs/gqlgen"]
 
 [[constraint]]
   branch = "master"
+  name = "github.com/ethereum/go-ethereum"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/joincivil/go-common"

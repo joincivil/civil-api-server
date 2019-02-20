@@ -5,8 +5,10 @@
 package graphql
 
 import (
-	pmodel "github.com/joincivil/civil-events-processor/pkg/model"
+	"errors"
 	"strings"
+
+	pmodel "github.com/joincivil/civil-events-processor/pkg/model"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -17,6 +19,23 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
+)
+
+var (
+	// ErrUserNotAuthorized is a generic error for unauthorized users
+	ErrUserNotAuthorized = errors.New("User is not authorized")
+
+	// ErrAccessDenied is a generic error for unauthorized access
+	ErrAccessDenied = errors.New("Access denied")
+
+	// ResponseOK is a generic OK response string
+	ResponseOK = "ok"
+
+	// ResponseError is a generic error response string
+	ResponseError = "error"
+
+	// ResponseNotImplemented is a generic response string for non-implemented endpoints
+	ResponseNotImplemented = "not implemented"
 )
 
 // ResolverConfig is the config params for the Resolver

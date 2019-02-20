@@ -218,7 +218,8 @@ func CreateKycUserTableQuery(tableName string) string {
 			quiz_status TEXT,
 			newsroom_data JSONB,
 			date_created INT,
-			date_updated INT
+			date_updated INT,
+			purchase_txhashes TEXT
         );
     `, tableName)
 	return queryString
