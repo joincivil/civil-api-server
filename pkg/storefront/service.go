@@ -121,6 +121,7 @@ func (s *Service) ConvertETHToUSD() (float64, error) {
 }
 
 // PurchaseTransactionComplete handles the transaction hash of a completed token sale
+// TODO(PN): Currently not used
 func (s *Service) PurchaseTransactionComplete(buyerUID string, txHash string) error {
 	user, err := s.userService.MaybeGetUser(users.UserCriteria{
 		UID: buyerUID,
@@ -159,6 +160,7 @@ func (s *Service) PurchaseTransactionComplete(buyerUID string, txHash string) er
 }
 
 // PurchaseTransactionCancel handles the cancelled purchase transaction
+// TODO(PN): Currently not used
 func (s *Service) PurchaseTransactionCancel(buyerUID string) error {
 	user, err := s.userService.MaybeGetUser(users.UserCriteria{
 		UID: buyerUID,
