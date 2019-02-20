@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/joincivil/go-common/pkg/email"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
@@ -18,6 +19,11 @@ const (
 	defaultGracePeriod = 15
 	// OkResponse is sent when an action is completed successfully
 	OkResponse = "ok"
+	// EmailNotFoundResponse is sent when an email address is not found for a user
+	EmailNotFoundResponse = "emailnotfound"
+	// EmailExistsResponse  is sent when an email address already exists for a user
+	EmailExistsResponse = "emailexists"
+
 	// sendgrid template ID for signup that sends a JWT encoded with the email address
 	// defaultSignupEmailConfirmTemplateID = "d-88f731b52a524e6cafc308d0359b84a6"
 	// sendgrid template ID for login that sends a JWT encoded with the email address
@@ -138,6 +144,19 @@ func (s *Service) SignupEmailSend(emailAddress string) (string, string, error) {
 // Returns the repsonse code, the token generated for the email, and a potential error
 func (s *Service) SignupEmailSendForApplication(emailAddress string,
 	application ApplicationEnum) (string, string, error) {
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(emailAddress),
+	}
+	user, err := s.userService.MaybeGetUser(identifier)
+	if err != nil {
+		return "", "", err
+	}
+
+	// If user does not exist, return with code
+	if user != nil {
+		return EmailExistsResponse, "", nil
+	}
+
 	templateID, err := s.SignupTemplateIDForApplication(application)
 	if err != nil {
 		return "", "", err
@@ -158,7 +177,9 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	}
 	email := claims["sub"].(string)
 
-	identifier := users.UserCriteria{Email: email}
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(email),
+	}
 	user, err := s.userService.CreateUser(identifier)
 	if err != nil {
 		return nil, err
@@ -202,6 +223,19 @@ func (s *Service) LoginEmailSend(emailAddress string) (string, string, error) {
 // Returns the repsonse code, the token generated for the email, and a potential error
 func (s *Service) LoginEmailSendForApplication(emailAddress string,
 	application ApplicationEnum) (string, string, error) {
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(emailAddress),
+	}
+	user, err := s.userService.MaybeGetUser(identifier)
+	if err != nil {
+		return "", "", err
+	}
+
+	// If user does not exist, return with code
+	if user == nil {
+		return EmailNotFoundResponse, "", nil
+	}
+
 	templateID, err := s.LoginTemplateIDForApplication(application)
 	if err != nil {
 		return "", "", err
@@ -222,7 +256,9 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	}
 	email := claims["sub"].(string)
 
-	identifier := users.UserCriteria{Email: email}
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(email),
+	}
 	user, err := s.userService.MaybeGetUser(identifier)
 	if err != nil {
 		return nil, err
