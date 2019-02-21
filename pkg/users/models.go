@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 	uuid "github.com/satori/go.uuid"
 )
@@ -21,18 +22,24 @@ const (
 
 // User represents a Civil User
 type User struct {
-	UID                 string                 `db:"uid"`
-	Email               string                 `db:"email"`
-	EthAddress          string                 `db:"eth_address"`
-	OnfidoApplicantID   string                 `db:"onfido_applicant_id"`
-	OnfidoCheckID       string                 `db:"onfido_check_id"`
-	KycStatus           string                 `db:"kyc_status"`
-	QuizPayload         cpostgres.JsonbPayload `db:"quiz_payload"`
-	QuizStatus          string                 `db:"quiz_status"`
-	NewsroomData        cpostgres.JsonbPayload `db:"newsroom_data"`
-	DateCreated         int64                  `db:"date_created"`
-	DateUpdated         int64                  `db:"date_updated"`
-	PurchaseTxHashesStr string                 `db:"purchase_txhashes"` // Comma separated
+	UID                   string                 `db:"uid"`
+	Email                 string                 `db:"email"`
+	EthAddress            string                 `db:"eth_address"`
+	OnfidoApplicantID     string                 `db:"onfido_applicant_id"`
+	OnfidoCheckID         string                 `db:"onfido_check_id"`
+	KycStatus             string                 `db:"kyc_status"`
+	QuizPayload           cpostgres.JsonbPayload `db:"quiz_payload"`
+	QuizStatus            string                 `db:"quiz_status"`
+	NewsroomData          cpostgres.JsonbPayload `db:"newsroom_data"`
+	DateCreated           int64                  `db:"date_created"`
+	DateUpdated           int64                  `db:"date_updated"`
+	PurchaseTxHashesStr   string                 `db:"purchase_txhashes"` // Comma separated
+	CivilianWhitelistTxID string                 `db:"civilian_whitelist_tx_id"`
+}
+
+// TokenControllerUpdater describes methods that the user service will use to manage the whitelists a user is a member of
+type TokenControllerUpdater interface {
+	AddToCivilians(addr common.Address) (common.Hash, error)
 }
 
 // GenerateUID generates and set the UID field for the user.  Will only

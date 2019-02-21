@@ -279,6 +279,7 @@ type ComplexityRoot struct {
 		KycStatus                func(childComplexity int) int
 		QuizPayload              func(childComplexity int) int
 		QuizStatus               func(childComplexity int) int
+		CivilianWhitelistTxId    func(childComplexity int) int
 		Invoices                 func(childComplexity int) int
 		IsTokenFoundryRegistered func(childComplexity int) int
 	}
@@ -2789,6 +2790,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.QuizStatus(childComplexity), true
+
+	case "User.civilianWhitelistTxID":
+		if e.complexity.User.CivilianWhitelistTxId == nil {
+			break
+		}
+
+		return e.complexity.User.CivilianWhitelistTxId(childComplexity), true
 
 	case "User.invoices":
 		if e.complexity.User.Invoices == nil {
@@ -9083,6 +9091,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_quizPayload(ctx, field, obj)
 		case "quizStatus":
 			out.Values[i] = ec._User_quizStatus(ctx, field, obj)
+		case "civilianWhitelistTxID":
+			out.Values[i] = ec._User_civilianWhitelistTxID(ctx, field, obj)
 		case "invoices":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -9288,6 +9298,30 @@ func (ec *executionContext) _User_quizStatus(ctx context.Context, field graphql.
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.QuizStatus, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_civilianWhitelistTxID(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CivilianWhitelistTxID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -11177,7 +11211,12 @@ type Query {
   # TCR / Crawler Queries (Legacy naming)
   # TODO(PN): Temporary keep these until migrated over to new naming
   # Just calls the properly named versions
-  articles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
+  articles(
+    addr: String
+    first: Int
+    after: String
+    lowercaseAddr: Boolean = True
+  ): [ContentRevision!]!
   challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   governanceEvents(
     addr: String
@@ -11186,7 +11225,10 @@ type Query {
     first: Int
     lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  governanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  governanceEventsTxHash(
+    txHash: String!
+    lowercaseAddr: Boolean = True
+  ): [GovernanceEvent!]!
   listing(addr: String!, lowercaseAddr: Boolean = True): Listing
   listings(
     first: Int
@@ -11207,7 +11249,10 @@ type Query {
     first: Int
     lowercaseAddr: Boolean = True
   ): GovernanceEventResultCursor
-  tcrGovernanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  tcrGovernanceEventsTxHash(
+    txHash: String!
+    lowercaseAddr: Boolean = True
+  ): [GovernanceEvent!]!
   tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
@@ -11220,7 +11265,12 @@ type Query {
   ): ListingResultCursor
 
   # Newsroom Queries
-  newsroomArticles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
+  newsroomArticles(
+    addr: String
+    first: Int
+    after: String
+    lowercaseAddr: Boolean = True
+  ): [ContentRevision!]!
 
   # User Queries
   currentUser: User
@@ -11480,6 +11530,7 @@ type User {
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
+  civilianWhitelistTxID: String
   # dateCreated: Int
   # dateUpdated: Int
   invoices: [Invoice]

@@ -13,6 +13,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
+	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 
 	log "github.com/golang/glog"
 
@@ -186,7 +187,7 @@ func initUserPersister(config *utils.GraphQLConfig) (*users.PostgresPersister, e
 	return persister, nil
 }
 
-func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresPersister) (
+func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresPersister, tokenControllerService *tokencontroller.Service) (
 	*users.UserService, error) {
 	if userPersister == nil {
 		var perr error
@@ -195,7 +196,7 @@ func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresP
 			return nil, perr
 		}
 	}
-	userService := users.NewUserService(userPersister)
+	userService := users.NewUserService(userPersister, tokenControllerService)
 	if userService == nil {
 		return nil, fmt.Errorf("User service was not initialized")
 	}
@@ -302,6 +303,10 @@ func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	if config.EthAPIURL != "" {
 		// todo(dankins): we don't actually need any private keys yet, but we will for CIVIL-5
 		accounts := map[string]string{}
+		if config.EthereumDefaultPrivateKey != "" {
+			log.Infof("Initialized default Ethereum account\n")
+			accounts["default"] = config.EthereumDefaultPrivateKey
+		}
 		ethHelper, err := eth.NewETHClientHelper(config.EthAPIURL, accounts)
 		if err != nil {
 			return nil, err
@@ -316,6 +321,10 @@ func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	}
 	log.Infof("Connected to Ethereum using Simulated Backend\n")
 	return ethHelper, nil
+}
+
+func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*tokencontroller.Service, error) {
+	return tokencontroller.NewService(config.ContractAddresses["CVLToken"], ethHelper)
 }
 
 func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, error) {
@@ -420,22 +429,35 @@ func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
 }
 
 type dependencies struct {
-	emailer           *cemail.Emailer
-	jwtGenerator      *auth.JwtTokenGenerator
-	invoicePersister  *invoicing.PostgresPersister
-	checkbookIO       *invoicing.CheckbookIO
-	userService       *users.UserService
-	authService       *auth.Service
-	jsonbService      *jsonstore.Service
-	nrsignupService   *nrsignup.Service
-	tokenFoundry      *tokenfoundry.API
-	onfido            *kyc.OnfidoAPI
-	ethHelper         *eth.Helper
-	storefrontService *storefront.Service
+	emailer                *cemail.Emailer
+	jwtGenerator           *auth.JwtTokenGenerator
+	invoicePersister       *invoicing.PostgresPersister
+	checkbookIO            *invoicing.CheckbookIO
+	userService            *users.UserService
+	authService            *auth.Service
+	jsonbService           *jsonstore.Service
+	nrsignupService        *nrsignup.Service
+	tokenFoundry           *tokenfoundry.API
+	onfido                 *kyc.OnfidoAPI
+	ethHelper              *eth.Helper
+	storefrontService      *storefront.Service
+	tokenControllerService *tokencontroller.Service
 }
 
 func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	var err error
+
+	ethHelper, err := initETHHelper(config)
+	if err != nil {
+		log.Fatalf("Error w init ETH Helper: err: %v", err)
+		return nil, err
+	}
+
+	tokenControllerService, err := initTokenControllerService(config, ethHelper)
+	if err != nil {
+		log.Fatalf("Error w init tokenControllerService Service: err: %v", err)
+		return nil, err
+	}
 
 	var checkbookIO *invoicing.CheckbookIO
 	if config.EnableInvoicing {
@@ -456,7 +478,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	tokenFoundry := initTokenFoundryAPI(config)
 	onfido := initOnfidoAPI(config)
 
-	userService, err := initUserService(config, nil)
+	userService, err := initUserService(config, nil, tokenControllerService)
 	if err != nil {
 		log.Fatalf("Error w init userService: err: %v", err)
 		return nil, err
@@ -490,12 +512,6 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
-	ethHelper, err := initETHHelper(config)
-	if err != nil {
-		log.Fatalf("Error w init ETH Helper: err: %v", err)
-		return nil, err
-	}
-
 	storefrontService, err := initStorefrontService(
 		config,
 		ethHelper,
@@ -507,18 +523,19 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	}
 
 	return &dependencies{
-		emailer:           emailer,
-		jwtGenerator:      jwtGenerator,
-		invoicePersister:  invoicePersister,
-		checkbookIO:       checkbookIO,
-		userService:       userService,
-		authService:       authService,
-		jsonbService:      jsonbService,
-		nrsignupService:   nrsignupService,
-		tokenFoundry:      tokenFoundry,
-		onfido:            onfido,
-		ethHelper:         ethHelper,
-		storefrontService: storefrontService,
+		emailer:                emailer,
+		jwtGenerator:           jwtGenerator,
+		invoicePersister:       invoicePersister,
+		checkbookIO:            checkbookIO,
+		userService:            userService,
+		authService:            authService,
+		jsonbService:           jsonbService,
+		nrsignupService:        nrsignupService,
+		tokenFoundry:           tokenFoundry,
+		onfido:                 onfido,
+		ethHelper:              ethHelper,
+		storefrontService:      storefrontService,
+		tokenControllerService: tokenControllerService,
 	}, nil
 
 }

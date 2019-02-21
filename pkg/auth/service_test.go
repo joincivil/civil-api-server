@@ -204,7 +204,7 @@ func TestSignupEmailSendNoEmailer(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil, defaultSignupTemplateIDs,
 		defaultLoginTemplateIDs, testSignupLoginProtoHost)
@@ -228,7 +228,7 @@ func TestSignupEmailSendNoProtoHost(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
@@ -306,7 +306,7 @@ func TestLoginEth(t *testing.T) {
 			user1.UID: user1,
 		},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox("", useSandbox)
 	svc, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
@@ -377,7 +377,7 @@ func TestConfigTemplateIDs(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost)
@@ -402,7 +402,7 @@ func TestBadConfigTemplateIDsAppName(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost)
@@ -426,7 +426,7 @@ func TestBadConfigTemplateIDsAppNameCase(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost)
@@ -450,7 +450,7 @@ func TestBadConfigTemplateIDs(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost)
@@ -472,7 +472,7 @@ func TestConfigTemplateIDsNotAll(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil,
 		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost)
@@ -492,7 +492,7 @@ func TestSignupTemplateIDFromApplication(t *testing.T) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil,
 		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost)
@@ -537,7 +537,7 @@ func buildService(sendGridKey string) (*auth.Service, error) {
 	persister := &testutils.InMemoryUserPersister{
 		Users: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
@@ -558,7 +558,7 @@ func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
 			user1.UID: user1,
 		},
 	}
-	userService := users.NewUserService(persister)
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,

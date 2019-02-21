@@ -64,6 +64,8 @@ type GraphQLConfig struct {
 	ContractAddressObjs map[string][]common.Address `ignored:"true"`
 
 	TokenSaleAddresses []common.Address `split_words:"true" desc:"Addresses that contain tokens to be sold as part of the Token Sale"`
+
+	EthereumDefaultPrivateKey string `split_words:"true" desc:"Private key to use when sending Ethereum transactions"`
 }
 
 // PersistType returns the persister type, implements PersisterConfig
