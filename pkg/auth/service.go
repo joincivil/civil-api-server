@@ -307,7 +307,7 @@ func (s *Service) buildSignupLoginConfirmLink(emailToken string, verifyURI strin
 }
 
 func (s *Service) buildSignupLoginConfirmMarkup(confirmLink string) string {
-	return fmt.Sprintf("<a href=\"%v\">Confirm your email address</a>", confirmLink)
+	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your email address</a>", confirmLink)
 }
 
 func (s *Service) sendEmailToken(emailAddress string, templateID string,
