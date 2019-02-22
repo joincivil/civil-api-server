@@ -16,7 +16,7 @@ const (
 	// number of seconds that a JWT token sent for login or signup is valid
 	defaultJWTEmailExpiration = 60 * 60 * 24 * 10
 	// number of seconds for a signature challenge
-	defaultGracePeriod = 15
+	defaultGracePeriod = 5 * 60 // 5 minutes
 	// OkResponse is sent when an action is completed successfully
 	OkResponse = "ok"
 	// EmailNotFoundResponse is sent when an email address is not found for a user
