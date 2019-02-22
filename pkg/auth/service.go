@@ -165,7 +165,7 @@ func (s *Service) SignupEmailSendForApplication(emailAddress string,
 	}
 
 	verifyURI := defaultSignupVerifyURI
-	if application == "NEWSROOM" {
+	if application == ApplicationEnumNewsroom {
 		verifyURI = newsroomSignupVerifyURI
 	}
 	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
@@ -248,7 +248,7 @@ func (s *Service) LoginEmailSendForApplication(emailAddress string,
 	}
 
 	verifyURI := defaultLoginVerifyURI
-	if application == "NEWSROOM" {
+	if application == ApplicationEnumNewsroom {
 		verifyURI = newsroomLoginVerifyURI
 	}
 	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
