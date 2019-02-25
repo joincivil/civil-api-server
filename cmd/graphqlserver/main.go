@@ -324,7 +324,7 @@ func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 }
 
 func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*tokencontroller.Service, error) {
-	return tokencontroller.NewService(config.ContractAddresses["CVLToken"], ethHelper)
+	return tokencontroller.NewService(config.ContractAddresses["CivilTokenController"], ethHelper)
 }
 
 func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, error) {
