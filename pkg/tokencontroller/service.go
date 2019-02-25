@@ -12,8 +12,8 @@ import (
 var (
 	// ErrAlreadyOnList is thrown when trying to add an address to a list of which it is already on
 	ErrAlreadyOnList = errors.New("address is already on list")
-	// ErrNoCVLTokenAddress is thrown when `GRAPHQL_CONTRACT_ADDRESSES` envvar does not contain `CVLToken`
-	ErrNoCVLTokenAddress = errors.New("no CVLToken address provided in configuration")
+	// ErrNoCivilTokenControllerAddress is thrown when `GRAPHQL_CONTRACT_ADDRESSES` envvar does not contain `CivilTokenController`
+	ErrNoCivilTokenControllerAddress = errors.New("no CivilTokenController address provided in configuration")
 )
 
 // Service provides a set of helpers to interact with the token controller
@@ -24,11 +24,11 @@ type Service struct {
 
 // NewService builds a new Service instance
 func NewService(civilTokenControllerAddress string, ethHelper *eth.Helper) (*Service, error) {
-	cvlTokenAddress := common.HexToAddress(civilTokenControllerAddress)
-	if cvlTokenAddress == common.HexToAddress("") {
-		return nil, ErrNoCVLTokenAddress
+	tokenControllerAddress := common.HexToAddress(civilTokenControllerAddress)
+	if tokenControllerAddress == common.HexToAddress("") {
+		return nil, ErrNoCivilTokenControllerAddress
 	}
-	tokenController, err := contract.NewCivilTokenControllerContract(cvlTokenAddress, ethHelper.Blockchain)
+	tokenController, err := contract.NewCivilTokenControllerContract(tokenControllerAddress, ethHelper.Blockchain)
 	if err != nil {
 		return nil, err
 	}
