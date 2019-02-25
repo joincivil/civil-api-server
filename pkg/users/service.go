@@ -3,27 +3,32 @@ package users
 import (
 	"errors"
 
+	"github.com/ethereum/go-ethereum/common"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
-
-// NewUserService instantiates a new DefaultUserService
-func NewUserService(userPersister UserPersister) *UserService {
-	return &UserService{
-		userPersister,
-	}
-}
-
-// UserService is an implementation of UserService that uses Postgres for persistence
-type UserService struct {
-	userPersister UserPersister
-}
 
 var (
 	// ErrUserExists is an error that represents an attempt to create a new user
 	// with a duplicate Email or ETH address
 	ErrUserExists = errors.New("User already exists with this identifier")
+	// ErrInvalidState is returned when a trying to
+	ErrInvalidState = errors.New("User already exists with this identifier")
 )
+
+// UserService is an implementation of UserService that uses Postgres for persistence
+type UserService struct {
+	userPersister     UserPersister
+	controllerUpdater TokenControllerUpdater
+}
+
+// NewUserService instantiates a new DefaultUserService
+func NewUserService(userPersister UserPersister, controllerUpdater TokenControllerUpdater) *UserService {
+	return &UserService{
+		userPersister,
+		controllerUpdater,
+	}
+}
 
 // GetUser retrieves a user from the database
 func (s *UserService) GetUser(identifier UserCriteria) (*User, error) {
@@ -105,10 +110,6 @@ func (s *UserService) UpdateUser(uid string, input *UserUpdateInput) (*User, err
 		user.OnfidoCheckID = input.OnfidoCheckID
 		fields = append(fields, "OnfidoCheckID")
 	}
-	if input.QuizStatus != "" {
-		user.QuizStatus = input.QuizStatus
-		fields = append(fields, "QuizStatus")
-	}
 	if input.KycStatus != "" {
 		user.KycStatus = input.KycStatus
 		fields = append(fields, "KycStatus")
@@ -116,6 +117,24 @@ func (s *UserService) UpdateUser(uid string, input *UserUpdateInput) (*User, err
 	if input.PurchaseTxHashesStr != "" {
 		user.PurchaseTxHashesStr = input.PurchaseTxHashesStr
 		fields = append(fields, "PurchaseTxHashesStr")
+	}
+
+	if input.QuizStatus != "" {
+		// if the QuizStatus changes to complete we need to add the user to the Civilian Whitelist on the token controller
+		if input.QuizStatus == "complete" && user.QuizStatus != "complete" {
+			if user.EthAddress == "" {
+				return nil, ErrInvalidState
+			}
+			addr := common.HexToAddress(user.EthAddress)
+			txHash, err := s.controllerUpdater.AddToCivilians(addr)
+			if err != nil {
+				return nil, err
+			}
+			user.CivilianWhitelistTxID = txHash.String()
+			fields = append(fields, "CivilianWhitelistTxID")
+		}
+		user.QuizStatus = input.QuizStatus
+		fields = append(fields, "QuizStatus")
 	}
 
 	err = s.userPersister.UpdateUser(user, fields)

@@ -34,7 +34,7 @@ func buildUserService(emailAddress string) *users.UserService {
 	}
 	persister := &testutils.InMemoryUserPersister{Users: initUsers}
 
-	return users.NewUserService(persister)
+	return users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 }
 
 func TestPurchaseTransactionComplete(t *testing.T) {
