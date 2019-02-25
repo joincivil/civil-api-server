@@ -3,6 +3,8 @@ package users
 import (
 	"errors"
 
+	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
+
 	"github.com/ethereum/go-ethereum/common"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
@@ -127,7 +129,7 @@ func (s *UserService) UpdateUser(uid string, input *UserUpdateInput) (*User, err
 			}
 			addr := common.HexToAddress(user.EthAddress)
 			txHash, err := s.controllerUpdater.AddToCivilians(addr)
-			if err != nil {
+			if err != nil && err != tokencontroller.ErrAlreadyOnList {
 				return nil, err
 			}
 			user.CivilianWhitelistTxID = txHash.String()
