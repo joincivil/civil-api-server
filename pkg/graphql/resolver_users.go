@@ -2,7 +2,6 @@ package graphql
 
 import (
 	context "context"
-	"fmt"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -35,7 +34,7 @@ func (r *userResolver) IsTokenFoundryRegistered(ctx context.Context, obj *users.
 func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+		return nil, ErrAccessDenied
 	}
 
 	return r.userService.GetUser(users.UserCriteria{UID: token.Sub})
@@ -46,12 +45,12 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.SignatureInput) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+		return nil, ErrAccessDenied
 	}
 
 	err := auth.VerifyEthChallengeAndSignature(auth.ChallengeRequest{
 		ExpectedPrefix: "I control this address",
-		GracePeriod:    10,
+		GracePeriod:    5 * 60, // 5 minutes
 		InputAddress:   input.Signer,
 		InputChallenge: input.Message,
 		Signature:      input.Signature,
@@ -71,13 +70,18 @@ func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.Si
 func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return nil, fmt.Errorf("Access denied")
+		return nil, ErrAccessDenied
 	}
 	// If UID is not passed, use the UID in the token
 	if uid == nil {
 		uid = &token.Sub
 	}
-	user, err := r.userService.UpdateUser(token.Sub, *uid, input)
+
+	if *uid != token.Sub {
+		return nil, ErrUserNotAuthorized
+	}
+
+	user, err := r.userService.UpdateUser(*uid, input)
 	if err != nil {
 		return nil, err
 	}

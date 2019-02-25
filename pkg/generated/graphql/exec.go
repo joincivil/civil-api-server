@@ -230,6 +230,8 @@ type ComplexityRoot struct {
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
+		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
+		StorefrontAirswapCancelled        func(childComplexity int) int
 		UserSetEthAddress                 func(childComplexity int, input users.SignatureInput) int
 		UserUpdate                        func(childComplexity int, uid *string, input *users.UserUpdateInput) int
 	}
@@ -277,6 +279,7 @@ type ComplexityRoot struct {
 		KycStatus                func(childComplexity int) int
 		QuizPayload              func(childComplexity int) int
 		QuizStatus               func(childComplexity int) int
+		CivilianWhitelistTxId    func(childComplexity int) int
 		Invoices                 func(childComplexity int) int
 		IsTokenFoundryRegistered func(childComplexity int) int
 	}
@@ -370,6 +373,8 @@ type MutationResolver interface {
 	NrsignupApproveGrant(ctx context.Context, approved bool, newsroomOwnerUID string) (string, error)
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
+	StorefrontAirswapTxHash(ctx context.Context, txHash string) (string, error)
+	StorefrontAirswapCancelled(ctx context.Context) (string, error)
 	UserSetEthAddress(ctx context.Context, input users.SignatureInput) (*string, error)
 	UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error)
 }
@@ -657,6 +662,21 @@ func field_Mutation_nrsignupPollNewsroomDeploy_args(rawArgs map[string]interface
 }
 
 func field_Mutation_nrsignupPollTcrApplication_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txHash"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["txHash"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_storefrontAirswapTxHash_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 string
 	if tmp, ok := rawArgs["txHash"]; ok {
@@ -2422,6 +2442,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.NrsignupPollTcrApplication(childComplexity, args["txHash"].(string)), true
 
+	case "Mutation.storefrontAirswapTxHash":
+		if e.complexity.Mutation.StorefrontAirswapTxHash == nil {
+			break
+		}
+
+		args, err := field_Mutation_storefrontAirswapTxHash_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.StorefrontAirswapTxHash(childComplexity, args["txHash"].(string)), true
+
+	case "Mutation.storefrontAirswapCancelled":
+		if e.complexity.Mutation.StorefrontAirswapCancelled == nil {
+			break
+		}
+
+		return e.complexity.Mutation.StorefrontAirswapCancelled(childComplexity), true
+
 	case "Mutation.userSetEthAddress":
 		if e.complexity.Mutation.UserSetEthAddress == nil {
 			break
@@ -2751,6 +2790,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.QuizStatus(childComplexity), true
+
+	case "User.civilianWhitelistTxID":
+		if e.complexity.User.CivilianWhitelistTxId == nil {
+			break
+		}
+
+		return e.complexity.User.CivilianWhitelistTxId(childComplexity), true
 
 	case "User.invoices":
 		if e.complexity.User.Invoices == nil {
@@ -6984,6 +7030,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "storefrontAirswapTxHash":
+			out.Values[i] = ec._Mutation_storefrontAirswapTxHash(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "storefrontAirswapCancelled":
+			out.Values[i] = ec._Mutation_storefrontAirswapCancelled(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "userSetEthAddress":
 			out.Values[i] = ec._Mutation_userSetEthAddress(ctx, field)
 		case "userUpdate":
@@ -7551,6 +7607,66 @@ func (ec *executionContext) _Mutation_nrsignupPollTcrApplication(ctx context.Con
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().NrsignupPollTcrApplication(rctx, args["txHash"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_storefrontAirswapTxHash(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_storefrontAirswapTxHash_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().StorefrontAirswapTxHash(rctx, args["txHash"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_storefrontAirswapCancelled(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().StorefrontAirswapCancelled(rctx)
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -8975,6 +9091,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_quizPayload(ctx, field, obj)
 		case "quizStatus":
 			out.Values[i] = ec._User_quizStatus(ctx, field, obj)
+		case "civilianWhitelistTxID":
+			out.Values[i] = ec._User_civilianWhitelistTxID(ctx, field, obj)
 		case "invoices":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -9180,6 +9298,30 @@ func (ec *executionContext) _User_quizStatus(ctx context.Context, field graphql.
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.QuizStatus, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_civilianWhitelistTxID(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CivilianWhitelistTxID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -11069,7 +11211,12 @@ type Query {
   # TCR / Crawler Queries (Legacy naming)
   # TODO(PN): Temporary keep these until migrated over to new naming
   # Just calls the properly named versions
-  articles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
+  articles(
+    addr: String
+    first: Int
+    after: String
+    lowercaseAddr: Boolean = True
+  ): [ContentRevision!]!
   challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   governanceEvents(
     addr: String
@@ -11078,7 +11225,10 @@ type Query {
     first: Int
     lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  governanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  governanceEventsTxHash(
+    txHash: String!
+    lowercaseAddr: Boolean = True
+  ): [GovernanceEvent!]!
   listing(addr: String!, lowercaseAddr: Boolean = True): Listing
   listings(
     first: Int
@@ -11099,7 +11249,10 @@ type Query {
     first: Int
     lowercaseAddr: Boolean = True
   ): GovernanceEventResultCursor
-  tcrGovernanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  tcrGovernanceEventsTxHash(
+    txHash: String!
+    lowercaseAddr: Boolean = True
+  ): [GovernanceEvent!]!
   tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
@@ -11112,7 +11265,12 @@ type Query {
   ): ListingResultCursor
 
   # Newsroom Queries
-  newsroomArticles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
+  newsroomArticles(
+    addr: String
+    first: Int
+    after: String
+    lowercaseAddr: Boolean = True
+  ): [ContentRevision!]!
 
   # User Queries
   currentUser: User
@@ -11158,6 +11316,10 @@ type Mutation {
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
+
+  # Storefront Mutations
+  storefrontAirswapTxHash(txHash: String!): String!
+  storefrontAirswapCancelled: String!
 
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
@@ -11368,6 +11530,7 @@ type User {
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
+  civilianWhitelistTxID: String
   # dateCreated: Int
   # dateUpdated: Int
   invoices: [Invoice]

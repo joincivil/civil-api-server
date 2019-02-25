@@ -9,7 +9,12 @@ type Query {
   # TCR / Crawler Queries (Legacy naming)
   # TODO(PN): Temporary keep these until migrated over to new naming
   # Just calls the properly named versions
-  articles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
+  articles(
+    addr: String
+    first: Int
+    after: String
+    lowercaseAddr: Boolean = True
+  ): [ContentRevision!]!
   challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
   governanceEvents(
     addr: String
@@ -18,7 +23,10 @@ type Query {
     first: Int
     lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  governanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  governanceEventsTxHash(
+    txHash: String!
+    lowercaseAddr: Boolean = True
+  ): [GovernanceEvent!]!
   listing(addr: String!, lowercaseAddr: Boolean = True): Listing
   listings(
     first: Int
@@ -39,7 +47,10 @@ type Query {
     first: Int
     lowercaseAddr: Boolean = True
   ): GovernanceEventResultCursor
-  tcrGovernanceEventsTxHash(txHash: String!, lowercaseAddr: Boolean = True): [GovernanceEvent!]!
+  tcrGovernanceEventsTxHash(
+    txHash: String!
+    lowercaseAddr: Boolean = True
+  ): [GovernanceEvent!]!
   tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
@@ -52,7 +63,12 @@ type Query {
   ): ListingResultCursor
 
   # Newsroom Queries
-  newsroomArticles(addr: String, first: Int, after: String, lowercaseAddr: Boolean = True): [ContentRevision!]!
+  newsroomArticles(
+    addr: String
+    first: Int
+    after: String
+    lowercaseAddr: Boolean = True
+  ): [ContentRevision!]!
 
   # User Queries
   currentUser: User
@@ -98,6 +114,10 @@ type Mutation {
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
+
+  # Storefront Mutations
+  storefrontAirswapTxHash(txHash: String!): String!
+  storefrontAirswapCancelled: String!
 
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
@@ -308,6 +328,7 @@ type User {
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
+  civilianWhitelistTxID: String
   # dateCreated: Int
   # dateUpdated: Int
   invoices: [Invoice]

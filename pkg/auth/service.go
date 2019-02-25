@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/joincivil/go-common/pkg/email"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
@@ -15,16 +16,23 @@ const (
 	// number of seconds that a JWT token sent for login or signup is valid
 	defaultJWTEmailExpiration = 60 * 60 * 24 * 10
 	// number of seconds for a signature challenge
-	defaultGracePeriod = 15
+	defaultGracePeriod = 5 * 60 // 5 minutes
 	// OkResponse is sent when an action is completed successfully
 	OkResponse = "ok"
+	// EmailNotFoundResponse is sent when an email address is not found for a user
+	EmailNotFoundResponse = "emailnotfound"
+	// EmailExistsResponse  is sent when an email address already exists for a user
+	EmailExistsResponse = "emailexists"
+
 	// sendgrid template ID for signup that sends a JWT encoded with the email address
 	// defaultSignupEmailConfirmTemplateID = "d-88f731b52a524e6cafc308d0359b84a6"
 	// sendgrid template ID for login that sends a JWT encoded with the email address
 	// defaultLoginEmailConfirmTemplateID = "d-a228aa83fed8476b82d4c97288df20d5"
 
-	defaultSignupVerifyURI = "account/auth/signup/verify-token"
-	defaultLoginVerifyURI  = "account/auth/login/verify-token"
+	defaultSignupVerifyURI  = "auth/signup/verify-token"
+	defaultLoginVerifyURI   = "auth/login/verify-token"
+	newsroomSignupVerifyURI = "apply-to-registry/signup"
+	newsroomLoginVerifyURI  = "apply-to-registry/login"
 
 	civilMediaName  = "Civil Media Company"
 	civilMediaEmail = "support@civil.co"
@@ -138,12 +146,29 @@ func (s *Service) SignupEmailSend(emailAddress string) (string, string, error) {
 // Returns the repsonse code, the token generated for the email, and a potential error
 func (s *Service) SignupEmailSendForApplication(emailAddress string,
 	application ApplicationEnum) (string, string, error) {
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(emailAddress),
+	}
+	user, err := s.userService.MaybeGetUser(identifier)
+	if err != nil {
+		return "", "", err
+	}
+
+	// If user does not exist, return with code
+	if user != nil {
+		return EmailExistsResponse, "", nil
+	}
+
 	templateID, err := s.SignupTemplateIDForApplication(application)
 	if err != nil {
 		return "", "", err
 	}
 
-	token, err := s.sendEmailToken(emailAddress, templateID, defaultSignupVerifyURI)
+	verifyURI := defaultSignupVerifyURI
+	if application == ApplicationEnumNewsroom {
+		verifyURI = newsroomSignupVerifyURI
+	}
+	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
 	if err != nil {
 		return "", "", err
 	}
@@ -158,7 +183,9 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	}
 	email := claims["sub"].(string)
 
-	identifier := users.UserCriteria{Email: email}
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(email),
+	}
 	user, err := s.userService.CreateUser(identifier)
 	if err != nil {
 		return nil, err
@@ -202,12 +229,29 @@ func (s *Service) LoginEmailSend(emailAddress string) (string, string, error) {
 // Returns the repsonse code, the token generated for the email, and a potential error
 func (s *Service) LoginEmailSendForApplication(emailAddress string,
 	application ApplicationEnum) (string, string, error) {
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(emailAddress),
+	}
+	user, err := s.userService.MaybeGetUser(identifier)
+	if err != nil {
+		return "", "", err
+	}
+
+	// If user does not exist, return with code
+	if user == nil {
+		return EmailNotFoundResponse, "", nil
+	}
+
 	templateID, err := s.LoginTemplateIDForApplication(application)
 	if err != nil {
 		return "", "", err
 	}
 
-	token, err := s.sendEmailToken(emailAddress, templateID, defaultLoginVerifyURI)
+	verifyURI := defaultLoginVerifyURI
+	if application == ApplicationEnumNewsroom {
+		verifyURI = newsroomLoginVerifyURI
+	}
+	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
 	if err != nil {
 		return "", "", err
 	}
@@ -222,7 +266,9 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	}
 	email := claims["sub"].(string)
 
-	identifier := users.UserCriteria{Email: email}
+	identifier := users.UserCriteria{
+		Email: strings.ToLower(email),
+	}
 	user, err := s.userService.MaybeGetUser(identifier)
 	if err != nil {
 		return nil, err
@@ -271,7 +317,7 @@ func (s *Service) buildSignupLoginConfirmLink(emailToken string, verifyURI strin
 }
 
 func (s *Service) buildSignupLoginConfirmMarkup(confirmLink string) string {
-	return fmt.Sprintf("<a href=\"%v\">Confirm your email address</a>", confirmLink)
+	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your email address</a>", confirmLink)
 }
 
 func (s *Service) sendEmailToken(emailAddress string, templateID string,

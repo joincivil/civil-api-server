@@ -34,7 +34,8 @@ type GraphQLConfig struct {
 	ApproveGrantProtoHost string `split_words:"true" desc:"Newsroom signup grant approval landing proto/host" required:"false"`
 	SignupLoginProtoHost  string `split_words:"true" desc:"Signup/login proto/host" required:"false"`
 
-	SendgridKey string `split_words:"true" desc:"The SendGrid API key"`
+	SendgridKey  string `split_words:"true" desc:"The SendGrid API key"`
+	MailchimpKey string `split_words:"true" desc:"The Mailchimp API key"`
 
 	OnfidoKey          string `split_words:"true" desc:"The Onfido API key"`
 	OnfidoReferrer     string `split_words:"true" desc:"The Onfido token referrer"`
@@ -63,6 +64,8 @@ type GraphQLConfig struct {
 	ContractAddressObjs map[string][]common.Address `ignored:"true"`
 
 	TokenSaleAddresses []common.Address `split_words:"true" desc:"Addresses that contain tokens to be sold as part of the Token Sale"`
+
+	EthereumDefaultPrivateKey string `split_words:"true" desc:"Private key to use when sending Ethereum transactions"`
 }
 
 // PersistType returns the persister type, implements PersisterConfig

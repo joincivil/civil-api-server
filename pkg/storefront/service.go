@@ -2,11 +2,14 @@ package storefront
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/golang/glog"
-	"github.com/joincivil/civil-api-server/pkg/utils"
+	log "github.com/golang/glog"
+
 	"github.com/joincivil/go-common/pkg/eth"
+
+	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
 const (
@@ -22,6 +25,17 @@ const (
 	startingPrice = 0.2
 )
 
+const (
+	// mailchimpMemberListID is the list id for the token holders/members list
+	mailchimpMemberListID = "96a8752688"
+	// mailchimpAbandonedListID is the list id for the abandoned token purchase list
+	mailchimpAbandonedListID = "843efbe924"
+
+	mailchimpAlreadySubErrSubstring = "already subscribed"
+	// mailchimpNoEmailRecordErrSubstring = "no record of the email address"
+	mailchimpNotSubscribedErrSubstring = "not subscribed"
+)
+
 var (
 	// ErrNoTokenSaleAddresses is thrown when `GRAPHQL_TOKEN_SALE_ADDRESSES` envvar is not available
 	ErrNoTokenSaleAddresses = errors.New("environment variable `GRAPHQL_TOKEN_SALE_ADDRESSES` not provided")
@@ -35,20 +49,23 @@ var (
 type Service struct {
 	currencyConversion CurrencyConversion
 	pricing            *PricingManager
+	userService        *users.UserService
+	emailLists         ServiceEmailLists
 }
 
 // NewService constructs a new Service instance
-func NewService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*Service, error) {
+func NewService(cvlTokenAddr string, tokenSaleAddrs []common.Address, ethHelper *eth.Helper,
+	userService *users.UserService, emailLists ServiceEmailLists) (*Service, error) {
 
 	initSupplyManager := true
-	cvlTokenAddress := common.HexToAddress(config.ContractAddresses["CVLToken"])
+	cvlTokenAddress := common.HexToAddress(cvlTokenAddr)
 	if cvlTokenAddress == common.HexToAddress("") {
 		initSupplyManager = false
-		glog.Infof("Not initializing supply manager, err: %v", ErrNoCVLTokenAddress)
+		log.Infof("Not initializing supply manager, err: %v", ErrNoCVLTokenAddress)
 
-	} else if config.TokenSaleAddresses == nil || len(config.TokenSaleAddresses) < 1 {
+	} else if tokenSaleAddrs == nil || len(tokenSaleAddrs) < 1 {
 		initSupplyManager = false
-		glog.Infof("Not initializing supply manager, err: %v", ErrNoTokenSaleAddresses)
+		log.Infof("Not initializing supply manager, err: %v", ErrNoTokenSaleAddresses)
 	}
 
 	pricingManager := NewPricingManager(totalOffering, totalRaiseUSD, startingPrice)
@@ -59,18 +76,19 @@ func NewService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*Service, e
 			cvlTokenAddress,
 			ethHelper.Blockchain,
 			pricingManager,
-			config.TokenSaleAddresses,
+			tokenSaleAddrs,
 			tokenSupplyPollFreqSecs,
 		)
 		if err != nil {
 			return nil, ErrInvalidSupplyManager
 		}
-
 	}
 
 	return &Service{
 		pricing:            pricingManager,
 		currencyConversion: currencyConversion,
+		userService:        userService,
+		emailLists:         emailLists,
 	}, nil
 }
 
@@ -100,4 +118,63 @@ func (s *Service) ConvertUSDToETH() (float64, error) {
 // ConvertETHToUSD returns the price of 1 ETH in USD
 func (s *Service) ConvertETHToUSD() (float64, error) {
 	return s.currencyConversion.ETHToUSD()
+}
+
+// PurchaseTransactionComplete handles the transaction hash of a completed token sale
+// TODO(PN): Currently not used
+func (s *Service) PurchaseTransactionComplete(buyerUID string, txHash string) error {
+	user, err := s.userService.MaybeGetUser(users.UserCriteria{
+		UID: buyerUID,
+	})
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("No user found: uid: %v", buyerUID)
+	}
+
+	for _, hash := range user.PurchaseTxHashes() {
+		if hash == txHash {
+			return fmt.Errorf("TxHash already in the user hash list: %v", txHash)
+		}
+	}
+
+	err = user.AddPurchaseTxHash(txHash)
+	if err != nil {
+		return err
+	}
+
+	update := &users.UserUpdateInput{
+		PurchaseTxHashesStr: user.PurchaseTxHashesStr,
+	}
+	_, err = s.userService.UpdateUser(buyerUID, update)
+	if err != nil {
+		return err
+	}
+
+	if s.emailLists != nil {
+		go s.emailLists.PurchaseCompleteAddToMembersList(user)
+	}
+
+	return nil
+}
+
+// PurchaseTransactionCancel handles the cancelled purchase transaction
+// TODO(PN): Currently not used
+func (s *Service) PurchaseTransactionCancel(buyerUID string) error {
+	user, err := s.userService.MaybeGetUser(users.UserCriteria{
+		UID: buyerUID,
+	})
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return fmt.Errorf("No user found: uid: %v", buyerUID)
+	}
+
+	if s.emailLists != nil {
+		go s.emailLists.PurchaseCancelRemoveFromAbandonedList(user)
+	}
+
+	return nil
 }

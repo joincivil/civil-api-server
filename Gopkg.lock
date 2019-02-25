@@ -101,7 +101,8 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:87fa9f2d71fd2516e6c0d906b7eb58886c8b4fcc6ee8cada0553a0e50bfeef3a"
+  branch = "master"
+  digest = "1:5ff50b247ac153c4ac8e4c09d93fbf0fd447c6b0e90d139759b2aeb7f1d34678"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -130,7 +131,6 @@
     "crypto/bn256/cloudflare",
     "crypto/bn256/google",
     "crypto/secp256k1",
-    "crypto/sha3",
     "eth/filters",
     "ethclient",
     "ethdb",
@@ -144,8 +144,7 @@
     "trie",
   ]
   pruneopts = "T"
-  revision = "24d727b6d6e2c0cde222fa12155c4a6db5caaf2e"
-  version = "v1.8.20"
+  revision = "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61"
 
 [[projects]]
   digest = "1:ca82a3b99694824c627573c2a76d0e49719b4a9c02d1d85a2ac91f1c1f52ab9b"
@@ -245,7 +244,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ff6bbc29b135285fbe3cf2bacb58afdc3674822f35865d7c5e256267dd1972df"
+  digest = "1:f7b8ec286b8bd9e8d7569486358a5209e89b2856d39b9ca185ef16da4ff88008"
   name = "github.com/joincivil/civil-events-crawler"
   packages = [
     "pkg/model",
@@ -253,7 +252,7 @@
     "pkg/persistence/postgres",
   ]
   pruneopts = "UT"
-  revision = "8de24fb6e3519ebf3111896ceda9142b0b703d25"
+  revision = "42cdafab48cac692bf9bd1d3b4215b6b8478dc2c"
 
 [[projects]]
   branch = "master"
@@ -268,11 +267,11 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "beece025f2ab9345538356f8b96179d4fedbf7b0"
+  revision = "9f2d13db87d3f09af6fd3b9cd70082db8248cf85"
 
 [[projects]]
   branch = "master"
-  digest = "1:f9db00c5030b6b9d426f63236a3abdfcd2655a2d309227acc99c2c7ad1f21075"
+  digest = "1:d2e70745c907d3ee5aee93d8540e3c217dc65eef95adc6b09392d4ad488bda2c"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -289,7 +288,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "f4251ce704bafccf23363e4ac4ee26fcd0783d61"
+  revision = "133ec50d16dbc22cd7c6221bebececf92baf2c1c"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -308,6 +307,14 @@
   ]
   pruneopts = "UT"
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
+
+[[projects]]
+  branch = "master"
+  digest = "1:66e942c52d4b0b3de846e8db3f9d4f9554873dd17798486743fb02b3c2bfed59"
+  name = "github.com/mattbaird/gochimp"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a267553896d1cbd0ccfc259ad5442e62bdc3d30d"
 
 [[projects]]
   digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
@@ -429,15 +436,16 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:230a66be994ebe110710c86b4c475b9050f4872ef04937b290d9c9db20436005"
+  digest = "1:a6f85d6d31c8c1185cf138cc82144c101e828472009bd8479425a011fd321e77"
   name = "golang.org/x/crypto"
   packages = [
     "pbkdf2",
     "ripemd160",
     "scrypt",
+    "sha3",
   ]
   pruneopts = "UT"
-  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
+  revision = "74369b46fc6756741c016591724fd1cb8e26845f"
 
 [[projects]]
   branch = "master"
@@ -516,6 +524,7 @@
     "github.com/ethereum/go-ethereum/accounts/abi/bind/backends",
     "github.com/ethereum/go-ethereum/common",
     "github.com/ethereum/go-ethereum/common/hexutil",
+    "github.com/ethereum/go-ethereum/core/types",
     "github.com/ethereum/go-ethereum/crypto",
     "github.com/go-chi/chi",
     "github.com/go-chi/chi/middleware",
@@ -532,6 +541,7 @@
     "github.com/joincivil/go-common/pkg/eth",
     "github.com/joincivil/go-common/pkg/generated/contract",
     "github.com/joincivil/go-common/pkg/http",
+    "github.com/joincivil/go-common/pkg/jobs",
     "github.com/joincivil/go-common/pkg/persistence",
     "github.com/joincivil/go-common/pkg/persistence/postgres",
     "github.com/joincivil/go-common/pkg/strings",
