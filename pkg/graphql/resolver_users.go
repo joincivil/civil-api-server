@@ -50,7 +50,7 @@ func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.Si
 
 	err := auth.VerifyEthChallengeAndSignature(auth.ChallengeRequest{
 		ExpectedPrefix: "I control this address",
-		GracePeriod:    10,
+		GracePeriod:    5 * 60, // 5 minutes
 		InputAddress:   input.Signer,
 		InputChallenge: input.Message,
 		Signature:      input.Signature,

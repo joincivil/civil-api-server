@@ -16,7 +16,7 @@ const (
 	// number of seconds that a JWT token sent for login or signup is valid
 	defaultJWTEmailExpiration = 60 * 60 * 24 * 10
 	// number of seconds for a signature challenge
-	defaultGracePeriod = 15
+	defaultGracePeriod = 5 * 60 // 5 minutes
 	// OkResponse is sent when an action is completed successfully
 	OkResponse = "ok"
 	// EmailNotFoundResponse is sent when an email address is not found for a user
@@ -29,8 +29,10 @@ const (
 	// sendgrid template ID for login that sends a JWT encoded with the email address
 	// defaultLoginEmailConfirmTemplateID = "d-a228aa83fed8476b82d4c97288df20d5"
 
-	defaultSignupVerifyURI = "auth/signup/verify-token"
-	defaultLoginVerifyURI  = "auth/login/verify-token"
+	defaultSignupVerifyURI  = "auth/signup/verify-token"
+	defaultLoginVerifyURI   = "auth/login/verify-token"
+	newsroomSignupVerifyURI = "apply-to-registry/signup"
+	newsroomLoginVerifyURI  = "apply-to-registry/login"
 
 	civilMediaName  = "Civil Media Company"
 	civilMediaEmail = "support@civil.co"
@@ -162,7 +164,11 @@ func (s *Service) SignupEmailSendForApplication(emailAddress string,
 		return "", "", err
 	}
 
-	token, err := s.sendEmailToken(emailAddress, templateID, defaultSignupVerifyURI)
+	verifyURI := defaultSignupVerifyURI
+	if application == ApplicationEnumNewsroom {
+		verifyURI = newsroomSignupVerifyURI
+	}
+	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
 	if err != nil {
 		return "", "", err
 	}
@@ -241,7 +247,11 @@ func (s *Service) LoginEmailSendForApplication(emailAddress string,
 		return "", "", err
 	}
 
-	token, err := s.sendEmailToken(emailAddress, templateID, defaultLoginVerifyURI)
+	verifyURI := defaultLoginVerifyURI
+	if application == ApplicationEnumNewsroom {
+		verifyURI = newsroomLoginVerifyURI
+	}
+	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
 	if err != nil {
 		return "", "", err
 	}
