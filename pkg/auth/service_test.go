@@ -3,6 +3,7 @@ package auth_test
 import (
 	"encoding/hex"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -90,6 +91,31 @@ func TestSignupEmailSendForApplication(t *testing.T) {
 		t.Errorf("Should have gotten the email exist response")
 	}
 }
+func TestSignupEmailSendForApplicationUserExists(t *testing.T) {
+	sendGridKey := getSendGridKeyFromEnvVar()
+	if sendGridKey == "" {
+		t.Log("No SENDGRID_TEST_KEY set, skipping signup email test")
+		return
+	}
+
+	service, err := buildServiceWithExistingUser(sendGridKey)
+	if err != nil {
+		t.Fatalf("Should have return a valid auth service: err: %v", err)
+	}
+
+	result, token, err := service.SignupEmailSendForApplication(testEmail, auth.ApplicationEnumNewsroom)
+	if err != nil {
+		t.Errorf("Should have not gotten an error sending signup email: err: %v", err)
+	}
+
+	if result != auth.EmailExistsResponse {
+		t.Fatalf("Should have gotten an email exists response: result = %v", result)
+	}
+
+	if token != "" {
+		t.Fatal("Should not have gotten token")
+	}
+}
 
 func TestSignupEmailSend(t *testing.T) {
 	sendGridKey := getSendGridKeyFromEnvVar()
@@ -134,7 +160,7 @@ func TestSignupEmailSend(t *testing.T) {
 func TestLoginEmailSendForApplication(t *testing.T) {
 	sendGridKey := getSendGridKeyFromEnvVar()
 	if sendGridKey == "" {
-		t.Log("No SENDGRID_TEST_KEY set, skipping signup email test")
+		t.Log("No SENDGRID_TEST_KEY set, skipping login email test")
 		return
 	}
 
@@ -145,14 +171,15 @@ func TestLoginEmailSendForApplication(t *testing.T) {
 
 	result, token, err := service.LoginEmailSendForApplication(testEmail, auth.ApplicationEnumNewsroom)
 	if err != nil {
-		t.Errorf("Should have not gotten an error sending signup email: err: %v", err)
+		t.Errorf("Should have not gotten an error sending login email: err: %v", err)
 	}
+
 	if result != "ok" {
-		t.Errorf("Should have gotten an OK response")
+		t.Fatalf("Should have gotten an OK response: result = %v", result)
 	}
 
 	if token == "" {
-		t.Errorf("Should have gotten token")
+		t.Fatal("Should have gotten token")
 	}
 
 	resp, err := service.LoginEmailConfirm(token)
@@ -172,7 +199,7 @@ func TestLoginEmailSendForApplication(t *testing.T) {
 
 	result, _, err = service.LoginEmailSendForApplication("nonexistent@email.com", auth.ApplicationEnumNewsroom)
 	if err != nil {
-		t.Errorf("Should have not gotten an error sending signup email: err: %v", err)
+		t.Errorf("Should have not gotten an error sending login email: err: %v", err)
 	}
 	if result != auth.EmailNotFoundResponse {
 		t.Errorf("Should have gotten the email not found response")
@@ -191,6 +218,32 @@ func TestLoginEmailSendForApplication(t *testing.T) {
 	}
 	if resp != nil {
 		t.Errorf("Should have gotten a nil response")
+	}
+}
+
+func TestLoginEmailSendForApplicationNoUser(t *testing.T) {
+	sendGridKey := getSendGridKeyFromEnvVar()
+	if sendGridKey == "" {
+		t.Log("No SENDGRID_TEST_KEY set, skipping login email test")
+		return
+	}
+
+	service, err := buildService(sendGridKey)
+	if err != nil {
+		t.Fatalf("Should have return a valid auth service: err: %v", err)
+	}
+
+	result, token, err := service.LoginEmailSendForApplication(testEmail, auth.ApplicationEnumNewsroom)
+	if err != nil {
+		t.Errorf("Should have not gotten an error sending login email: err: %v", err)
+	}
+
+	if result != auth.EmailNotFoundResponse {
+		t.Fatalf("Should have gotten an email not found response: result = %v", result)
+	}
+
+	if token != "" {
+		t.Fatal("Should not have gotten token")
 	}
 }
 
@@ -546,7 +599,7 @@ func buildService(sendGridKey string) (*auth.Service, error) {
 
 func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
 	user1 := &users.User{
-		Email:       testEmail,
+		Email:       strings.ToLower(testEmail),
 		EthAddress:  "0x5385A3a9a1468b7D900A93E6f21E903E30928765",
 		DateCreated: ctime.CurrentEpochSecsInInt64(),
 		DateUpdated: ctime.CurrentEpochSecsInInt64(),

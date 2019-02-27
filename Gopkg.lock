@@ -49,6 +49,18 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:f8455e889308d11dbe612bcec0286512c587395eda4272dfc412fa00e9fe7559"
+  name = "github.com/beeker1121/mailchimp-go"
+  packages = [
+    ".",
+    "lists/members",
+    "query",
+  ]
+  pruneopts = "UT"
+  revision = "7c5f827423b2a08c0cb05f6a79ea9fec1d2eb257"
+
+[[projects]]
+  branch = "master"
   digest = "1:2c00f064ba355903866cbfbf3f7f4c0fe64af6638cc7d1b8bdcf3181bc67f1d8"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
@@ -271,7 +283,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d2e70745c907d3ee5aee93d8540e3c217dc65eef95adc6b09392d4ad488bda2c"
+  digest = "1:603799ab0d7541e236ef0987eea4740efdf18dfb03973a8195839bd62c2701ae"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -288,7 +300,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "133ec50d16dbc22cd7c6221bebececf92baf2c1c"
+  revision = "dc6f5d6566124049620c3cddfbf5ee79e01476fc"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -307,14 +319,6 @@
   ]
   pruneopts = "UT"
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
-
-[[projects]]
-  branch = "master"
-  digest = "1:66e942c52d4b0b3de846e8db3f9d4f9554873dd17798486743fb02b3c2bfed59"
-  name = "github.com/mattbaird/gochimp"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "a267553896d1cbd0ccfc259ad5442e62bdc3d30d"
 
 [[projects]]
   digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
@@ -541,7 +545,6 @@
     "github.com/joincivil/go-common/pkg/eth",
     "github.com/joincivil/go-common/pkg/generated/contract",
     "github.com/joincivil/go-common/pkg/http",
-    "github.com/joincivil/go-common/pkg/jobs",
     "github.com/joincivil/go-common/pkg/persistence",
     "github.com/joincivil/go-common/pkg/persistence/postgres",
     "github.com/joincivil/go-common/pkg/strings",

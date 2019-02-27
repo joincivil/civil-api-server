@@ -64,6 +64,7 @@ type resolverConfig struct {
 	tokenFoundry      *tokenfoundry.API
 	onfido            *kyc.OnfidoAPI
 	storefrontService *storefront.Service
+	emailListMembers  cemail.ListMemberManager
 }
 
 func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
@@ -114,6 +115,7 @@ func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
 		JSONbService:        rconfig.jsonbService,
 		NrsignupService:     rconfig.nrsignupService,
 		StorefrontService:   rconfig.storefrontService,
+		EmailListMembers:    rconfig.emailListMembers,
 	}), nil
 }
 
@@ -187,7 +189,8 @@ func initUserPersister(config *utils.GraphQLConfig) (*users.PostgresPersister, e
 	return persister, nil
 }
 
-func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresPersister, tokenControllerService *tokencontroller.Service) (
+func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresPersister,
+	tokenControllerService *tokencontroller.Service) (
 	*users.UserService, error) {
 	if userPersister == nil {
 		var perr error
@@ -256,12 +259,8 @@ func initNrsignupService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 }
 
 func initStorefrontService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
-	userService *users.UserService) (*storefront.Service, error) {
-	var mailchimpAPI *cemail.MailchimpAPI
-	if config.MailchimpKey != "" {
-		mailchimpAPI = cemail.NewMailchimpAPI(config.MailchimpKey)
-	}
-	emailLists := storefront.NewMailchimpServiceEmailLists(mailchimpAPI)
+	userService *users.UserService, mailchimp *cemail.MailchimpAPI) (*storefront.Service, error) {
+	emailLists := storefront.NewMailchimpServiceEmailLists(mailchimp)
 
 	return storefront.NewService(
 		config.ContractAddresses["CVLToken"],
@@ -323,7 +322,8 @@ func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	return ethHelper, nil
 }
 
-func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (*tokencontroller.Service, error) {
+func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (
+	*tokencontroller.Service, error) {
 	return tokencontroller.NewService(config.ContractAddresses["CivilTokenController"], ethHelper)
 }
 
@@ -430,6 +430,7 @@ func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
 
 type dependencies struct {
 	emailer                *cemail.Emailer
+	mailchimp              *cemail.MailchimpAPI
 	jwtGenerator           *auth.JwtTokenGenerator
 	invoicePersister       *invoicing.PostgresPersister
 	checkbookIO            *invoicing.CheckbookIO
@@ -474,9 +475,18 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	}
 
 	jwtGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
-	emailer := cemail.NewEmailer(config.SendgridKey)
 	tokenFoundry := initTokenFoundryAPI(config)
 	onfido := initOnfidoAPI(config)
+
+	var emailer *cemail.Emailer
+	if config.SendgridKey != "" {
+		emailer = cemail.NewEmailer(config.SendgridKey)
+	}
+
+	var mailchimpAPI *cemail.MailchimpAPI
+	if config.MailchimpKey != "" {
+		mailchimpAPI = cemail.NewMailchimpAPI(config.MailchimpKey)
+	}
 
 	userService, err := initUserService(config, nil, tokenControllerService)
 	if err != nil {
@@ -516,6 +526,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		config,
 		ethHelper,
 		userService,
+		mailchimpAPI,
 	)
 	if err != nil {
 		log.Fatalf("Error w init Storefront Service: err: %v", err)
@@ -524,6 +535,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 
 	return &dependencies{
 		emailer:                emailer,
+		mailchimp:              mailchimpAPI,
 		jwtGenerator:           jwtGenerator,
 		invoicePersister:       invoicePersister,
 		checkbookIO:            checkbookIO,
@@ -562,6 +574,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 			tokenFoundry:      deps.tokenFoundry,
 			onfido:            deps.onfido,
 			storefrontService: deps.storefrontService,
+			emailListMembers:  deps.mailchimp,
 		}
 		err = graphQLRouting(router, rconfig)
 		if err != nil {
