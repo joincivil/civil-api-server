@@ -2,7 +2,6 @@ package graphql
 
 import (
 	context "context"
-
 	"github.com/joincivil/civil-api-server/pkg/auth"
 )
 

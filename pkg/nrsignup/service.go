@@ -128,7 +128,7 @@ func (s *Service) RequestGrant(newsroomOwnerUID string) error {
 		return err
 	}
 
-	signupData, err := s.retrieveUserJSONData(newsroomOwnerUID)
+	signupData, err := s.RetrieveUserJSONData(newsroomOwnerUID)
 	if err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func (s *Service) setGrantApprovedFlag(newsroomOwnerUID string, approved bool) e
 	return s.alterUserDataInJSONStore(newsroomOwnerUID, grantApproveUpdateFn)
 }
 
-func (s *Service) retrieveUserJSONData(newsroomOwnerUID string) (*SignupUserJSONData, error) {
+func (s *Service) RetrieveUserJSONData(newsroomOwnerUID string) (*SignupUserJSONData, error) {
 	s.alterMutex.Lock()
 	defer s.alterMutex.Unlock()
 
@@ -353,7 +353,7 @@ func (s *Service) saveUserJSONData(newsroomOwnerUID string, signupData *SignupUs
 type userDataUpdateFn func(*SignupUserJSONData) (*SignupUserJSONData, error)
 
 func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn userDataUpdateFn) error {
-	signupData, err := s.retrieveUserJSONData(newsroomOwnerUID)
+	signupData, err := s.RetrieveUserJSONData(newsroomOwnerUID)
 	if err != nil {
 		return err
 	}
