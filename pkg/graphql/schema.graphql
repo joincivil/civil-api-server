@@ -88,23 +88,23 @@ type Mutation {
   authSignupEth(input: UserSignatureInput!): AuthLoginResponse
   authSignupEmailSend(
     emailAddress: String!
-    addToList: Boolean = False
+    addToMailing: Boolean = False
   ): String
   authSignupEmailSendForApplication(
     emailAddress: String!
     application: AuthApplicationEnum!
-    addToList: Boolean = False
+    addToMailing: Boolean = False
   ): String
   authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
   authLoginEth(input: UserSignatureInput!): AuthLoginResponse
   authLoginEmailSend(
     emailAddress: String!
-    addToList: Boolean = False
+    addToMailing: Boolean = False
   ): String
   authLoginEmailSendForApplication(
     emailAddress: String!
     application: AuthApplicationEnum!
-    addToList: Boolean = False
+    addToMailing: Boolean = False
   ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
 
