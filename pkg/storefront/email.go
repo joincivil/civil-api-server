@@ -8,6 +8,8 @@ import (
 	"github.com/joincivil/go-common/pkg/email"
 )
 
+// TODO(PN): Switch this to use the ListMemberManager interface
+
 // ServiceEmailLists is an interface to handle the management of email addresses to
 // email lists
 type ServiceEmailLists interface {
@@ -44,7 +46,7 @@ func (s *MailchimpServiceEmailLists) PurchaseCompleteAddToMembersList(user *user
 
 	if !onMemberList {
 		// Add user to the Mailchimp members list for marketing/growth team
-		err = s.mailchimpAPI.SubscribeToList(mailchimpMemberListID, user.Email)
+		err = s.mailchimpAPI.SubscribeToList(mailchimpMemberListID, user.Email, nil)
 		if err != nil {
 			if !strings.Contains(err.Error(), mailchimpAlreadySubErrSubstring) {
 				log.Errorf("Error subscribing to the members list: err: %v", err)
@@ -77,7 +79,7 @@ func (s *MailchimpServiceEmailLists) PurchaseCancelRemoveFromAbandonedList(user 
 	// if it is not on the members list, then sent to abandoned list
 	if !onMemberList {
 		// Make sure it is subscribed to the abandoned list
-		err = s.mailchimpAPI.SubscribeToList(mailchimpAbandonedListID, user.Email)
+		err = s.mailchimpAPI.SubscribeToList(mailchimpAbandonedListID, user.Email, nil)
 		if err != nil {
 			if !strings.Contains(err.Error(), mailchimpAlreadySubErrSubstring) {
 				log.Errorf("Error subscribed to the abandoned list: err: %v", err)

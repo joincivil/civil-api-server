@@ -4,9 +4,44 @@ import (
 	context "context"
 	"fmt"
 
+	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/users"
+	"github.com/joincivil/civil-api-server/pkg/utils"
+
+	cemail "github.com/joincivil/go-common/pkg/email"
 )
+
+const (
+	// emailTagNewsroomSignup is the email tag to indicate the user is signed up
+	// from the newsroom signup module
+	emailTagNewsroomSignup cemail.Tag = "Newsroom Signup"
+
+	// emailTagTokenStorefront is the email tag to indicate the user is signed up
+	// from the token storefront module
+	emailTagTokenStorefront = "Token Storefront"
+)
+
+func (r *mutationResolver) addToNewsletterList(emailAddress string,
+	application auth.ApplicationEnum) error {
+	if r.emailListMembers != nil {
+		tags := []cemail.Tag{}
+
+		if application == auth.ApplicationEnumNewsroom {
+			tags = append(tags, emailTagNewsroomSignup)
+
+		} else if application == auth.ApplicationEnumStorefront {
+			tags = append(tags, emailTagTokenStorefront)
+		}
+
+		err := utils.AddToCivilCompanyNewsletterList(r.emailListMembers, emailAddress, tags)
+		if err != nil {
+			log.Errorf("Error adding to newsletter: err: %v", err)
+			return err
+		}
+	}
+	return nil
+}
 
 func (r *mutationResolver) AuthSignupEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error) {
 	response, err := r.authService.SignupEth(&input)
@@ -20,20 +55,31 @@ func (r *mutationResolver) AuthSignupEth(ctx context.Context, input users.Signat
 	return response, nil
 }
 
-func (r *mutationResolver) AuthSignupEmailSend(ctx context.Context, emailAddress string) (*string, error) {
+func (r *mutationResolver) AuthSignupEmailSend(ctx context.Context, emailAddress string,
+	addToMailing *bool) (*string, error) {
 	result, _, err := r.authService.SignupEmailSend(emailAddress)
 	if err != nil {
 		return nil, err
+	}
+
+	// if add to list is true, try to add to mailchimp list.
+	if *addToMailing {
+		_ = r.addToNewsletterList(emailAddress, auth.ApplicationEnumDefault)
 	}
 
 	return &result, nil
 }
 
 func (r *mutationResolver) AuthSignupEmailSendForApplication(ctx context.Context, emailAddress string,
-	application auth.ApplicationEnum) (*string, error) {
+	application auth.ApplicationEnum, addToMailing *bool) (*string, error) {
 	result, _, err := r.authService.SignupEmailSendForApplication(emailAddress, application)
 	if err != nil {
 		return nil, err
+	}
+
+	// if add to list is true, try to add to mailchimp list.
+	if *addToMailing {
+		_ = r.addToNewsletterList(emailAddress, application)
 	}
 
 	return &result, nil
@@ -56,7 +102,8 @@ func (r *mutationResolver) AuthLoginEth(ctx context.Context, input users.Signatu
 
 	return response, nil
 }
-func (r *mutationResolver) AuthLoginEmailSend(ctx context.Context, emailAddress string) (*string, error) {
+func (r *mutationResolver) AuthLoginEmailSend(ctx context.Context, emailAddress string,
+	addToMailing *bool) (*string, error) {
 	result, _, err := r.authService.LoginEmailSend(emailAddress)
 	if err != nil {
 		return nil, err
@@ -66,7 +113,7 @@ func (r *mutationResolver) AuthLoginEmailSend(ctx context.Context, emailAddress 
 }
 
 func (r *mutationResolver) AuthLoginEmailSendForApplication(ctx context.Context, emailAddress string,
-	application auth.ApplicationEnum) (*string, error) {
+	application auth.ApplicationEnum, addToMailing *bool) (*string, error) {
 	result, _, err := r.authService.LoginEmailSendForApplication(emailAddress, application)
 	if err != nil {
 		return nil, err

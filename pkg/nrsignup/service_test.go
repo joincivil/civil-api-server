@@ -93,7 +93,7 @@ func buildUserService() *users.UserService {
 	}
 	persister := &testutils.InMemoryUserPersister{Users: initUsers}
 
-	return users.NewUserService(persister)
+	return users.NewUserService(persister, nil)
 }
 
 func buildJsonbService(t *testing.T) *jsonstore.Service {

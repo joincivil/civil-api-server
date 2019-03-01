@@ -86,17 +86,25 @@ type Query {
 type Mutation {
   # Auth Mutations
   authSignupEth(input: UserSignatureInput!): AuthLoginResponse
-  authSignupEmailSend(emailAddress: String!): String
+  authSignupEmailSend(
+    emailAddress: String!
+    addToMailing: Boolean = False
+  ): String
   authSignupEmailSendForApplication(
     emailAddress: String!
     application: AuthApplicationEnum!
+    addToMailing: Boolean = False
   ): String
   authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
   authLoginEth(input: UserSignatureInput!): AuthLoginResponse
-  authLoginEmailSend(emailAddress: String!): String
+  authLoginEmailSend(
+    emailAddress: String!
+    addToMailing: Boolean = False
+  ): String
   authLoginEmailSendForApplication(
     emailAddress: String!
     application: AuthApplicationEnum!
+    addToMailing: Boolean = False
   ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
 

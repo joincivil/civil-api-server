@@ -219,7 +219,8 @@ func CreateKycUserTableQuery(tableName string) string {
 			newsroom_data JSONB,
 			date_created INT,
 			date_updated INT,
-			purchase_txhashes TEXT
+			purchase_txhashes TEXT,
+			civilian_whitelist_tx_id TEXT
         );
     `, tableName)
 	return queryString
