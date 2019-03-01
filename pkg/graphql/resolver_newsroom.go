@@ -6,10 +6,10 @@ import (
 
 	"github.com/iancoleman/strcase"
 
-	eventModel "github.com/joincivil/civil-events-processor/pkg/model"
-	newsroomModel "github.com/joincivil/civil-api-server/pkg/nrsignup"
-	"github.com/joincivil/go-common/pkg/eth"
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	newsroomModel "github.com/joincivil/civil-api-server/pkg/nrsignup"
+	eventModel "github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/go-common/pkg/eth"
 
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )

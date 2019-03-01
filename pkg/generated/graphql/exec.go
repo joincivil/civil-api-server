@@ -113,6 +113,7 @@ type ComplexityRoot struct {
 	}
 
 	CharterContent struct {
+		Name        func(childComplexity int) int
 		LogoUrl     func(childComplexity int) int
 		NewsroomUrl func(childComplexity int) int
 		Tagline     func(childComplexity int) int
@@ -259,6 +260,7 @@ type ComplexityRoot struct {
 		KycCreateCheck                    func(childComplexity int, applicantID string, facialVariant *string) int
 		KycGenerateSdkToken               func(childComplexity int, applicantID string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
+		NrsignupSaveCharter               func(childComplexity int, charterData nrsignup.Charter) int
 		NrsignupRequestGrant              func(childComplexity int) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
@@ -425,6 +427,7 @@ type MutationResolver interface {
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
 	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
+	NrsignupSaveCharter(ctx context.Context, charterData nrsignup.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context) (string, error)
 	NrsignupApproveGrant(ctx context.Context, approved bool, newsroomOwnerUID string) (string, error)
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
@@ -731,6 +734,21 @@ func field_Mutation_kycGenerateSdkToken_args(rawArgs map[string]interface{}) (ma
 		}
 	}
 	args["applicantID"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_nrsignupSaveCharter_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 nrsignup.Charter
+	if tmp, ok := rawArgs["charterData"]; ok {
+		var err error
+		arg0, err = UnmarshalCharterInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["charterData"] = arg0
 	return args, nil
 
 }
@@ -1885,6 +1903,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Charter.Timestamp(childComplexity), true
 
+	case "CharterContent.name":
+		if e.complexity.CharterContent.Name == nil {
+			break
+		}
+
+		return e.complexity.CharterContent.Name(childComplexity), true
+
 	case "CharterContent.logoUrl":
 		if e.complexity.CharterContent.LogoUrl == nil {
 			break
@@ -2651,6 +2676,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.NrsignupSendWelcomeEmail(childComplexity), true
+
+	case "Mutation.nrsignupSaveCharter":
+		if e.complexity.Mutation.NrsignupSaveCharter == nil {
+			break
+		}
+
+		args, err := field_Mutation_nrsignupSaveCharter_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NrsignupSaveCharter(childComplexity, args["charterData"].(nrsignup.Charter)), true
 
 	case "Mutation.nrsignupRequestGrant":
 		if e.complexity.Mutation.NrsignupRequestGrant == nil {
@@ -4680,6 +4717,8 @@ func (ec *executionContext) _CharterContent(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("CharterContent")
+		case "name":
+			out.Values[i] = ec._CharterContent_name(ctx, field, obj)
 		case "logoUrl":
 			out.Values[i] = ec._CharterContent_logoUrl(ctx, field, obj)
 		case "newsroomUrl":
@@ -4703,6 +4742,30 @@ func (ec *executionContext) _CharterContent(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _CharterContent_name(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "CharterContent",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 // nolint: vetshadow
@@ -8086,6 +8149,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "nrsignupSaveCharter":
+			out.Values[i] = ec._Mutation_nrsignupSaveCharter(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "nrsignupRequestGrant":
 			out.Values[i] = ec._Mutation_nrsignupRequestGrant(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8557,6 +8625,39 @@ func (ec *executionContext) _Mutation_nrsignupSendWelcomeEmail(ctx context.Conte
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().NrsignupSendWelcomeEmail(rctx)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_nrsignupSaveCharter(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_nrsignupSaveCharter_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupSaveCharter(rctx, args["charterData"].(nrsignup.Charter))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -12461,6 +12562,220 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.___Type(ctx, field.Selections, res)
 }
 
+func UnmarshalCharterInput(v interface{}) (nrsignup.Charter, error) {
+	var it nrsignup.Charter
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "logoUrl":
+			var err error
+			it.LogoURL, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "newsroomUrl":
+			var err error
+			it.NewsroomURL, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "tagline":
+			var err error
+			it.Tagline, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "roster":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				} else {
+					rawIf1 = []interface{}{v}
+				}
+			}
+			it.Roster = make([]*nrsignup.CharterRosterMember, len(rawIf1))
+			for idx1 := range rawIf1 {
+				var ptr2 nrsignup.CharterRosterMember
+				if rawIf1[idx1] != nil {
+					ptr2, err = UnmarshalRosterMemberInput(rawIf1[idx1])
+					it.Roster[idx1] = &ptr2
+				}
+			}
+			if err != nil {
+				return it, err
+			}
+		case "signatures":
+			var err error
+			var rawIf1 []interface{}
+			if v != nil {
+				if tmp1, ok := v.([]interface{}); ok {
+					rawIf1 = tmp1
+				} else {
+					rawIf1 = []interface{}{v}
+				}
+			}
+			it.Signatures = make([]*nrsignup.CharterConstitutionSignature, len(rawIf1))
+			for idx1 := range rawIf1 {
+				var ptr2 nrsignup.CharterConstitutionSignature
+				if rawIf1[idx1] != nil {
+					ptr2, err = UnmarshalConstitutionSignatureInput(rawIf1[idx1])
+					it.Signatures[idx1] = &ptr2
+				}
+			}
+			if err != nil {
+				return it, err
+			}
+		case "mission":
+			var err error
+			var ptr1 nrsignup.CharterMission
+			if v != nil {
+				ptr1, err = UnmarshalCharterMissionInput(v)
+				it.Mission = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "socialUrls":
+			var err error
+			var ptr1 nrsignup.CharterSocialURLs
+			if v != nil {
+				ptr1, err = UnmarshalCharterSocialUrlsInput(v)
+				it.SocialURLs = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalCharterMissionInput(v interface{}) (nrsignup.CharterMission, error) {
+	var it nrsignup.CharterMission
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "purpose":
+			var err error
+			it.Purpose, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "structure":
+			var err error
+			it.Structure, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "revenue":
+			var err error
+			it.Revenue, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "encumbrances":
+			var err error
+			it.Encumbrances, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "miscellaneous":
+			var err error
+			it.Miscellaneous, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalCharterSocialUrlsInput(v interface{}) (nrsignup.CharterSocialURLs, error) {
+	var it nrsignup.CharterSocialURLs
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "twitter":
+			var err error
+			it.Twitter, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "facebook":
+			var err error
+			it.Facebook, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "instagram":
+			var err error
+			it.Instagram, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "linkedIn":
+			var err error
+			it.Linkedin, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "youTube":
+			var err error
+			it.Youtube, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalConstitutionSignatureInput(v interface{}) (nrsignup.CharterConstitutionSignature, error) {
+	var it nrsignup.CharterConstitutionSignature
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "signer":
+			var err error
+			it.Signer, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "signature":
+			var err error
+			it.Signature, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "message":
+			var err error
+			it.Message, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalDateRange(v interface{}) (DateRange, error) {
 	var it DateRange
 	var asMap = v.(map[string]interface{})
@@ -12666,6 +12981,65 @@ func UnmarshalKycCreateApplicantInput(v interface{}) (KycCreateApplicantInput, e
 				it.Zipcode = &ptr1
 			}
 
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalRosterMemberInput(v interface{}) (nrsignup.CharterRosterMember, error) {
+	var it nrsignup.CharterRosterMember
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "role":
+			var err error
+			it.Role, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "bio":
+			var err error
+			it.Bio, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "ethAddress":
+			var err error
+			it.EthAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "socialUrls":
+			var err error
+			var ptr1 nrsignup.CharterSocialURLs
+			if v != nil {
+				ptr1, err = UnmarshalCharterSocialUrlsInput(v)
+				it.SocialURLs = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "avatarUrl":
+			var err error
+			it.AvatarURL, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "signature":
+			var err error
+			it.Signature, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -12916,6 +13290,7 @@ type Mutation {
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
+  nrsignupSaveCharter(charterData: CharterInput!): String!
   nrsignupRequestGrant: String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
@@ -13170,7 +13545,19 @@ type Newsroom {
   tcrApplyTx: String
 }
 
+input CharterInput {
+  name: String
+  logoUrl: String
+  newsroomUrl: String
+  tagline: String
+  roster: [RosterMemberInput]
+  signatures: [ConstitutionSignatureInput]
+  mission: CharterMissionInput
+  socialUrls: CharterSocialUrlsInput
+}
+
 type CharterContent {
+  name: String
   logoUrl: String
   newsroomUrl: String
   tagline: String
@@ -13178,6 +13565,16 @@ type CharterContent {
   signatures: [ConstitutionSignature]
   mission: CharterMission
   socialUrls: CharterSocialUrls
+}
+
+input RosterMemberInput {
+  name: String
+  role: String
+  bio: String
+  ethAddress: String
+  socialUrls: CharterSocialUrlsInput
+  avatarUrl: String
+  signature: String
 }
 
 type RosterMember {
@@ -13190,6 +13587,14 @@ type RosterMember {
   signature: String
 }
 
+input CharterSocialUrlsInput {
+  twitter: String
+  facebook: String
+  instagram: String
+  linkedIn: String
+  youTube: String
+}
+
 type CharterSocialUrls {
   twitter: String
   facebook: String
@@ -13198,10 +13603,24 @@ type CharterSocialUrls {
   youTube: String
 }
 
+input ConstitutionSignatureInput {
+  signer: String
+  signature: String
+  message: String
+}
+
 type ConstitutionSignature {
   signer: String
   signature: String
   message: String
+}
+
+input CharterMissionInput {
+  purpose: String
+  structure: String
+  revenue: String
+  encumbrances: String
+  miscellaneous: String
 }
 
 type CharterMission {

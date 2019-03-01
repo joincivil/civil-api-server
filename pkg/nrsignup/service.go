@@ -106,6 +106,24 @@ func (s *Service) SendWelcomeEmail(newsroomOwnerUID string) error {
 	return s.emailer.SendTemplateEmail(tmplReq)
 }
 
+// UpdateCharter takes a user id and a charter object and updates the SignupUserJSONData
+// for that user with that charter. it creates it if it doesnt exist
+func (s *Service) UpdateCharter(newsroomOwnerUID string, charter Charter) error {
+	charterUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
+		d.Charter = &charter
+		return d, nil
+	}
+
+	err := s.alterUserDataInJSONStore(newsroomOwnerUID, charterUpdateFn)
+
+	if err != nil {
+		newSignupData := SignupUserJSONData{Charter: &charter}
+		return s.saveUserJSONData(newsroomOwnerUID, &newSignupData)
+	}
+
+	return err
+}
+
 // RequestGrant sends a request for a grant to the Foundation on behalf of a newsroom via a
 // newsroom owner.
 // Sends along the data in the newsroom charter for review.
@@ -302,6 +320,7 @@ func (s *Service) setGrantApprovedFlag(newsroomOwnerUID string, approved bool) e
 	return s.alterUserDataInJSONStore(newsroomOwnerUID, grantApproveUpdateFn)
 }
 
+// RetrieveUserJSONData gets SignupUserJSONData for a given user
 func (s *Service) RetrieveUserJSONData(newsroomOwnerUID string) (*SignupUserJSONData, error) {
 	s.alterMutex.Lock()
 	defer s.alterMutex.Unlock()

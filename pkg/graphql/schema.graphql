@@ -119,6 +119,7 @@ type Mutation {
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
+  nrsignupSaveCharter(charterData: CharterInput!): String!
   nrsignupRequestGrant: String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
@@ -373,7 +374,19 @@ type Newsroom {
   tcrApplyTx: String
 }
 
+input CharterInput {
+  name: String
+  logoUrl: String
+  newsroomUrl: String
+  tagline: String
+  roster: [RosterMemberInput]
+  signatures: [ConstitutionSignatureInput]
+  mission: CharterMissionInput
+  socialUrls: CharterSocialUrlsInput
+}
+
 type CharterContent {
+  name: String
   logoUrl: String
   newsroomUrl: String
   tagline: String
@@ -381,6 +394,16 @@ type CharterContent {
   signatures: [ConstitutionSignature]
   mission: CharterMission
   socialUrls: CharterSocialUrls
+}
+
+input RosterMemberInput {
+  name: String
+  role: String
+  bio: String
+  ethAddress: String
+  socialUrls: CharterSocialUrlsInput
+  avatarUrl: String
+  signature: String
 }
 
 type RosterMember {
@@ -393,6 +416,14 @@ type RosterMember {
   signature: String
 }
 
+input CharterSocialUrlsInput {
+  twitter: String
+  facebook: String
+  instagram: String
+  linkedIn: String
+  youTube: String
+}
+
 type CharterSocialUrls {
   twitter: String
   facebook: String
@@ -401,10 +432,24 @@ type CharterSocialUrls {
   youTube: String
 }
 
+input ConstitutionSignatureInput {
+  signer: String
+  signature: String
+  message: String
+}
+
 type ConstitutionSignature {
   signer: String
   signature: String
   message: String
+}
+
+input CharterMissionInput {
+  purpose: String
+  structure: String
+  revenue: String
+  encumbrances: String
+  miscellaneous: String
 }
 
 type CharterMission {
