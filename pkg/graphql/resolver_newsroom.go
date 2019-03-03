@@ -6,9 +6,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
-	newsroomModel "github.com/joincivil/civil-api-server/pkg/nrsignup"
-	eventModel "github.com/joincivil/civil-events-processor/pkg/model"
+	model "github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/go-common/pkg/eth"
 
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -23,48 +21,48 @@ func (r *Resolver) ContentRevision() graphql.ContentRevisionResolver {
 
 type contentRevisionResolver struct{ *Resolver }
 
-func (r *contentRevisionResolver) ListingAddress(ctx context.Context, obj *eventModel.ContentRevision) (string, error) {
+func (r *contentRevisionResolver) ListingAddress(ctx context.Context, obj *model.ContentRevision) (string, error) {
 	return r.Resolver.DetermineAddrCase(obj.ListingAddress().Hex()), nil
 }
-func (r *contentRevisionResolver) Payload(ctx context.Context, obj *eventModel.ContentRevision) ([]graphql.ArticlePayload, error) {
+func (r *contentRevisionResolver) Payload(ctx context.Context, obj *model.ContentRevision) ([]graphql.ArticlePayload, error) {
 	data := []graphql.ArticlePayload{}
 	for key, val := range obj.Payload() {
 		meta := graphql.ArticlePayload{
 			// Make the key lower camel case for consistency with GraphQL field names
 			Key:   strcase.ToLowerCamel(key),
-			Value: eventModel.ArticlePayloadValue{Value: val},
+			Value: model.ArticlePayloadValue{Value: val},
 		}
 		data = append(data, meta)
 	}
 	return data, nil
 }
-func (r *contentRevisionResolver) EditorAddress(ctx context.Context, obj *eventModel.ContentRevision) (string, error) {
+func (r *contentRevisionResolver) EditorAddress(ctx context.Context, obj *model.ContentRevision) (string, error) {
 	return r.Resolver.DetermineAddrCase(obj.ListingAddress().Hex()), nil
 }
-func (r *contentRevisionResolver) ContractContentID(ctx context.Context, obj *eventModel.ContentRevision) (int, error) {
+func (r *contentRevisionResolver) ContractContentID(ctx context.Context, obj *model.ContentRevision) (int, error) {
 	bigInt := obj.ContractContentID()
 	return int(bigInt.Int64()), nil
 }
-func (r *contentRevisionResolver) ContractRevisionID(ctx context.Context, obj *eventModel.ContentRevision) (int, error) {
+func (r *contentRevisionResolver) ContractRevisionID(ctx context.Context, obj *model.ContentRevision) (int, error) {
 	bigInt := obj.ContractContentID()
 	return int(bigInt.Int64()), nil
 }
-func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *eventModel.ContentRevision) (int, error) {
+func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.ContentRevision) (int, error) {
 	return int(obj.RevisionDateTs()), nil
 }
 
 // QUERIES
 
 func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
-	after *string, lowercaseAddr *bool) ([]eventModel.ContentRevision, error) {
+	after *string, lowercaseAddr *bool) ([]model.ContentRevision, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	return r.NewsroomArticles(ctx, addr, first, after, lowercaseAddr)
 }
 
 func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, first *int,
-	after *string, lowercaseAddr *bool) ([]eventModel.ContentRevision, error) {
+	after *string, lowercaseAddr *bool) ([]model.ContentRevision, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
-	criteria := &eventModel.ContentRevisionCriteria{
+	criteria := &model.ContentRevisionCriteria{
 		LatestOnly: true,
 	}
 	if addr != nil && *addr != "" {
@@ -86,24 +84,9 @@ func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, firs
 		return nil, err
 	}
 
-	modelRevisions := make([]eventModel.ContentRevision, len(revisions))
+	modelRevisions := make([]model.ContentRevision, len(revisions))
 	for index, revision := range revisions {
 		modelRevisions[index] = *revision
 	}
 	return modelRevisions, nil
-}
-
-func (r *queryResolver) Newsroom(ctx context.Context) (*newsroomModel.SignupUserJSONData, error) {
-	token := auth.ForContext(ctx)
-	if token == nil {
-		return nil, ErrAccessDenied
-	}
-
-	newsroom, err := r.nrsignupService.RetrieveUserJSONData(token.Sub)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return newsroom, nil
 }

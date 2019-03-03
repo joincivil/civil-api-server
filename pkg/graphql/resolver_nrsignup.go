@@ -77,3 +77,18 @@ func (r *mutationResolver) NrsignupPollTcrApplication(ctx context.Context,
 	}
 	return ResponseNotImplemented, nil
 }
+
+func (r *queryResolver) Newsroom(ctx context.Context) (*model.SignupUserJSONData, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	newsroom, err := r.nrsignupService.RetrieveUserJSONData(token.Sub)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return newsroom, nil
+}
