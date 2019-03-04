@@ -123,6 +123,7 @@ func TestQuizComplete(t *testing.T) {
 	initUsers := map[string]*users.User{
 		"1": {UID: "1", Email: "foo@bar.com", EthAddress: "test"},
 		"2": {UID: "2", Email: "alice@bar.com"},
+		"3": {UID: "3", Email: "bob@bar.com", EthAddress: common.HexToAddress("0x001").String()},
 	}
 	persister := &testutils.InMemoryUserPersister{Users: initUsers}
 	updater := &testutils.ControllerUpdaterSpy{}
@@ -162,6 +163,22 @@ func TestQuizComplete(t *testing.T) {
 
 	if err != users.ErrInvalidState {
 		t.Fatal("completing quiz with no ETH address should fail with `users.ErrInvalidState`")
+	}
+
+	// when QuizStatus is "complete" and user is already on whitelist
+	user, err = svc.UpdateUser("3", &users.UserUpdateInput{
+		QuizStatus: "complete",
+	})
+	if err != nil {
+		t.Fatalf("not expecting an error: %v", err)
+	}
+
+	if updater.Calls != 2 {
+		t.Fatalf("expecting token controller spy to have calls = 2 but it was %v", updater.Calls)
+	}
+
+	if user.CivilianWhitelistTxID != common.HexToHash("0xf00").String() {
+		t.Fatalf("expecting user.CivilianWhitelistTxID to be common.Hash(0xf00) but it is %v", user.CivilianWhitelistTxID)
 	}
 
 }

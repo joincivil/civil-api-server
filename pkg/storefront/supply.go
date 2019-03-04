@@ -80,7 +80,7 @@ func (s *SupplyManager) UpdateTokensSold() (float64, error) {
 	for _, addr := range s.tokenSaleAddresses {
 		balance, err := s.cvlTokenContract.BalanceOf(&bind.CallOpts{}, addr)
 		if err != nil {
-			log.Errorf("Error receiving balanace for %v: err: %v", addr.String(), err)
+			log.Errorf("Error receiving balance for %v: err: %v", addr.String(), err)
 			return 0, err
 		}
 		availableTokens.Add(availableTokens, balance)

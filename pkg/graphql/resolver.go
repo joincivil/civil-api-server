@@ -19,6 +19,8 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
+
+	cemail "github.com/joincivil/go-common/pkg/email"
 )
 
 var (
@@ -55,6 +57,7 @@ type ResolverConfig struct {
 	JSONbService        *jsonstore.Service
 	NrsignupService     *nrsignup.Service
 	StorefrontService   *storefront.Service
+	EmailListMembers    cemail.ListMemberManager
 	LowercaseAddr       *bool
 }
 
@@ -76,6 +79,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		jsonbService:        config.JSONbService,
 		nrsignupService:     config.NrsignupService,
 		storefrontService:   config.StorefrontService,
+		emailListMembers:    config.EmailListMembers,
 		lowercaseAddr:       config.LowercaseAddr,
 	}
 }
@@ -97,6 +101,7 @@ type Resolver struct {
 	jsonbService        *jsonstore.Service
 	nrsignupService     *nrsignup.Service
 	storefrontService   *storefront.Service
+	emailListMembers    cemail.ListMemberManager
 	lowercaseAddr       *bool
 }
 
