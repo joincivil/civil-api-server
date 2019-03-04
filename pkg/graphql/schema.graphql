@@ -69,7 +69,7 @@ type Query {
     after: String
     lowercaseAddr: Boolean = True
   ): [ContentRevision!]!
-  newsroom: Newsroom
+  nrsignupNewsroom: NrsignupNewsroom
 
   # User Queries
   currentUser: User
@@ -362,7 +362,7 @@ input UserUpdateInput {
   quizStatus: String
 }
 
-type Newsroom {
+type NrsignupNewsroom {
   onboardedTs: Int
   charter: CharterContent
   charterLastUpdated: Int
