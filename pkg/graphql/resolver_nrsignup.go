@@ -34,13 +34,13 @@ func (r *mutationResolver) NrsignupSaveCharter(ctx context.Context, charterData 
 	return ResponseOK, nil
 }
 
-func (r *mutationResolver) NrsignupRequestGrant(ctx context.Context) (string, error) {
+func (r *mutationResolver) NrsignupRequestGrant(ctx context.Context, requested bool) (string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return "", ErrAccessDenied
 	}
 
-	err := r.nrsignupService.RequestGrant(token.Sub)
+	err := r.nrsignupService.RequestGrant(token.Sub, requested)
 	if err != nil {
 		return "", err
 	}

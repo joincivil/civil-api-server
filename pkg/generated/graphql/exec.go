@@ -137,6 +137,7 @@ type ComplexityRoot struct {
 		Instagram func(childComplexity int) int
 		LinkedIn  func(childComplexity int) int
 		YouTube   func(childComplexity int) int
+		Email     func(childComplexity int) int
 	}
 
 	ConstitutionSignature struct {
@@ -261,7 +262,7 @@ type ComplexityRoot struct {
 		KycGenerateSdkToken               func(childComplexity int, applicantID string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupSaveCharter               func(childComplexity int, charterData nrsignup.Charter) int
-		NrsignupRequestGrant              func(childComplexity int) int
+		NrsignupRequestGrant              func(childComplexity int, requested bool) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
@@ -428,7 +429,7 @@ type MutationResolver interface {
 	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData nrsignup.Charter) (string, error)
-	NrsignupRequestGrant(ctx context.Context) (string, error)
+	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
 	NrsignupApproveGrant(ctx context.Context, approved bool, newsroomOwnerUID string) (string, error)
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
@@ -749,6 +750,21 @@ func field_Mutation_nrsignupSaveCharter_args(rawArgs map[string]interface{}) (ma
 		}
 	}
 	args["charterData"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_nrsignupRequestGrant_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 bool
+	if tmp, ok := rawArgs["requested"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalBoolean(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["requested"] = arg0
 	return args, nil
 
 }
@@ -2029,6 +2045,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CharterSocialUrls.YouTube(childComplexity), true
 
+	case "CharterSocialUrls.email":
+		if e.complexity.CharterSocialUrls.Email == nil {
+			break
+		}
+
+		return e.complexity.CharterSocialUrls.Email(childComplexity), true
+
 	case "ConstitutionSignature.signer":
 		if e.complexity.ConstitutionSignature.Signer == nil {
 			break
@@ -2694,7 +2717,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Mutation.NrsignupRequestGrant(childComplexity), true
+		args, err := field_Mutation_nrsignupRequestGrant_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NrsignupRequestGrant(childComplexity, args["requested"].(bool)), true
 
 	case "Mutation.nrsignupApproveGrant":
 		if e.complexity.Mutation.NrsignupApproveGrant == nil {
@@ -5199,6 +5227,8 @@ func (ec *executionContext) _CharterSocialUrls(ctx context.Context, sel ast.Sele
 			out.Values[i] = ec._CharterSocialUrls_linkedIn(ctx, field, obj)
 		case "youTube":
 			out.Values[i] = ec._CharterSocialUrls_youTube(ctx, field, obj)
+		case "email":
+			out.Values[i] = ec._CharterSocialUrls_email(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5320,6 +5350,30 @@ func (ec *executionContext) _CharterSocialUrls_youTube(ctx context.Context, fiel
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Youtube, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _CharterSocialUrls_email(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "CharterSocialUrls",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -8675,16 +8729,22 @@ func (ec *executionContext) _Mutation_nrsignupSaveCharter(ctx context.Context, f
 func (ec *executionContext) _Mutation_nrsignupRequestGrant(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_nrsignupRequestGrant_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
 	rctx := &graphql.ResolverContext{
 		Object: "Mutation",
-		Args:   nil,
+		Args:   args,
 		Field:  field,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().NrsignupRequestGrant(rctx)
+		return ec.resolvers.Mutation().NrsignupRequestGrant(rctx, args["requested"].(bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -12740,6 +12800,12 @@ func UnmarshalCharterSocialUrlsInput(v interface{}) (nrsignup.CharterSocialURLs,
 			if err != nil {
 				return it, err
 			}
+		case "email":
+			var err error
+			it.Email, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -13291,7 +13357,7 @@ type Mutation {
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
   nrsignupSaveCharter(charterData: CharterInput!): String!
-  nrsignupRequestGrant: String!
+  nrsignupRequestGrant(requested: Boolean!): String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
@@ -13593,6 +13659,7 @@ input CharterSocialUrlsInput {
   instagram: String
   linkedIn: String
   youTube: String
+  email: String
 }
 
 type CharterSocialUrls {
@@ -13601,6 +13668,7 @@ type CharterSocialUrls {
   instagram: String
   linkedIn: String
   youTube: String
+  email: String
 }
 
 input ConstitutionSignatureInput {

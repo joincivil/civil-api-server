@@ -120,7 +120,7 @@ type Mutation {
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
   nrsignupSaveCharter(charterData: CharterInput!): String!
-  nrsignupRequestGrant: String!
+  nrsignupRequestGrant(requested: Boolean!): String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
@@ -422,6 +422,7 @@ input CharterSocialUrlsInput {
   instagram: String
   linkedIn: String
   youTube: String
+  email: String
 }
 
 type CharterSocialUrls {
@@ -430,6 +431,7 @@ type CharterSocialUrls {
   instagram: String
   linkedIn: String
   youTube: String
+  email: String
 }
 
 input ConstitutionSignatureInput {
