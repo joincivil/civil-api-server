@@ -272,7 +272,7 @@ type ComplexityRoot struct {
 		UserUpdate                        func(childComplexity int, uid *string, input *users.UserUpdateInput) int
 	}
 
-	Newsroom struct {
+	NrsignupNewsroom struct {
 		OnboardedTs        func(childComplexity int) int
 		Charter            func(childComplexity int) int
 		CharterLastUpdated func(childComplexity int) int
@@ -310,7 +310,7 @@ type ComplexityRoot struct {
 		TcrListing                func(childComplexity int, addr string, lowercaseAddr *bool) int
 		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) int
 		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, lowercaseAddr *bool) int
-		Newsroom                  func(childComplexity int) int
+		NrsignupNewsroom          func(childComplexity int) int
 		CurrentUser               func(childComplexity int) int
 		StorefrontEthPrice        func(childComplexity int) int
 		StorefrontCvlPrice        func(childComplexity int) int
@@ -458,7 +458,7 @@ type QueryResolver interface {
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) (*ListingResultCursor, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, lowercaseAddr *bool) ([]model.ContentRevision, error)
-	Newsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
+	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
 	StorefrontCvlPrice(ctx context.Context) (*float64, error)
@@ -2803,68 +2803,68 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UserUpdate(childComplexity, args["uid"].(*string), args["input"].(*users.UserUpdateInput)), true
 
-	case "Newsroom.onboardedTs":
-		if e.complexity.Newsroom.OnboardedTs == nil {
+	case "NrsignupNewsroom.onboardedTs":
+		if e.complexity.NrsignupNewsroom.OnboardedTs == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.OnboardedTs(childComplexity), true
+		return e.complexity.NrsignupNewsroom.OnboardedTs(childComplexity), true
 
-	case "Newsroom.charter":
-		if e.complexity.Newsroom.Charter == nil {
+	case "NrsignupNewsroom.charter":
+		if e.complexity.NrsignupNewsroom.Charter == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.Charter(childComplexity), true
+		return e.complexity.NrsignupNewsroom.Charter(childComplexity), true
 
-	case "Newsroom.charterLastUpdated":
-		if e.complexity.Newsroom.CharterLastUpdated == nil {
+	case "NrsignupNewsroom.charterLastUpdated":
+		if e.complexity.NrsignupNewsroom.CharterLastUpdated == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.CharterLastUpdated(childComplexity), true
+		return e.complexity.NrsignupNewsroom.CharterLastUpdated(childComplexity), true
 
-	case "Newsroom.grantRequested":
-		if e.complexity.Newsroom.GrantRequested == nil {
+	case "NrsignupNewsroom.grantRequested":
+		if e.complexity.NrsignupNewsroom.GrantRequested == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.GrantRequested(childComplexity), true
+		return e.complexity.NrsignupNewsroom.GrantRequested(childComplexity), true
 
-	case "Newsroom.grantApproved":
-		if e.complexity.Newsroom.GrantApproved == nil {
+	case "NrsignupNewsroom.grantApproved":
+		if e.complexity.NrsignupNewsroom.GrantApproved == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.GrantApproved(childComplexity), true
+		return e.complexity.NrsignupNewsroom.GrantApproved(childComplexity), true
 
-	case "Newsroom.newsroomDeployTx":
-		if e.complexity.Newsroom.NewsroomDeployTx == nil {
+	case "NrsignupNewsroom.newsroomDeployTx":
+		if e.complexity.NrsignupNewsroom.NewsroomDeployTx == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.NewsroomDeployTx(childComplexity), true
+		return e.complexity.NrsignupNewsroom.NewsroomDeployTx(childComplexity), true
 
-	case "Newsroom.newsroomAddress":
-		if e.complexity.Newsroom.NewsroomAddress == nil {
+	case "NrsignupNewsroom.newsroomAddress":
+		if e.complexity.NrsignupNewsroom.NewsroomAddress == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.NewsroomAddress(childComplexity), true
+		return e.complexity.NrsignupNewsroom.NewsroomAddress(childComplexity), true
 
-	case "Newsroom.newsroomName":
-		if e.complexity.Newsroom.NewsroomName == nil {
+	case "NrsignupNewsroom.newsroomName":
+		if e.complexity.NrsignupNewsroom.NewsroomName == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.NewsroomName(childComplexity), true
+		return e.complexity.NrsignupNewsroom.NewsroomName(childComplexity), true
 
-	case "Newsroom.tcrApplyTx":
-		if e.complexity.Newsroom.TcrApplyTx == nil {
+	case "NrsignupNewsroom.tcrApplyTx":
+		if e.complexity.NrsignupNewsroom.TcrApplyTx == nil {
 			break
 		}
 
-		return e.complexity.Newsroom.TcrApplyTx(childComplexity), true
+		return e.complexity.NrsignupNewsroom.TcrApplyTx(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -3059,12 +3059,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.NewsroomArticles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool)), true
 
-	case "Query.newsroom":
-		if e.complexity.Query.Newsroom == nil {
+	case "Query.nrsignupNewsroom":
+		if e.complexity.Query.NrsignupNewsroom == nil {
 			break
 		}
 
-		return e.complexity.Query.Newsroom(childComplexity), true
+		return e.complexity.Query.NrsignupNewsroom(childComplexity), true
 
 	case "Query.currentUser":
 		if e.complexity.Query.CurrentUser == nil {
@@ -8986,11 +8986,11 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 	return ec._User(ctx, field.Selections, res)
 }
 
-var newsroomImplementors = []string{"Newsroom"}
+var nrsignupNewsroomImplementors = []string{"NrsignupNewsroom"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Newsroom(ctx context.Context, sel ast.SelectionSet, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, newsroomImplementors)
+func (ec *executionContext) _NrsignupNewsroom(ctx context.Context, sel ast.SelectionSet, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, nrsignupNewsroomImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
 	invalid := false
@@ -8999,25 +8999,25 @@ func (ec *executionContext) _Newsroom(ctx context.Context, sel ast.SelectionSet,
 
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Newsroom")
+			out.Values[i] = graphql.MarshalString("NrsignupNewsroom")
 		case "onboardedTs":
-			out.Values[i] = ec._Newsroom_onboardedTs(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_onboardedTs(ctx, field, obj)
 		case "charter":
-			out.Values[i] = ec._Newsroom_charter(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_charter(ctx, field, obj)
 		case "charterLastUpdated":
-			out.Values[i] = ec._Newsroom_charterLastUpdated(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_charterLastUpdated(ctx, field, obj)
 		case "grantRequested":
-			out.Values[i] = ec._Newsroom_grantRequested(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_grantRequested(ctx, field, obj)
 		case "grantApproved":
-			out.Values[i] = ec._Newsroom_grantApproved(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_grantApproved(ctx, field, obj)
 		case "newsroomDeployTx":
-			out.Values[i] = ec._Newsroom_newsroomDeployTx(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_newsroomDeployTx(ctx, field, obj)
 		case "newsroomAddress":
-			out.Values[i] = ec._Newsroom_newsroomAddress(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_newsroomAddress(ctx, field, obj)
 		case "newsroomName":
-			out.Values[i] = ec._Newsroom_newsroomName(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_newsroomName(ctx, field, obj)
 		case "tcrApplyTx":
-			out.Values[i] = ec._Newsroom_tcrApplyTx(ctx, field, obj)
+			out.Values[i] = ec._NrsignupNewsroom_tcrApplyTx(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9030,11 +9030,11 @@ func (ec *executionContext) _Newsroom(ctx context.Context, sel ast.SelectionSet,
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_onboardedTs(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_onboardedTs(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9054,11 +9054,11 @@ func (ec *executionContext) _Newsroom_onboardedTs(ctx context.Context, field gra
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_charter(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_charter(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9083,11 +9083,11 @@ func (ec *executionContext) _Newsroom_charter(ctx context.Context, field graphql
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_charterLastUpdated(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_charterLastUpdated(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9107,11 +9107,11 @@ func (ec *executionContext) _Newsroom_charterLastUpdated(ctx context.Context, fi
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_grantRequested(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_grantRequested(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9135,11 +9135,11 @@ func (ec *executionContext) _Newsroom_grantRequested(ctx context.Context, field 
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_grantApproved(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_grantApproved(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9163,11 +9163,11 @@ func (ec *executionContext) _Newsroom_grantApproved(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_newsroomDeployTx(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_newsroomDeployTx(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9187,11 +9187,11 @@ func (ec *executionContext) _Newsroom_newsroomDeployTx(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_newsroomAddress(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_newsroomAddress(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9211,11 +9211,11 @@ func (ec *executionContext) _Newsroom_newsroomAddress(ctx context.Context, field
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_newsroomName(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_newsroomName(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9235,11 +9235,11 @@ func (ec *executionContext) _Newsroom_newsroomName(ctx context.Context, field gr
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Newsroom_tcrApplyTx(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
+func (ec *executionContext) _NrsignupNewsroom_tcrApplyTx(ctx context.Context, field graphql.CollectedField, obj *nrsignup.SignupUserJSONData) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
-		Object: "Newsroom",
+		Object: "NrsignupNewsroom",
 		Args:   nil,
 		Field:  field,
 	}
@@ -9660,10 +9660,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				wg.Done()
 			}(i, field)
-		case "newsroom":
+		case "nrsignupNewsroom":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._Query_newsroom(ctx, field)
+				out.Values[i] = ec._Query_nrsignupNewsroom(ctx, field)
 				wg.Done()
 			}(i, field)
 		case "currentUser":
@@ -10324,7 +10324,7 @@ func (ec *executionContext) _Query_newsroomArticles(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Query_newsroom(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+func (ec *executionContext) _Query_nrsignupNewsroom(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -10336,7 +10336,7 @@ func (ec *executionContext) _Query_newsroom(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Newsroom(rctx)
+		return ec.resolvers.Query().NrsignupNewsroom(rctx)
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -10349,7 +10349,7 @@ func (ec *executionContext) _Query_newsroom(ctx context.Context, field graphql.C
 		return graphql.Null
 	}
 
-	return ec._Newsroom(ctx, field.Selections, res)
+	return ec._NrsignupNewsroom(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -13306,7 +13306,7 @@ type Query {
     after: String
     lowercaseAddr: Boolean = True
   ): [ContentRevision!]!
-  newsroom: Newsroom
+  nrsignupNewsroom: NrsignupNewsroom
 
   # User Queries
   currentUser: User
@@ -13599,7 +13599,7 @@ input UserUpdateInput {
   quizStatus: String
 }
 
-type Newsroom {
+type NrsignupNewsroom {
   onboardedTs: Int
   charter: CharterContent
   charterLastUpdated: Int

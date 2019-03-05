@@ -56,7 +56,7 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONField
   Jsonb:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb
-  Newsroom:
+  NrsignupNewsroom:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.SignupUserJSONData
   CharterContent:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.Charter
