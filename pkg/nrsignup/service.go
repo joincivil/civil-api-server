@@ -106,12 +106,30 @@ func (s *Service) SendWelcomeEmail(newsroomOwnerUID string) error {
 	return s.emailer.SendTemplateEmail(tmplReq)
 }
 
+// UpdateCharter takes a user id and a charter object and updates the SignupUserJSONData
+// for that user with that charter. it creates it if it doesnt exist
+func (s *Service) UpdateCharter(newsroomOwnerUID string, charter Charter) error {
+	charterUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
+		d.Charter = &charter
+		return d, nil
+	}
+
+	err := s.alterUserDataInJSONStore(newsroomOwnerUID, charterUpdateFn)
+
+	if err != nil {
+		newSignupData := SignupUserJSONData{Charter: &charter}
+		return s.saveUserJSONData(newsroomOwnerUID, &newSignupData)
+	}
+
+	return err
+}
+
 // RequestGrant sends a request for a grant to the Foundation on behalf of a newsroom via a
 // newsroom owner.
 // Sends along the data in the newsroom charter for review.
 // Will send emails to the Foundation and newsroom owner.
 // The Foundation email will have magic links to approve/reject the grant.
-func (s *Service) RequestGrant(newsroomOwnerUID string) error {
+func (s *Service) RequestGrant(newsroomOwnerUID string, requested bool) error {
 	user, err := s.userService.MaybeGetUser(users.UserCriteria{
 		UID: newsroomOwnerUID,
 	})
@@ -123,12 +141,12 @@ func (s *Service) RequestGrant(newsroomOwnerUID string) error {
 	}
 
 	// Set the grant requested flag to true for this user UID
-	err = s.setGrantRequestedFlag(newsroomOwnerUID, true)
-	if err != nil {
+	err = s.setGrantRequestedFlag(newsroomOwnerUID, requested)
+	if err != nil || !requested {
 		return err
 	}
 
-	signupData, err := s.retrieveUserJSONData(newsroomOwnerUID)
+	signupData, err := s.RetrieveUserJSONData(newsroomOwnerUID)
 	if err != nil {
 		return err
 	}
@@ -262,7 +280,9 @@ func (s *Service) buildCharterDataIntoTemplate(tmplData email.TemplateData,
 	tmplData["nr_url"] = newsroomCharter.NewsroomURL
 	tmplData["nr_tagline"] = newsroomCharter.Tagline
 	tmplData["nr_mission"] = newsroomCharter.Mission.AsMap()
-	tmplData["nr_social_urls"] = newsroomCharter.SocialURLs.AsMap()
+	if newsroomCharter.SocialURLs != nil {
+		tmplData["nr_social_urls"] = newsroomCharter.SocialURLs.AsMap()
+	}
 
 	roster := []map[string]interface{}{}
 	for _, member := range newsroomCharter.Roster {
@@ -302,7 +322,8 @@ func (s *Service) setGrantApprovedFlag(newsroomOwnerUID string, approved bool) e
 	return s.alterUserDataInJSONStore(newsroomOwnerUID, grantApproveUpdateFn)
 }
 
-func (s *Service) retrieveUserJSONData(newsroomOwnerUID string) (*SignupUserJSONData, error) {
+// RetrieveUserJSONData gets SignupUserJSONData for a given user
+func (s *Service) RetrieveUserJSONData(newsroomOwnerUID string) (*SignupUserJSONData, error) {
 	s.alterMutex.Lock()
 	defer s.alterMutex.Unlock()
 
@@ -353,7 +374,7 @@ func (s *Service) saveUserJSONData(newsroomOwnerUID string, signupData *SignupUs
 type userDataUpdateFn func(*SignupUserJSONData) (*SignupUserJSONData, error)
 
 func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn userDataUpdateFn) error {
-	signupData, err := s.retrieveUserJSONData(newsroomOwnerUID)
+	signupData, err := s.RetrieveUserJSONData(newsroomOwnerUID)
 	if err != nil {
 		return err
 	}

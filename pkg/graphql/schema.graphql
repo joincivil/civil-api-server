@@ -69,6 +69,7 @@ type Query {
     after: String
     lowercaseAddr: Boolean = True
   ): [ContentRevision!]!
+  nrsignupNewsroom: NrsignupNewsroom
 
   # User Queries
   currentUser: User
@@ -118,7 +119,8 @@ type Mutation {
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
-  nrsignupRequestGrant: String!
+  nrsignupSaveCharter(charterData: CharterInput!): String!
+  nrsignupRequestGrant(requested: Boolean!): String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
@@ -358,6 +360,106 @@ input UserUpdateInput {
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
+}
+
+type NrsignupNewsroom {
+  onboardedTs: Int
+  charter: CharterContent
+  charterLastUpdated: Int
+  grantRequested: Boolean
+  grantApproved: Boolean
+  newsroomDeployTx: String
+  newsroomAddress: String
+  newsroomName: String
+  tcrApplyTx: String
+}
+
+input CharterInput {
+  name: String
+  logoUrl: String
+  newsroomUrl: String
+  tagline: String
+  roster: [RosterMemberInput]
+  signatures: [ConstitutionSignatureInput]
+  mission: CharterMissionInput
+  socialUrls: CharterSocialUrlsInput
+}
+
+type CharterContent {
+  name: String
+  logoUrl: String
+  newsroomUrl: String
+  tagline: String
+  roster: [RosterMember]
+  signatures: [ConstitutionSignature]
+  mission: CharterMission
+  socialUrls: CharterSocialUrls
+}
+
+input RosterMemberInput {
+  name: String
+  role: String
+  bio: String
+  ethAddress: String
+  socialUrls: CharterSocialUrlsInput
+  avatarUrl: String
+  signature: String
+}
+
+type RosterMember {
+  name: String
+  role: String
+  bio: String
+  ethAddress: String
+  socialUrls: CharterSocialUrls
+  avatarUrl: String
+  signature: String
+}
+
+input CharterSocialUrlsInput {
+  twitter: String
+  facebook: String
+  instagram: String
+  linkedIn: String
+  youTube: String
+  email: String
+}
+
+type CharterSocialUrls {
+  twitter: String
+  facebook: String
+  instagram: String
+  linkedIn: String
+  youTube: String
+  email: String
+}
+
+input ConstitutionSignatureInput {
+  signer: String
+  signature: String
+  message: String
+}
+
+type ConstitutionSignature {
+  signer: String
+  signature: String
+  message: String
+}
+
+input CharterMissionInput {
+  purpose: String
+  structure: String
+  revenue: String
+  encumbrances: String
+  miscellaneous: String
+}
+
+type CharterMission {
+  purpose: String
+  structure: String
+  revenue: String
+  encumbrances: String
+  miscellaneous: String
 }
 
 ## JSONb Store object schemas

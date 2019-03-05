@@ -14,6 +14,7 @@ type Newsroom struct {
 // FE client store as defined here
 // https://github.com/joincivil/Civil/blob/master/packages/core/src/types.ts#L73-L87
 type Charter struct {
+	Name        string                          `json:"name,omitempty"`
 	LogoURL     string                          `json:"logoUrl,omitempty"`
 	NewsroomURL string                          `json:"newsroomUrl,omitempty"`
 	Tagline     string                          `json:"tagline,omitempty"`
@@ -102,6 +103,7 @@ type CharterSocialURLs struct {
 	Instagram string `json:"instagram,omitempty"`
 	Linkedin  string `json:"linkedin,omitempty"`
 	Youtube   string `json:"youtube,omitempty"`
+	Email     string `json:"email,omitempty"`
 }
 
 // AsMap converts the CharterSocialURL to a map
@@ -112,6 +114,7 @@ func (c *CharterSocialURLs) AsMap() map[string]interface{} {
 	social["instagram"] = c.Instagram
 	social["linkedin"] = c.Linkedin
 	social["youtube"] = c.Youtube
+	social["email"] = c.Email
 	return social
 }
 
