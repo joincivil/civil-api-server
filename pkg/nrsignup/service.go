@@ -158,6 +158,8 @@ func (s *Service) RequestGrant(newsroomOwnerUID string, requested bool) error {
 	if err != nil {
 		return err
 	}
+	tmplData["nr_applicant_email"] = user.Email
+	tmplData["nr_applicant_address"] = user.EthAddress
 
 	tmplReq := &email.SendTemplateEmailRequest{
 		ToName:       civilPipedriveEmail,
