@@ -129,7 +129,7 @@ func (s *Service) UpdateCharter(newsroomOwnerUID string, charter Charter) error 
 // Sends along the data in the newsroom charter for review.
 // Will send emails to the Foundation and newsroom owner.
 // The Foundation email will have magic links to approve/reject the grant.
-func (s *Service) RequestGrant(newsroomOwnerUID string) error {
+func (s *Service) RequestGrant(newsroomOwnerUID string, requested bool) error {
 	user, err := s.userService.MaybeGetUser(users.UserCriteria{
 		UID: newsroomOwnerUID,
 	})
@@ -141,8 +141,8 @@ func (s *Service) RequestGrant(newsroomOwnerUID string) error {
 	}
 
 	// Set the grant requested flag to true for this user UID
-	err = s.setGrantRequestedFlag(newsroomOwnerUID, true)
-	if err != nil {
+	err = s.setGrantRequestedFlag(newsroomOwnerUID, requested)
+	if err != nil || !requested {
 		return err
 	}
 
@@ -158,6 +158,8 @@ func (s *Service) RequestGrant(newsroomOwnerUID string) error {
 	if err != nil {
 		return err
 	}
+	tmplData["nr_applicant_email"] = user.Email
+	tmplData["nr_applicant_address"] = user.EthAddress
 
 	tmplReq := &email.SendTemplateEmailRequest{
 		ToName:       civilPipedriveEmail,
@@ -280,7 +282,9 @@ func (s *Service) buildCharterDataIntoTemplate(tmplData email.TemplateData,
 	tmplData["nr_url"] = newsroomCharter.NewsroomURL
 	tmplData["nr_tagline"] = newsroomCharter.Tagline
 	tmplData["nr_mission"] = newsroomCharter.Mission.AsMap()
-	tmplData["nr_social_urls"] = newsroomCharter.SocialURLs.AsMap()
+	if newsroomCharter.SocialURLs != nil {
+		tmplData["nr_social_urls"] = newsroomCharter.SocialURLs.AsMap()
+	}
 
 	roster := []map[string]interface{}{}
 	for _, member := range newsroomCharter.Roster {
