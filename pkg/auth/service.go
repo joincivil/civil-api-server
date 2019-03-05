@@ -312,7 +312,7 @@ func (s *Service) buildLoginResponse(user *users.User) (*LoginResponse, error) {
 }
 
 func (s *Service) buildSignupLoginConfirmLink(emailToken string, verifyURI string) string {
-	link := fmt.Sprintf("%v/%v/%v", s.signupLoginProtoHost, verifyURI, emailToken)
+	link := fmt.Sprintf("%v/%v?jwt=%v", s.signupLoginProtoHost, verifyURI, emailToken)
 	return link
 }
 
