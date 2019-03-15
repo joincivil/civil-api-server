@@ -16,6 +16,19 @@ var (
 	ErrUserExists = errors.New("User already exists with this identifier")
 	// ErrInvalidState is returned when a trying to
 	ErrInvalidState = errors.New("User already exists with this identifier")
+
+	quizPayloadFieldName          = "QuizPayload"
+	quizStatusFieldName           = "QuizStatus"
+	onfidoApplicantIDFieldName    = "OnfidoApplicantID"
+	onfidoCheckIDFieldName        = "OnfidoCheckID"
+	kycStatusFieldName            = "KycStatus"
+	purchaseTxHashFieldName       = "PurchaseTxHashesStr"
+	newsroomStepFieldName         = "NewsroomStep"
+	newsroomFurthestStepFieldName = "NewsroomFurthestStep"
+	newsroomLastSeenFieldName     = "NewsroomLastSeen"
+	whitelistTxHashFieldName      = "CivilianWhitelistTxID"
+
+	quizStatusComplete = "complete"
 )
 
 // UserService is an implementation of UserService that uses Postgres for persistence
@@ -70,8 +83,9 @@ func (s *UserService) CreateUser(identifier UserCriteria) (*User, error) {
 	}
 
 	user := &User{
-		Email:      identifier.Email,
-		EthAddress: identifier.EthAddress,
+		Email:       identifier.Email,
+		EthAddress:  identifier.EthAddress,
+		AppReferral: identifier.AppReferral,
 	}
 	newUserErr := s.userPersister.SaveUser(user)
 	if newUserErr != nil {
@@ -89,6 +103,9 @@ type UserUpdateInput struct {
 	QuizPayload         cpostgres.JsonbPayload `json:"quizPayload"`
 	QuizStatus          string                 `json:"quizStatus"`
 	PurchaseTxHashesStr string                 `json:"purchaseTxHashesStr"`
+	NrStep              *int                   `json:"nrStep"`
+	NrFurthestStep      *int                   `json:"nrFurthestStep"`
+	NrLastSeen          *int                   `json:"nrLastSeen"`
 }
 
 // UpdateUser updates a user
@@ -102,41 +119,53 @@ func (s *UserService) UpdateUser(uid string, input *UserUpdateInput) (*User, err
 	fields := []string{}
 	if input.QuizPayload != nil {
 		user.QuizPayload = input.QuizPayload
-		fields = append(fields, "QuizPayload")
+		fields = append(fields, quizPayloadFieldName)
 	}
 	if input.OnfidoApplicantID != "" {
 		user.OnfidoApplicantID = input.OnfidoApplicantID
-		fields = append(fields, "OnfidoApplicantID")
+		fields = append(fields, onfidoApplicantIDFieldName)
 	}
 	if input.OnfidoCheckID != "" {
 		user.OnfidoCheckID = input.OnfidoCheckID
-		fields = append(fields, "OnfidoCheckID")
+		fields = append(fields, onfidoCheckIDFieldName)
 	}
 	if input.KycStatus != "" {
 		user.KycStatus = input.KycStatus
-		fields = append(fields, "KycStatus")
+		fields = append(fields, kycStatusFieldName)
 	}
 	if input.PurchaseTxHashesStr != "" {
 		user.PurchaseTxHashesStr = input.PurchaseTxHashesStr
-		fields = append(fields, "PurchaseTxHashesStr")
+		fields = append(fields, purchaseTxHashFieldName)
+	}
+	if input.NrStep != nil {
+		user.NewsroomStep = *input.NrStep
+		fields = append(fields, newsroomStepFieldName)
+	}
+	if input.NrFurthestStep != nil {
+		user.NewsroomFurthestStep = *input.NrFurthestStep
+		fields = append(fields, newsroomFurthestStepFieldName)
+	}
+	if input.NrLastSeen != nil {
+		user.NewsroomLastSeen = int64(*input.NrLastSeen)
+		fields = append(fields, newsroomLastSeenFieldName)
 	}
 
 	if input.QuizStatus != "" {
 		// if the QuizStatus changes to complete we need to add the user to the Civilian Whitelist on the token controller
-		if input.QuizStatus == "complete" && user.QuizStatus != "complete" {
+		if input.QuizStatus == quizStatusComplete && user.QuizStatus != quizStatusComplete {
 			if user.EthAddress == "" {
 				return nil, ErrInvalidState
 			}
 			addr := common.HexToAddress(user.EthAddress)
-			txHash, err := s.controllerUpdater.AddToCivilians(addr)
-			if err != nil && err != tokencontroller.ErrAlreadyOnList {
-				return nil, err
+			txHash, adderr := s.controllerUpdater.AddToCivilians(addr)
+			if adderr != nil && adderr != tokencontroller.ErrAlreadyOnList {
+				return nil, adderr
 			}
 			user.CivilianWhitelistTxID = txHash.String()
-			fields = append(fields, "CivilianWhitelistTxID")
+			fields = append(fields, whitelistTxHashFieldName)
 		}
 		user.QuizStatus = input.QuizStatus
-		fields = append(fields, "QuizStatus")
+		fields = append(fields, quizStatusFieldName)
 	}
 
 	err = s.userPersister.UpdateUser(user, fields)
