@@ -186,6 +186,10 @@ func initUserPersister(config *utils.GraphQLConfig) (*users.PostgresPersister, e
 	if err != nil {
 		return nil, fmt.Errorf("Error creating indices: err: %v", err)
 	}
+	err = persister.RunMigrations()
+	if err != nil {
+		return nil, fmt.Errorf("Error running migrations: err: %v", err)
+	}
 	return persister, nil
 }
 
