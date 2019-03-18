@@ -35,6 +35,10 @@ type User struct {
 	DateUpdated           int64                  `db:"date_updated"`
 	PurchaseTxHashesStr   string                 `db:"purchase_txhashes"` // Comma separated
 	CivilianWhitelistTxID string                 `db:"civilian_whitelist_tx_id"`
+	AppReferral           string                 `db:"app_refer"`
+	NewsroomStep          int                    `db:"nr_step"`
+	NewsroomFurthestStep  int                    `db:"nr_far_step"`
+	NewsroomLastSeen      int64                  `db:"nr_last_seen"`
 }
 
 // TokenControllerUpdater describes methods that the user service will use to manage the whitelists a user is a member of

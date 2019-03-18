@@ -13,4 +13,5 @@ type UserCriteria struct {
 	Email         string `db:"email"`
 	EthAddress    string `db:"eth_address"`
 	OnfidoCheckID string `db:"onfido_check_id"`
+	AppReferral   string `db:"app_refer"`
 }

@@ -341,6 +341,9 @@ type ComplexityRoot struct {
 		CivilianWhitelistTxId    func(childComplexity int) int
 		Invoices                 func(childComplexity int) int
 		IsTokenFoundryRegistered func(childComplexity int) int
+		NrStep                   func(childComplexity int) int
+		NrFurthestStep           func(childComplexity int) int
+		NrLastSeen               func(childComplexity int) int
 	}
 }
 
@@ -469,6 +472,9 @@ type QueryResolver interface {
 type UserResolver interface {
 	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
 	IsTokenFoundryRegistered(ctx context.Context, obj *users.User) (*bool, error)
+	NrStep(ctx context.Context, obj *users.User) (*int, error)
+	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
+	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
 }
 
 func field_Mutation_authSignupEth_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -3248,6 +3254,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.IsTokenFoundryRegistered(childComplexity), true
+
+	case "User.nrStep":
+		if e.complexity.User.NrStep == nil {
+			break
+		}
+
+		return e.complexity.User.NrStep(childComplexity), true
+
+	case "User.nrFurthestStep":
+		if e.complexity.User.NrFurthestStep == nil {
+			break
+		}
+
+		return e.complexity.User.NrFurthestStep(childComplexity), true
+
+	case "User.nrLastSeen":
+		if e.complexity.User.NrLastSeen == nil {
+			break
+		}
+
+		return e.complexity.User.NrLastSeen(childComplexity), true
 
 	}
 	return 0, false
@@ -10861,6 +10888,24 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._User_isTokenFoundryRegistered(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "nrStep":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_nrStep(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "nrFurthestStep":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_nrFurthestStep(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "nrLastSeen":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_nrLastSeen(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11175,6 +11220,90 @@ func (ec *executionContext) _User_isTokenFoundryRegistered(ctx context.Context, 
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_nrStep(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NrStep(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_nrFurthestStep(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NrFurthestStep(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_nrLastSeen(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NrLastSeen(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -13199,6 +13328,39 @@ func UnmarshalUserUpdateInput(v interface{}) (users.UserUpdateInput, error) {
 			if err != nil {
 				return it, err
 			}
+		case "nrStep":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.NrStep = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "nrFurthestStep":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.NrFurthestStep = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "nrLastSeen":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.NrLastSeen = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -13576,10 +13738,11 @@ type User {
   quizPayload: RawObject
   quizStatus: String
   civilianWhitelistTxID: String
-  # dateCreated: Int
-  # dateUpdated: Int
   invoices: [Invoice]
   isTokenFoundryRegistered: Boolean
+  nrStep: Int
+  nrFurthestStep: Int
+  nrLastSeen: Int
 }
 
 input UserSignatureInput {
@@ -13597,6 +13760,9 @@ input UserUpdateInput {
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
+  nrStep: Int
+  nrFurthestStep: Int
+  nrLastSeen: Int
 }
 
 type NrsignupNewsroom {
