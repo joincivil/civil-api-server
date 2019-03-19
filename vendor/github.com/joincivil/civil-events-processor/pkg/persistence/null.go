@@ -13,6 +13,11 @@ import (
 // Implements the ListingPersister, ContentRevisionPersister, and GovernanceEventPersister
 type NullPersister struct{}
 
+// Close does nothing
+func (n *NullPersister) Close() error {
+	return nil
+}
+
 // ListingsByCriteria returns all listings by ListingCriteria
 func (n *NullPersister) ListingsByCriteria(criteria *model.ListingCriteria) ([]*model.Listing, error) {
 	return []*model.Listing{}, nil
@@ -202,5 +207,15 @@ func (n *NullPersister) CreateAppeal(appeal *model.Appeal) error {
 
 // UpdateAppeal updates an appeal
 func (n *NullPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []string) error {
+	return nil
+}
+
+// TokenTransfersByToAddress gets a list of token transfers by purchaser address
+func (n *NullPersister) TokenTransfersByToAddress(addr common.Address) ([]*model.TokenTransfer, error) {
+	return []*model.TokenTransfer{}, nil
+}
+
+// CreateTokenTransfer creates an token transfer
+func (n *NullPersister) CreateTokenTransfer(appeal *model.TokenTransfer) error {
 	return nil
 }

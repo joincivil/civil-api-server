@@ -46,6 +46,8 @@ type ListingPersister interface {
 	UpdateListing(listing *Listing, updatedFields []string) error
 	// DeleteListing removes a listing
 	DeleteListing(listing *Listing) error
+	// Close shuts down the persister
+	Close() error
 }
 
 // ContentRevisionCriteria contains the retrieval criteria for a ContentRevisionsByCriteria
@@ -75,6 +77,8 @@ type ContentRevisionPersister interface {
 	UpdateContentRevision(revision *ContentRevision, updatedFields []string) error
 	// DeleteContentRevision removes a content revision
 	DeleteContentRevision(revision *ContentRevision) error
+	// Close shuts down the persister
+	Close() error
 }
 
 // GovernanceEventCriteria contains the retrieval criteria for a GovernanceEventsByCriteria
@@ -103,6 +107,8 @@ type GovernanceEventPersister interface {
 	UpdateGovernanceEvent(govEvent *GovernanceEvent, updatedFields []string) error
 	// DeleteGovernanceEvent removes a governance event
 	DeleteGovernanceEvent(govEvent *GovernanceEvent) error
+	// Close shuts down the persister
+	Close() error
 }
 
 // CronPersister persists information needed for the cron to run
@@ -115,6 +121,8 @@ type CronPersister interface {
 	EventHashesOfLastTimestampForCron() ([]string, error)
 	// UpdateEventHashesForCron updates the eventHashes saved in cron table
 	UpdateEventHashesForCron(eventHashes []string) error
+	// Close shuts down the persister
+	Close() error
 }
 
 // ChallengePersister is the interface to store ChallengeData
@@ -133,6 +141,8 @@ type ChallengePersister interface {
 	CreateChallenge(challenge *Challenge) error
 	// UpdateChallenge updates a challenge
 	UpdateChallenge(challenge *Challenge, updatedFields []string) error
+	// Close shuts down the persister
+	Close() error
 }
 
 // PollPersister is the interface to store PollData
@@ -145,6 +155,8 @@ type PollPersister interface {
 	CreatePoll(poll *Poll) error
 	// UpdatePoll updates a poll
 	UpdatePoll(poll *Poll, updatedFields []string) error
+	// Close shuts down the persister
+	Close() error
 }
 
 // AppealPersister is the interface to store AppealData
@@ -157,4 +169,16 @@ type AppealPersister interface {
 	CreateAppeal(appeal *Appeal) error
 	// UpdateAppeal updates an appeal
 	UpdateAppeal(appeal *Appeal, updatedFields []string) error
+	// Close shuts down the persister
+	Close() error
+}
+
+// TokenTransferPersister is the persister interface to store TokenTransfer
+type TokenTransferPersister interface {
+	// TokenTransfersByToAddress gets a list of token transfers by purchaser address
+	TokenTransfersByToAddress(addr common.Address) ([]*TokenTransfer, error)
+	// CreateTokenTransfer creates a new token transfer
+	CreateTokenTransfer(purchase *TokenTransfer) error
+	// Close shuts down the persister
+	Close() error
 }

@@ -11,17 +11,12 @@ const (
 	EventHashesDataType = "event_hashes"
 	// DataPersistedModelName is the string name of DataPersisted field in CronData
 	DataPersistedModelName = "DataPersisted"
-
-	defaultCronTableName = "cron"
+	// CronTableBaseName is the base name of table this code defines
+	CronTableBaseName = "cron"
 )
 
-// CreateCronTableQuery returns the query to create the cron table
-func CreateCronTableQuery() string {
-	return CreateCronTableQueryString(defaultCronTableName)
-}
-
-// CreateCronTableQueryString returns the query to create this table
-func CreateCronTableQueryString(tableName string) string {
+// CreateCronTableQuery returns the query to create this table
+func CreateCronTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(data_persisted TEXT, data_type TEXT);
     `, tableName)

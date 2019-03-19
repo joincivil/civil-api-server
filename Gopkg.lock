@@ -255,8 +255,8 @@
   revision = "0dae4fefe7c0e190f7b5a78dac28a1c82cc8d849"
 
 [[projects]]
-  branch = "master"
-  digest = "1:9ba0a75f57e9a3b9120ccc8fdf790daad334cf0e5e41846924f8243ae8987a19"
+  branch = "inna/338/db-rebuild"
+  digest = "1:aa0e910f21189a5b5ac34c33bf177c7f22cc3caafd1f5923c0da837c19db3f90"
   name = "github.com/joincivil/civil-events-crawler"
   packages = [
     "pkg/model",
@@ -264,22 +264,20 @@
     "pkg/persistence/postgres",
   ]
   pruneopts = "UT"
-  revision = "53f76f633cb18396d02f49dd62d3e333e9c9acde"
+  revision = "201f025b39188ded785440653e1c4ffb0d32afbf"
 
 [[projects]]
-  branch = "master"
-  digest = "1:7f697b7b0dd7308b3d474b1a1459882220a46a9a4bd5846e49b07945811b0237"
+  branch = "inna/338/db-rebuild"
+  digest = "1:bf2106d75c69387749d833947f835b4f4f67895d04bb3abfe3830117453c4a49"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
     "pkg/model",
     "pkg/persistence",
     "pkg/persistence/postgres",
-    "pkg/scraper",
-    "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "9f2d13db87d3f09af6fd3b9cd70082db8248cf85"
+  revision = "7d87bd192c603222507c959b23912cce9c4c08a9"
 
 [[projects]]
   branch = "master"
@@ -351,14 +349,6 @@
   pruneopts = "UT"
   revision = "69d839f37b13a8cb7a78366f7633a4071cb43be7"
   version = "v0.9.2"
-
-[[projects]]
-  digest = "1:ed615c5430ecabbb0fb7629a182da65ecee6523900ac1ac932520860878ffcad"
-  name = "github.com/robfig/cron"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "b41be1df696709bb6395fe435af20370037c0b4c"
-  version = "v1.1"
 
 [[projects]]
   digest = "1:b0c25f00bad20d783d259af2af8666969e2fc343fa0dc9efe52936bbd67fb758"

@@ -328,6 +328,11 @@ func (l *Listing) URL() string {
 	return l.url
 }
 
+// SetURL sets the URL of the newsroom
+func (l *Listing) SetURL(url string) {
+	l.url = url
+}
+
 // Charter returns the data regarding charter post for the newsroom
 func (l *Listing) Charter() *Charter {
 	return l.charter

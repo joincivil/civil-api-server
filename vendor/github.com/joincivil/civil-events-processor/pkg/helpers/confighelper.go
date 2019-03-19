@@ -10,16 +10,14 @@ import (
 
 	"github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/persistence"
-	"github.com/joincivil/civil-events-processor/pkg/scraper"
-	"github.com/joincivil/civil-events-processor/pkg/utils"
 
 	cconfig "github.com/joincivil/go-common/pkg/config"
 )
 
 // CronPersister is a helper function to return the correct cron persister based on
 // the given configuration
-func CronPersister(config cconfig.PersisterConfig) (model.CronPersister, error) {
-	p, err := persister(config)
+func CronPersister(config cconfig.PersisterConfig, versionNumber string) (model.CronPersister, error) {
+	p, err := persister(config, versionNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -40,6 +38,11 @@ func EventPersister(config cconfig.PersisterConfig) (crawlermodel.EventDataPersi
 		if err != nil {
 			return nil, err
 		}
+		// Pass nil to crawler persistence so it uses the latest version
+		err = persister.CreateVersionTable(nil)
+		if err != nil {
+			return nil, err
+		}
 		return persister, nil
 	}
 	nullPersister := &crawlerpersist.NullPersister{}
@@ -48,8 +51,8 @@ func EventPersister(config cconfig.PersisterConfig) (crawlermodel.EventDataPersi
 
 // ListingPersister is a helper function to return the correct listing persister based on
 // the given configuration
-func ListingPersister(config cconfig.PersisterConfig) (model.ListingPersister, error) {
-	p, err := persister(config)
+func ListingPersister(config cconfig.PersisterConfig, versionNumber string) (model.ListingPersister, error) {
+	p, err := persister(config, versionNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +61,8 @@ func ListingPersister(config cconfig.PersisterConfig) (model.ListingPersister, e
 
 // ContentRevisionPersister is a helper function to return the correct revision persister based on
 // the given configuration
-func ContentRevisionPersister(config cconfig.PersisterConfig) (model.ContentRevisionPersister, error) {
-	p, err := persister(config)
+func ContentRevisionPersister(config cconfig.PersisterConfig, versionNumber string) (model.ContentRevisionPersister, error) {
+	p, err := persister(config, versionNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -68,8 +71,8 @@ func ContentRevisionPersister(config cconfig.PersisterConfig) (model.ContentRevi
 
 // GovernanceEventPersister is a helper function to return the correct gov event persister based on
 // the given configuration
-func GovernanceEventPersister(config cconfig.PersisterConfig) (model.GovernanceEventPersister, error) {
-	p, err := persister(config)
+func GovernanceEventPersister(config cconfig.PersisterConfig, versionNumber string) (model.GovernanceEventPersister, error) {
+	p, err := persister(config, versionNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +81,8 @@ func GovernanceEventPersister(config cconfig.PersisterConfig) (model.GovernanceE
 
 // ChallengePersister is a helper function to return the correct challenge persister based on
 // the given configuration
-func ChallengePersister(config cconfig.PersisterConfig) (model.ChallengePersister, error) {
-	p, err := persister(config)
+func ChallengePersister(config cconfig.PersisterConfig, versionNumber string) (model.ChallengePersister, error) {
+	p, err := persister(config, versionNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +91,8 @@ func ChallengePersister(config cconfig.PersisterConfig) (model.ChallengePersiste
 
 // AppealPersister is a helper function to return the correct appeals persister based on
 // the given configuration
-func AppealPersister(config cconfig.PersisterConfig) (model.AppealPersister, error) {
-	p, err := persister(config)
+func AppealPersister(config cconfig.PersisterConfig, versionNumber string) (model.AppealPersister, error) {
+	p, err := persister(config, versionNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -98,23 +101,33 @@ func AppealPersister(config cconfig.PersisterConfig) (model.AppealPersister, err
 
 // PollPersister is a helper function to return the correct poll persister based on
 // the given configuration
-func PollPersister(config cconfig.PersisterConfig) (model.PollPersister, error) {
-	p, err := persister(config)
+func PollPersister(config cconfig.PersisterConfig, versionNumber string) (model.PollPersister, error) {
+	p, err := persister(config, versionNumber)
 	if err != nil {
 		return nil, err
 	}
 	return p.(model.PollPersister), nil
 }
 
-func persister(config cconfig.PersisterConfig) (interface{}, error) {
+// TokenTransferPersister is a helper function to return the token transfer persister based on
+// the given configuration
+func TokenTransferPersister(config cconfig.PersisterConfig, versionNumber string) (model.TokenTransferPersister, error) {
+	p, err := persister(config, versionNumber)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.TokenTransferPersister), nil
+}
+
+func persister(config cconfig.PersisterConfig, versionNumber string) (interface{}, error) {
 	if config.PersistType() == cconfig.PersisterTypePostgresql {
-		return postgresPersister(config)
+		return postgresPersister(config, versionNumber)
 	}
 	// Default to the NullPersister
 	return &persistence.NullPersister{}, nil
 }
 
-func postgresPersister(config cconfig.PersisterConfig) (*persistence.PostgresPersister, error) {
+func postgresPersister(config cconfig.PersisterConfig, versionNumber string) (*persistence.PostgresPersister, error) {
 	persister, err := persistence.NewPostgresPersister(
 		config.PostgresAddress(),
 		config.PostgresPort(),
@@ -124,6 +137,11 @@ func postgresPersister(config cconfig.PersisterConfig) (*persistence.PostgresPer
 	)
 	if err != nil {
 		// log.Errorf("Error connecting to Postgresql, stopping...; err: %v", err)
+		return nil, err
+	}
+	// Version table created by eventPersister, so just store version
+	err = persister.InitProcessorVersion(&versionNumber)
+	if err != nil {
 		return nil, err
 	}
 	// Attempts to create all the necessary tables here
@@ -139,22 +157,4 @@ func postgresPersister(config cconfig.PersisterConfig) (*persistence.PostgresPer
 		return nil, err
 	}
 	return persister, nil
-}
-
-// CivilMetadataScraper is a helper function to return a CivilMetadataScraper based on
-// the given configuration
-func CivilMetadataScraper(config *utils.ProcessorConfig) model.CivilMetadataScraper {
-	return &scraper.CivilMetadataScraper{}
-}
-
-// ContentScraper is a helper function to return a ContentScraper based on
-// the given configuration
-func ContentScraper(config *utils.ProcessorConfig) model.ContentScraper {
-	return &scraper.NullScraper{}
-}
-
-// MetadataScraper is a helper function to return a MetadataScraper based on
-// the given configuration
-func MetadataScraper(config *utils.ProcessorConfig) model.MetadataScraper {
-	return &scraper.NullScraper{}
 }

@@ -9,23 +9,19 @@ import (
 )
 
 const (
-	defaultGoveranceEventTableName = "governance_event"
+	// GovernanceEventTableBaseName is the base name of the table this code defines
+	GovernanceEventTableBaseName = "governance_event"
 )
 
-// CreateGovernanceEventTableQuery returns the query to create the governance_event table
-func CreateGovernanceEventTableQuery() string {
-	return CreateGovernanceEventTableQueryString(defaultGoveranceEventTableName)
-}
-
-// CreateGovernanceEventTableQueryString returns the query to create this table
-func CreateGovernanceEventTableQueryString(tableName string) string {
+// CreateGovernanceEventTableQuery returns the query to create this table
+func CreateGovernanceEventTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             listing_address TEXT,
             metadata JSONB,
             gov_event_type TEXT,
             creation_date INT,
-            last_updated INT,
+            last_updated_timestamp INT,
             event_hash TEXT UNIQUE,
             block_data JSONB
         );
@@ -33,13 +29,8 @@ func CreateGovernanceEventTableQueryString(tableName string) string {
 	return queryString
 }
 
-// GovernanceEventTableIndices returns the query to create indices for this table
-func GovernanceEventTableIndices() string {
-	return CreateGovernanceEventTableIndicesString(defaultGoveranceEventTableName)
-}
-
-// CreateGovernanceEventTableIndicesString returns the query to create indices for this table
-func CreateGovernanceEventTableIndicesString(tableName string) string {
+// CreateGovernanceEventTableIndicesQuery returns the query to create indices for this table
+func CreateGovernanceEventTableIndicesQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS govevent_addr_idx ON %s (listing_address);
 		CREATE INDEX IF NOT EXISTS govevent_block_data_idx ON %s USING GIN (block_data);
@@ -71,7 +62,7 @@ type GovernanceEvent struct {
 
 	CreationDateTs int64 `db:"creation_date"`
 
-	LastUpdatedDateTs int64 `db:"last_updated"`
+	LastUpdatedDateTs int64 `db:"last_updated_timestamp"`
 
 	EventHash string `db:"event_hash"`
 

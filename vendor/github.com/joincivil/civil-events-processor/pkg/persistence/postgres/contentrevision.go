@@ -10,16 +10,12 @@ import (
 )
 
 const (
-	defaultContentRevisionTableName = "content_revision"
+	// ContentRevisionTableBaseName is the type of table this code defines
+	ContentRevisionTableBaseName = "content_revision"
 )
 
-// CreateContentRevisionTableQuery returns the query to create the content_revision table
-func CreateContentRevisionTableQuery() string {
-	return CreateContentRevisionTableQueryString(defaultContentRevisionTableName)
-}
-
-// CreateContentRevisionTableQueryString returns the query to create this table
-func CreateContentRevisionTableQueryString(tableName string) string {
+// CreateContentRevisionTableQuery returns the query to create this table
+func CreateContentRevisionTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             id SERIAL PRIMARY KEY,
@@ -36,16 +32,11 @@ func CreateContentRevisionTableQueryString(tableName string) string {
 	return queryString
 }
 
-// ContentRevisionTableIndices returns the query to create indices for this table
-func ContentRevisionTableIndices() string {
-	return CreateContentRevisionTableIndicesString(defaultContentRevisionTableName)
-}
-
-// CreateContentRevisionTableIndicesString returns the query to create indices for this table
-func CreateContentRevisionTableIndicesString(tableName string) string {
+// CreateContentRevisionTableIndicesQuery returns the query to create indices for this table
+func CreateContentRevisionTableIndicesQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
-		CREATE INDEX IF NOT EXISTS revision_addr_type_idx ON %s (listing_address);
-	`, tableName)
+        CREATE INDEX IF NOT EXISTS revision_addr_type_idx ON %s (listing_address);
+    `, tableName)
 	return queryString
 }
 
