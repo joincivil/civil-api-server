@@ -14,7 +14,7 @@ const (
 	// number of seconds that a JWT token has until it expires
 	defaultJWTExpiration = 60 * 60 * 24 * 60 // 60 days
 	// number of seconds that a JWT token sent for login or signup is valid
-	defaultJWTEmailExpiration = 60 * 60 * 24 * 10
+	defaultJWTEmailExpiration = 60 * 60 * 6 // 6 hours
 	// number of seconds for a signature challenge
 	defaultGracePeriod = 5 * 60 // 5 minutes
 	// OkResponse is sent when an action is completed successfully
