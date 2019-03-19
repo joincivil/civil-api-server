@@ -52,6 +52,7 @@ type GraphQLConfig struct {
 	PersisterPostgresDbname  string                `split_words:"true" desc:"If persister type is Postgresql, sets the database name"`
 	PersisterPostgresUser    string                `split_words:"true" desc:"If persister type is Postgresql, sets the database user"`
 	PersisterPostgresPw      string                `split_words:"true" desc:"If persister type is Postgresql, sets the database password"`
+	PersisterVersion         string                `split_words:"True" desc:"If persister type is Postgresql, sets the version to use"`
 
 	TokenFoundryUser     string `split_words:"true" desc:"TokenFoundry User"`
 	TokenFoundryPassword string `split_words:"true" desc:"TokenFoundry Password"`
