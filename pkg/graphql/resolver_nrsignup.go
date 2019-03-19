@@ -58,6 +58,34 @@ func (r *mutationResolver) NrsignupApproveGrant(ctx context.Context, approved bo
 	return ResponseNotImplemented, nil
 }
 
+func (r *mutationResolver) NrsignupSaveTxHash(ctx context.Context, txHash string) (string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	err := r.nrsignupService.SaveNewsroomDeployTxHash(token.Sub, txHash)
+	if err != nil {
+		return "", err
+	}
+
+	return ResponseOK, nil
+}
+
+func (r *mutationResolver) NrsignupSaveAddress(ctx context.Context, address string) (string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	err := r.nrsignupService.SaveNewsroomAddress(token.Sub, address)
+	if err != nil {
+		return "", err
+	}
+
+	return ResponseOK, nil
+}
+
 // Not implemented yet
 func (r *mutationResolver) NrsignupPollNewsroomDeploy(ctx context.Context,
 	txHash string) (string, error) {

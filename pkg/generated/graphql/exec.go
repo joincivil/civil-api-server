@@ -264,6 +264,8 @@ type ComplexityRoot struct {
 		NrsignupSaveCharter               func(childComplexity int, charterData nrsignup.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
+		NrsignupSaveTxHash                func(childComplexity int, txHash string) int
+		NrsignupSaveAddress               func(childComplexity int, address string) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
 		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
@@ -434,6 +436,8 @@ type MutationResolver interface {
 	NrsignupSaveCharter(ctx context.Context, charterData nrsignup.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
 	NrsignupApproveGrant(ctx context.Context, approved bool, newsroomOwnerUID string) (string, error)
+	NrsignupSaveTxHash(ctx context.Context, txHash string) (string, error)
+	NrsignupSaveAddress(ctx context.Context, address string) (string, error)
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
 	StorefrontAirswapTxHash(ctx context.Context, txHash string) (string, error)
@@ -795,6 +799,36 @@ func field_Mutation_nrsignupApproveGrant_args(rawArgs map[string]interface{}) (m
 		}
 	}
 	args["newsroomOwnerUID"] = arg1
+	return args, nil
+
+}
+
+func field_Mutation_nrsignupSaveTxHash_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txHash"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["txHash"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_nrsignupSaveAddress_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
 	return args, nil
 
 }
@@ -2741,6 +2775,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.NrsignupApproveGrant(childComplexity, args["approved"].(bool), args["newsroomOwnerUID"].(string)), true
+
+	case "Mutation.nrsignupSaveTxHash":
+		if e.complexity.Mutation.NrsignupSaveTxHash == nil {
+			break
+		}
+
+		args, err := field_Mutation_nrsignupSaveTxHash_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NrsignupSaveTxHash(childComplexity, args["txHash"].(string)), true
+
+	case "Mutation.nrsignupSaveAddress":
+		if e.complexity.Mutation.NrsignupSaveAddress == nil {
+			break
+		}
+
+		args, err := field_Mutation_nrsignupSaveAddress_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NrsignupSaveAddress(childComplexity, args["address"].(string)), true
 
 	case "Mutation.nrsignupPollNewsroomDeploy":
 		if e.complexity.Mutation.NrsignupPollNewsroomDeploy == nil {
@@ -8245,6 +8303,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "nrsignupSaveTxHash":
+			out.Values[i] = ec._Mutation_nrsignupSaveTxHash(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "nrsignupSaveAddress":
+			out.Values[i] = ec._Mutation_nrsignupSaveAddress(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "nrsignupPollNewsroomDeploy":
 			out.Values[i] = ec._Mutation_nrsignupPollNewsroomDeploy(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8805,6 +8873,72 @@ func (ec *executionContext) _Mutation_nrsignupApproveGrant(ctx context.Context, 
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().NrsignupApproveGrant(rctx, args["approved"].(bool), args["newsroomOwnerUID"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_nrsignupSaveTxHash(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_nrsignupSaveTxHash_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupSaveTxHash(rctx, args["txHash"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_nrsignupSaveAddress(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_nrsignupSaveAddress_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupSaveAddress(rctx, args["address"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -13521,6 +13655,8 @@ type Mutation {
   nrsignupSaveCharter(charterData: CharterInput!): String!
   nrsignupRequestGrant(requested: Boolean!): String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
+  nrsignupSaveTxHash(txHash: String!): String!
+  nrsignupSaveAddress(address: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
 
