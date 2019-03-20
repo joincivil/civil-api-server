@@ -296,7 +296,7 @@ func (s *Service) buildCharterDataIntoTemplate(tmplData email.TemplateData,
 	signupData *SignupUserJSONData) email.TemplateData {
 	newsroomCharter := signupData.Charter
 
-	tmplData["nr_name"] = signupData.NewsroomName
+	tmplData["nr_name"] = newsroomCharter.Name
 	tmplData["nr_logo_url"] = newsroomCharter.LogoURL
 	tmplData["nr_logo_markup"] = s.buildLogoURLMarkup(newsroomCharter.LogoURL)
 	tmplData["nr_url"] = newsroomCharter.NewsroomURL
