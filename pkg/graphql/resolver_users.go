@@ -29,6 +29,23 @@ func (r *userResolver) IsTokenFoundryRegistered(ctx context.Context, obj *users.
 	return &ok, err
 }
 
+// NrStep returns the most recent step the user made in Newsroom signup
+func (r *userResolver) NrStep(ctx context.Context, obj *users.User) (*int, error) {
+	return &obj.NewsroomStep, nil
+}
+
+// NrFurthestStep returns the furthest step the user made in Newsroom signup
+func (r *userResolver) NrFurthestStep(ctx context.Context, obj *users.User) (*int, error) {
+	return &obj.NewsroomFurthestStep, nil
+}
+
+// NrLastSeen returns the timestamp secs from epoch since the user was last seen
+// in newsroom signup
+func (r *userResolver) NrLastSeen(ctx context.Context, obj *users.User) (*int, error) {
+	asInt := int(obj.NewsroomLastSeen)
+	return &asInt, nil
+}
+
 // QUERIES
 
 func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
@@ -73,6 +90,7 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *u
 		return nil, ErrAccessDenied
 	}
 	// If UID is not passed, use the UID in the token
+	// TODO(PN): Can remove the uid as an input and just use the uid in the token
 	if uid == nil {
 		uid = &token.Sub
 	}

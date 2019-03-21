@@ -17,7 +17,7 @@ const (
 	tpostgresPswd   = "docker"
 	tpostgresHost   = "localhost"
 
-	defaultKycUserTestTableName = "civil_user_test"
+	defaultUserTestTableName = "civil_user_test"
 )
 
 func setupDBConnection() (*PostgresPersister, error) {
@@ -32,8 +32,8 @@ func setupTestTable(tableName string) (*PostgresPersister, error) {
 	}
 	var queryString string
 	switch tableName {
-	case defaultKycUserTestTableName:
-		queryString = CreateKycUserTableQuery(tableName)
+	case defaultUserTestTableName:
+		queryString = CreateUserTableQuery(tableName)
 	}
 	_, err = persister.db.Query(queryString)
 	if err != nil {
@@ -45,7 +45,7 @@ func setupTestTable(tableName string) (*PostgresPersister, error) {
 func deleteTestTable(persister *PostgresPersister, tableName string) error {
 	var err error
 	switch tableName {
-	case defaultKycUserTestTableName:
+	case defaultUserTestTableName:
 		_, err = persister.db.Query(fmt.Sprintf("DROP TABLE %v;", tableName))
 	}
 	if err != nil {
@@ -94,11 +94,15 @@ func TestTableSetup(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error connecting to DB: %v", err)
 	}
+	err = persister.RunMigrations()
+	if err != nil {
+		t.Errorf("Error running migrations: %v", err)
+	}
 	err = persister.CreateTables()
 	if err != nil {
 		t.Errorf("Error creating tables: %v", err)
 	}
-	err = checkTableExists(defaultKycUserTableName, persister)
+	err = checkTableExists(defaultUserTableName, persister)
 	if err != nil {
 		t.Error(err)
 	}
@@ -106,45 +110,45 @@ func TestTableSetup(t *testing.T) {
 
 // TestTableSetup tests to ensure that our DB tables are being setup
 func TestIndicesSetup(t *testing.T) {
-	persister, err := setupTestTable(defaultKycUserTestTableName)
+	persister, err := setupTestTable(defaultUserTestTableName)
 	if err != nil {
 		t.Errorf("Error connecting to DB: %v", err)
 	}
-	defer deleteTestTable(persister, defaultKycUserTestTableName)
-	err = persister.createKycUserIndicesForTable(defaultKycUserTestTableName)
+	defer deleteTestTable(persister, defaultUserTestTableName)
+	err = persister.createUserIndicesForTable(defaultUserTestTableName)
 	if err != nil {
 		t.Errorf("Error creating indices for invoices: %v", err)
 	}
 }
 
-func TestGetKycUser(t *testing.T) {
-	persister, err := setupTestTable(defaultKycUserTestTableName)
+func TestGetUser(t *testing.T) {
+	persister, err := setupTestTable(defaultUserTestTableName)
 	if err != nil {
 		t.Errorf("Error connecting to DB: %v", err)
 	}
-	defer deleteTestTable(persister, defaultKycUserTestTableName)
+	defer deleteTestTable(persister, defaultUserTestTableName)
 
-	testKycUserToCreate := &User{
+	testUserToCreate := &User{
 		Email:         "test@civil.co",
 		EthAddress:    "testEthAddress1",
 		OnfidoCheckID: "onfidocheckid1",
 	}
 
-	err = persister.createKycUserForTable(testKycUserToCreate, defaultKycUserTestTableName)
+	err = persister.createUserForTable(testUserToCreate, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should not have received an error saving user: err: %v", err)
 	}
 
 	// Test the get by email query
 	criteria := &UserCriteria{
-		Email: testKycUserToCreate.Email,
+		Email: testUserToCreate.Email,
 	}
-	user, err := persister.userFromTable(criteria, defaultKycUserTestTableName)
+	user, err := persister.userFromTable(criteria, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should have received a result from users: err: %v", err)
 	}
 
-	if user.Email != testKycUserToCreate.Email {
+	if user.Email != testUserToCreate.Email {
 		t.Error("Should have gotten the correct entry")
 	}
 
@@ -160,39 +164,39 @@ func TestGetKycUser(t *testing.T) {
 
 	// Test the onfido check id query
 	criteria = &UserCriteria{
-		OnfidoCheckID: testKycUserToCreate.OnfidoCheckID,
+		OnfidoCheckID: testUserToCreate.OnfidoCheckID,
 	}
-	user, err = persister.userFromTable(criteria, defaultKycUserTestTableName)
+	user, err = persister.userFromTable(criteria, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should have received a result from users given check id: err: %v", err)
 	}
 
-	if user.OnfidoCheckID != testKycUserToCreate.OnfidoCheckID {
+	if user.OnfidoCheckID != testUserToCreate.OnfidoCheckID {
 		t.Error("Should have gotten the correct onfidocheckid entry")
 	}
 }
 
-func TestUpdateKycUser(t *testing.T) {
-	persister, err := setupTestTable(defaultKycUserTestTableName)
+func TestUpdateUser(t *testing.T) {
+	persister, err := setupTestTable(defaultUserTestTableName)
 	if err != nil {
 		t.Errorf("Error connecting to DB: %v", err)
 	}
-	defer deleteTestTable(persister, defaultKycUserTestTableName)
+	defer deleteTestTable(persister, defaultUserTestTableName)
 
-	testKycUserToCreate := &User{
+	testUserToCreate := &User{
 		Email:      "test@civil.co",
 		EthAddress: "testEthAddress1",
 	}
 
-	err = persister.createKycUserForTable(testKycUserToCreate, defaultKycUserTestTableName)
+	err = persister.createUserForTable(testUserToCreate, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should not have received an error saving user: err: %v", err)
 	}
 
 	criteria := &UserCriteria{
-		Email: testKycUserToCreate.Email,
+		Email: testUserToCreate.Email,
 	}
-	user, err := persister.userFromTable(criteria, defaultKycUserTestTableName)
+	user, err := persister.userFromTable(criteria, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should have received a result from users: err: %v", err)
 	}
@@ -207,12 +211,12 @@ func TestUpdateKycUser(t *testing.T) {
 	// To test the date updated
 	time.Sleep(1 * time.Second)
 
-	err = persister.updateKycUserForTable(user, updatedFields, defaultKycUserTestTableName)
+	err = persister.updateUserForTable(user, updatedFields, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should not have received an error updating user: err: %v", err)
 	}
 
-	user, err = persister.userFromTable(criteria, defaultKycUserTestTableName)
+	user, err = persister.userFromTable(criteria, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should have received a result from users: err: %v", err)
 	}

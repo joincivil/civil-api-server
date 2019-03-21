@@ -84,7 +84,7 @@ func TestHandleGrantApprovalApproved(t *testing.T) {
 
 	token, _ := tokenGen.GenerateToken(tokenSub, now+expires)
 
-	err := signupService.RequestGrant("1")
+	err := signupService.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -127,7 +127,7 @@ func TestHandleGrantApprovalRejected(t *testing.T) {
 
 	token, _ := tokenGen.GenerateToken(tokenSub, now+expires)
 
-	err := signupService.RequestGrant("1")
+	err := signupService.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -163,7 +163,7 @@ func TestHandleGrantApprovalInvalidToken(t *testing.T) {
 		"http://localhost:8080",
 	)
 
-	err := signupService.RequestGrant("1")
+	err := signupService.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -208,7 +208,7 @@ func TestHandleGrantApprovalNoApprovedValue(t *testing.T) {
 
 	token, _ := tokenGen.GenerateToken(tokenSub, now+expires)
 
-	err := signupService.RequestGrant("1")
+	err := signupService.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -252,7 +252,7 @@ func TestHandleGrantApprovalBadApprovedValue(t *testing.T) {
 
 	token, _ := tokenGen.GenerateToken(tokenSub, now+expires)
 
-	err := signupService.RequestGrant("1")
+	err := signupService.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -288,7 +288,7 @@ func TestApproveGrantHandler(t *testing.T) {
 		"http://localhost:8080",
 	)
 
-	err := signupService.RequestGrant("1")
+	err := signupService.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -354,7 +354,7 @@ func TestApproveGrantHandlerInvalidToken(t *testing.T) {
 		"http://localhost:8080",
 	)
 
-	err := signupService.RequestGrant("1")
+	err := signupService.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}

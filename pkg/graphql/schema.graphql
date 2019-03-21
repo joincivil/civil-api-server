@@ -122,6 +122,8 @@ type Mutation {
   nrsignupSaveCharter(charterData: CharterInput!): String!
   nrsignupRequestGrant(requested: Boolean!): String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
+  nrsignupSaveTxHash(txHash: String!): String!
+  nrsignupSaveAddress(address: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
 
@@ -339,10 +341,11 @@ type User {
   quizPayload: RawObject
   quizStatus: String
   civilianWhitelistTxID: String
-  # dateCreated: Int
-  # dateUpdated: Int
   invoices: [Invoice]
   isTokenFoundryRegistered: Boolean
+  nrStep: Int
+  nrFurthestStep: Int
+  nrLastSeen: Int
 }
 
 input UserSignatureInput {
@@ -360,6 +363,9 @@ input UserUpdateInput {
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
+  nrStep: Int
+  nrFurthestStep: Int
+  nrLastSeen: Int
 }
 
 type NrsignupNewsroom {

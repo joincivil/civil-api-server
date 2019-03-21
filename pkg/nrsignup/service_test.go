@@ -198,7 +198,7 @@ func TestRequestGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("1")
+	err = signup.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -245,7 +245,7 @@ func TestRequestGrantNoUser(t *testing.T) {
 		t.Fatalf("Error init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("2")
+	err = signup.RequestGrant("2", true)
 	if err == nil {
 		t.Fatalf("Should have failed to return with invalid user")
 	}
@@ -263,7 +263,7 @@ func TestApproveGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("1")
+	err = signup.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}
@@ -315,7 +315,7 @@ func TestRejectGrant(t *testing.T) {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
 
-	err = signup.RequestGrant("1")
+	err = signup.RequestGrant("1", true)
 	if err != nil {
 		t.Fatalf("Should not have error requesting grant: err: %v", err)
 	}

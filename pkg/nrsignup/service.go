@@ -215,6 +215,26 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 	return s.setGrantApprovedFlag(newsroomOwnerUID, approved)
 }
 
+// SaveNewsroomDeployTxHash saves the txhash for a newsroom deploy
+func (s *Service) SaveNewsroomDeployTxHash(newsroomOwnerUID string, txHash string) error {
+	newsroomDeployTxHashUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
+		d.NewsroomDeployTx = txHash
+		return d, nil
+	}
+
+	return s.alterUserDataInJSONStore(newsroomOwnerUID, newsroomDeployTxHashUpdateFn)
+}
+
+// SaveNewsroomAddress saves the newsrooms address
+func (s *Service) SaveNewsroomAddress(newsroomOwnerUID string, address string) error {
+	newsroomAdressUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
+		d.NewsroomAddress = address
+		return d, nil
+	}
+
+	return s.alterUserDataInJSONStore(newsroomOwnerUID, newsroomAdressUpdateFn)
+}
+
 // StartPollNewsroomDeployTx starts a polling process that detects when a newsroom
 // contract deployment transaction has completed.  Will send emails
 // alerting the Foundation and the newsroom owner that it has completed.
@@ -276,7 +296,7 @@ func (s *Service) buildCharterDataIntoTemplate(tmplData email.TemplateData,
 	signupData *SignupUserJSONData) email.TemplateData {
 	newsroomCharter := signupData.Charter
 
-	tmplData["nr_name"] = signupData.NewsroomName
+	tmplData["nr_name"] = newsroomCharter.Name
 	tmplData["nr_logo_url"] = newsroomCharter.LogoURL
 	tmplData["nr_logo_markup"] = s.buildLogoURLMarkup(newsroomCharter.LogoURL)
 	tmplData["nr_url"] = newsroomCharter.NewsroomURL

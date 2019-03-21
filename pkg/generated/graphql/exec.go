@@ -264,6 +264,8 @@ type ComplexityRoot struct {
 		NrsignupSaveCharter               func(childComplexity int, charterData nrsignup.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
+		NrsignupSaveTxHash                func(childComplexity int, txHash string) int
+		NrsignupSaveAddress               func(childComplexity int, address string) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
 		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
@@ -341,6 +343,9 @@ type ComplexityRoot struct {
 		CivilianWhitelistTxId    func(childComplexity int) int
 		Invoices                 func(childComplexity int) int
 		IsTokenFoundryRegistered func(childComplexity int) int
+		NrStep                   func(childComplexity int) int
+		NrFurthestStep           func(childComplexity int) int
+		NrLastSeen               func(childComplexity int) int
 	}
 }
 
@@ -431,6 +436,8 @@ type MutationResolver interface {
 	NrsignupSaveCharter(ctx context.Context, charterData nrsignup.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
 	NrsignupApproveGrant(ctx context.Context, approved bool, newsroomOwnerUID string) (string, error)
+	NrsignupSaveTxHash(ctx context.Context, txHash string) (string, error)
+	NrsignupSaveAddress(ctx context.Context, address string) (string, error)
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
 	StorefrontAirswapTxHash(ctx context.Context, txHash string) (string, error)
@@ -469,6 +476,9 @@ type QueryResolver interface {
 type UserResolver interface {
 	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
 	IsTokenFoundryRegistered(ctx context.Context, obj *users.User) (*bool, error)
+	NrStep(ctx context.Context, obj *users.User) (*int, error)
+	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
+	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
 }
 
 func field_Mutation_authSignupEth_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -789,6 +799,36 @@ func field_Mutation_nrsignupApproveGrant_args(rawArgs map[string]interface{}) (m
 		}
 	}
 	args["newsroomOwnerUID"] = arg1
+	return args, nil
+
+}
+
+func field_Mutation_nrsignupSaveTxHash_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["txHash"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["txHash"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_nrsignupSaveAddress_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["address"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["address"] = arg0
 	return args, nil
 
 }
@@ -2736,6 +2776,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.NrsignupApproveGrant(childComplexity, args["approved"].(bool), args["newsroomOwnerUID"].(string)), true
 
+	case "Mutation.nrsignupSaveTxHash":
+		if e.complexity.Mutation.NrsignupSaveTxHash == nil {
+			break
+		}
+
+		args, err := field_Mutation_nrsignupSaveTxHash_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NrsignupSaveTxHash(childComplexity, args["txHash"].(string)), true
+
+	case "Mutation.nrsignupSaveAddress":
+		if e.complexity.Mutation.NrsignupSaveAddress == nil {
+			break
+		}
+
+		args, err := field_Mutation_nrsignupSaveAddress_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NrsignupSaveAddress(childComplexity, args["address"].(string)), true
+
 	case "Mutation.nrsignupPollNewsroomDeploy":
 		if e.complexity.Mutation.NrsignupPollNewsroomDeploy == nil {
 			break
@@ -3248,6 +3312,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.IsTokenFoundryRegistered(childComplexity), true
+
+	case "User.nrStep":
+		if e.complexity.User.NrStep == nil {
+			break
+		}
+
+		return e.complexity.User.NrStep(childComplexity), true
+
+	case "User.nrFurthestStep":
+		if e.complexity.User.NrFurthestStep == nil {
+			break
+		}
+
+		return e.complexity.User.NrFurthestStep(childComplexity), true
+
+	case "User.nrLastSeen":
+		if e.complexity.User.NrLastSeen == nil {
+			break
+		}
+
+		return e.complexity.User.NrLastSeen(childComplexity), true
 
 	}
 	return 0, false
@@ -8218,6 +8303,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "nrsignupSaveTxHash":
+			out.Values[i] = ec._Mutation_nrsignupSaveTxHash(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "nrsignupSaveAddress":
+			out.Values[i] = ec._Mutation_nrsignupSaveAddress(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "nrsignupPollNewsroomDeploy":
 			out.Values[i] = ec._Mutation_nrsignupPollNewsroomDeploy(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8778,6 +8873,72 @@ func (ec *executionContext) _Mutation_nrsignupApproveGrant(ctx context.Context, 
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().NrsignupApproveGrant(rctx, args["approved"].(bool), args["newsroomOwnerUID"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_nrsignupSaveTxHash(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_nrsignupSaveTxHash_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupSaveTxHash(rctx, args["txHash"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_nrsignupSaveAddress(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_nrsignupSaveAddress_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupSaveAddress(rctx, args["address"].(string))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -10861,6 +11022,24 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._User_isTokenFoundryRegistered(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "nrStep":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_nrStep(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "nrFurthestStep":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_nrFurthestStep(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "nrLastSeen":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_nrLastSeen(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11175,6 +11354,90 @@ func (ec *executionContext) _User_isTokenFoundryRegistered(ctx context.Context, 
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_nrStep(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NrStep(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_nrFurthestStep(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NrFurthestStep(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_nrLastSeen(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NrLastSeen(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -13199,6 +13462,39 @@ func UnmarshalUserUpdateInput(v interface{}) (users.UserUpdateInput, error) {
 			if err != nil {
 				return it, err
 			}
+		case "nrStep":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.NrStep = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "nrFurthestStep":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.NrFurthestStep = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "nrLastSeen":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.NrLastSeen = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -13359,6 +13655,8 @@ type Mutation {
   nrsignupSaveCharter(charterData: CharterInput!): String!
   nrsignupRequestGrant(requested: Boolean!): String!
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
+  nrsignupSaveTxHash(txHash: String!): String!
+  nrsignupSaveAddress(address: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
 
@@ -13576,10 +13874,11 @@ type User {
   quizPayload: RawObject
   quizStatus: String
   civilianWhitelistTxID: String
-  # dateCreated: Int
-  # dateUpdated: Int
   invoices: [Invoice]
   isTokenFoundryRegistered: Boolean
+  nrStep: Int
+  nrFurthestStep: Int
+  nrLastSeen: Int
 }
 
 input UserSignatureInput {
@@ -13597,6 +13896,9 @@ input UserUpdateInput {
   kycStatus: String
   quizPayload: RawObject
   quizStatus: String
+  nrStep: Int
+  nrFurthestStep: Int
+  nrLastSeen: Int
 }
 
 type NrsignupNewsroom {

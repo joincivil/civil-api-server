@@ -22,11 +22,11 @@ import (
 
 const (
 	// Could make this configurable later if needed
-	maxOpenConns            = 20
-	maxIdleConns            = 5
-	connMaxLifetime         = time.Nanosecond
-	defaultKycUserTableName = "civil_user"
-	dateUpdatedFieldName    = "DateUpdated"
+	maxOpenConns         = 20
+	maxIdleConns         = 5
+	connMaxLifetime      = time.Nanosecond
+	defaultUserTableName = "civil_user"
+	dateUpdatedFieldName = "DateUpdated"
 )
 
 // NewPostgresPersister creates a new postgres persister instance
@@ -59,53 +59,58 @@ type PostgresPersister struct {
 
 // User retrieves a user based on the given UserCriteria
 func (p *PostgresPersister) User(criteria *UserCriteria) (*User, error) {
-	return p.userFromTable(criteria, defaultKycUserTableName)
+	return p.userFromTable(criteria, defaultUserTableName)
 }
 
 // SaveUser saves a new user
 func (p *PostgresPersister) SaveUser(user *User) error {
-	return p.createKycUserForTable(user, defaultKycUserTableName)
+	return p.createUserForTable(user, defaultUserTableName)
 }
 
 // UpdateUser updates an existing user
 func (p *PostgresPersister) UpdateUser(user *User, updatedFields []string) error {
-	return p.updateKycUserForTable(user, updatedFields, defaultKycUserTableName)
+	return p.updateUserForTable(user, updatedFields, defaultUserTableName)
 }
 
 // CreateTables creates the tables if they don't exist
 func (p *PostgresPersister) CreateTables() error {
-	kycUserTableQuery := CreateKycUserTableQuery(defaultKycUserTableName)
-	_, err := p.db.Exec(kycUserTableQuery)
+	userTableQuery := CreateUserTableQuery(defaultUserTableName)
+	_, err := p.db.Exec(userTableQuery)
 	if err != nil {
 		return fmt.Errorf("Error creating user table in postgres: %v", err)
 	}
 	return nil
 }
 
+// RunMigrations runs the migrations statements to update existing tables.
+func (p *PostgresPersister) RunMigrations() error {
+	return p.runUserMigrationsForTable(defaultUserTableName)
+}
+
 // CreateIndices creates the indices for DB if they don't exist
 func (p *PostgresPersister) CreateIndices() error {
-	return p.createKycUserIndicesForTable(defaultKycUserTableName)
+	return p.createUserIndicesForTable(defaultUserTableName)
 }
 
 func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName string) (*User, error) {
-	kycUsers := []*User{}
-	queryString := p.kycUserQuery(criteria, tableName)
+	users := []*User{}
+	queryString := p.userQuery(criteria, tableName)
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
 		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
 
 	}
-	err = nstmt.Select(&kycUsers, criteria)
+	err = nstmt.Select(&users, criteria)
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving user from table: %v", err)
 	}
-	if len(kycUsers) == 0 {
+	if len(users) == 0 {
 		return nil, cpersist.ErrPersisterNoResults
 	}
-	return kycUsers[0], err
+	return users[0], err
 }
 
-func (p *PostgresPersister) kycUserQuery(criteria *UserCriteria, tableName string) string {
+func (p *PostgresPersister) userQuery(criteria *UserCriteria, tableName string) string {
 	queryBuf := bytes.NewBufferString("SELECT ")
 	fieldNames, _ := cpostgres.StructFieldsForQuery(User{}, false, "")
 
@@ -126,7 +131,7 @@ func (p *PostgresPersister) kycUserQuery(criteria *UserCriteria, tableName strin
 	return queryBuf.String()
 }
 
-func (p *PostgresPersister) createKycUserForTable(user *User, tableName string) error {
+func (p *PostgresPersister) createUserForTable(user *User, tableName string) error {
 	// Ensure a UID is generated. Will fail if a UID already exists, which means
 	// the user was already created
 	err := user.GenerateUID()
@@ -149,13 +154,13 @@ func (p *PostgresPersister) createKycUserForTable(user *User, tableName string) 
 	return nil
 }
 
-func (p *PostgresPersister) updateKycUserForTable(user *User, updatedFields []string,
+func (p *PostgresPersister) updateUserForTable(user *User, updatedFields []string,
 	tableName string) error {
 	ts := ctime.CurrentEpochSecsInInt64()
 	user.DateUpdated = ts
 	updatedFields = append(updatedFields, dateUpdatedFieldName)
 
-	queryString, err := p.updateKycUserQuery(updatedFields, tableName)
+	queryString, err := p.updateUserQuery(updatedFields, tableName)
 	if err != nil {
 		return fmt.Errorf("Error creating query string for update: %v ", err)
 	}
@@ -166,7 +171,7 @@ func (p *PostgresPersister) updateKycUserForTable(user *User, updatedFields []st
 	return nil
 }
 
-func (p *PostgresPersister) updateKycUserQuery(updatedFields []string, tableName string) (string, error) {
+func (p *PostgresPersister) updateUserQuery(updatedFields []string, tableName string) (string, error) {
 	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, User{})
 	if err != nil {
 		return "", err
@@ -196,14 +201,20 @@ func (p *PostgresPersister) updateDBQueryBuffer(updatedFields []string, tableNam
 	return queryBuf, nil
 }
 
-func (p *PostgresPersister) createKycUserIndicesForTable(tableName string) error {
-	indexQuery := CreateKycUserTableIndicesString(tableName)
+func (p *PostgresPersister) runUserMigrationsForTable(tableName string) error {
+	indexQuery := CreateUserTableMigrationQuery(tableName)
 	_, err := p.db.Exec(indexQuery)
 	return err
 }
 
-// CreateKycUserTableQuery returns the query to create the KYC users
-func CreateKycUserTableQuery(tableName string) string {
+func (p *PostgresPersister) createUserIndicesForTable(tableName string) error {
+	indexQuery := CreateUserTableIndicesString(tableName)
+	_, err := p.db.Exec(indexQuery)
+	return err
+}
+
+// CreateUserTableQuery returns the query to create the  users
+func CreateUserTableQuery(tableName string) string {
 	// XXX(PN): ideally, uuid should be generated by the DB, but not messing with DB
 	// permissions right now.  Going to generate it via application code.
 	queryString := fmt.Sprintf(`
@@ -220,14 +231,31 @@ func CreateKycUserTableQuery(tableName string) string {
 			date_created INT,
 			date_updated INT,
 			purchase_txhashes TEXT,
-			civilian_whitelist_tx_id TEXT
+			civilian_whitelist_tx_id TEXT,
+			app_refer TEXT,
+			nr_step INT,
+			nr_far_step INT,
+			nr_last_seen INT
         );
     `, tableName)
 	return queryString
 }
 
-// CreateKycUserTableIndicesString returns the query to create indices on the table
-func CreateKycUserTableIndicesString(tableName string) string {
+// CreateUserTableMigrationQuery calls alter table queries to update existing tables if
+// they exists in lieu of a migration mechanism for our DB. Ensure we always
+// set the default values of any altered columns.
+func CreateUserTableMigrationQuery(tableName string) string {
+	queryString := fmt.Sprintf(`
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS app_refer TEXT DEFAULT '';
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_step INT DEFAULT 0;
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_far_step INT DEFAULT 0;
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_last_seen INT DEFAULT 0;
+	`, tableName, tableName, tableName, tableName)
+	return queryString
+}
+
+// CreateUserTableIndicesString returns the query to create indices on the table
+func CreateUserTableIndicesString(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS email_idx ON %s (email);
 		CREATE INDEX IF NOT EXISTS eth_address_idx ON %s (eth_address);

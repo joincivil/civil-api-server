@@ -14,7 +14,7 @@ const (
 	// number of seconds that a JWT token has until it expires
 	defaultJWTExpiration = 60 * 60 * 24 * 60 // 60 days
 	// number of seconds that a JWT token sent for login or signup is valid
-	defaultJWTEmailExpiration = 60 * 60 * 24 * 10
+	defaultJWTEmailExpiration = 60 * 60 * 6 // 6 hours
 	// number of seconds for a signature challenge
 	defaultGracePeriod = 5 * 60 // 5 minutes
 	// OkResponse is sent when an action is completed successfully
@@ -23,6 +23,8 @@ const (
 	EmailNotFoundResponse = "emailnotfound"
 	// EmailExistsResponse  is sent when an email address already exists for a user
 	EmailExistsResponse = "emailexists"
+
+	subDelimiter = "||"
 
 	// sendgrid template ID for signup that sends a JWT encoded with the email address
 	// defaultSignupEmailConfirmTemplateID = "d-88f731b52a524e6cafc308d0359b84a6"
@@ -48,10 +50,10 @@ type ApplicationEmailTemplateMap map[ApplicationEnum]string
 func (a ApplicationEmailTemplateMap) Validate() error {
 	for appEnum, templateID := range a {
 		if !appEnum.IsValid() {
-			return fmt.Errorf("App enum is not valid: %v", appEnum.String())
+			return fmt.Errorf("app enum is not valid: %v", appEnum.String())
 		}
 		if templateID == "" {
-			return fmt.Errorf("Cannot have empty template ID for %v", appEnum.String())
+			return fmt.Errorf("cannot have empty template ID for %v", appEnum.String())
 		}
 	}
 	return nil
@@ -62,10 +64,10 @@ func (a ApplicationEmailTemplateMap) FromStringMap(smap map[string]string) error
 	for appName, templateID := range smap {
 		enum := ApplicationEnum(appName)
 		if !enum.IsValid() {
-			return fmt.Errorf("App enum is not valid: %v", enum.String())
+			return fmt.Errorf("app enum is not valid: %v", enum.String())
 		}
 		if templateID == "" {
-			return fmt.Errorf("Cannot have empty template ID for %v", enum.String())
+			return fmt.Errorf("cannot have empty template ID for %v", enum.String())
 		}
 		a[enum] = templateID
 	}
@@ -154,7 +156,7 @@ func (s *Service) SignupEmailSendForApplication(emailAddress string,
 		return "", "", err
 	}
 
-	// If user does not exist, return with code
+	// If user does exist, return with code
 	if user != nil {
 		return EmailExistsResponse, "", nil
 	}
@@ -168,7 +170,8 @@ func (s *Service) SignupEmailSendForApplication(emailAddress string,
 	if application == ApplicationEnumNewsroom {
 		verifyURI = newsroomSignupVerifyURI
 	}
-	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
+	referral := string(application)
+	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI, referral)
 	if err != nil {
 		return "", "", err
 	}
@@ -181,10 +184,16 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	email := claims["sub"].(string)
+
+	sub := claims["sub"].(string)
+	email, referral := s.subData(sub)
+	if email == "" {
+		return nil, fmt.Errorf("no email found in token")
+	}
 
 	identifier := users.UserCriteria{
-		Email: strings.ToLower(email),
+		Email:       strings.ToLower(email),
+		AppReferral: strings.ToLower(referral),
 	}
 	user, err := s.userService.CreateUser(identifier)
 	if err != nil {
@@ -210,7 +219,7 @@ func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) 
 	identifier := users.UserCriteria{EthAddress: input.Signer}
 	user, err := s.userService.GetUser(identifier)
 	if err != nil && err == cpersist.ErrPersisterNoResults {
-		return nil, fmt.Errorf("User does not exist")
+		return nil, fmt.Errorf("user does not exist")
 	} else if err != nil {
 		return nil, err
 	}
@@ -251,7 +260,10 @@ func (s *Service) LoginEmailSendForApplication(emailAddress string,
 	if application == ApplicationEnumNewsroom {
 		verifyURI = newsroomLoginVerifyURI
 	}
-	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI)
+
+	referral := string(application)
+
+	token, err := s.sendEmailToken(emailAddress, templateID, verifyURI, referral)
 	if err != nil {
 		return "", "", err
 	}
@@ -264,10 +276,16 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	email := claims["sub"].(string)
+
+	sub := claims["sub"].(string)
+	email, referral := s.subData(sub)
+	if email == "" {
+		return nil, fmt.Errorf("no email found in token")
+	}
 
 	identifier := users.UserCriteria{
-		Email: strings.ToLower(email),
+		Email:       strings.ToLower(email),
+		AppReferral: strings.ToLower(referral),
 	}
 	user, err := s.userService.MaybeGetUser(identifier)
 	if err != nil {
@@ -285,7 +303,7 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 func (s *Service) SignupTemplateIDForApplication(application ApplicationEnum) (string, error) {
 	templateID, ok := s.signupEmailTemplateIDs[application]
 	if !ok || templateID == "" {
-		return "", fmt.Errorf("Application signup %v template not found", application.String())
+		return "", fmt.Errorf("application signup %v template not found", application.String())
 	}
 	return templateID, nil
 }
@@ -294,7 +312,7 @@ func (s *Service) SignupTemplateIDForApplication(application ApplicationEnum) (s
 func (s *Service) LoginTemplateIDForApplication(application ApplicationEnum) (string, error) {
 	templateID, ok := s.loginEmailTemplateIDs[application]
 	if !ok || templateID == "" {
-		return "", fmt.Errorf("Application login %v template not found", application.String())
+		return "", fmt.Errorf("application login %v template not found", application.String())
 	}
 	return templateID, nil
 }
@@ -320,16 +338,19 @@ func (s *Service) buildSignupLoginConfirmMarkup(confirmLink string) string {
 	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your email address</a>", confirmLink)
 }
 
-func (s *Service) sendEmailToken(emailAddress string, templateID string,
-	verifyURI string) (string, error) {
+func (s *Service) sendEmailToken(emailAddress string, templateID string, verifyURI string,
+	referral string) (string, error) {
 	if s.emailer == nil {
-		return "", fmt.Errorf("Emailer is nil, disabling email of magic link")
+		return "", fmt.Errorf("emailer is nil, disabling email of magic link")
 	}
 	if s.signupLoginProtoHost == "" {
-		return "", fmt.Errorf("No signup/login host for confirmation email")
+		return "", fmt.Errorf("no signup/login host for confirmation email")
 	}
 
-	emailToken, err := s.tokenGenerator.GenerateToken(emailAddress, defaultJWTEmailExpiration)
+	emailToken, err := s.tokenGenerator.GenerateToken(
+		s.buildSub(emailAddress, referral),
+		defaultJWTEmailExpiration,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -352,4 +373,25 @@ func (s *Service) sendEmailToken(emailAddress string, templateID string,
 		AsmGroupID:   defaultAsmGroupID,
 	}
 	return emailToken, s.emailer.SendTemplateEmail(emailReq)
+}
+
+func (s *Service) buildSub(email string, ref string) string {
+	if ref == "" {
+		return email
+	}
+
+	parts := []string{email, ref}
+	return strings.Join(parts, subDelimiter)
+}
+
+func (s *Service) subData(sub string) (email string, ref string) {
+	splitsub := strings.Split(sub, subDelimiter)
+	if len(splitsub) == 1 {
+		return splitsub[0], ""
+
+	} else if len(splitsub) == 2 {
+		return splitsub[0], splitsub[1]
+	}
+
+	return "", ""
 }
