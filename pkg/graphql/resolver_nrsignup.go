@@ -2,7 +2,9 @@ package graphql
 
 import (
 	context "context"
+
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	model "github.com/joincivil/civil-api-server/pkg/nrsignup"
 )
 
@@ -56,6 +58,22 @@ func (r *mutationResolver) NrsignupApproveGrant(ctx context.Context, approved bo
 		return "", ErrAccessDenied
 	}
 	return ResponseNotImplemented, nil
+}
+
+func (r *mutationResolver) NrsignupUpdateSteps(ctx context.Context,
+	input graphql.NrsignupStepsInput) (string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	err := r.nrsignupService.UpdateUserSteps(token.Sub, input.Step,
+		input.FurthestStep, input.LastSeen)
+	if err != nil {
+		return "", err
+	}
+
+	return ResponseOK, nil
 }
 
 func (r *mutationResolver) NrsignupSaveTxHash(ctx context.Context, txHash string) (string, error) {
