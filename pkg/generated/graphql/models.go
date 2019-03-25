@@ -71,6 +71,12 @@ type Metadata struct {
 	Value string `json:"value"`
 }
 
+type NrsignupStepsInput struct {
+	Step         *int `json:"step"`
+	FurthestStep *int `json:"furthestStep"`
+	LastSeen     *int `json:"lastSeen"`
+}
+
 type PageInfo struct {
 	EndCursor   *string `json:"endCursor"`
 	HasNextPage bool    `json:"hasNextPage"`

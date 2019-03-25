@@ -215,6 +215,25 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 	return s.setGrantApprovedFlag(newsroomOwnerUID, approved)
 }
 
+// UpdateUserSteps updates the user steps through the newsroom flow.  This differs
+// from userUpdate is that emails or actions will be triggered based on the user furthest
+// step.
+func (s *Service) UpdateUserSteps(newsroomOwnerUID string, step *int,
+	furthestStep *int, lastSeen *int) error {
+	input := &users.UserUpdateInput{
+		NrStep:         step,
+		NrFurthestStep: furthestStep,
+		NrLastSeen:     lastSeen,
+	}
+	_, err := s.userService.UpdateUser(newsroomOwnerUID, input)
+	// TODO(PN): If step X, trigger email for the user has applied.
+
+	// if err != nil {
+	return err
+	// }
+	// return nil
+}
+
 // SaveNewsroomDeployTxHash saves the txhash for a newsroom deploy
 func (s *Service) SaveNewsroomDeployTxHash(newsroomOwnerUID string, txHash string) error {
 	newsroomDeployTxHashUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
