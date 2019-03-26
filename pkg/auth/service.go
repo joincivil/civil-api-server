@@ -197,6 +197,12 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 		return nil, fmt.Errorf("no email found in token")
 	}
 
+	// Don't allow refresh token use here
+	_, ok := claims["aud"].(string)
+	if ok {
+		return nil, fmt.Errorf("invalid token")
+	}
+
 	identifier := users.UserCriteria{
 		Email:       strings.ToLower(email),
 		AppReferral: strings.ToLower(referral),
@@ -287,6 +293,12 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	email, referral := s.subData(sub)
 	if email == "" {
 		return nil, fmt.Errorf("no email found in token")
+	}
+
+	// Don't allow refresh token use here
+	_, ok := claims["aud"].(string)
+	if ok {
+		return nil, fmt.Errorf("invalid token")
 	}
 
 	identifier := users.UserCriteria{
