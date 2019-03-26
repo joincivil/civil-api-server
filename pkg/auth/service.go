@@ -12,6 +12,7 @@ import (
 
 const (
 	// number of seconds that a JWT token has until it expires
+	// TODO(PN): when client is integrated with refresh, lower this value
 	defaultJWTExpiration = 60 * 60 * 24 * 60 // 60 days
 	// number of seconds that a JWT token sent for login or signup is valid
 	defaultJWTEmailExpiration = 60 * 60 * 6 // 6 hours
@@ -40,6 +41,7 @@ const (
 	civilMediaEmail = "support@civil.co"
 
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
+
 )
 
 // ApplicationEmailTemplateMap represents a mapping of the ApplicationEnum to it's email
@@ -82,12 +84,14 @@ type Service struct {
 	signupEmailTemplateIDs ApplicationEmailTemplateMap
 	loginEmailTemplateIDs  ApplicationEmailTemplateMap
 	signupLoginProtoHost   string
+	refreshBlacklist       []string
 }
 
 // NewAuthService creates a new AuthService instance
 func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGenerator,
 	emailer *email.Emailer, signupTemplateIDs map[string]string,
-	loginTemplateIDs map[string]string, signupLoginProtoHost string) (*Service, error) {
+	loginTemplateIDs map[string]string, signupLoginProtoHost string,
+	refreshBlacklist []string) (*Service, error) {
 	var signupIDs ApplicationEmailTemplateMap
 	if signupTemplateIDs != nil {
 		signupIDs = ApplicationEmailTemplateMap{}
@@ -111,6 +115,7 @@ func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGene
 		signupEmailTemplateIDs: signupIDs,
 		loginEmailTemplateIDs:  loginIDs,
 		signupLoginProtoHost:   signupLoginProtoHost,
+		refreshBlacklist:       refreshBlacklist,
 	}, nil
 }
 
@@ -189,6 +194,12 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	email, referral := s.subData(sub)
 	if email == "" {
 		return nil, fmt.Errorf("no email found in token")
+	}
+
+	// Don't allow refresh token use here
+	_, ok := claims["aud"].(string)
+	if ok {
+		return nil, fmt.Errorf("invalid token")
 	}
 
 	identifier := users.UserCriteria{
@@ -283,6 +294,12 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 		return nil, fmt.Errorf("no email found in token")
 	}
 
+	// Don't allow refresh token use here
+	_, ok := claims["aud"].(string)
+	if ok {
+		return nil, fmt.Errorf("invalid token")
+	}
+
 	identifier := users.UserCriteria{
 		Email:       strings.ToLower(email),
 		AppReferral: strings.ToLower(referral),
@@ -297,6 +314,58 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	}
 
 	return s.buildLoginResponse(user)
+}
+
+// RefreshAccessToken will return a new JWT access token given the refresh token.
+func (s *Service) RefreshAccessToken(refreshToken string) (*LoginResponse, error) {
+	// Check if refresh token is on blacklist, this is in a env var for emergencies.  If we find the
+	// blacklist volume to be high, can move to a store.
+	for _, t := range s.refreshBlacklist {
+		if strings.ToLower(t) == strings.ToLower(refreshToken) {
+			return nil, fmt.Errorf("token blacklisted, rejecting: %v", refreshToken)
+		}
+	}
+
+	// Validate refresh token
+	claims, err := s.tokenGenerator.ValidateToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check claims
+	uid, ok := claims["sub"].(string)
+	if !ok || uid == "" {
+		return nil, fmt.Errorf("no uid found in token")
+	}
+	aud, ok := claims["aud"].(string)
+	if !ok || aud == "" {
+		return nil, fmt.Errorf("invalid token")
+	}
+	if aud != "refresh" {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	// Check if user exists
+	identifier := users.UserCriteria{
+		UID: strings.ToLower(uid),
+	}
+	user, err := s.userService.MaybeGetUser(identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, fmt.Errorf("unrecognized user")
+	}
+
+	// Everything is verified, so generate a new token
+	jwt, err := s.tokenGenerator.GenerateToken(user.UID, defaultJWTExpiration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LoginResponse{UID: user.UID, Token: jwt, RefreshToken: refreshToken}, nil
+
 }
 
 // SignupTemplateIDForApplication returns the signup email template ID for the given application enum

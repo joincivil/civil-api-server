@@ -256,6 +256,7 @@ type ComplexityRoot struct {
 		AuthLoginEmailSend                func(childComplexity int, emailAddress string, addToMailing *bool) int
 		AuthLoginEmailSendForApplication  func(childComplexity int, emailAddress string, application auth.ApplicationEnum, addToMailing *bool) int
 		AuthLoginEmailConfirm             func(childComplexity int, loginJWT string) int
+		AuthRefresh                       func(childComplexity int, token string) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		KycCreateApplicant                func(childComplexity int, applicant KycCreateApplicantInput) int
 		KycCreateCheck                    func(childComplexity int, applicantID string, facialVariant *string) int
@@ -429,6 +430,7 @@ type MutationResolver interface {
 	AuthLoginEmailSend(ctx context.Context, emailAddress string, addToMailing *bool) (*string, error)
 	AuthLoginEmailSendForApplication(ctx context.Context, emailAddress string, application auth.ApplicationEnum, addToMailing *bool) (*string, error)
 	AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error)
+	AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error)
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
@@ -673,6 +675,21 @@ func field_Mutation_authLoginEmailConfirm_args(rawArgs map[string]interface{}) (
 		}
 	}
 	args["loginJWT"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_authRefresh_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg0
 	return args, nil
 
 }
@@ -2701,6 +2718,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AuthLoginEmailConfirm(childComplexity, args["loginJWT"].(string)), true
+
+	case "Mutation.authRefresh":
+		if e.complexity.Mutation.AuthRefresh == nil {
+			break
+		}
+
+		args, err := field_Mutation_authRefresh_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AuthRefresh(childComplexity, args["token"].(string)), true
 
 	case "Mutation.jsonbSave":
 		if e.complexity.Mutation.JsonbSave == nil {
@@ -8301,6 +8330,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_authLoginEmailSendForApplication(ctx, field)
 		case "authLoginEmailConfirm":
 			out.Values[i] = ec._Mutation_authLoginEmailConfirm(ctx, field)
+		case "authRefresh":
+			out.Values[i] = ec._Mutation_authRefresh(ctx, field)
 		case "jsonbSave":
 			out.Values[i] = ec._Mutation_jsonbSave(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8643,6 +8674,41 @@ func (ec *executionContext) _Mutation_authLoginEmailConfirm(ctx context.Context,
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AuthLoginEmailConfirm(rctx, args["loginJWT"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*auth.LoginResponse)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._AuthLoginResponse(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_authRefresh(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_authRefresh_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AuthRefresh(rctx, args["token"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -13753,6 +13819,7 @@ type Mutation {
     addToMailing: Boolean = False
   ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+  authRefresh(token: String!): AuthLoginResponse
 
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
