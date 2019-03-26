@@ -284,6 +284,7 @@ func initAuthService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 		config.AuthEmailSignupTemplates,
 		config.AuthEmailLoginTemplates,
 		config.SignupLoginProtoHost,
+		config.RefreshTokenBlacklist,
 	)
 }
 

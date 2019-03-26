@@ -44,10 +44,6 @@ const (
 
 )
 
-var (
-	refreshTokenBlacklist = []string{}
-)
-
 // ApplicationEmailTemplateMap represents a mapping of the ApplicationEnum to it's email
 // template ID
 type ApplicationEmailTemplateMap map[ApplicationEnum]string
@@ -88,12 +84,14 @@ type Service struct {
 	signupEmailTemplateIDs ApplicationEmailTemplateMap
 	loginEmailTemplateIDs  ApplicationEmailTemplateMap
 	signupLoginProtoHost   string
+	refreshBlacklist       []string
 }
 
 // NewAuthService creates a new AuthService instance
 func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGenerator,
 	emailer *email.Emailer, signupTemplateIDs map[string]string,
-	loginTemplateIDs map[string]string, signupLoginProtoHost string) (*Service, error) {
+	loginTemplateIDs map[string]string, signupLoginProtoHost string,
+	refreshBlacklist []string) (*Service, error) {
 	var signupIDs ApplicationEmailTemplateMap
 	if signupTemplateIDs != nil {
 		signupIDs = ApplicationEmailTemplateMap{}
@@ -117,6 +115,7 @@ func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGene
 		signupEmailTemplateIDs: signupIDs,
 		loginEmailTemplateIDs:  loginIDs,
 		signupLoginProtoHost:   signupLoginProtoHost,
+		refreshBlacklist:       refreshBlacklist,
 	}, nil
 }
 
@@ -319,9 +318,9 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 
 // RefreshAccessToken will return a new JWT access token given the refresh token.
 func (s *Service) RefreshAccessToken(refreshToken string) (*LoginResponse, error) {
-	// Check if on blacklist, this is in a basic list for emergencies.  If we find the
+	// Check if refresh token is on blacklist, this is in a env var for emergencies.  If we find the
 	// blacklist volume to be high, can move to a store.
-	for _, t := range refreshTokenBlacklist {
+	for _, t := range s.refreshBlacklist {
 		if strings.ToLower(t) == strings.ToLower(refreshToken) {
 			return nil, fmt.Errorf("token blacklisted, rejecting: %v", refreshToken)
 		}
