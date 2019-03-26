@@ -108,6 +108,7 @@ type Mutation {
     addToMailing: Boolean = False
   ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+  authRefresh(token: String!): AuthLoginResponse
 
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!

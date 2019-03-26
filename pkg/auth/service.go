@@ -12,6 +12,7 @@ import (
 
 const (
 	// number of seconds that a JWT token has until it expires
+	// TODO(PN): when client is integrated with refresh, lower this value
 	defaultJWTExpiration = 60 * 60 * 24 * 60 // 60 days
 	// number of seconds that a JWT token sent for login or signup is valid
 	defaultJWTEmailExpiration = 60 * 60 * 6 // 6 hours
@@ -40,6 +41,11 @@ const (
 	civilMediaEmail = "support@civil.co"
 
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
+
+)
+
+var (
+	refreshTokenBlacklist = []string{}
 )
 
 // ApplicationEmailTemplateMap represents a mapping of the ApplicationEnum to it's email
@@ -297,6 +303,58 @@ func (s *Service) LoginEmailConfirm(signupJWT string) (*LoginResponse, error) {
 	}
 
 	return s.buildLoginResponse(user)
+}
+
+// RefreshAccessToken will return a new JWT access token given the refresh token.
+func (s *Service) RefreshAccessToken(refreshToken string) (*LoginResponse, error) {
+	// Check if on blacklist, this is in a basic list for emergencies.  If we find the
+	// blacklist volume to be high, can move to a store.
+	for _, t := range refreshTokenBlacklist {
+		if strings.ToLower(t) == strings.ToLower(refreshToken) {
+			return nil, fmt.Errorf("token blacklisted, rejecting: %v", refreshToken)
+		}
+	}
+
+	// Validate refresh token
+	claims, err := s.tokenGenerator.ValidateToken(refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check claims
+	uid, ok := claims["sub"].(string)
+	if !ok || uid == "" {
+		return nil, fmt.Errorf("no uid found in token")
+	}
+	aud, ok := claims["aud"].(string)
+	if !ok || aud == "" {
+		return nil, fmt.Errorf("invalid token")
+	}
+	if aud != "refresh" {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	// Check if user exists
+	identifier := users.UserCriteria{
+		UID: strings.ToLower(uid),
+	}
+	user, err := s.userService.MaybeGetUser(identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	if user == nil {
+		return nil, fmt.Errorf("unrecognized user")
+	}
+
+	// Everything is verified, so generate a new token
+	jwt, err := s.tokenGenerator.GenerateToken(user.UID, defaultJWTExpiration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LoginResponse{UID: user.UID, Token: jwt, RefreshToken: refreshToken}, nil
+
 }
 
 // SignupTemplateIDForApplication returns the signup email template ID for the given application enum

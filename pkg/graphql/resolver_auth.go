@@ -130,3 +130,13 @@ func (r *mutationResolver) AuthLoginEmailConfirm(ctx context.Context, loginJWT s
 
 	return response, nil
 }
+
+func (r *mutationResolver) AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error) {
+	response, err := r.authService.RefreshAccessToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+
+}
