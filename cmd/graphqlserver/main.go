@@ -232,6 +232,10 @@ func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, 
 	if err != nil {
 		return nil, fmt.Errorf("Error creating indices: err: %v", err)
 	}
+	err = jsonbPersister.RunMigrations()
+	if err != nil {
+		return nil, fmt.Errorf("Error running migrations: err: %v", err)
+	}
 	return jsonbPersister, nil
 }
 

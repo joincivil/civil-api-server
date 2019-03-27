@@ -446,6 +446,7 @@ func (s *Service) saveUserJSONData(newsroomOwnerUID string, signupData *SignupUs
 		jsonstore.DefaultJsonbGraphqlNs,
 		newsroomOwnerUID,
 		string(bys),
+		&newsroomOwnerUID,
 	)
 
 	return err
