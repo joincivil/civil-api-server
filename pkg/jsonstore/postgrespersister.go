@@ -77,6 +77,11 @@ func (p *PostgresPersister) CreateTables() error {
 	return nil
 }
 
+// RunMigrations runs the migration statements to update existing tables
+func (p *PostgresPersister) RunMigrations() error {
+	return p.runJsonbMigrationsForTable(defaultJsonbTableName)
+}
+
 // CreateIndices creates the indices for DB if they don't exist
 func (p *PostgresPersister) CreateIndices() error {
 	return p.createJsonbIndicesForTable(defaultJsonbTableName)
@@ -174,12 +179,18 @@ func (p *PostgresPersister) appendReturningQueryClause(queryString string) strin
 	queryString = splitQueryStrs[0]
 
 	queryBuf := bytes.NewBufferString(queryString)
-	queryBuf.WriteString(" RETURNING key, hash, id, created_date, last_updated_date, raw_json;")
+	queryBuf.WriteString(" RETURNING key, hash, uid, id, created_date, last_updated_date, raw_json;")
 	return queryBuf.String()
 }
 
 func (p *PostgresPersister) createJsonbIndicesForTable(tableName string) error {
 	indexQuery := CreateJsonbTableIndicesString(tableName)
+	_, err := p.db.Exec(indexQuery)
+	return err
+}
+
+func (p *PostgresPersister) runJsonbMigrationsForTable(tableName string) error {
+	indexQuery := CreateJsonbTableMigrationQuery(tableName)
 	_, err := p.db.Exec(indexQuery)
 	return err
 }
@@ -190,6 +201,7 @@ func CreateJsonbTableQuery(tableName string) string {
         CREATE TABLE IF NOT EXISTS %s(
             key TEXT PRIMARY KEY UNIQUE,
 			hash TEXT,
+			uid TEXT,
 			id TEXT,
 			namespace TEXT,
             created_date BIGINT,
@@ -197,6 +209,14 @@ func CreateJsonbTableQuery(tableName string) string {
             raw_json JSONB
         );
     `, tableName)
+	return queryString
+}
+
+// CreateJsonbTableMigrationQuery returns the query to do db migrations
+func CreateJsonbTableMigrationQuery(tableName string) string {
+	queryString := fmt.Sprintf(`
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS uid TEXT DEFAULT '';
+	`, tableName)
 	return queryString
 }
 
@@ -246,6 +266,7 @@ func NewPostgresJSONbFromJSONb(jsonb *JSONb) (*PostgresJSONb, error) {
 	return &PostgresJSONb{
 		Hash:            jsonb.Hash,
 		ID:              jsonb.ID,
+		UID:             jsonb.UID,
 		Key:             jsonb.Key,
 		Namespace:       jsonb.Namespace,
 		CreatedDate:     createdTs,
@@ -259,6 +280,8 @@ type PostgresJSONb struct {
 	Key string `db:"key"`
 
 	Hash string `db:"hash"`
+
+	UID string `db:"uid"`
 
 	ID string `db:"id"`
 
@@ -285,6 +308,7 @@ func (p *PostgresJSONb) PostgresJSONbToJSONb() (*JSONb, error) {
 	jsonb := &JSONb{}
 	jsonb.Key = p.Key
 	jsonb.Hash = p.Hash
+	jsonb.UID = p.UID
 	jsonb.ID = p.ID
 	jsonb.Namespace = p.Namespace
 	jsonb.CreatedDate = ctime.SecsFromEpochToTime(p.CreatedDate)
