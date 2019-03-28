@@ -60,12 +60,13 @@ type GraphQLConfig struct {
 
 	// ContractAddresses map a contract type to a string of contract addresses.  If there are more than 1
 	// contract to be tracked for a particular type, delimit the addresses with '|'.
-	ContractAddresses   map[string]string           `split_words:"true" desc:"<contract name>:<contract addr>. Delimit contract address with '|' for multiple addresses"`
-	ContractAddressObjs map[string][]common.Address `ignored:"true"`
+	ContractAddresses map[string]string `split_words:"true" desc:"<contract name>:<contract addr>. Delimit contract address with '|' for multiple addresses"`
 
 	TokenSaleAddresses []common.Address `split_words:"true" desc:"Addresses that contain tokens to be sold as part of the Token Sale"`
 
 	EthereumDefaultPrivateKey string `split_words:"true" desc:"Private key to use when sending Ethereum transactions"`
+
+	RefreshTokenBlacklist []string `split_words:"true" desc:"List of refresh tokens to blacklist"`
 }
 
 // PersistType returns the persister type, implements PersisterConfig

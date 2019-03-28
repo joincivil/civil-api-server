@@ -138,11 +138,13 @@ func newTestNewsroomSignupService(t *testing.T, sendGridKey string) (
 	*nrsignup.Service, *jsonstore.Service, error) {
 	jsonbService := buildJsonbService(t)
 	signupService, err := nrsignup.NewNewsroomSignupService(
+		nil,
 		email.NewEmailerWithSandbox(sendGridKey, useSandbox),
 		buildUserService(),
 		jsonbService,
 		auth.NewJwtTokenGenerator([]byte(testSecret)),
 		"http://localhost:8080",
+		"",
 	)
 	return signupService, jsonbService, err
 }

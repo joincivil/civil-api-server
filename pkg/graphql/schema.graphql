@@ -108,6 +108,7 @@ type Mutation {
     addToMailing: Boolean = False
   ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+  authRefresh(token: String!): AuthLoginResponse
 
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
@@ -126,6 +127,7 @@ type Mutation {
   nrsignupSaveAddress(address: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
+  nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
 
   # Storefront Mutations
   storefrontAirswapTxHash(txHash: String!): String!
@@ -366,6 +368,12 @@ input UserUpdateInput {
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
+}
+
+input NrsignupStepsInput {
+  step: Int
+  furthestStep: Int
+  lastSeen: Int
 }
 
 type NrsignupNewsroom {

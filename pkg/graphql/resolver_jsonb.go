@@ -49,6 +49,7 @@ func (r *mutationResolver) JsonbSave(ctx context.Context, input graphql.JsonbInp
 		jsonstore.DefaultJsonbGraphqlNs,
 		token.Sub, // token sub as salt
 		input.JSONStr,
+		&token.Sub,
 	)
 	return *updatedJSONb, err
 }

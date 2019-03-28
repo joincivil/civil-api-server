@@ -48,7 +48,7 @@ func TestSaveRetrieveJSONb(t *testing.T) {
 	namespace := "somenamespaceid"
 
 	jsonb, err := jsonbService.SaveRawJSONb(testID, namespace,
-		jsonstore.NoSaltValue, testJSONStr)
+		jsonstore.NoSaltValue, testJSONStr, nil)
 	if err != nil {
 		t.Errorf("Should have saved to the JSONb store: err: %v", err)
 	}
@@ -104,12 +104,12 @@ func TestInvalidJSONStr(t *testing.T) {
 	namespace := "somenamespaceid"
 
 	_, err := jsonbService.SaveRawJSONb(testID, namespace, jsonstore.NoSaltValue,
-		testInvalidJSONStr)
+		testInvalidJSONStr, nil)
 	if err == nil {
 		t.Errorf("Should have received error with invalid JSON: err: %v", err)
 	}
 
-	_, err = jsonbService.SaveRawJSONb(testID, namespace, jsonstore.NoSaltValue, "")
+	_, err = jsonbService.SaveRawJSONb(testID, namespace, jsonstore.NoSaltValue, "", nil)
 	if err == nil {
 		t.Errorf("Should have received error with empty JSON: err: %v", err)
 	}

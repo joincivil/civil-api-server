@@ -256,6 +256,7 @@ type ComplexityRoot struct {
 		AuthLoginEmailSend                func(childComplexity int, emailAddress string, addToMailing *bool) int
 		AuthLoginEmailSendForApplication  func(childComplexity int, emailAddress string, application auth.ApplicationEnum, addToMailing *bool) int
 		AuthLoginEmailConfirm             func(childComplexity int, loginJWT string) int
+		AuthRefresh                       func(childComplexity int, token string) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		KycCreateApplicant                func(childComplexity int, applicant KycCreateApplicantInput) int
 		KycCreateCheck                    func(childComplexity int, applicantID string, facialVariant *string) int
@@ -268,6 +269,7 @@ type ComplexityRoot struct {
 		NrsignupSaveAddress               func(childComplexity int, address string) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
+		NrsignupUpdateSteps               func(childComplexity int, input NrsignupStepsInput) int
 		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
 		StorefrontAirswapCancelled        func(childComplexity int) int
 		UserSetEthAddress                 func(childComplexity int, input users.SignatureInput) int
@@ -428,6 +430,7 @@ type MutationResolver interface {
 	AuthLoginEmailSend(ctx context.Context, emailAddress string, addToMailing *bool) (*string, error)
 	AuthLoginEmailSendForApplication(ctx context.Context, emailAddress string, application auth.ApplicationEnum, addToMailing *bool) (*string, error)
 	AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error)
+	AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error)
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
 	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
 	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
@@ -440,6 +443,7 @@ type MutationResolver interface {
 	NrsignupSaveAddress(ctx context.Context, address string) (string, error)
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
+	NrsignupUpdateSteps(ctx context.Context, input NrsignupStepsInput) (string, error)
 	StorefrontAirswapTxHash(ctx context.Context, txHash string) (string, error)
 	StorefrontAirswapCancelled(ctx context.Context) (string, error)
 	UserSetEthAddress(ctx context.Context, input users.SignatureInput) (*string, error)
@@ -675,6 +679,21 @@ func field_Mutation_authLoginEmailConfirm_args(rawArgs map[string]interface{}) (
 
 }
 
+func field_Mutation_authRefresh_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["token"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["token"] = arg0
+	return args, nil
+
+}
+
 func field_Mutation_jsonbSave_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 JsonbInput
@@ -859,6 +878,21 @@ func field_Mutation_nrsignupPollTcrApplication_args(rawArgs map[string]interface
 		}
 	}
 	args["txHash"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_nrsignupUpdateSteps_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 NrsignupStepsInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalNrsignupStepsInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 
 }
@@ -2685,6 +2719,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AuthLoginEmailConfirm(childComplexity, args["loginJWT"].(string)), true
 
+	case "Mutation.authRefresh":
+		if e.complexity.Mutation.AuthRefresh == nil {
+			break
+		}
+
+		args, err := field_Mutation_authRefresh_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AuthRefresh(childComplexity, args["token"].(string)), true
+
 	case "Mutation.jsonbSave":
 		if e.complexity.Mutation.JsonbSave == nil {
 			break
@@ -2823,6 +2869,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.NrsignupPollTcrApplication(childComplexity, args["txHash"].(string)), true
+
+	case "Mutation.nrsignupUpdateSteps":
+		if e.complexity.Mutation.NrsignupUpdateSteps == nil {
+			break
+		}
+
+		args, err := field_Mutation_nrsignupUpdateSteps_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NrsignupUpdateSteps(childComplexity, args["input"].(NrsignupStepsInput)), true
 
 	case "Mutation.storefrontAirswapTxHash":
 		if e.complexity.Mutation.StorefrontAirswapTxHash == nil {
@@ -8272,6 +8330,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_authLoginEmailSendForApplication(ctx, field)
 		case "authLoginEmailConfirm":
 			out.Values[i] = ec._Mutation_authLoginEmailConfirm(ctx, field)
+		case "authRefresh":
+			out.Values[i] = ec._Mutation_authRefresh(ctx, field)
 		case "jsonbSave":
 			out.Values[i] = ec._Mutation_jsonbSave(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8320,6 +8380,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "nrsignupPollTcrApplication":
 			out.Values[i] = ec._Mutation_nrsignupPollTcrApplication(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "nrsignupUpdateSteps":
+			out.Values[i] = ec._Mutation_nrsignupUpdateSteps(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -8609,6 +8674,41 @@ func (ec *executionContext) _Mutation_authLoginEmailConfirm(ctx context.Context,
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AuthLoginEmailConfirm(rctx, args["loginJWT"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*auth.LoginResponse)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._AuthLoginResponse(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_authRefresh(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_authRefresh_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AuthRefresh(rctx, args["token"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -9005,6 +9105,39 @@ func (ec *executionContext) _Mutation_nrsignupPollTcrApplication(ctx context.Con
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().NrsignupPollTcrApplication(rctx, args["txHash"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_nrsignupUpdateSteps(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_nrsignupUpdateSteps_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupUpdateSteps(rctx, args["input"].(NrsignupStepsInput))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -13319,6 +13452,51 @@ func UnmarshalKycCreateApplicantInput(v interface{}) (KycCreateApplicantInput, e
 	return it, nil
 }
 
+func UnmarshalNrsignupStepsInput(v interface{}) (NrsignupStepsInput, error) {
+	var it NrsignupStepsInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "step":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.Step = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "furthestStep":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.FurthestStep = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		case "lastSeen":
+			var err error
+			var ptr1 int
+			if v != nil {
+				ptr1, err = graphql.UnmarshalInt(v)
+				it.LastSeen = &ptr1
+			}
+
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalRosterMemberInput(v interface{}) (nrsignup.CharterRosterMember, error) {
 	var it nrsignup.CharterRosterMember
 	var asMap = v.(map[string]interface{})
@@ -13641,6 +13819,7 @@ type Mutation {
     addToMailing: Boolean = False
   ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+  authRefresh(token: String!): AuthLoginResponse
 
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
@@ -13659,6 +13838,7 @@ type Mutation {
   nrsignupSaveAddress(address: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
+  nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
 
   # Storefront Mutations
   storefrontAirswapTxHash(txHash: String!): String!
@@ -13899,6 +14079,12 @@ input UserUpdateInput {
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
+}
+
+input NrsignupStepsInput {
+  step: Int
+  furthestStep: Int
+  lastSeen: Int
 }
 
 type NrsignupNewsroom {

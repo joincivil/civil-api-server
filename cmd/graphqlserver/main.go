@@ -8,6 +8,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+
 	"github.com/joincivil/go-common/pkg/eth"
 
 	"github.com/joincivil/civil-api-server/pkg/airswap"
@@ -230,6 +232,10 @@ func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, 
 	if err != nil {
 		return nil, fmt.Errorf("Error creating indices: err: %v", err)
 	}
+	err = jsonbPersister.RunMigrations()
+	if err != nil {
+		return nil, fmt.Errorf("Error running migrations: err: %v", err)
+	}
 	return jsonbPersister, nil
 }
 
@@ -246,15 +252,17 @@ func initJsonbService(config *utils.GraphQLConfig, jsonbPersister jsonstore.Json
 	return jsonbService, nil
 }
 
-func initNrsignupService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
-	userService *users.UserService, jsonbService *jsonstore.Service,
+func initNrsignupService(config *utils.GraphQLConfig, client bind.ContractBackend,
+	emailer *cemail.Emailer, userService *users.UserService, jsonbService *jsonstore.Service,
 	jwtGenerator *auth.JwtTokenGenerator) (*nrsignup.Service, error) {
 	nrsignupService, err := nrsignup.NewNewsroomSignupService(
+		client,
 		emailer,
 		userService,
 		jsonbService,
 		jwtGenerator,
 		config.ApproveGrantProtoHost,
+		config.ContractAddresses["civilparameterizer"],
 	)
 	if err != nil {
 		return nil, err
@@ -284,6 +292,7 @@ func initAuthService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 		config.AuthEmailSignupTemplates,
 		config.AuthEmailLoginTemplates,
 		config.SignupLoginProtoHost,
+		config.RefreshTokenBlacklist,
 	)
 }
 
@@ -505,6 +514,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	}
 	nrsignupService, err := initNrsignupService(
 		config,
+		ethHelper.Blockchain,
 		emailer,
 		userService,
 		jsonbService,
