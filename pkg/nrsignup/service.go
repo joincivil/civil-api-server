@@ -264,7 +264,7 @@ func (s *Service) UpdateUserSteps(newsroomOwnerUID string, step *int,
 
 	// TODO(PN): If step X, trigger email for the user has applied.
 	if *furthestStep == stepApplyComplete {
-		err = s.sendApplicationCompleteEmail(user.Email)
+		err = s.sendApplicationCompleteEmail(newsroomOwnerUID, user.Email)
 		if err != nil {
 			return err
 		}
@@ -468,8 +468,13 @@ func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn use
 	return s.saveUserJSONData(newsroomOwnerUID, signupData)
 }
 
-func (s *Service) sendApplicationCompleteEmail(emailAddress string) error {
+func (s *Service) sendApplicationCompleteEmail(newsroomOwnerUID string, emailAddress string) error {
 	applyLen, err := s.getApplyStageLength()
+	if err != nil {
+		return err
+	}
+
+	signupData, err := s.RetrieveUserJSONData(newsroomOwnerUID)
 	if err != nil {
 		return err
 	}
@@ -477,6 +482,7 @@ func (s *Service) sendApplicationCompleteEmail(emailAddress string) error {
 	tmplData := email.TemplateData{
 		"greeting":         emailAddress,
 		"apply_stage_days": s.convertToDaysStr(applyLen),
+		"nr_name":          signupData.Charter.Name,
 	}
 
 	tmplReq := &email.SendTemplateEmailRequest{
