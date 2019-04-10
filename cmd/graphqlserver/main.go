@@ -263,6 +263,7 @@ func initNrsignupService(config *utils.GraphQLConfig, client bind.ContractBacken
 		jwtGenerator,
 		config.ApproveGrantProtoHost,
 		config.ContractAddresses["civilparameterizer"],
+		config.RegistryAlertsID,
 	)
 	if err != nil {
 		return nil, err

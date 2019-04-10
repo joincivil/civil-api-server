@@ -145,6 +145,7 @@ func newTestNewsroomSignupService(t *testing.T, sendGridKey string) (
 		auth.NewJwtTokenGenerator([]byte(testSecret)),
 		"http://localhost:8080",
 		"",
+		"",
 	)
 	return signupService, jsonbService, err
 }

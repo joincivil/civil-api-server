@@ -39,6 +39,7 @@ func TestHandleGrantApprovalNotRequested(t *testing.T) {
 		tokenGen,
 		"http://localhost:8080",
 		"",
+		"",
 	)
 
 	tokenSub := fmt.Sprintf("1:%v", nrsignup.ApprovedSubValue)
@@ -78,6 +79,7 @@ func TestHandleGrantApprovalApproved(t *testing.T) {
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
 		"",
 	)
 
@@ -124,6 +126,7 @@ func TestHandleGrantApprovalRejected(t *testing.T) {
 		tokenGen,
 		"http://localhost:8080",
 		"",
+		"",
 	)
 
 	tokenSub := fmt.Sprintf("1:%v", nrsignup.RejectedSubValue)
@@ -169,6 +172,7 @@ func TestHandleGrantApprovalInvalidToken(t *testing.T) {
 		tokenGen,
 		"http://localhost:8080",
 		"",
+		"",
 	)
 
 	err := signupService.RequestGrant("1", true)
@@ -207,6 +211,7 @@ func TestHandleGrantApprovalNoApprovedValue(t *testing.T) {
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
 		"",
 	)
 
@@ -254,6 +259,7 @@ func TestHandleGrantApprovalBadApprovedValue(t *testing.T) {
 		tokenGen,
 		"http://localhost:8080",
 		"",
+		"",
 	)
 
 	// No delimiter for the token sub
@@ -299,6 +305,7 @@ func TestApproveGrantHandler(t *testing.T) {
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
 		"",
 	)
 
@@ -368,6 +375,7 @@ func TestApproveGrantHandlerInvalidToken(t *testing.T) {
 		tokenGen,
 		"http://localhost:8080",
 		"",
+		"",
 	)
 
 	err := signupService.RequestGrant("1", true)
@@ -435,6 +443,7 @@ func TestApproveGrantHandlerError(t *testing.T) {
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
 		"",
 	)
 
