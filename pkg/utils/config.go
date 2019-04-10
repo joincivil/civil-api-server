@@ -34,8 +34,9 @@ type GraphQLConfig struct {
 	ApproveGrantProtoHost string `split_words:"true" desc:"Newsroom signup grant approval landing proto/host" required:"false"`
 	SignupLoginProtoHost  string `split_words:"true" desc:"Signup/login proto/host" required:"false"`
 
-	SendgridKey  string `split_words:"true" desc:"The SendGrid API key"`
-	MailchimpKey string `split_words:"true" desc:"The Mailchimp API key"`
+	RegistryAlertsID string `split_words:"true" desc:"Sets the registry alerts list ID"`
+	SendgridKey      string `split_words:"true" desc:"The SendGrid API key"`
+	MailchimpKey     string `split_words:"true" desc:"The Mailchimp API key"`
 
 	OnfidoKey          string `split_words:"true" desc:"The Onfido API key"`
 	OnfidoReferrer     string `split_words:"true" desc:"The Onfido token referrer"`
