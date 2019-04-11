@@ -268,11 +268,9 @@ func (s *Service) UpdateUserSteps(newsroomOwnerUID string, step *int,
 		}
 
 		// Add the user to the registry alerts list if ID is set
-		if s.registryListID != "" {
-			err = utils.AddToRegistryAlertsList(user.Email, s.registryListID)
-			if err != nil {
-				return err
-			}
+		err = s.addToRegistryAlertsList(user.Email)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -472,6 +470,16 @@ func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn use
 	}
 
 	return s.saveUserJSONData(newsroomOwnerUID, signupData)
+}
+
+func (s *Service) addToRegistryAlertsList(emailAddress string) error {
+	if s.registryListID != "" {
+		err := utils.AddToRegistryAlertsList(emailAddress, s.registryListID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) sendApplicationCompleteEmail(newsroomOwnerUID string, emailAddress string) error {
