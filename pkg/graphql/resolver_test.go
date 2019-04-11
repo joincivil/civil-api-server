@@ -226,17 +226,13 @@ func initResolver(t *testing.T) (*graphql.Resolver, common.Address) {
 		Events: events,
 	}
 	resolver := graphql.NewResolver(&graphql.ResolverConfig{
-		InvoicePersister:    nil,
-		ListingPersister:    listingPersister,
-		GovEventPersister:   govEventsPersister,
-		RevisionPersister:   nil,
-		ChallengePersister:  nil,
-		AppealPersister:     nil,
-		PollPersister:       nil,
-		OnfidoAPI:           nil,
-		OnfidoTokenReferrer: "",
-		TokenFoundry:        nil,
-		UserService:         nil,
+		ListingPersister:   listingPersister,
+		GovEventPersister:  govEventsPersister,
+		RevisionPersister:  nil,
+		ChallengePersister: nil,
+		AppealPersister:    nil,
+		PollPersister:      nil,
+		UserService:        nil,
 	})
 	return resolver, govEventAddr
 }

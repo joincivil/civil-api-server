@@ -113,11 +113,6 @@ type Mutation {
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
 
-  # KYC Mutations
-  kycCreateApplicant(applicant: KycCreateApplicantInput!): String
-  kycCreateCheck(applicantID: String!, facialVariant: String): String
-  kycGenerateSdkToken(applicantID: String!): String
-
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
   nrsignupSaveCharter(charterData: CharterInput!): String!
@@ -290,61 +285,16 @@ type ContentRevision {
   revisionDate: Int!
 }
 
-## KYC object schemas
-
-# A type that reflects values in onfido.CreateApplicantRequest
-input KycCreateApplicantInput {
-  firstName: String!
-  lastName: String!
-  email: String
-  middleName: String
-  profession: String
-  nationality: String
-  countryOfResidence: String
-  dateOfBirth: String
-  buildingNumber: String
-  street: String
-  aptNumber: String
-  city: String
-  state: String
-  zipcode: String
-}
-
 ## User object schemas
-
-# A type that reflects values in invoicing.PostgresInvoice
-type Invoice {
-  hash: String
-  email: String
-  phone: String
-  name: String
-  amount: Float
-  invoiceID: String
-  invoiceNum: String
-  invoiceStatus: String
-  checkID: String
-  checkStatus: String
-  stopPoll: Boolean
-  isCheckbook: Boolean
-  isThirdParty: Boolean
-  referralCode: String
-  referredBy: String
-  emailState: Int
-}
 
 # A type that reflects values in users.User
 type User {
   uid: String
   email: String
   ethAddress: String
-  onfidoApplicantId: String
-  onfidoCheckID: String
-  kycStatus: String
   quizPayload: RawObject
   quizStatus: String
   civilianWhitelistTxID: String
-  invoices: [Invoice]
-  isTokenFoundryRegistered: Boolean
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
@@ -361,8 +311,6 @@ input UserSignatureInput {
 }
 
 input UserUpdateInput {
-  onfidoApplicantID: String
-  kycStatus: String
   quizPayload: RawObject
   quizStatus: String
   nrStep: Int

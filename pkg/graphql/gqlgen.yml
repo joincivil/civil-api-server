@@ -40,8 +40,6 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.Poll
   CurrentUser:
     model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
-  Invoice:
-    model: github.com/joincivil/civil-api-server/pkg/invoicing.PostgresInvoice
   RawObject:
     model: github.com/joincivil/civil-api-server/pkg/utils.JsonbPayloadScalar
   User:
