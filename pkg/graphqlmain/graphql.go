@@ -11,12 +11,9 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	graphqlgen "github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
-	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
-	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
-	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
@@ -31,13 +28,10 @@ const (
 
 type resolverConfig struct {
 	config            *utils.GraphQLConfig
-	invoicePersister  *invoicing.PostgresPersister
 	authService       *auth.Service
 	userService       *users.UserService
 	jsonbService      *jsonstore.Service
 	nrsignupService   *nrsignup.Service
-	tokenFoundry      *tokenfoundry.API
-	onfido            *kyc.OnfidoAPI
 	storefrontService *storefront.Service
 	emailListMembers  cemail.ListMemberManager
 }
@@ -75,22 +69,18 @@ func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
 	}
 
 	return graphql.NewResolver(&graphql.ResolverConfig{
-		AuthService:         rconfig.authService,
-		InvoicePersister:    rconfig.invoicePersister,
-		ListingPersister:    listingPersister,
-		RevisionPersister:   contentRevisionPersister,
-		GovEventPersister:   governanceEventPersister,
-		ChallengePersister:  challengePersister,
-		AppealPersister:     appealPersister,
-		PollPersister:       pollPersister,
-		OnfidoAPI:           rconfig.onfido,
-		OnfidoTokenReferrer: rconfig.config.OnfidoReferrer,
-		TokenFoundry:        rconfig.tokenFoundry,
-		UserService:         rconfig.userService,
-		JSONbService:        rconfig.jsonbService,
-		NrsignupService:     rconfig.nrsignupService,
-		StorefrontService:   rconfig.storefrontService,
-		EmailListMembers:    rconfig.emailListMembers,
+		AuthService:        rconfig.authService,
+		ListingPersister:   listingPersister,
+		RevisionPersister:  contentRevisionPersister,
+		GovEventPersister:  governanceEventPersister,
+		ChallengePersister: challengePersister,
+		AppealPersister:    appealPersister,
+		PollPersister:      pollPersister,
+		UserService:        rconfig.userService,
+		JSONbService:       rconfig.jsonbService,
+		NrsignupService:    rconfig.nrsignupService,
+		StorefrontService:  rconfig.storefrontService,
+		EmailListMembers:   rconfig.emailListMembers,
 	}), nil
 }
 

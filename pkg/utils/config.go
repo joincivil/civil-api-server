@@ -20,11 +20,8 @@ const (
 // GraphQLConfig is the master config for the GraphQL API derived from environment
 // variables.
 type GraphQLConfig struct {
-	Port            int  `required:"true" desc:"Sets the GraphQL service port"`
-	Debug           bool `default:"false" desc:"If true, enables the GraphQL playground"`
-	EnableGraphQL   bool `envconfig:"enable_graphql" split_words:"true" default:"true" desc:"If true, enables the GraphQL endpoint"`
-	EnableInvoicing bool `split_words:"true" default:"false" desc:"If true, enables the invoicing endpoint"`
-	EnableKYC       bool `split_words:"true" default:"false" desc:"If true, enables the KYC endpoint"`
+	Port  int  `required:"true" desc:"Sets the GraphQL service port"`
+	Debug bool `default:"false" desc:"If true, enables the GraphQL playground"`
 
 	JwtSecret string `split_words:"true" desc:"Secret used to encode JWT tokens"`
 

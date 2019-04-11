@@ -1,18 +1,13 @@
 package graphqlmain
 
 import (
-	"errors"
-
 	log "github.com/golang/glog"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
-	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
-	"github.com/joincivil/civil-api-server/pkg/kyc"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
-	"github.com/joincivil/civil-api-server/pkg/tokenfoundry"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
@@ -25,14 +20,10 @@ type dependencies struct {
 	emailer                *cemail.Emailer
 	mailchimp              *cemail.MailchimpAPI
 	jwtGenerator           *auth.JwtTokenGenerator
-	invoicePersister       *invoicing.PostgresPersister
-	checkbookIO            *invoicing.CheckbookIO
 	userService            *users.UserService
 	authService            *auth.Service
 	jsonbService           *jsonstore.Service
 	nrsignupService        *nrsignup.Service
-	tokenFoundry           *tokenfoundry.API
-	onfido                 *kyc.OnfidoAPI
 	ethHelper              *eth.Helper
 	storefrontService      *storefront.Service
 	tokenControllerService *tokencontroller.Service
@@ -53,23 +44,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
-	var checkbookIO *invoicing.CheckbookIO
-	if config.EnableInvoicing {
-		checkbookIO, err = invoiceCheckbookIO(config)
-		if err != nil {
-			log.Fatalf("Error setting up invoicing client: err: %v", err)
-		}
-	}
-
-	invoicePersister, err := initInvoicePersister(config)
-	if err != nil {
-		log.Fatalf("Error setting up invoicing persister: err: %v", err)
-		return nil, err
-	}
-
 	jwtGenerator := auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
-	tokenFoundry := initTokenFoundryAPI(config)
-	onfido := initOnfidoAPI(config)
 
 	var emailer *cemail.Emailer
 	if config.SendgridKey != "" {
@@ -131,57 +106,15 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		emailer:                emailer,
 		mailchimp:              mailchimpAPI,
 		jwtGenerator:           jwtGenerator,
-		invoicePersister:       invoicePersister,
-		checkbookIO:            checkbookIO,
 		userService:            userService,
 		authService:            authService,
 		jsonbService:           jsonbService,
 		nrsignupService:        nrsignupService,
-		tokenFoundry:           tokenFoundry,
-		onfido:                 onfido,
 		ethHelper:              ethHelper,
 		storefrontService:      storefrontService,
 		tokenControllerService: tokenControllerService,
 	}, nil
 
-}
-
-func invoiceCheckbookIO(config *utils.GraphQLConfig) (*invoicing.CheckbookIO, error) {
-	key := config.CheckbookKey
-	secret := config.CheckbookSecret
-	test := config.CheckbookTest
-
-	if key == "" || secret == "" {
-		return nil, errors.New("Checkbook key and secret required")
-	}
-
-	checkbookBaseURL := invoicing.ProdCheckbookIOBaseURL
-	if test {
-		checkbookBaseURL = invoicing.SandboxCheckbookIOBaseURL
-	}
-
-	checkbookIOClient := invoicing.NewCheckbookIO(
-		checkbookBaseURL,
-		key,
-		secret,
-		test,
-	)
-	return checkbookIOClient, nil
-}
-
-func initTokenFoundryAPI(config *utils.GraphQLConfig) *tokenfoundry.API {
-	return tokenfoundry.NewAPI(
-		"https://tokenfoundry.com",
-		config.TokenFoundryUser,
-		config.TokenFoundryPassword,
-	)
-}
-
-func initOnfidoAPI(config *utils.GraphQLConfig) *kyc.OnfidoAPI {
-	return kyc.NewOnfidoAPI(
-		kyc.ProdAPIURL,
-		config.OnfidoKey,
-	)
 }
 
 func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {

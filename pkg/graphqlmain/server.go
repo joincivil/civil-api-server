@@ -9,15 +9,13 @@ import (
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/auth"
-	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/rs/cors"
 )
 
 const (
-	defaultPort                 = "8080"
-	invoicingVersion            = "v1"
-	checkbookUpdaterRunFreqSecs = 60 * 5 // 5 mins
+	defaultPort      = "8080"
+	invoicingVersion = "v1"
 )
 
 var (
@@ -84,72 +82,28 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 	router.Use(auth.Middleware(deps.jwtGenerator))
 
 	// GraphQL Query Endpoint (Crawler/KYC)
-	if config.EnableGraphQL {
-		rconfig := &resolverConfig{
-			config:            config,
-			invoicePersister:  deps.invoicePersister,
-			authService:       deps.authService,
-			userService:       deps.userService,
-			jsonbService:      deps.jsonbService,
-			nrsignupService:   deps.nrsignupService,
-			tokenFoundry:      deps.tokenFoundry,
-			onfido:            deps.onfido,
-			storefrontService: deps.storefrontService,
-			emailListMembers:  deps.mailchimp,
-		}
-		err = graphQLRouting(router, rconfig)
-		if err != nil {
-			log.Fatalf("Error setting up graphql routing: err: %v", err)
-		}
-		log.Infof(
-			"Connect to http://localhost:%v/%v/query for Civil GraphQL\n",
-			port,
-			graphQLVersion,
-		)
-		// GraphQL Debug Console
-		if config.Debug {
-			debugGraphQLRouting(router, "query")
-			log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
-		}
+	rconfig := &resolverConfig{
+		config:            config,
+		authService:       deps.authService,
+		userService:       deps.userService,
+		jsonbService:      deps.jsonbService,
+		nrsignupService:   deps.nrsignupService,
+		storefrontService: deps.storefrontService,
+		emailListMembers:  deps.mailchimp,
 	}
-
-	// Invoicing REST endpoints
-	if config.EnableInvoicing {
-		err = invoicingRouting(router, deps.checkbookIO, deps.invoicePersister, deps.emailer, config.CheckbookTest)
-		if err != nil {
-			log.Fatalf("Error setting up invoicing routing: err: %v", err)
-		}
-		log.Infof(
-			"Connect to http://localhost:%v/%v/invoicing/send for invoicing\n",
-			port,
-			invoicingVersion,
-		)
-		log.Infof(
-			"Connect to http://localhost:%v/%v/invoicing/cb for checkbook webhook\n",
-			port,
-			invoicingVersion,
-		)
-
-		updater := invoicing.NewCheckoutIOUpdater(
-			deps.checkbookIO,
-			deps.invoicePersister,
-			deps.emailer,
-			checkbookUpdaterRunFreqSecs,
-		)
-		go updater.Run()
+	err = graphQLRouting(router, rconfig)
+	if err != nil {
+		log.Fatalf("Error setting up graphql routing: err: %v", err)
 	}
-
-	// KYC REST endpoints
-	if config.EnableKYC {
-		err = kycRouting(router, config, deps.onfido, deps.emailer)
-		if err != nil {
-			log.Fatalf("Error setting up KYC routing: err: %v", err)
-		}
-		log.Infof(
-			"Connect to http://localhost:%v/%v/kyc/cb for onfido webhook\n",
-			port,
-			invoicingVersion,
-		)
+	log.Infof(
+		"Connect to http://localhost:%v/%v/query for Civil GraphQL\n",
+		port,
+		graphQLVersion,
+	)
+	// GraphQL Debug Console
+	if config.Debug {
+		debugGraphQLRouting(router, "query")
+		log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
 	}
 
 	// Newsroom Signup REST endpoints
