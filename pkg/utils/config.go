@@ -20,11 +20,8 @@ const (
 // GraphQLConfig is the master config for the GraphQL API derived from environment
 // variables.
 type GraphQLConfig struct {
-	Port            int  `required:"true" desc:"Sets the GraphQL service port"`
-	Debug           bool `default:"false" desc:"If true, enables the GraphQL playground"`
-	EnableGraphQL   bool `envconfig:"enable_graphql" split_words:"true" default:"true" desc:"If true, enables the GraphQL endpoint"`
-	EnableInvoicing bool `split_words:"true" default:"false" desc:"If true, enables the invoicing endpoint"`
-	EnableKYC       bool `split_words:"true" default:"false" desc:"If true, enables the KYC endpoint"`
+	Port  int  `required:"true" desc:"Sets the GraphQL service port"`
+	Debug bool `default:"false" desc:"If true, enables the GraphQL playground"`
 
 	JwtSecret string `split_words:"true" desc:"Secret used to encode JWT tokens"`
 
@@ -34,8 +31,9 @@ type GraphQLConfig struct {
 	ApproveGrantProtoHost string `split_words:"true" desc:"Newsroom signup grant approval landing proto/host" required:"false"`
 	SignupLoginProtoHost  string `split_words:"true" desc:"Signup/login proto/host" required:"false"`
 
-	SendgridKey  string `split_words:"true" desc:"The SendGrid API key"`
-	MailchimpKey string `split_words:"true" desc:"The Mailchimp API key"`
+	RegistryAlertsID string `split_words:"true" desc:"Sets the registry alerts list ID"`
+	SendgridKey      string `split_words:"true" desc:"The SendGrid API key"`
+	MailchimpKey     string `split_words:"true" desc:"The Mailchimp API key"`
 
 	OnfidoKey          string `split_words:"true" desc:"The Onfido API key"`
 	OnfidoReferrer     string `split_words:"true" desc:"The Onfido token referrer"`

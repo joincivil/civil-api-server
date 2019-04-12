@@ -26,19 +26,17 @@ type Query {
 }
 
 type Mutation {
-	kycCreateApplicant
 	userCreateUser
 }
 ```
 
 ### Namespaces
-Namespaces designate a group of related types, interfaces, and operations.  Each namespace must have a corresponding file containing all related resolvers for the namespace.  This will keep all related code together rather than in one giant sprawling file. 
+Namespaces designate a group of related types, interfaces, and operations.  Each namespace must have a corresponding file containing all related resolvers for the namespace.  This will keep all related code together rather than in one giant sprawling file.
 
 ```
 Exs.
 /pkg/graphql/resolver_crawl.go
 /pkg/graphql/resolver_users.go
-/pkg/graphql/resolver_kyc.go
 
 ```
 
@@ -59,8 +57,8 @@ type Query {
 
 	// Queries for User in alphabetical order
 	...
- 
-	// Queries for KYC in alphabetical order
+
+	// Queries for Nrsignup in alphabetical order
 	...
 }
 
@@ -69,14 +67,14 @@ type Mutation {
 	// Mutations for User in alphabetical order
 	...
 
-	// Mutations for KYC in alphabetical order
+	// Mutations for Nrsignup in alphabetical order
 	...
 }
 
 // Types/interfaces for User in alphabetical order
 ...
 
-// Types/kyc for KYC in alphabetical order
+// Types/nrsignup for Nrsignup in alphabetical order
 ...
 
 // All scalars in alphabetical order
@@ -100,7 +98,7 @@ Read these before proceeding to update or add endpoints.
 1. Update models, queries, inputs, etc. in `schema.graphql`
 2. Write any models you want to use with the schema and put them into `pkg/models` (or let them autogenerate into `pkg/generated/graphql`).
 3. Update `gqlgen.yml` with the locations of the models you have written.
-4. Run the code generator as described below. This will generate `models.go` and `exec.go` and put them into `pkg/generated/graphql`	 
+4. Run the code generator as described below. This will generate `models.go` and `exec.go` and put them into `pkg/generated/graphql`
 5. Implement code in `resolver.go` or `resolver_*.go` to populate data into the models.
 
 ## To Generate Code
@@ -122,7 +120,7 @@ Run `make test` and/or `make lint` and check for errors and if things are not ma
 
 ## `dataloaden`
 Reference: https://gqlgen.com/reference/dataloaders/ and https://github.com/vektah/dataloaden
- 
+
 To generate a dataloader file (i.e. for a `model.Listing` that creates `listingloader_gen.go`):
 ```
 go get -u github.com/vektah/dataloaden

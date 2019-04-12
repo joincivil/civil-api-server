@@ -15,6 +15,7 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/users"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 
 	"github.com/joincivil/go-common/pkg/email"
 )
@@ -46,13 +47,8 @@ const (
 
 	foundationEmailName    = "Civil Foundation"
 	foundationEmailAddress = "foundation@civilfound.org"
-	// foundationEmailAddress = "peter@civil.co"
-	// councilEmailName = "Civil Foundation"
-	// registryEmailName   = "Civil Media Company"
-	// noreplyEmailAddress = "noreply@civil.co"
-	supportEmailAddress = "support@civil.co"
-
-	civilPipedriveEmail = "civil@pipedrivemail.com"
+	supportEmailAddress    = "support@civil.co"
+	civilPipedriveEmail    = "civil@pipedrivemail.com"
 
 	defaultFromEmailName    = foundationEmailName
 	defaultFromEmailAddress = foundationEmailAddress
@@ -74,7 +70,7 @@ const (
 // signup service struct
 func NewNewsroomSignupService(client bind.ContractBackend, emailer *email.Emailer, userService *users.UserService,
 	jsonbService *jsonstore.Service, tokenGenerator *auth.JwtTokenGenerator,
-	grantLandingProtoHost string, paramAddr string) (*Service, error) {
+	grantLandingProtoHost string, paramAddr string, registryListID string) (*Service, error) {
 	return &Service{
 		client:                client,
 		emailer:               emailer,
@@ -83,6 +79,7 @@ func NewNewsroomSignupService(client bind.ContractBackend, emailer *email.Emaile
 		tokenGenerator:        tokenGenerator,
 		grantLandingProtoHost: grantLandingProtoHost,
 		parameterizerAddr:     paramAddr,
+		registryListID:        registryListID,
 	}, nil
 }
 
@@ -96,6 +93,7 @@ type Service struct {
 	grantLandingProtoHost string
 	alterMutex            sync.Mutex
 	parameterizerAddr     string
+	registryListID        string
 }
 
 // SendWelcomeEmail sends a newsroom signup welcome email to the given newsroom owner.
@@ -262,9 +260,15 @@ func (s *Service) UpdateUserSteps(newsroomOwnerUID string, step *int,
 		return err
 	}
 
-	// TODO(PN): If step X, trigger email for the user has applied.
 	if *furthestStep == stepApplyComplete {
+		// Send user the application was complete email
 		err = s.sendApplicationCompleteEmail(newsroomOwnerUID, user.Email)
+		if err != nil {
+			return err
+		}
+
+		// Add the user to the registry alerts list if ID is set
+		err = s.addToRegistryAlertsList(user.Email)
 		if err != nil {
 			return err
 		}
@@ -468,7 +472,21 @@ func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn use
 	return s.saveUserJSONData(newsroomOwnerUID, signupData)
 }
 
+func (s *Service) addToRegistryAlertsList(emailAddress string) error {
+	if s.registryListID != "" {
+		err := utils.AddToRegistryAlertsList(emailAddress, s.registryListID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *Service) sendApplicationCompleteEmail(newsroomOwnerUID string, emailAddress string) error {
+	if s.emailer == nil {
+		return nil
+	}
+
 	applyLen, err := s.getApplyStageLength()
 	if err != nil {
 		return err

@@ -13,7 +13,6 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/joincivil/civil-api-server/pkg/auth"
-	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -178,25 +177,6 @@ type ComplexityRoot struct {
 		PageInfo func(childComplexity int) int
 	}
 
-	Invoice struct {
-		Hash          func(childComplexity int) int
-		Email         func(childComplexity int) int
-		Phone         func(childComplexity int) int
-		Name          func(childComplexity int) int
-		Amount        func(childComplexity int) int
-		InvoiceId     func(childComplexity int) int
-		InvoiceNum    func(childComplexity int) int
-		InvoiceStatus func(childComplexity int) int
-		CheckId       func(childComplexity int) int
-		CheckStatus   func(childComplexity int) int
-		StopPoll      func(childComplexity int) int
-		IsCheckbook   func(childComplexity int) int
-		IsThirdParty  func(childComplexity int) int
-		ReferralCode  func(childComplexity int) int
-		ReferredBy    func(childComplexity int) int
-		EmailState    func(childComplexity int) int
-	}
-
 	JsonField struct {
 		Key   func(childComplexity int) int
 		Value func(childComplexity int) int
@@ -258,9 +238,6 @@ type ComplexityRoot struct {
 		AuthLoginEmailConfirm             func(childComplexity int, loginJWT string) int
 		AuthRefresh                       func(childComplexity int, token string) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
-		KycCreateApplicant                func(childComplexity int, applicant KycCreateApplicantInput) int
-		KycCreateCheck                    func(childComplexity int, applicantID string, facialVariant *string) int
-		KycGenerateSdkToken               func(childComplexity int, applicantID string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupSaveCharter               func(childComplexity int, charterData nrsignup.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -334,20 +311,15 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Uid                      func(childComplexity int) int
-		Email                    func(childComplexity int) int
-		EthAddress               func(childComplexity int) int
-		OnfidoApplicantId        func(childComplexity int) int
-		OnfidoCheckId            func(childComplexity int) int
-		KycStatus                func(childComplexity int) int
-		QuizPayload              func(childComplexity int) int
-		QuizStatus               func(childComplexity int) int
-		CivilianWhitelistTxId    func(childComplexity int) int
-		Invoices                 func(childComplexity int) int
-		IsTokenFoundryRegistered func(childComplexity int) int
-		NrStep                   func(childComplexity int) int
-		NrFurthestStep           func(childComplexity int) int
-		NrLastSeen               func(childComplexity int) int
+		Uid                   func(childComplexity int) int
+		Email                 func(childComplexity int) int
+		EthAddress            func(childComplexity int) int
+		QuizPayload           func(childComplexity int) int
+		QuizStatus            func(childComplexity int) int
+		CivilianWhitelistTxId func(childComplexity int) int
+		NrStep                func(childComplexity int) int
+		NrFurthestStep        func(childComplexity int) int
+		NrLastSeen            func(childComplexity int) int
 	}
 }
 
@@ -432,9 +404,6 @@ type MutationResolver interface {
 	AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error)
 	AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error)
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
-	KycCreateApplicant(ctx context.Context, applicant KycCreateApplicantInput) (*string, error)
-	KycCreateCheck(ctx context.Context, applicantID string, facialVariant *string) (*string, error)
-	KycGenerateSdkToken(ctx context.Context, applicantID string) (*string, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData nrsignup.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -478,8 +447,6 @@ type QueryResolver interface {
 	Jsonb(ctx context.Context, id *string) (*jsonstore.JSONb, error)
 }
 type UserResolver interface {
-	Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error)
-	IsTokenFoundryRegistered(ctx context.Context, obj *users.User) (*bool, error)
 	NrStep(ctx context.Context, obj *users.User) (*int, error)
 	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
 	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
@@ -705,65 +672,6 @@ func field_Mutation_jsonbSave_args(rawArgs map[string]interface{}) (map[string]i
 		}
 	}
 	args["input"] = arg0
-	return args, nil
-
-}
-
-func field_Mutation_kycCreateApplicant_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 KycCreateApplicantInput
-	if tmp, ok := rawArgs["applicant"]; ok {
-		var err error
-		arg0, err = UnmarshalKycCreateApplicantInput(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["applicant"] = arg0
-	return args, nil
-
-}
-
-func field_Mutation_kycCreateCheck_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["applicantID"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["applicantID"] = arg0
-	var arg1 *string
-	if tmp, ok := rawArgs["facialVariant"]; ok {
-		var err error
-		var ptr1 string
-		if tmp != nil {
-			ptr1, err = graphql.UnmarshalString(tmp)
-			arg1 = &ptr1
-		}
-
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["facialVariant"] = arg1
-	return args, nil
-
-}
-
-func field_Mutation_kycGenerateSdkToken_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["applicantID"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["applicantID"] = arg0
 	return args, nil
 
 }
@@ -2287,118 +2195,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GovernanceEventResultCursor.PageInfo(childComplexity), true
 
-	case "Invoice.hash":
-		if e.complexity.Invoice.Hash == nil {
-			break
-		}
-
-		return e.complexity.Invoice.Hash(childComplexity), true
-
-	case "Invoice.email":
-		if e.complexity.Invoice.Email == nil {
-			break
-		}
-
-		return e.complexity.Invoice.Email(childComplexity), true
-
-	case "Invoice.phone":
-		if e.complexity.Invoice.Phone == nil {
-			break
-		}
-
-		return e.complexity.Invoice.Phone(childComplexity), true
-
-	case "Invoice.name":
-		if e.complexity.Invoice.Name == nil {
-			break
-		}
-
-		return e.complexity.Invoice.Name(childComplexity), true
-
-	case "Invoice.amount":
-		if e.complexity.Invoice.Amount == nil {
-			break
-		}
-
-		return e.complexity.Invoice.Amount(childComplexity), true
-
-	case "Invoice.invoiceID":
-		if e.complexity.Invoice.InvoiceId == nil {
-			break
-		}
-
-		return e.complexity.Invoice.InvoiceId(childComplexity), true
-
-	case "Invoice.invoiceNum":
-		if e.complexity.Invoice.InvoiceNum == nil {
-			break
-		}
-
-		return e.complexity.Invoice.InvoiceNum(childComplexity), true
-
-	case "Invoice.invoiceStatus":
-		if e.complexity.Invoice.InvoiceStatus == nil {
-			break
-		}
-
-		return e.complexity.Invoice.InvoiceStatus(childComplexity), true
-
-	case "Invoice.checkID":
-		if e.complexity.Invoice.CheckId == nil {
-			break
-		}
-
-		return e.complexity.Invoice.CheckId(childComplexity), true
-
-	case "Invoice.checkStatus":
-		if e.complexity.Invoice.CheckStatus == nil {
-			break
-		}
-
-		return e.complexity.Invoice.CheckStatus(childComplexity), true
-
-	case "Invoice.stopPoll":
-		if e.complexity.Invoice.StopPoll == nil {
-			break
-		}
-
-		return e.complexity.Invoice.StopPoll(childComplexity), true
-
-	case "Invoice.isCheckbook":
-		if e.complexity.Invoice.IsCheckbook == nil {
-			break
-		}
-
-		return e.complexity.Invoice.IsCheckbook(childComplexity), true
-
-	case "Invoice.isThirdParty":
-		if e.complexity.Invoice.IsThirdParty == nil {
-			break
-		}
-
-		return e.complexity.Invoice.IsThirdParty(childComplexity), true
-
-	case "Invoice.referralCode":
-		if e.complexity.Invoice.ReferralCode == nil {
-			break
-		}
-
-		return e.complexity.Invoice.ReferralCode(childComplexity), true
-
-	case "Invoice.referredBy":
-		if e.complexity.Invoice.ReferredBy == nil {
-			break
-		}
-
-		return e.complexity.Invoice.ReferredBy(childComplexity), true
-
-	case "Invoice.emailState":
-		if e.complexity.Invoice.EmailState == nil {
-			break
-		}
-
-		return e.complexity.Invoice.EmailState(childComplexity), true
-
 	case "JsonField.key":
 		if e.complexity.JsonField.Key == nil {
 			break
@@ -2742,42 +2538,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.JsonbSave(childComplexity, args["input"].(JsonbInput)), true
-
-	case "Mutation.kycCreateApplicant":
-		if e.complexity.Mutation.KycCreateApplicant == nil {
-			break
-		}
-
-		args, err := field_Mutation_kycCreateApplicant_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.KycCreateApplicant(childComplexity, args["applicant"].(KycCreateApplicantInput)), true
-
-	case "Mutation.kycCreateCheck":
-		if e.complexity.Mutation.KycCreateCheck == nil {
-			break
-		}
-
-		args, err := field_Mutation_kycCreateCheck_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.KycCreateCheck(childComplexity, args["applicantID"].(string), args["facialVariant"].(*string)), true
-
-	case "Mutation.kycGenerateSdkToken":
-		if e.complexity.Mutation.KycGenerateSdkToken == nil {
-			break
-		}
-
-		args, err := field_Mutation_kycGenerateSdkToken_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.KycGenerateSdkToken(childComplexity, args["applicantID"].(string)), true
 
 	case "Mutation.nrsignupSendWelcomeEmail":
 		if e.complexity.Mutation.NrsignupSendWelcomeEmail == nil {
@@ -3315,27 +3075,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.EthAddress(childComplexity), true
 
-	case "User.onfidoApplicantId":
-		if e.complexity.User.OnfidoApplicantId == nil {
-			break
-		}
-
-		return e.complexity.User.OnfidoApplicantId(childComplexity), true
-
-	case "User.onfidoCheckID":
-		if e.complexity.User.OnfidoCheckId == nil {
-			break
-		}
-
-		return e.complexity.User.OnfidoCheckId(childComplexity), true
-
-	case "User.kycStatus":
-		if e.complexity.User.KycStatus == nil {
-			break
-		}
-
-		return e.complexity.User.KycStatus(childComplexity), true
-
 	case "User.quizPayload":
 		if e.complexity.User.QuizPayload == nil {
 			break
@@ -3356,20 +3095,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.CivilianWhitelistTxId(childComplexity), true
-
-	case "User.invoices":
-		if e.complexity.User.Invoices == nil {
-			break
-		}
-
-		return e.complexity.User.Invoices(childComplexity), true
-
-	case "User.isTokenFoundryRegistered":
-		if e.complexity.User.IsTokenFoundryRegistered == nil {
-			break
-		}
-
-		return e.complexity.User.IsTokenFoundryRegistered(childComplexity), true
 
 	case "User.nrStep":
 		if e.complexity.User.NrStep == nil {
@@ -6527,447 +6252,6 @@ func (ec *executionContext) _GovernanceEventResultCursor_pageInfo(ctx context.Co
 	return ec._PageInfo(ctx, field.Selections, &res)
 }
 
-var invoiceImplementors = []string{"Invoice"}
-
-// nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _Invoice(ctx context.Context, sel ast.SelectionSet, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	fields := graphql.CollectFields(ctx, sel, invoiceImplementors)
-
-	out := graphql.NewOrderedMap(len(fields))
-	invalid := false
-	for i, field := range fields {
-		out.Keys[i] = field.Alias
-
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Invoice")
-		case "hash":
-			out.Values[i] = ec._Invoice_hash(ctx, field, obj)
-		case "email":
-			out.Values[i] = ec._Invoice_email(ctx, field, obj)
-		case "phone":
-			out.Values[i] = ec._Invoice_phone(ctx, field, obj)
-		case "name":
-			out.Values[i] = ec._Invoice_name(ctx, field, obj)
-		case "amount":
-			out.Values[i] = ec._Invoice_amount(ctx, field, obj)
-		case "invoiceID":
-			out.Values[i] = ec._Invoice_invoiceID(ctx, field, obj)
-		case "invoiceNum":
-			out.Values[i] = ec._Invoice_invoiceNum(ctx, field, obj)
-		case "invoiceStatus":
-			out.Values[i] = ec._Invoice_invoiceStatus(ctx, field, obj)
-		case "checkID":
-			out.Values[i] = ec._Invoice_checkID(ctx, field, obj)
-		case "checkStatus":
-			out.Values[i] = ec._Invoice_checkStatus(ctx, field, obj)
-		case "stopPoll":
-			out.Values[i] = ec._Invoice_stopPoll(ctx, field, obj)
-		case "isCheckbook":
-			out.Values[i] = ec._Invoice_isCheckbook(ctx, field, obj)
-		case "isThirdParty":
-			out.Values[i] = ec._Invoice_isThirdParty(ctx, field, obj)
-		case "referralCode":
-			out.Values[i] = ec._Invoice_referralCode(ctx, field, obj)
-		case "referredBy":
-			out.Values[i] = ec._Invoice_referredBy(ctx, field, obj)
-		case "emailState":
-			out.Values[i] = ec._Invoice_emailState(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-
-	if invalid {
-		return graphql.Null
-	}
-	return out
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_hash(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Hash, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_email(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Email, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_phone(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Phone, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_name(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_amount(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Amount, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalFloat(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_invoiceID(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InvoiceID, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_invoiceNum(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InvoiceNum, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_invoiceStatus(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.InvoiceStatus, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_checkID(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CheckID, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_checkStatus(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CheckStatus, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_stopPoll(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StopPoll, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalBoolean(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_isCheckbook(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsCheckbook, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalBoolean(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_isThirdParty(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsThirdParty, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalBoolean(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_referralCode(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReferralCode, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_referredBy(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReferredBy, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Invoice_emailState(ctx context.Context, field graphql.CollectedField, obj *invoicing.PostgresInvoice) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "Invoice",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.EmailState, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalInt(res)
-}
-
 var jsonFieldImplementors = []string{"JsonField"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -8337,12 +7621,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
-		case "kycCreateApplicant":
-			out.Values[i] = ec._Mutation_kycCreateApplicant(ctx, field)
-		case "kycCreateCheck":
-			out.Values[i] = ec._Mutation_kycCreateCheck(ctx, field)
-		case "kycGenerateSdkToken":
-			out.Values[i] = ec._Mutation_kycGenerateSdkToken(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8756,108 +8034,6 @@ func (ec *executionContext) _Mutation_jsonbSave(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._Jsonb(ctx, field.Selections, &res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Mutation_kycCreateApplicant(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Mutation_kycCreateApplicant_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().KycCreateApplicant(rctx, args["applicant"].(KycCreateApplicantInput))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalString(*res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Mutation_kycCreateCheck(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Mutation_kycCreateCheck_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().KycCreateCheck(rctx, args["applicantID"].(string), args["facialVariant"].(*string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalString(*res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Mutation_kycGenerateSdkToken(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Mutation_kycGenerateSdkToken_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().KycGenerateSdkToken(rctx, args["applicantID"].(string))
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalString(*res)
 }
 
 // nolint: vetshadow
@@ -11131,30 +10307,12 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_email(ctx, field, obj)
 		case "ethAddress":
 			out.Values[i] = ec._User_ethAddress(ctx, field, obj)
-		case "onfidoApplicantId":
-			out.Values[i] = ec._User_onfidoApplicantId(ctx, field, obj)
-		case "onfidoCheckID":
-			out.Values[i] = ec._User_onfidoCheckID(ctx, field, obj)
-		case "kycStatus":
-			out.Values[i] = ec._User_kycStatus(ctx, field, obj)
 		case "quizPayload":
 			out.Values[i] = ec._User_quizPayload(ctx, field, obj)
 		case "quizStatus":
 			out.Values[i] = ec._User_quizStatus(ctx, field, obj)
 		case "civilianWhitelistTxID":
 			out.Values[i] = ec._User_civilianWhitelistTxID(ctx, field, obj)
-		case "invoices":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._User_invoices(ctx, field, obj)
-				wg.Done()
-			}(i, field)
-		case "isTokenFoundryRegistered":
-			wg.Add(1)
-			go func(i int, field graphql.CollectedField) {
-				out.Values[i] = ec._User_isTokenFoundryRegistered(ctx, field, obj)
-				wg.Done()
-			}(i, field)
 		case "nrStep":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -11257,78 +10415,6 @@ func (ec *executionContext) _User_ethAddress(ctx context.Context, field graphql.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _User_onfidoApplicantId(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "User",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OnfidoApplicantID, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _User_onfidoCheckID(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "User",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.OnfidoCheckID, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _User_kycStatus(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "User",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.KycStatus, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
 func (ec *executionContext) _User_quizPayload(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -11398,95 +10484,6 @@ func (ec *executionContext) _User_civilianWhitelistTxID(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _User_invoices(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "User",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().Invoices(rctx, obj)
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*invoicing.PostgresInvoice)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	arr1 := make(graphql.Array, len(res))
-	var wg sync.WaitGroup
-
-	isLen1 := len(res) == 1
-	if !isLen1 {
-		wg.Add(len(res))
-	}
-
-	for idx1 := range res {
-		idx1 := idx1
-		rctx := &graphql.ResolverContext{
-			Index:  &idx1,
-			Result: res[idx1],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(idx1 int) {
-			if !isLen1 {
-				defer wg.Done()
-			}
-			arr1[idx1] = func() graphql.Marshaler {
-
-				if res[idx1] == nil {
-					return graphql.Null
-				}
-
-				return ec._Invoice(ctx, field.Selections, res[idx1])
-			}()
-		}
-		if isLen1 {
-			f(idx1)
-		} else {
-			go f(idx1)
-		}
-
-	}
-	wg.Wait()
-	return arr1
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _User_isTokenFoundryRegistered(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "User",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.User().IsTokenFoundryRegistered(rctx, obj)
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	if res == nil {
-		return graphql.Null
-	}
-	return graphql.MarshalBoolean(*res)
 }
 
 // nolint: vetshadow
@@ -13296,162 +12293,6 @@ func UnmarshalJsonbInput(v interface{}) (JsonbInput, error) {
 	return it, nil
 }
 
-func UnmarshalKycCreateApplicantInput(v interface{}) (KycCreateApplicantInput, error) {
-	var it KycCreateApplicantInput
-	var asMap = v.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "firstName":
-			var err error
-			it.FirstName, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "lastName":
-			var err error
-			it.LastName, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "email":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Email = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "middleName":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.MiddleName = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "profession":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Profession = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "nationality":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Nationality = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "countryOfResidence":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.CountryOfResidence = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "dateOfBirth":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.DateOfBirth = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "buildingNumber":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.BuildingNumber = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "street":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Street = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "aptNumber":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.AptNumber = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "city":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.City = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "state":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.State = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		case "zipcode":
-			var err error
-			var ptr1 string
-			if v != nil {
-				ptr1, err = graphql.UnmarshalString(v)
-				it.Zipcode = &ptr1
-			}
-
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func UnmarshalNrsignupStepsInput(v interface{}) (NrsignupStepsInput, error) {
 	var it NrsignupStepsInput
 	var asMap = v.(map[string]interface{})
@@ -13616,18 +12457,6 @@ func UnmarshalUserUpdateInput(v interface{}) (users.UserUpdateInput, error) {
 
 	for k, v := range asMap {
 		switch k {
-		case "onfidoApplicantID":
-			var err error
-			it.OnfidoApplicantID, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
-		case "kycStatus":
-			var err error
-			it.KycStatus, err = graphql.UnmarshalString(v)
-			if err != nil {
-				return it, err
-			}
 		case "quizPayload":
 			var err error
 			it.QuizPayload, err = utils.UnmarshalJsonbPayloadScalar(v)
@@ -13824,11 +12653,6 @@ type Mutation {
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
 
-  # KYC Mutations
-  kycCreateApplicant(applicant: KycCreateApplicantInput!): String
-  kycCreateCheck(applicantID: String!, facialVariant: String): String
-  kycGenerateSdkToken(applicantID: String!): String
-
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
   nrsignupSaveCharter(charterData: CharterInput!): String!
@@ -14001,61 +12825,16 @@ type ContentRevision {
   revisionDate: Int!
 }
 
-## KYC object schemas
-
-# A type that reflects values in onfido.CreateApplicantRequest
-input KycCreateApplicantInput {
-  firstName: String!
-  lastName: String!
-  email: String
-  middleName: String
-  profession: String
-  nationality: String
-  countryOfResidence: String
-  dateOfBirth: String
-  buildingNumber: String
-  street: String
-  aptNumber: String
-  city: String
-  state: String
-  zipcode: String
-}
-
 ## User object schemas
-
-# A type that reflects values in invoicing.PostgresInvoice
-type Invoice {
-  hash: String
-  email: String
-  phone: String
-  name: String
-  amount: Float
-  invoiceID: String
-  invoiceNum: String
-  invoiceStatus: String
-  checkID: String
-  checkStatus: String
-  stopPoll: Boolean
-  isCheckbook: Boolean
-  isThirdParty: Boolean
-  referralCode: String
-  referredBy: String
-  emailState: Int
-}
 
 # A type that reflects values in users.User
 type User {
   uid: String
   email: String
   ethAddress: String
-  onfidoApplicantId: String
-  onfidoCheckID: String
-  kycStatus: String
   quizPayload: RawObject
   quizStatus: String
   civilianWhitelistTxID: String
-  invoices: [Invoice]
-  isTokenFoundryRegistered: Boolean
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
@@ -14072,8 +12851,6 @@ input UserSignatureInput {
 }
 
 input UserUpdateInput {
-  onfidoApplicantID: String
-  kycStatus: String
   quizPayload: RawObject
   quizStatus: String
   nrStep: Int

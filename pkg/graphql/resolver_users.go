@@ -5,7 +5,6 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
-	"github.com/joincivil/civil-api-server/pkg/invoicing"
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
 
@@ -17,17 +16,6 @@ func (r *Resolver) User() graphql.UserResolver {
 // TYPE RESOLVERS
 
 type userResolver struct{ *Resolver }
-
-// Invoices returns a list of `invoicing.PostgresInvoice` created by the user
-func (r *userResolver) Invoices(ctx context.Context, obj *users.User) ([]*invoicing.PostgresInvoice, error) {
-	return r.invoicePersister.Invoices(obj.UID, obj.Email, "", "")
-}
-
-// IsTokenFoundryRegistered determines if the User is registered to buy CVL on TokenFoundry
-func (r *userResolver) IsTokenFoundryRegistered(ctx context.Context, obj *users.User) (*bool, error) {
-	ok, err := r.tokenFoundry.GetKYCStatus(obj.Email)
-	return &ok, err
-}
 
 // NrStep returns the most recent step the user made in Newsroom signup
 func (r *userResolver) NrStep(ctx context.Context, obj *users.User) (*int, error) {

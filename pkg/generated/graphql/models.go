@@ -39,23 +39,6 @@ type JsonbInput struct {
 	JSONStr string `json:"jsonStr"`
 }
 
-type KycCreateApplicantInput struct {
-	FirstName          string  `json:"firstName"`
-	LastName           string  `json:"lastName"`
-	Email              *string `json:"email"`
-	MiddleName         *string `json:"middleName"`
-	Profession         *string `json:"profession"`
-	Nationality        *string `json:"nationality"`
-	CountryOfResidence *string `json:"countryOfResidence"`
-	DateOfBirth        *string `json:"dateOfBirth"`
-	BuildingNumber     *string `json:"buildingNumber"`
-	Street             *string `json:"street"`
-	AptNumber          *string `json:"aptNumber"`
-	City               *string `json:"city"`
-	State              *string `json:"state"`
-	Zipcode            *string `json:"zipcode"`
-}
-
 type ListingEdge struct {
 	Cursor string        `json:"cursor"`
 	Node   model.Listing `json:"node"`
