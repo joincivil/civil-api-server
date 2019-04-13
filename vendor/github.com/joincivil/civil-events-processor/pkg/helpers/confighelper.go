@@ -10,8 +10,6 @@ import (
 
 	"github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/persistence"
-	"github.com/joincivil/civil-events-processor/pkg/scraper"
-	"github.com/joincivil/civil-events-processor/pkg/utils"
 
 	cconfig "github.com/joincivil/go-common/pkg/config"
 )
@@ -106,6 +104,26 @@ func PollPersister(config cconfig.PersisterConfig) (model.PollPersister, error) 
 	return p.(model.PollPersister), nil
 }
 
+// TokenTransferPersister is a helper function to return the token transfer persister based on
+// the given configuration
+func TokenTransferPersister(config cconfig.PersisterConfig) (model.TokenTransferPersister, error) {
+	p, err := persister(config)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.TokenTransferPersister), nil
+}
+
+// ParameterizerPersister is a helper function to return the parameterizerpersister based
+// on the given configureation
+func ParameterizerPersister(config cconfig.PersisterConfig) (model.ParamProposalPersister, error) {
+	p, err := persister(config)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.ParamProposalPersister), nil
+}
+
 func persister(config cconfig.PersisterConfig) (interface{}, error) {
 	if config.PersistType() == cconfig.PersisterTypePostgresql {
 		return postgresPersister(config)
@@ -139,22 +157,4 @@ func postgresPersister(config cconfig.PersisterConfig) (*persistence.PostgresPer
 		return nil, err
 	}
 	return persister, nil
-}
-
-// CivilMetadataScraper is a helper function to return a CivilMetadataScraper based on
-// the given configuration
-func CivilMetadataScraper(config *utils.ProcessorConfig) model.CivilMetadataScraper {
-	return &scraper.CivilMetadataScraper{}
-}
-
-// ContentScraper is a helper function to return a ContentScraper based on
-// the given configuration
-func ContentScraper(config *utils.ProcessorConfig) model.ContentScraper {
-	return &scraper.NullScraper{}
-}
-
-// MetadataScraper is a helper function to return a MetadataScraper based on
-// the given configuration
-func MetadataScraper(config *utils.ProcessorConfig) model.MetadataScraper {
-	return &scraper.NullScraper{}
 }

@@ -44,4 +44,8 @@ required = ["github.com/99designs/gqlgen"]
 
 [[constraint]]
   branch = "master"
+  name = "github.com/joincivil/civil-events-processor"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/joincivil/go-common"

@@ -284,12 +284,12 @@ type ComplexityRoot struct {
 		GovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
 		GovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
 		Listing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
-		Listings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) int
+		Listings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
 		TcrChallenge              func(childComplexity int, id int, lowercaseAddr *bool) int
 		TcrGovernanceEvents       func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
 		TcrGovernanceEventsTxHash func(childComplexity int, txHash string, lowercaseAddr *bool) int
 		TcrListing                func(childComplexity int, addr string, lowercaseAddr *bool) int
-		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) int
+		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
 		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, lowercaseAddr *bool) int
 		NrsignupNewsroom          func(childComplexity int) int
 		CurrentUser               func(childComplexity int) int
@@ -431,12 +431,12 @@ type QueryResolver interface {
 	GovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	Listing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
-	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) ([]model.Listing, error)
+	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) ([]model.Listing, error)
 	TcrChallenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
 	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) (*GovernanceEventResultCursor, error)
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
-	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool) (*ListingResultCursor, error)
+	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
@@ -1194,6 +1194,34 @@ func field_Query_listings_args(rawArgs map[string]interface{}) (map[string]inter
 		}
 	}
 	args["lowercaseAddr"] = arg6
+	var arg7 *model.SortByType
+	if tmp, ok := rawArgs["sortBy"]; ok {
+		var err error
+		var ptr1 model.SortByType
+		if tmp != nil {
+			err = (&ptr1).UnmarshalGQL(tmp)
+			arg7 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortBy"] = arg7
+	var arg8 *bool
+	if tmp, ok := rawArgs["sortDesc"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg8 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortDesc"] = arg8
 	return args, nil
 
 }
@@ -1461,6 +1489,34 @@ func field_Query_tcrListings_args(rawArgs map[string]interface{}) (map[string]in
 		}
 	}
 	args["lowercaseAddr"] = arg6
+	var arg7 *model.SortByType
+	if tmp, ok := rawArgs["sortBy"]; ok {
+		var err error
+		var ptr1 model.SortByType
+		if tmp != nil {
+			err = (&ptr1).UnmarshalGQL(tmp)
+			arg7 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortBy"] = arg7
+	var arg8 *bool
+	if tmp, ok := rawArgs["sortDesc"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg8 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sortDesc"] = arg8
 	return args, nil
 
 }
@@ -2867,7 +2923,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Listings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.Listings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool), args["sortBy"].(*model.SortByType), args["sortDesc"].(*bool)), true
 
 	case "Query.tcrChallenge":
 		if e.complexity.Query.TcrChallenge == nil {
@@ -2927,7 +2983,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrListings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.TcrListings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool), args["sortBy"].(*model.SortByType), args["sortDesc"].(*bool)), true
 
 	case "Query.newsroomArticles":
 		if e.complexity.Query.NewsroomArticles == nil {
@@ -9474,7 +9530,7 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Listings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().Listings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool), args["sortBy"].(*model.SortByType), args["sortDesc"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9711,7 +9767,7 @@ func (ec *executionContext) _Query_tcrListings(ctx context.Context, field graphq
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrListings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().TcrListings(rctx, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool), args["sortBy"].(*model.SortByType), args["sortDesc"].(*bool))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -12576,6 +12632,8 @@ type Query {
     activeChallenge: Boolean
     currentApplication: Boolean
     lowercaseAddr: Boolean = True
+    sortBy: ListingSort
+    sortDesc: Boolean = False
   ): [Listing!]!
 
   # TCR Queries
@@ -12600,6 +12658,8 @@ type Query {
     activeChallenge: Boolean
     currentApplication: Boolean
     lowercaseAddr: Boolean = True
+    sortBy: ListingSort
+    sortDesc: Boolean = False
   ): ListingResultCursor
 
   # Newsroom Queries
@@ -12673,6 +12733,7 @@ type Mutation {
   userUpdate(uid: String, input: UserUpdateInput): User
 }
 
+# Enum of valid values for application types for auth
 enum AuthApplicationEnum {
   DEFAULT
   NEWSROOM
@@ -12726,6 +12787,7 @@ type Challenge {
   lastUpdatedDateTs: Int!
 }
 
+# A type that represents a Charter
 type Charter {
   uri: String!
   contentID: Int!
@@ -12748,11 +12810,13 @@ type GovernanceEvent {
   listing: Listing!
 }
 
+# A type that represents an edge value in a GovernanceEvent
 type GovernanceEventEdge {
   cursor: String!
   node: GovernanceEvent!
 }
 
+# A type that represents return values from GovernanceEvents
 type GovernanceEventResultCursor {
   edges: [GovernanceEventEdge]!
   pageInfo: PageInfo!
@@ -12780,14 +12844,25 @@ type Listing {
   prevChallenge: Challenge
 }
 
+# A type that represents a edge value in a Listing
 type ListingEdge {
   cursor: String!
   node: Listing!
 }
 
+# A type that represents return values from Listings
 type ListingResultCursor {
   edges: [ListingEdge]!
   pageInfo: PageInfo!
+}
+
+# Enum of valid sort values for Listings
+enum ListingSort {
+  DEFAULT
+  NAME
+  CREATED
+  APPLIED
+  WHITELISTED
 }
 
 # A type that reflects values in model.Metadata
