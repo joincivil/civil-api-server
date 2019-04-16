@@ -9,7 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	model "github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/civil-events-processor/pkg/model"
 
 	"github.com/joincivil/go-common/pkg/bytes"
 	"github.com/joincivil/go-common/pkg/eth"
@@ -532,10 +532,11 @@ func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
 
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
-	currentApplication *bool, lowercaseAddr *bool) ([]model.Listing, error) {
+	currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType,
+	sortDesc *bool) ([]model.Listing, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	resultCursor, err := r.TcrListings(ctx, first, after, whitelistedOnly, rejectedOnly,
-		activeChallenge, currentApplication, lowercaseAddr)
+		activeChallenge, currentApplication, lowercaseAddr, sortBy, sortDesc)
 	if err != nil {
 		return []model.Listing{}, err
 	}
@@ -549,7 +550,7 @@ func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 
 func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
-	currentApplication *bool, lowercaseAddr *bool) (*graphql.ListingResultCursor, error) {
+	currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*graphql.ListingResultCursor, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	var err error
 
@@ -579,6 +580,13 @@ func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *stri
 		criteria.ActiveChallenge = *activeChallenge
 	} else if currentApplication != nil {
 		criteria.CurrentApplication = *currentApplication
+	}
+
+	if sortBy != nil {
+		criteria.SortBy = *sortBy
+		if sortDesc != nil {
+			criteria.SortDesc = *sortDesc
+		}
 	}
 
 	allListings, err := r.listingPersister.ListingsByCriteria(criteria)

@@ -36,6 +36,8 @@ type Query {
     activeChallenge: Boolean
     currentApplication: Boolean
     lowercaseAddr: Boolean = True
+    sortBy: ListingSort
+    sortDesc: Boolean = False
   ): [Listing!]!
 
   # TCR Queries
@@ -60,6 +62,8 @@ type Query {
     activeChallenge: Boolean
     currentApplication: Boolean
     lowercaseAddr: Boolean = True
+    sortBy: ListingSort
+    sortDesc: Boolean = False
   ): ListingResultCursor
 
   # Newsroom Queries
@@ -133,6 +137,7 @@ type Mutation {
   userUpdate(uid: String, input: UserUpdateInput): User
 }
 
+# Enum of valid values for application types for auth
 enum AuthApplicationEnum {
   DEFAULT
   NEWSROOM
@@ -186,6 +191,7 @@ type Challenge {
   lastUpdatedDateTs: Int!
 }
 
+# A type that represents a Charter
 type Charter {
   uri: String!
   contentID: Int!
@@ -208,11 +214,13 @@ type GovernanceEvent {
   listing: Listing!
 }
 
+# A type that represents an edge value in a GovernanceEvent
 type GovernanceEventEdge {
   cursor: String!
   node: GovernanceEvent!
 }
 
+# A type that represents return values from GovernanceEvents
 type GovernanceEventResultCursor {
   edges: [GovernanceEventEdge]!
   pageInfo: PageInfo!
@@ -240,14 +248,25 @@ type Listing {
   prevChallenge: Challenge
 }
 
+# A type that represents a edge value in a Listing
 type ListingEdge {
   cursor: String!
   node: Listing!
 }
 
+# A type that represents return values from Listings
 type ListingResultCursor {
   edges: [ListingEdge]!
   pageInfo: PageInfo!
+}
+
+# Enum of valid sort values for Listings
+enum ListingSort {
+  DEFAULT
+  NAME
+  CREATED
+  APPLIED
+  WHITELISTED
 }
 
 # A type that reflects values in model.Metadata
