@@ -1,6 +1,10 @@
 package graphqlmain
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	log "github.com/golang/glog"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -15,6 +19,17 @@ import (
 
 	cemail "github.com/joincivil/go-common/pkg/email"
 )
+
+// SetupKillNotify sets up the kill signal hook
+func SetupKillNotify(quitChan chan<- bool) {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		close(quitChan)
+		os.Exit(1)
+	}()
+}
 
 type dependencies struct {
 	emailer                *cemail.Emailer

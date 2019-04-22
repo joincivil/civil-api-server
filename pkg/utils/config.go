@@ -65,6 +65,12 @@ type GraphQLConfig struct {
 	EthereumDefaultPrivateKey string `split_words:"true" desc:"Private key to use when sending Ethereum transactions"`
 
 	RefreshTokenBlacklist []string `split_words:"true" desc:"List of refresh tokens to blacklist"`
+
+	// Runs the pubsub worker
+	// Should eventually move this to it's own repo and codebase
+	PubSubProjectID      string `split_words:"true" desc:"Sets GPubSub project ID. If not set, will not pub or sub."`
+	PubSubTokenTopicName string `split_words:"true" desc:"Sets GPubSub topic name for cvltoken events."`
+	PubSubTokenSubName   string `split_words:"true" desc:"Sets GPubSub subscription name for cvltoken events."`
 }
 
 // PersistType returns the persister type, implements PersisterConfig

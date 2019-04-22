@@ -210,6 +210,11 @@ func (n *NullPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []strin
 	return nil
 }
 
+// TokenTransfersByTxHash gets a list of token transfers by tx hash
+func (n *NullPersister) TokenTransfersByTxHash(txHash common.Hash) ([]*model.TokenTransfer, error) {
+	return []*model.TokenTransfer{}, nil
+}
+
 // TokenTransfersByToAddress gets a list of token transfers by purchaser address
 func (n *NullPersister) TokenTransfersByToAddress(addr common.Address) ([]*model.TokenTransfer, error) {
 	return []*model.TokenTransfer{}, nil
