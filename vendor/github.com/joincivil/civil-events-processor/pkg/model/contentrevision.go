@@ -4,11 +4,12 @@ package model // import "github.com/joincivil/civil-events-processor/pkg/model"
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/golang/glog"
 	"io"
 	"math/big"
 	"sort"
 	"strconv"
+
+	log "github.com/golang/glog"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"

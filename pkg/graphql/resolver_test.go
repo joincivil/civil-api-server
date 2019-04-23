@@ -63,6 +63,10 @@ func (t *testListingPersister) DeleteListing(listing *pmodel.Listing) error {
 	return nil
 }
 
+func (t *testListingPersister) Close() error {
+	return nil
+}
+
 type testGovernanceEventPersister struct {
 	Events []*pmodel.GovernanceEvent
 }
@@ -121,6 +125,10 @@ func (t *testGovernanceEventPersister) UpdateGovernanceEvent(govEvent *pmodel.Go
 
 // DeleteGovernanceEvent removes a governance event
 func (t *testGovernanceEventPersister) DeleteGovernanceEvent(govEvent *pmodel.GovernanceEvent) error {
+	return nil
+}
+
+func (t *testGovernanceEventPersister) Close() error {
 	return nil
 }
 
@@ -243,7 +251,7 @@ func TestResolverTcrListings(t *testing.T) {
 	queries := resolver.Query()
 
 	first := 54
-	cursor, err := queries.TcrListings(context.Background(), &first, nil, nil, nil, nil, nil, nil)
+	cursor, err := queries.TcrListings(context.Background(), &first, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Errorf("Should have gotten a cursor: err: %v", err)
 	}
@@ -276,7 +284,7 @@ func TestResolverTcrListingsPagination(t *testing.T) {
 
 Loop:
 	for {
-		cursor, err := queries.TcrListings(context.Background(), &first, &after, nil, nil, nil, nil, nil)
+		cursor, err := queries.TcrListings(context.Background(), &first, &after, nil, nil, nil, nil, nil, nil, nil)
 		if err != nil {
 			t.Errorf("Should have gotten a cursor: err: %v", err)
 		}

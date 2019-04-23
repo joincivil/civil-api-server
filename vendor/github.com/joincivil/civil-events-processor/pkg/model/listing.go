@@ -328,6 +328,11 @@ func (l *Listing) URL() string {
 	return l.url
 }
 
+// SetURL sets the URL of the newsroom
+func (l *Listing) SetURL(url string) {
+	l.url = url
+}
+
 // Charter returns the data regarding charter post for the newsroom
 func (l *Listing) Charter() *Charter {
 	return l.charter
@@ -408,6 +413,11 @@ func (l *Listing) ResetContributorAddresses() {
 // ApplicationDateTs returns the timestamp of the listing's initial application
 func (l *Listing) ApplicationDateTs() int64 {
 	return l.applicationDateTs
+}
+
+// SetApplicationDateTs sets the timestamp of the listing's initial application
+func (l *Listing) SetApplicationDateTs(date int64) {
+	l.applicationDateTs = date
 }
 
 // ApprovalDateTs returns the timestamp of the listing's whitelisted/approved

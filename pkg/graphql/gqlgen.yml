@@ -24,6 +24,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/auth.ApplicationEnum
   Listing:
     model: github.com/joincivil/civil-events-processor/pkg/model.Listing
+  ListingSort:
+    model: github.com/joincivil/civil-events-processor/pkg/model.SortByType
   Charter:
     model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   GovernanceEvent:
