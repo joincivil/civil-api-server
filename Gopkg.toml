@@ -43,7 +43,7 @@ required = ["github.com/99designs/gqlgen"]
   name = "github.com/ethereum/go-ethereum"
 
 [[constraint]]
-  branch = "master"
+  branch = "inna/358/user-data"
   name = "github.com/joincivil/civil-events-processor"
 
 [[constraint]]

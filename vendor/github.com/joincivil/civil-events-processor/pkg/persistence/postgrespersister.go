@@ -79,6 +79,9 @@ func (p *PostgresPersister) Close() error {
 }
 
 func (p *PostgresPersister) closeRows(rows *sqlx.Rows) {
+	if rows == nil {
+		return
+	}
 	err := rows.Close()
 	if err != nil {
 		log.Errorf("Error closing rows: err: %v", err)
@@ -229,7 +232,7 @@ func (p *PostgresPersister) ChallengesByListingAddress(addr common.Address) ([]*
 
 // PollByPollID gets a poll by pollID
 func (p *PostgresPersister) PollByPollID(pollID int) (*model.Poll, error) {
-	return p.pollByPollIDFromTable(pollID)
+	return p.pollByPollIDFromTable(pollID, pollTableName)
 }
 
 // PollsByPollIDs returns a slice of polls in order based on poll IDs
@@ -249,13 +252,18 @@ func (p *PostgresPersister) UpdatePoll(poll *model.Poll, updatedFields []string)
 
 // AppealByChallengeID gets an appeal by challengeID
 func (p *PostgresPersister) AppealByChallengeID(challengeID int) (*model.Appeal, error) {
-	return p.appealByChallengeIDFromTable(challengeID)
+	return p.appealByChallengeIDFromTable(challengeID, appealTableName)
 }
 
 // AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
 func (p *PostgresPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
 	return p.appealsByChallengeIDsInTableInOrder(challengeIDs, appealTableName)
 }
+
+// // AppealsByAppealChallengeIDs returns an appeal based on appealchallengeID
+// func (p *PostgresPersister) AppealsByAppealChallengeIDs(appealChallengeID int) (*model.Appeal, error) {
+// 	return p.appealByAppealChallengeIDInTable(appealChallengeID, appealTableName)
+// }
 
 // CreateAppeal creates a new appeal
 func (p *PostgresPersister) CreateAppeal(appeal *model.Appeal) error {
@@ -265,6 +273,12 @@ func (p *PostgresPersister) CreateAppeal(appeal *model.Appeal) error {
 // UpdateAppeal updates an appeal
 func (p *PostgresPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []string) error {
 	return p.updateAppealInTable(appeal, updatedFields, appealTableName)
+}
+
+// TokenTransfersByTxHash all the token transfers for a given purchaser address
+func (p *PostgresPersister) TokenTransfersByTxHash(txHash common.Hash) (
+	[]*model.TokenTransfer, error) {
+	return p.tokenTransfersByTxHashFromTable(txHash, tokenTransferTableName)
 }
 
 // TokenTransfersByToAddress gets all the token transfers for a given purchaser address
@@ -296,8 +310,27 @@ func (p *PostgresPersister) ParamProposalByName(name string, active bool) ([]*mo
 // UpdateParamProposal updates a parameter proposal
 func (p *PostgresPersister) UpdateParamProposal(paramProposal *model.ParameterProposal,
 	updatedFields []string) error {
-
 	return p.updateParamProposalInTable(paramProposal, updatedFields, postgres.ParameterProposalTableName)
+}
+
+// CreateUserChallengeData creates a new UserChallengeData
+func (p *PostgresPersister) CreateUserChallengeData(userChallengeData *model.UserChallengeData) error {
+	return p.createUserChallengeDataInTable(userChallengeData, postgres.UserChallengeDataTableName)
+}
+
+// UserChallengeDataByCriteria retrieves UserChallengeData based on criteria
+func (p *PostgresPersister) UserChallengeDataByCriteria(
+	criteria *model.UserChallengeDataCriteria) ([]*model.UserChallengeData, error) {
+	return p.userChallengeDataByCriteriaFromTable(criteria,
+		postgres.UserChallengeDataTableName, postgres.PollTableName)
+}
+
+// UpdateUserChallengeData updates UserChallengeData in table
+// user=true updates for user + pollID, user=false updates for pollID
+func (p *PostgresPersister) UpdateUserChallengeData(userChallengeData *model.UserChallengeData,
+	updatedFields []string, updateWithUserAddress bool) error {
+	return p.updateUserChallengeDataInTable(userChallengeData, updatedFields, updateWithUserAddress,
+		postgres.UserChallengeDataTableName)
 }
 
 // CreateTables creates the tables for processor if they don't exist
@@ -312,6 +345,7 @@ func (p *PostgresPersister) CreateTables() error {
 	appealTableQuery := postgres.CreateAppealTableQuery()
 	tokenTransferQuery := postgres.CreateTokenTransferTableQuery()
 	parameterProposalQuery := postgres.CreateParameterProposalQuery()
+	userChallengeDataQuery := postgres.CreateUserChallengeDataQuery()
 
 	_, err := p.db.Exec(contRevTableQuery)
 	if err != nil {
@@ -349,6 +383,10 @@ func (p *PostgresPersister) CreateTables() error {
 	if err != nil {
 		return fmt.Errorf("Error creating parameter proposal table in postgres: %v", err)
 	}
+	_, err = p.db.Exec(userChallengeDataQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating user_challenge_data table in postgres: %v", err)
+	}
 	return nil
 }
 
@@ -373,6 +411,11 @@ func (p *PostgresPersister) CreateIndices() error {
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
 		return errors.Wrap(err, "error creating challenge table indices")
+	}
+	indexQuery = postgres.UserChallengeDataTableIndices()
+	_, err = p.db.Exec(indexQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating user_challenge_data table indices in postgres: %v", err)
 	}
 	// indexQuery = postgres.PollTableIndices()
 	// _, err = p.db.Exec(indexQuery)
@@ -780,7 +823,8 @@ func (p *PostgresPersister) deleteContentRevisionQuery(tableName string) string 
 	return queryString
 }
 
-func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address common.Address, tableName string) ([]*model.GovernanceEvent, error) {
+func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address common.Address,
+	tableName string) ([]*model.GovernanceEvent, error) {
 	govEvents := []*model.GovernanceEvent{}
 	queryString := p.govEventsQuery(tableName)
 	dbGovEvents := []postgres.GovernanceEvent{}
@@ -795,9 +839,12 @@ func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address co
 	return govEvents, nil
 }
 
-func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash, tableName string) ([]*model.GovernanceEvent, error) {
-	queryString := p.governanceEventsByTxHashQuery(txHash, tableName)
-	rows, err := p.db.Queryx(queryString)
+func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash,
+	tableName string) ([]*model.GovernanceEvent, error) {
+	queryString := p.governanceEventsByTxHashQuery(tableName)
+
+	blockDataValue := fmt.Sprintf("{ \"txHash\": \"%s\" }", txHash.Hex())
+	rows, err := p.db.Queryx(queryString, blockDataValue)
 	defer p.closeRows(rows)
 	if err != nil {
 		return nil, errors.Wrap(err, "error retrieving governance events from table")
@@ -818,13 +865,12 @@ func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceE
 	return govEvents, nil
 }
 
-func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, tableName string) string {
+func (p *PostgresPersister) governanceEventsByTxHashQuery(tableName string) string {
 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
 	queryString := fmt.Sprintf( // nolint: gosec
-		"SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }' ORDER BY creation_date",
+		"SELECT %s FROM %s WHERE block_data @> $1 ORDER BY creation_date",
 		fieldNames,
 		tableName,
-		txHash.Hex(),
 	)
 	return queryString
 }
@@ -975,7 +1021,7 @@ func (p *PostgresPersister) updateChallengeQuery(updatedFields []string, tableNa
 }
 
 func (p *PostgresPersister) challengeByChallengeIDFromTable(challengeID int, tableName string) (*model.Challenge, error) {
-	challenges, err := p.challengesByChallengeIDsInTableInOrder([]int{challengeID}, challengeTableName)
+	challenges, err := p.challengesByChallengeIDsInTableInOrder([]int{challengeID}, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -1000,7 +1046,9 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 	}
 
 	query = p.db.Rebind(query)
+
 	rows, err := p.db.Queryx(query, args...)
+
 	defer p.closeRows(rows)
 	if err != nil {
 		return nil, errors.Wrap(err, "error retrieving challenges from table")
@@ -1176,8 +1224,8 @@ func (p *PostgresPersister) updatePollQuery(updatedFields []string, tableName st
 	return queryString.String(), nil
 }
 
-func (p *PostgresPersister) pollByPollIDFromTable(pollID int) (*model.Poll, error) {
-	polls, err := p.pollsByPollIDsInTableInOrder([]int{pollID}, pollTableName)
+func (p *PostgresPersister) pollByPollIDFromTable(pollID int, tableName string) (*model.Poll, error) {
+	polls, err := p.pollsByPollIDsInTableInOrder([]int{pollID}, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -1274,8 +1322,8 @@ func (p *PostgresPersister) updateAppealQuery(updatedFields []string, tableName 
 	return queryString.String(), nil
 }
 
-func (p *PostgresPersister) appealByChallengeIDFromTable(challengeID int) (*model.Appeal, error) {
-	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, appealTableName)
+func (p *PostgresPersister) appealByChallengeIDFromTable(challengeID int, tableName string) (*model.Appeal, error) {
+	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -1328,11 +1376,33 @@ func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []i
 	return appeals, nil
 }
 
+// func (p *PostgresPersister) appealByAppealChallengeIDInTable(appealChallengeID int,
+// 	tableName string) (*model.Appeal, error) {
+
+// 	appealData := []postgres.Appeal{}
+// 	queryString := p.appealByAppealChallengeIDQuery(tableName)
+// 	err := p.db.Select(&appealData, queryString, appealChallengeID)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("Error retrieving appeal from table: %v", err)
+// 	}
+// 	if len(appealData) == 0 {
+// 		return nil, cpersist.ErrPersisterNoResults
+// 	}
+// 	appeal := appealData[0].DbToAppealData()
+// 	return appeal, nil
+// }
+
 func (p *PostgresPersister) appealsByChallengeIDsQuery(tableName string) string {
 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Appeal{}, false, "")
 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE original_challenge_id IN (?);", fieldNames, tableName) // nolint: gosec
 	return queryString
 }
+
+// func (p *PostgresPersister) appealByAppealChallengeIDQuery(tableName string) string {
+// 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Appeal{}, false, "")
+// 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE appeal_challenge_id=$1;", fieldNames, tableName) // nolint: gosec
+// 	return queryString
+// }
 
 func (p *PostgresPersister) lastCronTimestampFromTable(tableName string) (int64, error) {
 	var timestampInt int64
@@ -1408,6 +1478,39 @@ func (p *PostgresPersister) updateCronTable(cronData *postgres.CronData, tableNa
 	}
 
 	return nil
+}
+
+func (p *PostgresPersister) tokenTransfersByTxHashFromTable(txHash common.Hash, tableName string) (
+	[]*model.TokenTransfer, error) {
+	purchases := []*model.TokenTransfer{}
+	queryString := p.tokenTransfersByTxHashQuery(tableName)
+
+	blockDataValue := fmt.Sprintf("{ \"txHash\": \"%s\" }", txHash.Hex())
+	dbPurchases := []*postgres.TokenTransfer{}
+	err := p.db.Select(&dbPurchases, queryString, blockDataValue)
+	if err != nil {
+		return purchases, errors.Wrap(err, "error retrieving token transfers from table")
+	}
+
+	if len(dbPurchases) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+
+	for _, dbPurchase := range dbPurchases {
+		purchases = append(purchases, dbPurchase.DbToTokenTransfer())
+	}
+
+	return purchases, nil
+}
+
+func (p *PostgresPersister) tokenTransfersByTxHashQuery(tableName string) string {
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.TokenTransfer{}, false, "")
+	queryString := fmt.Sprintf( // nolint: gosec
+		"SELECT %s FROM %s WHERE block_data @> $1 ORDER BY transfer_date",
+		fieldNames,
+		tableName,
+	)
+	return queryString
 }
 
 func (p *PostgresPersister) tokenTransfersByToAddressFromTable(addr common.Address,
@@ -1550,6 +1653,119 @@ func (p *PostgresPersister) paramProposalQueryByName(tableName string, active bo
 		queryString = fmt.Sprintf("%s AND expired=false;", queryString)
 	}
 	return queryString
+}
+
+func (p *PostgresPersister) createUserChallengeDataInTable(userChallengeData *model.UserChallengeData,
+	tableName string) error {
+	dbUserChall := postgres.NewUserChallengeData(userChallengeData)
+	queryString := p.insertIntoDBQueryString(tableName, postgres.UserChallengeData{})
+	_, err := p.db.NamedExec(queryString, dbUserChall)
+	if err != nil {
+		return fmt.Errorf("Error saving UserChallengData to table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) userChallengeDataByCriteriaFromTable(criteria *model.UserChallengeDataCriteria,
+	tableName string, joinTableName string) ([]*model.UserChallengeData, error) {
+	dbUserChalls := []postgres.UserChallengeData{}
+	queryString, err := p.userChallengeDataByCriteriaQuery(criteria, tableName, joinTableName)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error writing query: %v", err)
+	}
+	nstmt, err := p.db.PrepareNamed(queryString)
+	if err != nil {
+		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
+	}
+	err = nstmt.Select(&dbUserChalls, criteria)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
+	}
+	if len(dbUserChalls) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+	userChalls := make([]*model.UserChallengeData, len(dbUserChalls))
+	for index, dbUserChall := range dbUserChalls {
+		modelUserChall := dbUserChall.DbToUserChallengeData()
+		userChalls[index] = modelUserChall
+	}
+	return userChalls, nil
+}
+
+func (p *PostgresPersister) userChallengeDataByCriteriaQuery(criteria *model.UserChallengeDataCriteria,
+	tableName string, joinTableName string) (string, error) {
+	queryBuf := bytes.NewBufferString("SELECT ") // nolint: gosec
+
+	var fieldNames string
+	fieldNames, _ = cpostgres.StructFieldsForQuery(postgres.UserChallengeData{}, false, "u")
+
+	queryBuf.WriteString(fieldNames) // nolint: gosec
+	queryBuf.WriteString(" FROM ")   // nolint: gosec
+	queryBuf.WriteString(tableName)  // nolint: gosec
+	queryBuf.WriteString(" u ")      // nolint: gosec
+
+	if criteria.UserAddress != "" {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(" u.user_address=:user_address") // nolint: gosec
+	}
+	if criteria.PollID > 0 {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(" u.poll_id=:poll_id") // nolint: gosec
+	}
+	if criteria.CanUserReveal {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(fmt.Sprintf(" u.poll_reveal_end_date > %v", ctime.CurrentEpochSecsInInt64())) // nolint: gosec
+
+	} else if criteria.CanUserRescue {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(" u.user_did_reveal=false AND u.did_user_rescue=false AND")                   // nolint: gosec
+		queryBuf.WriteString(fmt.Sprintf(" u.poll_reveal_end_date < %v", ctime.CurrentEpochSecsInInt64())) // nolint: gosec
+	} else if criteria.CanUserCollect {
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(` ((u.poll_is_passed = true AND u.choice = 1) OR (u.poll_is_passed = false AND u.choice = 0))
+		AND (u.did_user_collect = false) `) // nolint: gosec
+	}
+
+	if criteria.Offset > 0 {
+		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
+	}
+
+	if criteria.Count > 0 {
+		queryBuf.WriteString(" LIMIT :count") // nolint: gosec
+	}
+	return queryBuf.String(), nil
+}
+
+func (p *PostgresPersister) updateUserChallengeDataInTable(userChallengeData *model.UserChallengeData,
+	updatedFields []string, updateWithUserAddress bool, tableName string) error {
+	userChallengeData.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
+	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
+	queryString, err := p.updateUserChallengeDataQuery(updatedFields, tableName, updateWithUserAddress)
+	if err != nil {
+		return fmt.Errorf("Error creating query string for update: %v ", err)
+	}
+	dbUserChallengeData := postgres.NewUserChallengeData(userChallengeData)
+	_, err = p.db.NamedExec(queryString, dbUserChallengeData)
+	if err != nil {
+		return fmt.Errorf("Error updating fields in db: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updateUserChallengeDataQuery(updatedFields []string,
+	tableName string, updateWithUserAddress bool) (string, error) {
+	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, postgres.UserChallengeData{})
+	if err != nil {
+		return "", err
+	}
+	if updateWithUserAddress {
+		queryString.WriteString(" WHERE user_address=:user_address AND poll_id=:poll_id;") // nolint: gosec
+	} else {
+		queryString.WriteString(" WHERE poll_id=:poll_id;") // nolint: gosec
+	}
+
+	return queryString.String(), nil
 }
 
 func (p *PostgresPersister) typeExistsInCronTable(tableName string, dataType string) (string, error) {

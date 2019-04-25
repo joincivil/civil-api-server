@@ -31,6 +31,7 @@ func CreateChallengeTableQueryString(tableName string) string {
             stake NUMERIC,
             total_tokens NUMERIC,
             request_appeal_expiry NUMERIC,
+            challenge_type TEXT,
             last_updated_timestamp INT
         );
     `, tableName)
@@ -70,6 +71,8 @@ type Challenge struct {
 
 	RequestAppealExpiry int64 `db:"request_appeal_expiry"`
 
+	ChallengeType string `db:"challenge_type"`
+
 	LastUpdatedDateTs int64 `db:"last_updated_timestamp"`
 }
 
@@ -102,6 +105,7 @@ func NewChallenge(challengeData *model.Challenge) *Challenge {
 	} else {
 		challenge.RequestAppealExpiry = 0
 	}
+	challenge.ChallengeType = challengeData.ChallengeType()
 	return challenge
 }
 
@@ -114,5 +118,5 @@ func (c *Challenge) DbToChallengeData() *model.Challenge {
 	stake := numbers.Float64ToBigInt(c.Stake)
 	totalTokens := numbers.Float64ToBigInt(c.TotalTokens)
 	return model.NewChallenge(challengeID, listingAddress, c.Statement, rewardPool, challenger, c.Resolved,
-		stake, totalTokens, big.NewInt(c.RequestAppealExpiry), c.LastUpdatedDateTs)
+		stake, totalTokens, big.NewInt(c.RequestAppealExpiry), c.ChallengeType, c.LastUpdatedDateTs)
 }

@@ -115,13 +115,23 @@ func TokenTransferPersister(config cconfig.PersisterConfig) (model.TokenTransfer
 }
 
 // ParameterizerPersister is a helper function to return the parameterizerpersister based
-// on the given configureation
+// on the given configuration
 func ParameterizerPersister(config cconfig.PersisterConfig) (model.ParamProposalPersister, error) {
 	p, err := persister(config)
 	if err != nil {
 		return nil, err
 	}
 	return p.(model.ParamProposalPersister), nil
+}
+
+// UserChallengeDataPersister is a helper function to return the userchallengedatapersister based
+// on the given configuration.
+func UserChallengeDataPersister(config cconfig.PersisterConfig) (model.UserChallengeDataPersister, error) {
+	p, err := persister(config)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.UserChallengeDataPersister), nil
 }
 
 func persister(config cconfig.PersisterConfig) (interface{}, error) {

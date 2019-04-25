@@ -9,9 +9,13 @@ import (
 type Poll struct {
 	pollID *big.Int
 
+	pollType string
+
 	commitEndDate *big.Int
 
 	revealEndDate *big.Int
+
+	isPassed bool
 
 	voteQuorum *big.Int
 
@@ -41,6 +45,17 @@ func (p *Poll) PollID() *big.Int {
 	return p.pollID
 }
 
+// PollType returns the polltype of this poll
+// NOTE(IS): This isn't set until we start receiving voteCommitted events from the poll
+func (p *Poll) PollType() string {
+	return p.pollType
+}
+
+// SetPollType sets the polltype of this poll
+func (p *Poll) SetPollType(pollType string) {
+	p.pollType = pollType
+}
+
 // CommitEndDate returns the commitenddate
 func (p *Poll) CommitEndDate() *big.Int {
 	return p.commitEndDate
@@ -49,6 +64,16 @@ func (p *Poll) CommitEndDate() *big.Int {
 // RevealEndDate returns the RevealEndDate
 func (p *Poll) RevealEndDate() *big.Int {
 	return p.revealEndDate
+}
+
+// IsPassed corresponds to function in PLCR contract voting.isPassed()
+func (p *Poll) IsPassed() bool {
+	return p.isPassed
+}
+
+// SetIsPassed sets passed which corresponds to function in PLCR contract voting.isPassed()
+func (p *Poll) SetIsPassed(passed bool) {
+	p.isPassed = passed
 }
 
 // VoteQuorum returns the VoteQuorum

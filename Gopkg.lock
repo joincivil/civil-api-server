@@ -251,8 +251,8 @@
   revision = "53f76f633cb18396d02f49dd62d3e333e9c9acde"
 
 [[projects]]
-  branch = "master"
-  digest = "1:6690086e4ec80c1dca1aaa11c67bec2813447cb98a27cd0cfc88e8f723c7d66e"
+  branch = "inna/358/user-data"
+  digest = "1:bf734e69149d6e12e1bb5a3d51607cfabb2443b5b3ed7228e07e9bd7f9addc6c"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -261,7 +261,7 @@
     "pkg/persistence/postgres",
   ]
   pruneopts = "UT"
-  revision = "7e6bf484e04c31ff27aa67820e2ce3371df389c0"
+  revision = "5de9bf156c6e1148a12b3eab0c47be7abc317138"
 
 [[projects]]
   branch = "master"
