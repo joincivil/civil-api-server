@@ -34,7 +34,6 @@ func main() {
 	err = graphqlmain.RunTokenEventsWorkers(config, quit)
 	if err != nil {
 		log.Errorf("Error starting token events workers: err: %v\n", err)
-		os.Exit(2)
 	}
 
 	// Starts up the GraphQL/API server

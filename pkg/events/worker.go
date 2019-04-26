@@ -177,6 +177,11 @@ Loop:
 			msg.Ack()
 
 		case <-w.quitChan:
+			defer func() {
+				if r := recover(); r != nil {
+					log.Errorf("Panic captured during worker quit: %v", r)
+				}
+			}()
 			err := ps.StopSubscribers()
 			if err != nil {
 				log.Errorf("Error stopping subscribers: err: %v", err)
