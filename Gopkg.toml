@@ -42,8 +42,8 @@ required = ["github.com/99designs/gqlgen"]
   branch = "master"
   name = "github.com/ethereum/go-ethereum"
 
-[[constraint]]
-  branch = "master"
+[[override]]
+  branch = "png/CIVIL-603/token-events"
   name = "github.com/joincivil/civil-events-processor"
 
 [[constraint]]

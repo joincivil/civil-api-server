@@ -79,6 +79,9 @@ func (p *PostgresPersister) Close() error {
 }
 
 func (p *PostgresPersister) closeRows(rows *sqlx.Rows) {
+	if rows == nil {
+		return
+	}
 	err := rows.Close()
 	if err != nil {
 		log.Errorf("Error closing rows: err: %v", err)
@@ -265,6 +268,12 @@ func (p *PostgresPersister) CreateAppeal(appeal *model.Appeal) error {
 // UpdateAppeal updates an appeal
 func (p *PostgresPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []string) error {
 	return p.updateAppealInTable(appeal, updatedFields, appealTableName)
+}
+
+// TokenTransfersByTxHash all the token transfers for a given purchaser address
+func (p *PostgresPersister) TokenTransfersByTxHash(txHash common.Hash) (
+	[]*model.TokenTransfer, error) {
+	return p.tokenTransfersByTxHashFromTable(txHash, tokenTransferTableName)
 }
 
 // TokenTransfersByToAddress gets all the token transfers for a given purchaser address
@@ -780,7 +789,8 @@ func (p *PostgresPersister) deleteContentRevisionQuery(tableName string) string 
 	return queryString
 }
 
-func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address common.Address, tableName string) ([]*model.GovernanceEvent, error) {
+func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address common.Address,
+	tableName string) ([]*model.GovernanceEvent, error) {
 	govEvents := []*model.GovernanceEvent{}
 	queryString := p.govEventsQuery(tableName)
 	dbGovEvents := []postgres.GovernanceEvent{}
@@ -795,9 +805,12 @@ func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address co
 	return govEvents, nil
 }
 
-func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash, tableName string) ([]*model.GovernanceEvent, error) {
-	queryString := p.governanceEventsByTxHashQuery(txHash, tableName)
-	rows, err := p.db.Queryx(queryString)
+func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash,
+	tableName string) ([]*model.GovernanceEvent, error) {
+	queryString := p.governanceEventsByTxHashQuery(tableName)
+
+	blockDataValue := fmt.Sprintf("{ \"txHash\": \"%s\" }", txHash.Hex())
+	rows, err := p.db.Queryx(queryString, blockDataValue)
 	defer p.closeRows(rows)
 	if err != nil {
 		return nil, errors.Wrap(err, "error retrieving governance events from table")
@@ -818,13 +831,12 @@ func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceE
 	return govEvents, nil
 }
 
-func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, tableName string) string {
+func (p *PostgresPersister) governanceEventsByTxHashQuery(tableName string) string {
 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
 	queryString := fmt.Sprintf( // nolint: gosec
-		"SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }' ORDER BY creation_date",
+		"SELECT %s FROM %s WHERE block_data @> $1 ORDER BY creation_date",
 		fieldNames,
 		tableName,
-		txHash.Hex(),
 	)
 	return queryString
 }
@@ -1408,6 +1420,39 @@ func (p *PostgresPersister) updateCronTable(cronData *postgres.CronData, tableNa
 	}
 
 	return nil
+}
+
+func (p *PostgresPersister) tokenTransfersByTxHashFromTable(txHash common.Hash, tableName string) (
+	[]*model.TokenTransfer, error) {
+	purchases := []*model.TokenTransfer{}
+	queryString := p.tokenTransfersByTxHashQuery(tableName)
+
+	blockDataValue := fmt.Sprintf("{ \"txHash\": \"%s\" }", txHash.Hex())
+	dbPurchases := []*postgres.TokenTransfer{}
+	err := p.db.Select(&dbPurchases, queryString, blockDataValue)
+	if err != nil {
+		return purchases, errors.Wrap(err, "error retrieving token transfers from table")
+	}
+
+	if len(dbPurchases) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+
+	for _, dbPurchase := range dbPurchases {
+		purchases = append(purchases, dbPurchase.DbToTokenTransfer())
+	}
+
+	return purchases, nil
+}
+
+func (p *PostgresPersister) tokenTransfersByTxHashQuery(tableName string) string {
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.TokenTransfer{}, false, "")
+	queryString := fmt.Sprintf( // nolint: gosec
+		"SELECT %s FROM %s WHERE block_data @> $1 ORDER BY transfer_date",
+		fieldNames,
+		tableName,
+	)
+	return queryString
 }
 
 func (p *PostgresPersister) tokenTransfersByToAddressFromTable(addr common.Address,
