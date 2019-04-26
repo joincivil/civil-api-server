@@ -66,6 +66,14 @@ func TestWorkers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Unable to setup pubsub: err: %v", err)
 	}
+	err = ps.DeleteSubscription(config.PubSubSubscriptionName)
+	if err != nil {
+		t.Logf("Error deleting subscription %v", err)
+	}
+	err = ps.DeleteTopic(config.PubSubTopicName)
+	if err != nil {
+		t.Logf("Error deleting topic %v", err)
+	}
 	err = ps.CreateTopic(config.PubSubTopicName)
 	if err != nil {
 		t.Fatalf("Error creating topic %v", err)
