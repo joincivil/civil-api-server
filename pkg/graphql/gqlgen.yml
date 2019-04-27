@@ -40,6 +40,8 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.Appeal
   Poll:
     model: github.com/joincivil/civil-events-processor/pkg/model.Poll
+  UserChallengeVoteData:
+    model: github.com/joincivil/civil-events-processor/pkg/model.UserChallengeData
   CurrentUser:
     model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
   RawObject:

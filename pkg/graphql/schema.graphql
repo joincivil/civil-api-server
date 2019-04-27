@@ -75,6 +75,15 @@ type Query {
   ): [ContentRevision!]!
   nrsignupNewsroom: NrsignupNewsroom
 
+  # UserChallengeData Queries
+  userChallengeData(
+    userAddr: String
+    pollID: Int
+    canUserCollect: Boolean
+    canUserRescue: Boolean
+    canUserReveal: Boolean
+  ): [UserChallengeVoteData!]!
+
   # User Queries
   currentUser: User
 
@@ -282,6 +291,26 @@ type Poll {
   voteQuorum: Int!
   votesFor: String!
   votesAgainst: String!
+}
+
+# A type that reflects values in model.UserChallengeData
+type UserChallengeVoteData {
+  pollID: Int!
+  pollRevealDate: Int!
+  pollType: String!
+  userAddress: String!
+  userDidCommit: Boolean!
+  userDidReveal: Boolean!
+  didUserCollect: Boolean!
+  didUserRescue: Boolean!
+  didCollectAmount: Int!
+  isVoterWinner: Boolean!
+  pollIsPassed: Boolean!
+  salt: Int!
+  choice: Int!
+  numTokens: String!
+  voterReward: Int!
+  parentChallengeID: Int!
 }
 
 ## Newsroom object schemas
