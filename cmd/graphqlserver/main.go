@@ -25,6 +25,18 @@ func main() {
 		os.Exit(2)
 	}
 
+	quit := make(chan bool)
+
+	// Setup the kill hook
+	graphqlmain.SetupKillNotify(quit)
+
+	// Starts up the events workers
+	err = graphqlmain.RunTokenEventsWorkers(config, quit)
+	if err != nil {
+		log.Errorf("Error starting token events workers: err: %v\n", err)
+	}
+
+	// Starts up the GraphQL/API server
 	err = graphqlmain.RunServer(config)
 	if err != nil {
 		log.Errorf("Error starting graphql server: err: %v\n", err)

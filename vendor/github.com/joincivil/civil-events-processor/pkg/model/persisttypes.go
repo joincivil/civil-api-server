@@ -232,6 +232,8 @@ type AppealPersister interface {
 
 // TokenTransferPersister is the persister interface to store TokenTransfer
 type TokenTransferPersister interface {
+	// TokenTransfersByTxHash gets a list of token transfers by txhash
+	TokenTransfersByTxHash(txHash common.Hash) ([]*TokenTransfer, error)
 	// TokenTransfersByToAddress gets a list of token transfers by purchaser address
 	TokenTransfersByToAddress(addr common.Address) ([]*TokenTransfer, error)
 	// CreateTokenTransfer creates a new token transfer

@@ -1,6 +1,8 @@
 package testutils
 
 import (
+	"strings"
+
 	"github.com/joincivil/civil-api-server/pkg/users"
 
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
@@ -25,7 +27,7 @@ func (r *InMemoryUserPersister) User(criteria *users.UserCriteria) (*users.User,
 	}
 
 	for _, user := range r.Users {
-		if target == user.Email || target == user.EthAddress || target == user.UID {
+		if target == user.Email || strings.ToLower(target) == strings.ToLower(user.EthAddress) || target == user.UID {
 			u = user
 			break
 		}
