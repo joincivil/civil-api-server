@@ -4,7 +4,6 @@ package persistence // import "github.com/joincivil/civil-events-processor/pkg/p
 import (
 	"bytes"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"math/big"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	log "github.com/golang/glog"
+	"github.com/pkg/errors"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jmoiron/sqlx"
@@ -24,6 +24,7 @@ import (
 
 	crawlerPostgres "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
 
+	cbytes "github.com/joincivil/go-common/pkg/bytes"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 	cstrings "github.com/joincivil/go-common/pkg/strings"
@@ -50,7 +51,7 @@ func NewPostgresPersister(host string, port int, user string, password string, d
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 	db, err := sqlx.Connect("postgres", psqlInfo)
 	if err != nil {
-		return pgPersister, fmt.Errorf("Error connecting to sqlx: %v", err)
+		return pgPersister, errors.Wrap(err, "error connecting to sqlx")
 	}
 	pgPersister.db = db
 	db.SetMaxOpenConns(maxOpenConns)
@@ -79,6 +80,9 @@ func (p *PostgresPersister) Close() error {
 }
 
 func (p *PostgresPersister) closeRows(rows *sqlx.Rows) {
+	if rows == nil {
+		return
+	}
 	err := rows.Close()
 	if err != nil {
 		log.Errorf("Error closing rows: err: %v", err)
@@ -304,6 +308,13 @@ func (p *PostgresPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []s
 	return p.updateAppealInTable(appeal, updatedFields, appealTableName)
 }
 
+// TokenTransfersByTxHash all the token transfers for a given purchaser address
+func (p *PostgresPersister) TokenTransfersByTxHash(txHash common.Hash) (
+	[]*model.TokenTransfer, error) {
+	tokenTransferTableName := p.GetTableName(postgres.TokenTransferTableBaseName)
+	return p.tokenTransfersByTxHashFromTable(txHash, tokenTransferTableName)
+}
+
 // TokenTransfersByToAddress gets all the token transfers for a given purchaser address
 func (p *PostgresPersister) TokenTransfersByToAddress(addr common.Address) (
 	[]*model.TokenTransfer, error) {
@@ -351,6 +362,28 @@ func (p *PostgresPersister) InitProcessorVersion(versionNumber *string) error {
 	return nil
 }
 
+// CreateParameterProposal creates a new parameter proposal
+func (p *PostgresPersister) CreateParameterProposal(paramProposal *model.ParameterProposal) error {
+	return p.createParameterProposalInTable(paramProposal, postgres.ParameterProposalTableBaseName)
+}
+
+// ParamProposalByPropID gets parameter proposal by propID
+func (p *PostgresPersister) ParamProposalByPropID(propID [32]byte) (*model.ParameterProposal, error) {
+	return p.paramProposalByPropIDFromTable(propID, postgres.ParameterProposalTableBaseName)
+}
+
+// ParamProposalByName gets parameter proposals by name. active=true will get only active
+func (p *PostgresPersister) ParamProposalByName(name string, active bool) ([]*model.ParameterProposal, error) {
+	return p.paramProposalByNameFromTable(name, active, postgres.ParameterProposalTableBaseName)
+}
+
+// UpdateParamProposal updates a parameter proposal
+func (p *PostgresPersister) UpdateParamProposal(paramProposal *model.ParameterProposal,
+	updatedFields []string) error {
+
+	return p.updateParamProposalInTable(paramProposal, updatedFields, postgres.ParameterProposalTableBaseName)
+}
+
 // CreateTables creates the tables for processor if they don't exist
 func (p *PostgresPersister) CreateTables() error {
 	contRevTableQuery := postgres.CreateContentRevisionTableQuery(p.GetTableName(postgres.ContentRevisionTableBaseName))
@@ -361,38 +394,43 @@ func (p *PostgresPersister) CreateTables() error {
 	pollTableQuery := postgres.CreatePollTableQuery(p.GetTableName(postgres.PollTableBaseName))
 	appealTableQuery := postgres.CreateAppealTableQuery(p.GetTableName(postgres.AppealTableBaseName))
 	tokenTransferQuery := postgres.CreateTokenTransferTableQuery(p.GetTableName(postgres.TokenTransferTableBaseName))
+	parameterProposalQuery := postgres.CreateParameterProposalTableQuery(p.GetTableName(postgres.ParameterProposalTableBaseName))
 
 	_, err := p.db.Exec(contRevTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating content_revision table in postgres: %v", err)
+		return errors.Wrap(err, "error creating content_revision table in postgres")
 	}
 	_, err = p.db.Exec(govEventTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating governance_event table in postgres: %v", err)
+		return errors.Wrap(err, "error creating governance_event table in postgres")
 	}
 	_, err = p.db.Exec(listingTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating listing table in postgres: %v", err)
+		return errors.Wrap(err, "error creating listing table in postgres")
 	}
 	_, err = p.db.Exec(cronTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating listing table in postgres: %v", err)
+		return errors.Wrap(err, "error creating cron table in postgres")
 	}
 	_, err = p.db.Exec(challengeTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating challenge table in postgres: %v", err)
+		return errors.Wrap(err, "error creating challenge table in postgres")
 	}
 	_, err = p.db.Exec(pollTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating poll table in postgres: %v", err)
+		return errors.Wrap(err, "error creating poll table in postgres")
 	}
 	_, err = p.db.Exec(appealTableQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating appeal table in postgres: %v", err)
+		return errors.Wrap(err, "error creating appeal table in postgres")
 	}
 	_, err = p.db.Exec(tokenTransferQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating token transfer table in postgres: %v", err)
+		return errors.Wrap(err, "error creating token transfer table in postgres")
+	}
+	_, err = p.db.Exec(parameterProposalQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating parameter proposal table in postgres: %v", err)
 	}
 	return nil
 }
@@ -402,38 +440,38 @@ func (p *PostgresPersister) CreateIndices() error {
 	indexQuery := postgres.CreateContentRevisionTableIndicesQuery(p.GetTableName(postgres.ContentRevisionTableBaseName))
 	_, err := p.db.Exec(indexQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating content revision table indices in postgres: %v", err)
+		return errors.Wrap(err, "error creating content revision table indices")
 	}
 	indexQuery = postgres.CreateGovernanceEventTableIndicesQuery(p.GetTableName(postgres.GovernanceEventTableBaseName))
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating gov events table indices in postgres: %v", err)
+		return errors.Wrap(err, "error creating gov events table indices")
 	}
 	indexQuery = postgres.CreateListingTableIndicesQuery(p.GetTableName(postgres.ListingTableBaseName))
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating listing table indices in postgres: %v", err)
+		return errors.Wrap(err, "error creating listing table indices")
 	}
 	indexQuery = postgres.CreateChallengeTableIndicesQuery(p.GetTableName(postgres.ChallengeTableBaseName))
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
-		return fmt.Errorf("Error creating challenge table indices in postgres: %v", err)
+		return errors.Wrap(err, "error creating challenge table indices")
 	}
 	// indexQuery = postgres.CreatePollTableIndicesQuery(postgres.PollTableBaseName)
 	// _, err = p.db.Exec(indexQuery)
 	// if err != nil {
-	// 	return fmt.Errorf("Error creating poll table indices in postgres: %v", err)
+	// 	return errors.Wrap(err, "Error creating poll table indices in postgres")
 	// }
 	// indexQuery = postgres.CreateAppealTableIndicesQuery(postgres.AppealTableBaseName)
 	// _, err = p.db.Exec(indexQuery)
 	// if err != nil {
-	// 	return fmt.Errorf("Error creating appeal table indices in postgres: %v", err)
+	// 	return errors.Wrap(err, "Error creating appeal table indices in postgres")
 	// }
-	// indexQuery = postgres.CreateTokenTransferTableIndicesQuery(postgres.TokenTransferTableBaseName)
-	// _, err = p.db.Exec(indexQuery)
-	// if err != nil {
-	// 	return fmt.Errorf("Error creating token_transfer table indices in postgres: %v", err)
-	// }
+	indexQuery = postgres.CreateTokenTransferTableIndicesQuery(postgres.TokenTransferTableBaseName)
+	_, err = p.db.Exec(indexQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating token_transfer table indices in postgres: %v", err)
+	}
 	return err
 }
 
@@ -508,7 +546,7 @@ func (p *PostgresPersister) updateDBQueryBuffer(updatedFields []string, tableNam
 	for idx, field := range updatedFields {
 		dbFieldName, err := cpostgres.DbFieldNameFromModelName(dbModelStruct, field)
 		if err != nil {
-			return queryBuf, fmt.Errorf("Error getting %s from %s table DB struct tag: %v", field, tableName, err)
+			return queryBuf, errors.Wrapf(err, "error getting %s from %s table DB struct tag", field, tableName)
 		}
 		queryBuf.WriteString(fmt.Sprintf("%s=:%s", dbFieldName, dbFieldName)) // nolint: gosec
 		if idx+1 < len(updatedFields) {
@@ -527,11 +565,11 @@ func (p *PostgresPersister) listingsByCriteriaFromTable(criteria *model.ListingC
 	}
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
+		return nil, errors.Wrap(err, "error preparing query with sqlx")
 	}
 	err = nstmt.Select(&dbListings, criteria)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving listings from table")
 	}
 	listings := make([]*model.Listing, len(dbListings))
 	for index, dbListing := range dbListings {
@@ -551,14 +589,14 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 	queryString := p.listingByAddressesQuery(tableName)
 	query, args, err := sqlx.In(queryString, stringAddresses)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+		return nil, errors.Wrap(err, "error preparing 'IN' statement")
 	}
 
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	defer p.closeRows(rows)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving listings from table")
 	}
 
 	listingsMap := map[common.Address]*model.Listing{}
@@ -566,7 +604,7 @@ func (p *PostgresPersister) listingsByAddressesFromTableInOrder(addresses []comm
 		var dbListing postgres.Listing
 		err = rows.StructScan(&dbListing)
 		if err != nil {
-			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+			return nil, errors.Wrap(err, "error scanning row from IN query")
 		}
 		modelListing := dbListing.DbToListingData()
 		listingsMap[modelListing.ContractAddress()] = modelListing
@@ -645,7 +683,30 @@ func (p *PostgresPersister) listingsByCriteriaQuery(criteria *model.ListingCrite
 		queryBuf.WriteString(" creation_timestamp < :created_beforets") // nolint: gosec
 	}
 
-	queryBuf.WriteString(" ORDER BY creation_timestamp") // nolint: gosec
+	if criteria.SortBy == model.SortByUndefined || criteria.SortBy == model.SortByCreated {
+		queryBuf.WriteString(" ORDER BY creation_timestamp") // nolint: gosec
+
+	} else if criteria.SortBy == model.SortByName {
+		queryBuf.WriteString(" ORDER BY name") // nolint: gosec
+
+	} else if criteria.SortBy == model.SortByApplied {
+		if !criteria.ActiveChallenge && !criteria.CurrentApplication {
+			p.addWhereAnd(queryBuf)
+			queryBuf.WriteString(" application_timestamp > 0") // nolint: gosec
+		}
+		queryBuf.WriteString(" ORDER BY application_timestamp") // nolint: gosec
+
+	} else if criteria.SortBy == model.SortByWhitelisted {
+		if !criteria.WhitelistedOnly {
+			p.addWhereAnd(queryBuf)
+			queryBuf.WriteString(" approval_timestamp > 0") // nolint: gosec
+		}
+		queryBuf.WriteString(" ORDER BY approval_timestamp") // nolint: gosec
+	}
+
+	if criteria.SortDesc {
+		queryBuf.WriteString(" DESC") // nolint: gosec
+	}
 
 	if criteria.Offset > 0 {
 		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
@@ -668,7 +729,7 @@ func (p *PostgresPersister) createListingForTable(listing *model.Listing, tableN
 	queryString := p.insertIntoDBQueryString(tableName, postgres.Listing{})
 	_, err := p.db.NamedExec(queryString, dbListing)
 	if err != nil {
-		return fmt.Errorf("Error saving listing to table: %v", err)
+		return errors.Wrap(err, "error saving listing to table")
 	}
 	return nil
 }
@@ -680,12 +741,12 @@ func (p *PostgresPersister) updateListingInTable(listing *model.Listing, updated
 
 	queryString, err := p.updateListingQuery(updatedFields, tableName)
 	if err != nil {
-		return fmt.Errorf("Error creating query string for update: %v ", err)
+		return errors.Wrap(err, "error creating query string for update")
 	}
 	dbListing := postgres.NewListing(listing)
 	_, err = p.db.NamedExec(queryString, dbListing)
 	if err != nil {
-		return fmt.Errorf("Error updating fields in db: %v", err)
+		return errors.Wrap(err, "error updating fields in db")
 	}
 	return nil
 }
@@ -704,7 +765,7 @@ func (p *PostgresPersister) deleteListingFromTable(listing *model.Listing, table
 	queryString := p.deleteListingQuery(tableName)
 	_, err := p.db.NamedExec(queryString, dbListing)
 	if err != nil {
-		return fmt.Errorf("Error deleting listing in db: %v", err)
+		return errors.Wrap(err, "error deleting listing in db")
 	}
 	return nil
 }
@@ -719,7 +780,7 @@ func (p *PostgresPersister) createContentRevisionForTable(revision *model.Conten
 	dbContRev := postgres.NewContentRevision(revision)
 	_, err := p.db.NamedExec(queryString, dbContRev)
 	if err != nil {
-		return fmt.Errorf("Error saving contentRevision to table: %v", err)
+		return errors.Wrap(err, "error saving contentRevision to table")
 	}
 	return nil
 }
@@ -732,7 +793,7 @@ func (p *PostgresPersister) contentRevisionFromTable(address common.Address, con
 		if err == sql.ErrNoRows {
 			return nil, cpersist.ErrPersisterNoResults
 		}
-		return nil, fmt.Errorf("Wasn't able to get ContentRevision from postgres table: %v", err)
+		return nil, errors.Wrap(err, "wasn't able to get ContentRevision from postgres table")
 	}
 	contRev := dbContRev.DbToContentRevisionData()
 	if contRev == nil {
@@ -753,7 +814,7 @@ func (p *PostgresPersister) contentRevisionsFromTable(address common.Address, co
 	queryString := p.contentRevisionsQuery(tableName)
 	err := p.db.Select(&dbContRevs, queryString, address.Hex(), contentID.Int64())
 	if err != nil {
-		return contRevs, fmt.Errorf("Wasn't able to get ContentRevisions from postgres table: %v", err)
+		return contRevs, errors.Wrap(err, "wasn't able to get ContentRevisions from postgres table")
 	}
 	for _, dbContRev := range dbContRevs {
 		contRevs = append(contRevs, dbContRev.DbToContentRevisionData())
@@ -774,11 +835,11 @@ func (p *PostgresPersister) contentRevisionsByCriteriaFromTable(criteria *model.
 
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
+		return nil, errors.Wrap(err, "error preparing query with sqlx")
 	}
 	err = nstmt.Select(&dbContRevs, criteria)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving content revisions from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving content revisions from table")
 	}
 	revisions := make([]*model.ContentRevision, len(dbContRevs))
 	for index, dbContRev := range dbContRevs {
@@ -830,12 +891,12 @@ func (p *PostgresPersister) contentRevisionsByCriteriaQuery(criteria *model.Cont
 func (p *PostgresPersister) updateContentRevisionInTable(revision *model.ContentRevision, updatedFields []string, tableName string) error {
 	queryString, err := p.updateContentRevisionQuery(updatedFields, tableName)
 	if err != nil {
-		return fmt.Errorf("Error creating query string for update: %v ", err)
+		return errors.WithMessage(err, "error creating query string for update")
 	}
 	dbContentRevision := postgres.NewContentRevision(revision)
 	_, err = p.db.NamedExec(queryString, dbContentRevision)
 	if err != nil {
-		return fmt.Errorf("Error updating fields in db: %v", err)
+		return errors.Wrap(err, "error updating fields in db")
 	}
 	return nil
 }
@@ -854,7 +915,7 @@ func (p *PostgresPersister) deleteContentRevisionFromTable(revision *model.Conte
 	queryString := p.deleteContentRevisionQuery(tableName)
 	_, err := p.db.NamedExec(queryString, dbContRev)
 	if err != nil {
-		return fmt.Errorf("Error deleting content revision in db: %v", err)
+		return errors.Wrap(err, "error deleting content revision in db")
 	}
 	return nil
 }
@@ -864,13 +925,14 @@ func (p *PostgresPersister) deleteContentRevisionQuery(tableName string) string 
 	return queryString
 }
 
-func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address common.Address, tableName string) ([]*model.GovernanceEvent, error) {
+func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address common.Address,
+	tableName string) ([]*model.GovernanceEvent, error) {
 	govEvents := []*model.GovernanceEvent{}
 	queryString := p.govEventsQuery(tableName)
 	dbGovEvents := []postgres.GovernanceEvent{}
 	err := p.db.Select(&dbGovEvents, queryString, address.Hex())
 	if err != nil {
-		return govEvents, fmt.Errorf("Error retrieving governance events from table: %v", err)
+		return govEvents, errors.Wrap(err, "error retrieving governance events from table")
 	}
 	// retrieved correctly
 	for _, dbGovEvent := range dbGovEvents {
@@ -879,12 +941,15 @@ func (p *PostgresPersister) governanceEventsByListingAddressFromTable(address co
 	return govEvents, nil
 }
 
-func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash, tableName string) ([]*model.GovernanceEvent, error) {
-	queryString := p.governanceEventsByTxHashQuery(txHash, tableName)
-	rows, err := p.db.Queryx(queryString)
+func (p *PostgresPersister) governanceEventsByTxHashFromTable(txHash common.Hash,
+	tableName string) ([]*model.GovernanceEvent, error) {
+	queryString := p.governanceEventsByTxHashQuery(tableName)
+
+	blockDataValue := fmt.Sprintf("{ \"txHash\": \"%s\" }", txHash.Hex())
+	rows, err := p.db.Queryx(queryString, blockDataValue)
 	defer p.closeRows(rows)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving governance events from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving governance events from table")
 	}
 	return p.scanGovEvents(rows)
 }
@@ -896,19 +961,18 @@ func (p *PostgresPersister) scanGovEvents(rows *sqlx.Rows) ([]*model.GovernanceE
 		err := rows.StructScan(&govEvent)
 		govEvents = append(govEvents, govEvent.DbToGovernanceData())
 		if err != nil {
-			return govEvents, fmt.Errorf("Error scanning results from governance event query: %v", err)
+			return govEvents, errors.Wrap(err, "error scanning results from governance event query")
 		}
 	}
 	return govEvents, nil
 }
 
-func (p *PostgresPersister) governanceEventsByTxHashQuery(txHash common.Hash, tableName string) string {
+func (p *PostgresPersister) governanceEventsByTxHashQuery(tableName string) string {
 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.GovernanceEvent{}, false, "")
 	queryString := fmt.Sprintf( // nolint: gosec
-		"SELECT %s FROM %s WHERE block_data @> '{\"txHash\": \"%s\" }' ORDER BY creation_date",
+		"SELECT %s FROM %s WHERE block_data @> $1 ORDER BY creation_date",
 		fieldNames,
 		tableName,
-		txHash.Hex(),
 	)
 	return queryString
 }
@@ -924,7 +988,7 @@ func (p *PostgresPersister) createGovernanceEventInTable(govEvent *model.Governa
 	queryString := p.insertIntoDBQueryString(tableName, postgres.GovernanceEvent{})
 	_, err := p.db.NamedExec(queryString, dbGovEvent)
 	if err != nil {
-		return fmt.Errorf("Error saving GovernanceEvent to table: %v", err)
+		return errors.Wrap(err, "error saving GovernanceEvent to table")
 	}
 	return nil
 }
@@ -935,11 +999,11 @@ func (p *PostgresPersister) governanceEventsByCriteriaFromTable(criteria *model.
 	queryString := p.governanceEventsByCriteriaQuery(criteria, tableName)
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing query with sqlx: %v", err)
+		return nil, errors.Wrap(err, "error preparing query with sqlx")
 	}
 	err = nstmt.Select(&dbGovEvents, criteria)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving gov events from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving gov events from table")
 	}
 	events := make([]*model.GovernanceEvent, len(dbGovEvents))
 	for index, event := range dbGovEvents {
@@ -986,12 +1050,12 @@ func (p *PostgresPersister) updateGovernanceEventInTable(govEvent *model.Governa
 
 	queryString, err := p.updateGovEventsQuery(updatedFields, tableName)
 	if err != nil {
-		return fmt.Errorf("Error creating query string for update: %v ", err)
+		return errors.Wrap(err, "error creating query string for update")
 	}
 	dbGovEvent := postgres.NewGovernanceEvent(govEvent)
 	_, err = p.db.NamedExec(queryString, dbGovEvent)
 	if err != nil {
-		return fmt.Errorf("Error updating fields in db: %v", err)
+		return errors.Wrap(err, "error updating fields in db")
 	}
 	return nil
 }
@@ -1010,7 +1074,7 @@ func (p *PostgresPersister) deleteGovernanceEventFromTable(govEvent *model.Gover
 	queryString := p.deleteGovEventQuery(tableName)
 	_, err := p.db.NamedExec(queryString, dbGovEvent)
 	if err != nil {
-		return fmt.Errorf("Error deleting governanceEvent in db: %v", err)
+		return errors.Wrap(err, "error deleting governanceEvent in db")
 	}
 	return nil
 }
@@ -1025,7 +1089,7 @@ func (p *PostgresPersister) createChallengeInTable(challenge *model.Challenge, t
 	queryString := p.insertIntoDBQueryString(tableName, postgres.Challenge{})
 	_, err := p.db.NamedExec(queryString, dbChallenge)
 	if err != nil {
-		return fmt.Errorf("Error saving Challenge to table: %v", err)
+		return errors.Wrap(err, "error saving Challenge to table")
 	}
 	return nil
 }
@@ -1038,13 +1102,13 @@ func (p *PostgresPersister) updateChallengeInTable(challenge *model.Challenge, u
 
 	queryString, err := p.updateChallengeQuery(updatedFields, tableName)
 	if err != nil {
-		return fmt.Errorf("Error creating query string for update: %v ", err)
+		return errors.Wrap(err, "error creating query string for update")
 	}
 
 	dbChallenge := postgres.NewChallenge(challenge)
 	_, err = p.db.NamedExec(queryString, dbChallenge)
 	if err != nil {
-		return fmt.Errorf("Error updating fields in challenge table: %v", err)
+		return errors.Wrap(err, "error updating fields in challenge table")
 	}
 	return nil
 }
@@ -1079,13 +1143,13 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 	queryString := p.challengesByChallengeIDsQuery(tableName)
 	query, args, err := sqlx.In(queryString, challengeIDsString)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+		return nil, errors.Wrap(err, "error preparing 'IN' statement")
 	}
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	defer p.closeRows(rows)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving challenges from table")
 	}
 
 	challengesMap := map[int]*model.Challenge{}
@@ -1093,7 +1157,7 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 		var dbChallenge postgres.Challenge
 		err = rows.StructScan(&dbChallenge)
 		if err != nil {
-			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+			return nil, errors.Wrap(err, "error scanning row from IN query")
 		}
 
 		modelChallenge := dbChallenge.DbToChallengeData()
@@ -1131,14 +1195,14 @@ func (p *PostgresPersister) challengesByListingAddressesInTable(addrs []common.A
 
 	query, args, err := sqlx.In(queryString, listingAddrs)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+		return nil, errors.Wrap(err, "error preparing 'IN' statement")
 	}
 
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	defer p.closeRows(rows)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving challenges from table")
 	}
 
 	challengesMap := map[string][]*model.Challenge{}
@@ -1146,7 +1210,7 @@ func (p *PostgresPersister) challengesByListingAddressesInTable(addrs []common.A
 		var dbChallenge postgres.Challenge
 		err = rows.StructScan(&dbChallenge)
 		if err != nil {
-			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+			return nil, errors.Wrap(err, "error scanning row from IN query")
 		}
 		modelChallenge := dbChallenge.DbToChallengeData()
 		listingAddr := modelChallenge.ListingAddress().Hex()
@@ -1195,7 +1259,7 @@ func (p *PostgresPersister) challengesByListingAddressInTable(addr common.Addres
 	dbChallenges := []*postgres.Challenge{}
 	err := p.db.Select(&dbChallenges, queryString, addr.Hex())
 	if err != nil {
-		return challenges, fmt.Errorf("Error retrieving challenges from table: %v", err)
+		return challenges, errors.Wrap(err, "error retrieving challenges from table")
 	}
 
 	if len(dbChallenges) == 0 {
@@ -1226,7 +1290,7 @@ func (p *PostgresPersister) createPollInTable(poll *model.Poll, tableName string
 	queryString := p.insertIntoDBQueryString(tableName, postgres.Poll{})
 	_, err := p.db.NamedExec(queryString, dbPoll)
 	if err != nil {
-		return fmt.Errorf("Error saving Poll to table: %v", err)
+		return errors.Wrap(err, "error saving Poll to table")
 	}
 	return nil
 }
@@ -1239,12 +1303,12 @@ func (p *PostgresPersister) updatePollInTable(poll *model.Poll, updatedFields []
 
 	queryString, err := p.updatePollQuery(updatedFields, tableName)
 	if err != nil {
-		return fmt.Errorf("Error creating query string for update: %v ", err)
+		return errors.Wrap(err, "error creating query string for update")
 	}
 	dbPoll := postgres.NewPoll(poll)
 	_, err = p.db.NamedExec(queryString, dbPoll)
 	if err != nil {
-		return fmt.Errorf("Error updating fields in poll table: %v", err)
+		return errors.Wrap(err, "error updating fields in poll table")
 	}
 	return nil
 }
@@ -1278,14 +1342,14 @@ func (p *PostgresPersister) pollsByPollIDsInTableInOrder(pollIDs []int, pollTabl
 	queryString := p.pollByPollIDsQuery(pollTableName)
 	query, args, err := sqlx.In(queryString, pollIDsString)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+		return nil, errors.Wrapf(err, "error preparing 'IN' statement")
 	}
 
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	defer p.closeRows(rows)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving challenges from table")
 	}
 
 	pollsMap := map[int]*model.Poll{}
@@ -1293,7 +1357,7 @@ func (p *PostgresPersister) pollsByPollIDsInTableInOrder(pollIDs []int, pollTabl
 		var dbPoll postgres.Poll
 		err = rows.StructScan(&dbPoll)
 		if err != nil {
-			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+			return nil, errors.Wrap(err, "error scanning row from IN query")
 		}
 		modelPoll := dbPoll.DbToPollData()
 		pollsMap[int(modelPoll.PollID().Int64())] = modelPoll
@@ -1323,7 +1387,7 @@ func (p *PostgresPersister) createAppealInTable(appeal *model.Appeal, tableName 
 	queryString := p.insertIntoDBQueryString(tableName, postgres.Appeal{})
 	_, err := p.db.NamedExec(queryString, dbAppeal)
 	if err != nil {
-		return fmt.Errorf("Error saving appeal to table: %v", err)
+		return errors.Wrap(err, "error saving appeal to table")
 	}
 	return nil
 }
@@ -1336,13 +1400,13 @@ func (p *PostgresPersister) updateAppealInTable(appeal *model.Appeal, updatedFie
 
 	queryString, err := p.updateAppealQuery(updatedFields, tableName)
 	if err != nil {
-		return fmt.Errorf("Error creating query string for update: %v ", err)
+		return errors.WithMessage(err, "error creating query string for update")
 	}
 
 	dbAppeal := postgres.NewAppeal(appeal)
 	_, err = p.db.NamedExec(queryString, dbAppeal)
 	if err != nil {
-		return fmt.Errorf("Error updating fields in appeal table: %v", err)
+		return errors.Wrap(err, "error updating fields in appeal table")
 	}
 	return nil
 }
@@ -1376,14 +1440,14 @@ func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []i
 	queryString := p.appealsByChallengeIDsQuery(tableName)
 	query, args, err := sqlx.In(queryString, challengeIDsString)
 	if err != nil {
-		return nil, fmt.Errorf("Error preparing 'IN' statement: %v", err)
+		return nil, errors.Wrap(err, "error preparing 'IN' statement")
 	}
 
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	defer p.closeRows(rows)
 	if err != nil {
-		return nil, fmt.Errorf("Error retrieving challenges from table: %v", err)
+		return nil, errors.Wrap(err, "error retrieving challenges from table")
 	}
 
 	appealsMap := map[int]*model.Appeal{}
@@ -1391,7 +1455,7 @@ func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []i
 		var dbAppeal postgres.Appeal
 		err = rows.StructScan(&dbAppeal)
 		if err != nil {
-			return nil, fmt.Errorf("Error scanning row from IN query: %v", err)
+			return nil, errors.Wrap(err, "error scanning row from IN query")
 		}
 		modelAppeal := dbAppeal.DbToAppealData()
 		appealsMap[int(modelAppeal.OriginalChallengeID().Int64())] = modelAppeal
@@ -1425,11 +1489,11 @@ func (p *PostgresPersister) lastCronTimestampFromTable(tableName string) (int64,
 			// If there are no rows in DB, call updateCronTimestampInTable to do an insert of 0
 			err = p.updateCronTimestampInTable(timestampInt, tableName) // nolint: gosec
 			if err != nil {
-				return timestampInt, fmt.Errorf("No row in %s with timestamp. Error updating table, %v", tableName, err)
+				return timestampInt, errors.WithMessagef(err, "no row in %s with timestamp. Error updating table", tableName)
 			}
 			return timestampInt, nil
 		}
-		return timestampInt, fmt.Errorf("Wasn't able to get listing from postgres table: %v", err)
+		return timestampInt, errors.WithMessage(err, "wasn't able to get listing from postgres table")
 	}
 	timestampInt, err = ctime.StringToTimestamp(timestampString)
 	return timestampInt, err
@@ -1443,11 +1507,11 @@ func (p *PostgresPersister) lastEventHashesFromTable(tableName string) ([]string
 			// If row doesn't exist, create row with nil value
 			updateErr := p.updateEventHashesInTable(noLastHash, tableName)
 			if updateErr != nil {
-				return noLastHash, fmt.Errorf("No row in %s with hash. Error updating table, %v", tableName, updateErr)
+				return noLastHash, errors.WithMessagef(err, "no row in %s with hash. Error updating table", tableName)
 			}
 			return noLastHash, nil
 		}
-		return noLastHash, fmt.Errorf("Wasn't able to get listing from postgres table: %v", err)
+		return noLastHash, errors.WithMessage(err, "wasn't able to get listing from postgres table")
 	}
 	return strings.Split(lastHashesString, ","), nil
 }
@@ -1469,7 +1533,7 @@ func (p *PostgresPersister) updateCronTable(cronData *postgres.CronData, tableNa
 		if err == sql.ErrNoRows {
 			typeExists = false
 		} else {
-			return fmt.Errorf("Error checking DB for cron row, %v", err)
+			return errors.WithMessage(err, "error checking DB for cron row")
 		}
 	}
 	var queryString string
@@ -1486,10 +1550,43 @@ func (p *PostgresPersister) updateCronTable(cronData *postgres.CronData, tableNa
 	}
 	_, err = p.db.NamedExec(queryString, cronData)
 	if err != nil {
-		return fmt.Errorf("Error updating fields in db: %v", err)
+		return errors.Wrap(err, "error updating fields in db")
 	}
 
 	return nil
+}
+
+func (p *PostgresPersister) tokenTransfersByTxHashFromTable(txHash common.Hash, tableName string) (
+	[]*model.TokenTransfer, error) {
+	purchases := []*model.TokenTransfer{}
+	queryString := p.tokenTransfersByTxHashQuery(tableName)
+
+	blockDataValue := fmt.Sprintf("{ \"txHash\": \"%s\" }", txHash.Hex())
+	dbPurchases := []*postgres.TokenTransfer{}
+	err := p.db.Select(&dbPurchases, queryString, blockDataValue)
+	if err != nil {
+		return purchases, errors.Wrap(err, "error retrieving token transfers from table")
+	}
+
+	if len(dbPurchases) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+
+	for _, dbPurchase := range dbPurchases {
+		purchases = append(purchases, dbPurchase.DbToTokenTransfer())
+	}
+
+	return purchases, nil
+}
+
+func (p *PostgresPersister) tokenTransfersByTxHashQuery(tableName string) string {
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.TokenTransfer{}, false, "")
+	queryString := fmt.Sprintf( // nolint: gosec
+		"SELECT %s FROM %s WHERE block_data @> $1 ORDER BY transfer_date",
+		fieldNames,
+		tableName,
+	)
+	return queryString
 }
 
 func (p *PostgresPersister) tokenTransfersByToAddressFromTable(addr common.Address,
@@ -1500,7 +1597,7 @@ func (p *PostgresPersister) tokenTransfersByToAddressFromTable(addr common.Addre
 	dbPurchases := []*postgres.TokenTransfer{}
 	err := p.db.Select(&dbPurchases, queryString, addr.Hex())
 	if err != nil {
-		return purchases, fmt.Errorf("Error retrieving token transfers from table: %v", err)
+		return purchases, errors.Wrap(err, "error retrieving token transfers from table")
 	}
 
 	if len(dbPurchases) == 0 {
@@ -1530,9 +1627,108 @@ func (p *PostgresPersister) createTokenTransferInTable(purchase *model.TokenTran
 	queryString := p.insertIntoDBQueryString(tableName, postgres.TokenTransfer{})
 	_, err := p.db.NamedExec(queryString, dbPurchase)
 	if err != nil {
-		return fmt.Errorf("Error saving token transfer to table: %v", err)
+		return errors.Wrap(err, "error saving token transfer to table")
 	}
 	return nil
+}
+
+func (p *PostgresPersister) createParameterProposalInTable(paramProposal *model.ParameterProposal,
+	tableName string) error {
+	dbParamProposal := postgres.NewParameterProposal(paramProposal)
+	queryString := p.insertIntoDBQueryString(tableName, postgres.ParameterProposal{})
+	_, err := p.db.NamedExec(queryString, dbParamProposal)
+	if err != nil {
+		return fmt.Errorf("Error saving parameter proposal to table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) paramProposalByPropIDFromTable(propID [32]byte,
+	tableName string) (*model.ParameterProposal, error) {
+	paramProposalData := []postgres.ParameterProposal{}
+	queryString := p.paramProposalQuery(tableName)
+	propIDString := cbytes.Byte32ToHexString(propID)
+	err := p.db.Select(&paramProposalData, queryString, propIDString)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving parameter proposal from table: %v", err)
+	}
+	if len(paramProposalData) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+	paramProposal, err := paramProposalData[0].DbToParameterProposalData()
+	if err != nil {
+		return nil, err
+	}
+	return paramProposal, nil
+}
+
+func (p *PostgresPersister) paramProposalByNameFromTable(name string,
+	active bool, tableName string) ([]*model.ParameterProposal, error) {
+
+	paramProposalData := []postgres.ParameterProposal{}
+	queryString := p.paramProposalQueryByName(tableName, active)
+	err := p.db.Select(&paramProposalData, queryString, name)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving parameter proposals from table: %v", err)
+	}
+
+	if len(paramProposalData) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+
+	paramProposals := make([]*model.ParameterProposal, len(paramProposalData))
+
+	for index, dbProp := range paramProposalData {
+		modelProp, err := dbProp.DbToParameterProposalData()
+		if err != nil {
+			return nil, err
+		}
+		paramProposals[index] = modelProp
+	}
+
+	return paramProposals, nil
+}
+
+func (p *PostgresPersister) updateParamProposalInTable(paramProposal *model.ParameterProposal,
+	updatedFields []string, tableName string) error {
+
+	paramProposal.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
+	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
+
+	queryString, err := p.updateParamProposalQuery(updatedFields, tableName)
+	if err != nil {
+		return fmt.Errorf("Error creating query string for update: %v ", err)
+	}
+	dbParamProposal := postgres.NewParameterProposal(paramProposal)
+	_, err = p.db.NamedExec(queryString, dbParamProposal)
+	if err != nil {
+		return fmt.Errorf("Error updating fields in db: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) updateParamProposalQuery(updatedFields []string, tableName string) (string, error) {
+	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, postgres.ParameterProposal{})
+	if err != nil {
+		return "", err
+	}
+	queryString.WriteString(" WHERE prop_id=:prop_id;") // nolint: gosec
+	return queryString.String(), nil
+}
+
+func (p *PostgresPersister) paramProposalQuery(tableName string) string {
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.ParameterProposal{}, false, "")
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE prop_id=$1", fieldNames, tableName) // nolint: gosec
+	return queryString
+}
+
+func (p *PostgresPersister) paramProposalQueryByName(tableName string, active bool) string {
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.ParameterProposal{}, false, "")
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE name=$1", fieldNames, tableName) // nolint: gosec
+	if active {
+		queryString = fmt.Sprintf("%s AND expired=false;", queryString)
+	}
+	return queryString
 }
 
 func (p *PostgresPersister) typeExistsInCronTable(tableName string, dataType string) (string, error) {
@@ -1546,7 +1742,7 @@ func (p *PostgresPersister) typeExistsInCronTable(tableName string, dataType str
 		return "", sql.ErrNoRows
 	}
 	if len(dbCronData) > 1 {
-		return "", fmt.Errorf("There should not be more than 1 row with type %s in %s table", dataType, tableName)
+		return "", errors.Errorf("There should not be more than 1 row with type %s in %s table", dataType, tableName)
 	}
 	return dbCronData[0].DataPersisted, nil
 }

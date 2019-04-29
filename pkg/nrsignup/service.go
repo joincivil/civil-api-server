@@ -3,12 +3,20 @@ package nrsignup
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 
+	"github.com/joincivil/go-common/pkg/generated/contract"
+
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/users"
+	"github.com/joincivil/civil-api-server/pkg/utils"
+
 	"github.com/joincivil/go-common/pkg/email"
 )
 
@@ -32,19 +40,15 @@ const (
 	signupWelcomeEmailTemplateID       = "d-125a9b151d99483f9dc8a8cc61fcb786"
 	requestGrantUserEmailTemplateID    = "d-f17d8ba462ce4ac9ab24e447d9ee099d"
 	requestGrantCouncilEmailTemplateID = "d-2ffc71848ea743b0a5b56a7c0d6b9ac3"
+	appliedToRegistryEmailTemplateID   = "d-5a449104d603419195084adb1a536b9d"
 
 	// grantApprovalUserEmailTemplateID = "d-f363c4aa8d404bd39e7c14f527318d4f"
 	// grantApprovalCouncilEmailTemplateID = ""
 
 	foundationEmailName    = "Civil Foundation"
 	foundationEmailAddress = "foundation@civilfound.org"
-	// foundationEmailAddress = "peter@civil.co"
-	// councilEmailName = "Civil Foundation"
-	// registryEmailName   = "Civil Media Company"
-	// noreplyEmailAddress = "noreply@civil.co"
-	supportEmailAddress = "support@civil.co"
-
-	civilPipedriveEmail = "civil@pipedrivemail.com"
+	supportEmailAddress    = "support@civil.co"
+	civilPipedriveEmail    = "civil@pipedrivemail.com"
 
 	defaultFromEmailName    = foundationEmailName
 	defaultFromEmailAddress = foundationEmailAddress
@@ -52,30 +56,44 @@ const (
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
 
 	grantApprovalURI = "v1/nrsignup/grantapprove"
+
+	applyStageLenName        = "applyStageLen"
+	defaultApplyStageLenSecs = 1209600
+)
+
+const (
+	// newsroom signup steps from Civil/newsroom-signup/Newsroom.tsx
+	stepApplyComplete = 13
 )
 
 // NewNewsroomSignupService is a convenience function to initialize a new newsroom
 // signup service struct
-func NewNewsroomSignupService(emailer *email.Emailer, userService *users.UserService,
+func NewNewsroomSignupService(client bind.ContractBackend, emailer *email.Emailer, userService *users.UserService,
 	jsonbService *jsonstore.Service, tokenGenerator *auth.JwtTokenGenerator,
-	grantLandingProtoHost string) (*Service, error) {
+	grantLandingProtoHost string, paramAddr string, registryListID string) (*Service, error) {
 	return &Service{
+		client:                client,
 		emailer:               emailer,
 		userService:           userService,
 		jsonbService:          jsonbService,
 		tokenGenerator:        tokenGenerator,
 		grantLandingProtoHost: grantLandingProtoHost,
+		parameterizerAddr:     paramAddr,
+		registryListID:        registryListID,
 	}, nil
 }
 
 // Service is a struct and methods used for handling newsroom signup functionality
 type Service struct {
+	client                bind.ContractBackend
 	emailer               *email.Emailer
 	userService           *users.UserService
 	jsonbService          *jsonstore.Service
 	tokenGenerator        *auth.JwtTokenGenerator
 	grantLandingProtoHost string
 	alterMutex            sync.Mutex
+	parameterizerAddr     string
+	registryListID        string
 }
 
 // SendWelcomeEmail sends a newsroom signup welcome email to the given newsroom owner.
@@ -215,6 +233,50 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 	return s.setGrantApprovedFlag(newsroomOwnerUID, approved)
 }
 
+// UpdateUserSteps updates the user steps through the newsroom flow.  This differs
+// from userUpdate is that emails or actions will be triggered based on the user furthest
+// step.
+func (s *Service) UpdateUserSteps(newsroomOwnerUID string, step *int,
+	furthestStep *int, lastSeen *int) error {
+	user, err := s.userService.MaybeGetUser(users.UserCriteria{
+		UID: newsroomOwnerUID,
+	})
+	if err != nil {
+		return err
+	}
+
+	input := &users.UserUpdateInput{
+		NrStep:         step,
+		NrFurthestStep: furthestStep,
+		NrLastSeen:     lastSeen,
+	}
+	_, err = s.userService.UpdateUser(newsroomOwnerUID, input)
+	if err != nil {
+		return err
+	}
+
+	// If furthest step hasn't changed or is nil, don't do anything
+	if furthestStep == nil || (user != nil && user.NewsroomFurthestStep >= *furthestStep) {
+		return err
+	}
+
+	if *furthestStep == stepApplyComplete {
+		// Send user the application was complete email
+		err = s.sendApplicationCompleteEmail(newsroomOwnerUID, user.Email)
+		if err != nil {
+			return err
+		}
+
+		// Add the user to the registry alerts list if ID is set
+		err = s.addToRegistryAlertsList(user.Email)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // SaveNewsroomDeployTxHash saves the txhash for a newsroom deploy
 func (s *Service) SaveNewsroomDeployTxHash(newsroomOwnerUID string, txHash string) error {
 	newsroomDeployTxHashUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
@@ -296,7 +358,7 @@ func (s *Service) buildCharterDataIntoTemplate(tmplData email.TemplateData,
 	signupData *SignupUserJSONData) email.TemplateData {
 	newsroomCharter := signupData.Charter
 
-	tmplData["nr_name"] = signupData.NewsroomName
+	tmplData["nr_name"] = newsroomCharter.Name
 	tmplData["nr_logo_url"] = newsroomCharter.LogoURL
 	tmplData["nr_logo_markup"] = s.buildLogoURLMarkup(newsroomCharter.LogoURL)
 	tmplData["nr_url"] = newsroomCharter.NewsroomURL
@@ -388,6 +450,7 @@ func (s *Service) saveUserJSONData(newsroomOwnerUID string, signupData *SignupUs
 		jsonstore.DefaultJsonbGraphqlNs,
 		newsroomOwnerUID,
 		string(bys),
+		&newsroomOwnerUID,
 	)
 
 	return err
@@ -407,4 +470,72 @@ func (s *Service) alterUserDataInJSONStore(newsroomOwnerUID string, updateFn use
 	}
 
 	return s.saveUserJSONData(newsroomOwnerUID, signupData)
+}
+
+func (s *Service) addToRegistryAlertsList(emailAddress string) error {
+	if s.registryListID != "" {
+		err := utils.AddToRegistryAlertsList(emailAddress, s.registryListID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Service) sendApplicationCompleteEmail(newsroomOwnerUID string, emailAddress string) error {
+	if s.emailer == nil {
+		return nil
+	}
+
+	applyLen, err := s.getApplyStageLength()
+	if err != nil {
+		return err
+	}
+
+	signupData, err := s.RetrieveUserJSONData(newsroomOwnerUID)
+	if err != nil {
+		return err
+	}
+
+	tmplData := email.TemplateData{
+		"greeting":         emailAddress,
+		"apply_stage_days": s.convertToDaysStr(applyLen),
+		"nr_name":          signupData.Charter.Name,
+	}
+
+	tmplReq := &email.SendTemplateEmailRequest{
+		ToName:       emailAddress,
+		ToEmail:      emailAddress,
+		FromName:     defaultFromEmailName,
+		FromEmail:    defaultFromEmailAddress,
+		TemplateID:   appliedToRegistryEmailTemplateID,
+		TemplateData: tmplData,
+		AsmGroupID:   defaultAsmGroupID,
+	}
+	return s.emailer.SendTemplateEmail(tmplReq)
+}
+
+func (s *Service) convertToDaysStr(applyStageLen *big.Int) string {
+	periodInSecs := applyStageLen.Int64()
+	inDays := periodInSecs / 60 / 60 / 24
+
+	applyStageDays := fmt.Sprintf("%v days", inDays)
+	if inDays <= 1 {
+		applyStageDays = fmt.Sprintf("%v day", inDays)
+	}
+	return applyStageDays
+}
+
+func (s *Service) getApplyStageLength() (*big.Int, error) {
+	if s.client == nil || s.parameterizerAddr == "" {
+		return big.NewInt(defaultApplyStageLenSecs), nil
+	}
+
+	addr := common.HexToAddress(s.parameterizerAddr)
+	pcontract, err := contract.NewParameterizerContract(addr, s.client)
+	if err != nil {
+		return nil, err
+	}
+
+	return pcontract.Get(&bind.CallOpts{}, applyStageLenName)
 }

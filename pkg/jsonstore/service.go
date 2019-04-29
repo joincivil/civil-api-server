@@ -58,7 +58,7 @@ func (s *Service) RetrieveJSONb(id string, namespace string, salt string) (
 // Can also add an addtional salt to increase uniqueness and prevent overwriting, but
 // is optional.
 func (s *Service) SaveRawJSONb(id string, namespace string, salt string,
-	jsonStr string) (*JSONb, error) {
+	jsonStr string, uid *string) (*JSONb, error) {
 	key, err := NamespaceIDSaltHashKey(namespace, id, salt)
 	if err != nil {
 		return nil, err
@@ -67,6 +67,9 @@ func (s *Service) SaveRawJSONb(id string, namespace string, salt string,
 	jsonb := &JSONb{}
 	jsonb.Key = key
 	jsonb.ID = id
+	if uid != nil {
+		jsonb.UID = *uid
+	}
 	jsonb.Namespace = namespace
 	jsonb.CreatedDate = time.Now().UTC()
 	jsonb.LastUpdatedDate = time.Now().UTC()

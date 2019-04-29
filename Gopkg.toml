@@ -47,9 +47,9 @@ required = ["github.com/99designs/gqlgen"]
   name = "github.com/joincivil/go-common"
 
 [[constraint]]
-  branch = "inna/338/db-rebuild"
+  branch = "master"
   name = "github.com/joincivil/civil-events-processor"
 
 [[constraint]]
-  branch = "inna/338/db-rebuild"
+  branch = "master"
   name = "github.com/joincivil/civil-events-crawler"

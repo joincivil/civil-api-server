@@ -415,6 +415,11 @@ func (l *Listing) ApplicationDateTs() int64 {
 	return l.applicationDateTs
 }
 
+// SetApplicationDateTs sets the timestamp of the listing's initial application
+func (l *Listing) SetApplicationDateTs(date int64) {
+	l.applicationDateTs = date
+}
+
 // ApprovalDateTs returns the timestamp of the listing's whitelisted/approved
 func (l *Listing) ApprovalDateTs() int64 {
 	return l.approvalDateTs

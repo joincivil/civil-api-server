@@ -31,10 +31,10 @@ func CreateTokenTransferTableQuery(tableName string) string {
 
 // CreateTokenTransferTableIndicesQuery returns the query to create indices for this table
 func CreateTokenTransferTableIndicesQuery(tableName string) string {
-	// queryString := fmt.Sprintf(`
-	// `, tableName, tableName)
-	// return queryString
-	return ""
+	queryString := fmt.Sprintf(`
+		CREATE INDEX IF NOT EXISTS tokentransfer_block_data_idx ON %s USING GIN (block_data);
+	`, tableName)
+	return queryString
 }
 
 // NewTokenTransfer creates a new postgres TokenTransfer from model.TokenTransfer

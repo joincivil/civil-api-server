@@ -36,6 +36,8 @@ type Query {
     activeChallenge: Boolean
     currentApplication: Boolean
     lowercaseAddr: Boolean = True
+    sortBy: ListingSort
+    sortDesc: Boolean = False
   ): [Listing!]!
 
   # TCR Queries
@@ -60,6 +62,8 @@ type Query {
     activeChallenge: Boolean
     currentApplication: Boolean
     lowercaseAddr: Boolean = True
+    sortBy: ListingSort
+    sortDesc: Boolean = False
   ): ListingResultCursor
 
   # Newsroom Queries
@@ -108,14 +112,10 @@ type Mutation {
     addToMailing: Boolean = False
   ): String
   authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+  authRefresh(token: String!): AuthLoginResponse
 
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
-
-  # KYC Mutations
-  kycCreateApplicant(applicant: KycCreateApplicantInput!): String
-  kycCreateCheck(applicantID: String!, facialVariant: String): String
-  kycGenerateSdkToken(applicantID: String!): String
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -126,6 +126,7 @@ type Mutation {
   nrsignupSaveAddress(address: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
+  nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
 
   # Storefront Mutations
   storefrontAirswapTxHash(txHash: String!): String!
@@ -136,6 +137,7 @@ type Mutation {
   userUpdate(uid: String, input: UserUpdateInput): User
 }
 
+# Enum of valid values for application types for auth
 enum AuthApplicationEnum {
   DEFAULT
   NEWSROOM
@@ -189,6 +191,7 @@ type Challenge {
   lastUpdatedDateTs: Int!
 }
 
+# A type that represents a Charter
 type Charter {
   uri: String!
   contentID: Int!
@@ -211,11 +214,13 @@ type GovernanceEvent {
   listing: Listing!
 }
 
+# A type that represents an edge value in a GovernanceEvent
 type GovernanceEventEdge {
   cursor: String!
   node: GovernanceEvent!
 }
 
+# A type that represents return values from GovernanceEvents
 type GovernanceEventResultCursor {
   edges: [GovernanceEventEdge]!
   pageInfo: PageInfo!
@@ -243,14 +248,25 @@ type Listing {
   prevChallenge: Challenge
 }
 
+# A type that represents a edge value in a Listing
 type ListingEdge {
   cursor: String!
   node: Listing!
 }
 
+# A type that represents return values from Listings
 type ListingResultCursor {
   edges: [ListingEdge]!
   pageInfo: PageInfo!
+}
+
+# Enum of valid sort values for Listings
+enum ListingSort {
+  DEFAULT
+  NAME
+  CREATED
+  APPLIED
+  WHITELISTED
 }
 
 # A type that reflects values in model.Metadata
@@ -288,61 +304,16 @@ type ContentRevision {
   revisionDate: Int!
 }
 
-## KYC object schemas
-
-# A type that reflects values in onfido.CreateApplicantRequest
-input KycCreateApplicantInput {
-  firstName: String!
-  lastName: String!
-  email: String
-  middleName: String
-  profession: String
-  nationality: String
-  countryOfResidence: String
-  dateOfBirth: String
-  buildingNumber: String
-  street: String
-  aptNumber: String
-  city: String
-  state: String
-  zipcode: String
-}
-
 ## User object schemas
-
-# A type that reflects values in invoicing.PostgresInvoice
-type Invoice {
-  hash: String
-  email: String
-  phone: String
-  name: String
-  amount: Float
-  invoiceID: String
-  invoiceNum: String
-  invoiceStatus: String
-  checkID: String
-  checkStatus: String
-  stopPoll: Boolean
-  isCheckbook: Boolean
-  isThirdParty: Boolean
-  referralCode: String
-  referredBy: String
-  emailState: Int
-}
 
 # A type that reflects values in users.User
 type User {
   uid: String
   email: String
   ethAddress: String
-  onfidoApplicantId: String
-  onfidoCheckID: String
-  kycStatus: String
   quizPayload: RawObject
   quizStatus: String
   civilianWhitelistTxID: String
-  invoices: [Invoice]
-  isTokenFoundryRegistered: Boolean
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
@@ -359,13 +330,17 @@ input UserSignatureInput {
 }
 
 input UserUpdateInput {
-  onfidoApplicantID: String
-  kycStatus: String
   quizPayload: RawObject
   quizStatus: String
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
+}
+
+input NrsignupStepsInput {
+  step: Int
+  furthestStep: Int
+  lastSeen: Int
 }
 
 type NrsignupNewsroom {

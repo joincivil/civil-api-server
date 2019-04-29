@@ -2,10 +2,62 @@
 package model // import "github.com/joincivil/civil-events-processor/pkg/model"
 
 import (
+	"fmt"
+	"io"
 	"math/big"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 )
+
+// SortByType is a string enum of the sort type
+type SortByType string
+
+const (
+	// SortByUndefined is an undefined SortBy type
+	SortByUndefined SortByType = ""
+	// SortByName sorts by the newsroom name
+	SortByName = "NAME"
+	// SortByCreated sorts by the newsroom's creation date
+	SortByCreated = "CREATED"
+	// SortByApplied sorts by the newsroom's application date
+	SortByApplied = "APPLIED"
+	// SortByWhitelisted sorts by the newsroom's whitelisted date
+	SortByWhitelisted = "WHITELISTED"
+)
+
+// IsValid returns if the enum is a valid one
+func (e SortByType) IsValid() bool {
+	switch e {
+	case SortByUndefined, SortByName, SortByCreated, SortByApplied, SortByWhitelisted:
+		return true
+	}
+	return false
+}
+
+// String returns the string value of this enum
+func (e SortByType) String() string {
+	return string(e)
+}
+
+// UnmarshalGQL unmarshals from a value to the enum
+func (e *SortByType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = SortByType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid SortByType", str)
+	}
+	return nil
+}
+
+// MarshalGQL marshals from an enum to the writer
+func (e SortByType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String())) // nolint: errcheck
+}
 
 // errors must not be returned in valid conditions, such as when there is no
 // record for a query.  In this case, return the empty value for the return
@@ -28,6 +80,11 @@ type ListingCriteria struct {
 	CurrentApplication bool  `db:"current_application"`
 	CreatedFromTs      int64 `db:"created_fromts"`
 	CreatedBeforeTs    int64 `db:"created_beforets"`
+
+	// SortBy is the sort type to use when returning results
+	SortBy SortByType `db:"sort_by"`
+	// SortDesc returns results in desc order if true
+	SortDesc bool `db:"sort_desc"`
 }
 
 // ListingPersister is the interface to store the listings data related to the processor
@@ -175,6 +232,8 @@ type AppealPersister interface {
 
 // TokenTransferPersister is the persister interface to store TokenTransfer
 type TokenTransferPersister interface {
+	// TokenTransfersByTxHash gets a list of token transfers by txhash
+	TokenTransfersByTxHash(txHash common.Hash) ([]*TokenTransfer, error)
 	// TokenTransfersByToAddress gets a list of token transfers by purchaser address
 	TokenTransfersByToAddress(addr common.Address) ([]*TokenTransfer, error)
 	// CreateTokenTransfer creates a new token transfer
@@ -182,3 +241,23 @@ type TokenTransferPersister interface {
 	// Close shuts down the persister
 	Close() error
 }
+
+// ParamProposalPersister is the persister interface to store ParameterProposal
+type ParamProposalPersister interface {
+	// CreateParameterProposal creates a new parameter proposal
+	CreateParameterProposal(paramProposal *ParameterProposal) error
+	// ParamProposalByPropID gets a parameter proposal from persistence using propID
+	ParamProposalByPropID(propID [32]byte) (*ParameterProposal, error)
+	// ParamProposalByName gets parameter proposals by name from persistence
+	ParamProposalByName(name string, active bool) ([]*ParameterProposal, error)
+	// UpdateParamProposal updates parameter propsal in table
+	UpdateParamProposal(paramProposal *ParameterProposal, updatedFields []string) error
+	// Close shuts down the persister
+	Close() error
+}
+
+// // TCRParameterPersister is the persister interface to store current TCRParameters
+// type TCRParameterPersister interface {
+// 	// Close shuts down the persister
+// 	Close() error
+// }

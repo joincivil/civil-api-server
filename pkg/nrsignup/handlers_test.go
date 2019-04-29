@@ -32,11 +32,14 @@ func TestHandleGrantApprovalNotRequested(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	tokenSub := fmt.Sprintf("1:%v", nrsignup.ApprovedSubValue)
@@ -70,11 +73,14 @@ func TestHandleGrantApprovalApproved(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	tokenSub := fmt.Sprintf("1:%v", nrsignup.ApprovedSubValue)
@@ -113,11 +119,14 @@ func TestHandleGrantApprovalRejected(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	tokenSub := fmt.Sprintf("1:%v", nrsignup.RejectedSubValue)
@@ -156,11 +165,14 @@ func TestHandleGrantApprovalInvalidToken(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	err := signupService.RequestGrant("1", true)
@@ -193,11 +205,14 @@ func TestHandleGrantApprovalNoApprovedValue(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	// No delimiter for the token sub
@@ -237,11 +252,14 @@ func TestHandleGrantApprovalBadApprovedValue(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	// No delimiter for the token sub
@@ -281,11 +299,14 @@ func TestApproveGrantHandler(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	err := signupService.RequestGrant("1", true)
@@ -347,11 +368,14 @@ func TestApproveGrantHandlerInvalidToken(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	err := signupService.RequestGrant("1", true)
@@ -413,11 +437,14 @@ func TestApproveGrantHandlerError(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
+		nil,
 		emailer,
 		userService,
 		jsonbService,
 		tokenGen,
 		"http://localhost:8080",
+		"",
+		"",
 	)
 
 	tokenSub := fmt.Sprintf("1:%v", nrsignup.ApprovedSubValue)

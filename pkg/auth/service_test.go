@@ -260,7 +260,7 @@ func TestSignupEmailSendNoEmailer(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost)
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err != nil {
 		t.Errorf("Should have not failed to create a new auth service: err: %v", err)
 	}
@@ -285,7 +285,7 @@ func TestSignupEmailSendNoProtoHost(t *testing.T) {
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, "")
+		defaultLoginTemplateIDs, "", []string{})
 	if err != nil {
 		t.Errorf("Should have not failed to create a new auth service: err: %v", err)
 	}
@@ -363,7 +363,7 @@ func TestLoginEth(t *testing.T) {
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox("", useSandbox)
 	svc, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost)
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err != nil {
 		t.Errorf("Should have not failed to create a new auth service: err: %v", err)
 	}
@@ -433,7 +433,7 @@ func TestConfigTemplateIDs(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost)
+		loginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err != nil {
 		t.Errorf("Should not have failed to create a new auth service: err: %v", err)
 	}
@@ -458,7 +458,7 @@ func TestBadConfigTemplateIDsAppName(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost)
+		loginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err == nil {
 		t.Errorf("Should have failed to create a new auth service: err: %v", err)
 	}
@@ -482,7 +482,7 @@ func TestBadConfigTemplateIDsAppNameCase(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost)
+		loginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err == nil {
 		t.Errorf("Should have failed to create a new auth service: err: %v", err)
 	}
@@ -506,7 +506,7 @@ func TestBadConfigTemplateIDs(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost)
+		loginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err == nil {
 		t.Errorf("Should have failed to create a new auth service: err: %v", err)
 	}
@@ -528,7 +528,7 @@ func TestConfigTemplateIDsNotAll(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil,
-		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost)
+		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err != nil {
 		t.Errorf("Should not have failed to create a new auth service: err: %v", err)
 	}
@@ -548,7 +548,7 @@ func TestSignupTemplateIDFromApplication(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil,
-		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost)
+		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{})
 	if err != nil {
 		t.Errorf("Should not have failed to create a new auth service: err: %v", err)
 	}
@@ -594,7 +594,7 @@ func buildService(sendGridKey string) (*auth.Service, error) {
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost)
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
 }
 
 func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
@@ -615,6 +615,6 @@ func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost)
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
 
 }

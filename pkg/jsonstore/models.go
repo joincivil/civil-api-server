@@ -74,6 +74,7 @@ type JSONField struct {
 type JSONb struct {
 	Key             string       `json:"key"`
 	Hash            string       `json:"hash"`
+	UID             string       `json:"uid"`
 	ID              string       `json:"id"`
 	Namespace       string       `json:"namespace"`
 	CreatedDate     time.Time    `json:"createdDate"`

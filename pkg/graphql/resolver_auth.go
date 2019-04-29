@@ -64,7 +64,10 @@ func (r *mutationResolver) AuthSignupEmailSend(ctx context.Context, emailAddress
 
 	// if add to list is true, try to add to mailchimp list.
 	if *addToMailing {
-		_ = r.addToNewsletterList(emailAddress, auth.ApplicationEnumDefault)
+		err = r.addToNewsletterList(emailAddress, auth.ApplicationEnumDefault)
+		if err != nil {
+			log.Errorf("Error adding to newsletter list: err: %v", err)
+		}
 	}
 
 	return &result, nil
@@ -79,7 +82,10 @@ func (r *mutationResolver) AuthSignupEmailSendForApplication(ctx context.Context
 
 	// if add to list is true, try to add to mailchimp list.
 	if *addToMailing {
-		_ = r.addToNewsletterList(emailAddress, application)
+		err = r.addToNewsletterList(emailAddress, application)
+		if err != nil {
+			log.Errorf("Error adding to newsletter list: err: %v", err)
+		}
 	}
 
 	return &result, nil
@@ -129,4 +135,14 @@ func (r *mutationResolver) AuthLoginEmailConfirm(ctx context.Context, loginJWT s
 	}
 
 	return response, nil
+}
+
+func (r *mutationResolver) AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error) {
+	response, err := r.authService.RefreshAccessToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+
 }

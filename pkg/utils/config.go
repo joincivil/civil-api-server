@@ -20,11 +20,8 @@ const (
 // GraphQLConfig is the master config for the GraphQL API derived from environment
 // variables.
 type GraphQLConfig struct {
-	Port            int  `required:"true" desc:"Sets the GraphQL service port"`
-	Debug           bool `default:"false" desc:"If true, enables the GraphQL playground"`
-	EnableGraphQL   bool `envconfig:"enable_graphql" split_words:"true" default:"true" desc:"If true, enables the GraphQL endpoint"`
-	EnableInvoicing bool `split_words:"true" default:"false" desc:"If true, enables the invoicing endpoint"`
-	EnableKYC       bool `split_words:"true" default:"false" desc:"If true, enables the KYC endpoint"`
+	Port  int  `required:"true" desc:"Sets the GraphQL service port"`
+	Debug bool `default:"false" desc:"If true, enables the GraphQL playground"`
 
 	JwtSecret string `split_words:"true" desc:"Secret used to encode JWT tokens"`
 
@@ -34,8 +31,9 @@ type GraphQLConfig struct {
 	ApproveGrantProtoHost string `split_words:"true" desc:"Newsroom signup grant approval landing proto/host" required:"false"`
 	SignupLoginProtoHost  string `split_words:"true" desc:"Signup/login proto/host" required:"false"`
 
-	SendgridKey  string `split_words:"true" desc:"The SendGrid API key"`
-	MailchimpKey string `split_words:"true" desc:"The Mailchimp API key"`
+	RegistryAlertsID string `split_words:"true" desc:"Sets the registry alerts list ID"`
+	SendgridKey      string `split_words:"true" desc:"The SendGrid API key"`
+	MailchimpKey     string `split_words:"true" desc:"The Mailchimp API key"`
 
 	OnfidoKey          string `split_words:"true" desc:"The Onfido API key"`
 	OnfidoReferrer     string `split_words:"true" desc:"The Onfido token referrer"`
@@ -61,12 +59,19 @@ type GraphQLConfig struct {
 
 	// ContractAddresses map a contract type to a string of contract addresses.  If there are more than 1
 	// contract to be tracked for a particular type, delimit the addresses with '|'.
-	ContractAddresses   map[string]string           `split_words:"true" desc:"<contract name>:<contract addr>. Delimit contract address with '|' for multiple addresses"`
-	ContractAddressObjs map[string][]common.Address `ignored:"true"`
+	ContractAddresses map[string]string `split_words:"true" desc:"<contract name>:<contract addr>. Delimit contract address with '|' for multiple addresses"`
 
 	TokenSaleAddresses []common.Address `split_words:"true" desc:"Addresses that contain tokens to be sold as part of the Token Sale"`
 
 	EthereumDefaultPrivateKey string `split_words:"true" desc:"Private key to use when sending Ethereum transactions"`
+
+	RefreshTokenBlacklist []string `split_words:"true" desc:"List of refresh tokens to blacklist"`
+
+	// Runs the pubsub worker
+	// Should eventually move this to it's own repo and codebase
+	PubSubProjectID      string `split_words:"true" desc:"Sets GPubSub project ID. If not set, will not pub or sub."`
+	PubSubTokenTopicName string `split_words:"true" desc:"Sets GPubSub topic name for cvltoken events."`
+	PubSubTokenSubName   string `split_words:"true" desc:"Sets GPubSub subscription name for cvltoken events."`
 }
 
 // PersistType returns the persister type, implements PersisterConfig
