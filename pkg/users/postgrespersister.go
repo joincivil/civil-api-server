@@ -57,6 +57,11 @@ type PostgresPersister struct {
 	db *sqlx.DB
 }
 
+// Users retrieves a list of users based on the given UserCriteria
+func (p *PostgresPersister) Users(criteria *UserCriteria) ([]*User, error) {
+	return p.usersFromTable(criteria, defaultUserTableName)
+}
+
 // User retrieves a user based on the given UserCriteria
 func (p *PostgresPersister) User(criteria *UserCriteria) (*User, error) {
 	return p.userFromTable(criteria, defaultUserTableName)
@@ -92,7 +97,7 @@ func (p *PostgresPersister) CreateIndices() error {
 	return p.createUserIndicesForTable(defaultUserTableName)
 }
 
-func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName string) (*User, error) {
+func (p *PostgresPersister) usersFromTable(criteria *UserCriteria, tableName string) ([]*User, error) {
 	users := []*User{}
 	queryString := p.userQuery(criteria, tableName)
 	nstmt, err := p.db.PrepareNamed(queryString)
@@ -106,6 +111,14 @@ func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName stri
 	}
 	if len(users) == 0 {
 		return nil, cpersist.ErrPersisterNoResults
+	}
+	return users, nil
+}
+
+func (p *PostgresPersister) userFromTable(criteria *UserCriteria, tableName string) (*User, error) {
+	users, err := p.usersFromTable(criteria, tableName)
+	if err != nil {
+		return nil, err
 	}
 	return users[0], err
 }
@@ -125,8 +138,8 @@ func (p *PostgresPersister) userQuery(criteria *UserCriteria, tableName string) 
 		queryBuf.WriteString(" WHERE r1.email = :email") // nolint: gosec
 	} else if criteria.EthAddress != "" {
 		queryBuf.WriteString(" WHERE r1.eth_address = :eth_address") // nolint: gosec
-	} else if criteria.OnfidoCheckID != "" {
-		queryBuf.WriteString(" WHERE r1.onfido_check_id = :onfido_check_id") // nolint: gosec
+	} else if criteria.NewsroomAddr != "" {
+		queryBuf.WriteString(" WHERE r1.assoc_nr_addr @> ARRAY[:nr_addr]") // nolint: gosec
 	}
 	return queryBuf.String()
 }
@@ -220,22 +233,19 @@ func CreateUserTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
 			uid uuid PRIMARY KEY,
-			email TEXT,
-			eth_address TEXT,
-			onfido_applicant_id TEXT,
-			onfido_check_id TEXT,
-			kyc_status TEXT,
-			quiz_payload JSONB,
-			quiz_status TEXT,
-			newsroom_data JSONB,
-			date_created INT,
-			date_updated INT,
-			purchase_txhashes TEXT,
-			civilian_whitelist_tx_id TEXT,
-			app_refer TEXT,
-			nr_step INT,
-			nr_far_step INT,
-			nr_last_seen INT
+			email TEXT DEFAULT '',
+			eth_address TEXT DEFAULT '',
+			quiz_payload JSONB DEFAULT '{}',
+			quiz_status TEXT DEFAULT '',
+			date_created INT DEFAULT 0,
+			date_updated INT DEFAULT 0,
+			purchase_txhashes TEXT[] DEFAULT ARRAY[]::TEXT[],
+			civilian_whitelist_tx_id TEXT DEFAULT '',
+			app_refer TEXT DEFAULT '',
+			nr_step INT DEFAULT 0,
+			nr_far_step INT DEFAULT 0,
+			nr_last_seen INT DEFAULT 0,
+			assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[]
         );
     `, tableName)
 	return queryString
@@ -245,12 +255,20 @@ func CreateUserTableQuery(tableName string) string {
 // they exists in lieu of a migration mechanism for our DB. Ensure we always
 // set the default values of any altered columns.
 func CreateUserTableMigrationQuery(tableName string) string {
+	// ALTER TABLE %s ALTER COLUMN purchase_txhashes TYPE TEXT[] USING ARRAY[purchase_txhashes];
+	// ALTER TABLE %s ALTER COLUMN purchase_txhashes SET DEFAULT ARRAY[]::TEXT[];
 	queryString := fmt.Sprintf(`
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS app_refer TEXT DEFAULT '';
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_step INT DEFAULT 0;
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_far_step INT DEFAULT 0;
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_last_seen INT DEFAULT 0;
-	`, tableName, tableName, tableName, tableName)
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[];
+		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_applicant_id;
+		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_check_id;
+		ALTER TABLE %s DROP COLUMN IF EXISTS kyc_status;
+		ALTER TABLE %s DROP COLUMN IF EXISTS newsroom_data;
+	`, tableName, tableName, tableName, tableName, tableName, tableName,
+		tableName, tableName, tableName)
 	return queryString
 }
 
@@ -259,6 +277,7 @@ func CreateUserTableIndicesString(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS email_idx ON %s (email);
 		CREATE INDEX IF NOT EXISTS eth_address_idx ON %s (eth_address);
-	`, tableName, tableName)
+		CREATE INDEX IF NOT EXISTS assoc_nr_addr_idx ON %s USING GIN (assoc_nr_addr);
+	`, tableName, tableName, tableName)
 	return queryString
 }

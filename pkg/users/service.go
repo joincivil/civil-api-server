@@ -19,14 +19,12 @@ var (
 
 	quizPayloadFieldName          = "QuizPayload"
 	quizStatusFieldName           = "QuizStatus"
-	onfidoApplicantIDFieldName    = "OnfidoApplicantID"
-	onfidoCheckIDFieldName        = "OnfidoCheckID"
-	kycStatusFieldName            = "KycStatus"
 	purchaseTxHashFieldName       = "PurchaseTxHashesStr"
 	newsroomStepFieldName         = "NewsroomStep"
 	newsroomFurthestStepFieldName = "NewsroomFurthestStep"
 	newsroomLastSeenFieldName     = "NewsroomLastSeen"
 	whitelistTxHashFieldName      = "CivilianWhitelistTxID"
+	assocNewsroomAddrFieldName    = "AssocNewsoomAddr"
 
 	quizStatusComplete = "complete"
 )
@@ -43,6 +41,17 @@ func NewUserService(userPersister UserPersister, controllerUpdater TokenControll
 		userPersister,
 		controllerUpdater,
 	}
+}
+
+// GetUsers retrieves a list of users from the database
+func (s *UserService) GetUsers(identifier UserCriteria) ([]*User, error) {
+
+	users, err := s.userPersister.Users(&identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }
 
 // GetUser retrieves a user from the database
@@ -97,15 +106,13 @@ func (s *UserService) CreateUser(identifier UserCriteria) (*User, error) {
 
 // UserUpdateInput describes the input needed for UpdateUser
 type UserUpdateInput struct {
-	OnfidoApplicantID   string                 `json:"onfidoApplicantID"`
-	OnfidoCheckID       string                 `json:"onfidoCheckID"`
-	KycStatus           string                 `json:"kycStatus"`
-	QuizPayload         cpostgres.JsonbPayload `json:"quizPayload"`
-	QuizStatus          string                 `json:"quizStatus"`
-	PurchaseTxHashesStr string                 `json:"purchaseTxHashesStr"`
-	NrStep              *int                   `json:"nrStep"`
-	NrFurthestStep      *int                   `json:"nrFurthestStep"`
-	NrLastSeen          *int                   `json:"nrLastSeen"`
+	QuizPayload      cpostgres.JsonbPayload `json:"quizPayload"`
+	QuizStatus       string                 `json:"quizStatus"`
+	PurchaseTxHashes []string               `json:"purchaseTxHashes"`
+	NrStep           *int                   `json:"nrStep"`
+	NrFurthestStep   *int                   `json:"nrFurthestStep"`
+	NrLastSeen       *int                   `json:"nrLastSeen"`
+	AssocNewsoomAddr []string               `json:"assocNewsoomAddr"`
 }
 
 // UpdateUser updates a user
@@ -121,20 +128,8 @@ func (s *UserService) UpdateUser(uid string, input *UserUpdateInput) (*User, err
 		user.QuizPayload = input.QuizPayload
 		fields = append(fields, quizPayloadFieldName)
 	}
-	if input.OnfidoApplicantID != "" {
-		user.OnfidoApplicantID = input.OnfidoApplicantID
-		fields = append(fields, onfidoApplicantIDFieldName)
-	}
-	if input.OnfidoCheckID != "" {
-		user.OnfidoCheckID = input.OnfidoCheckID
-		fields = append(fields, onfidoCheckIDFieldName)
-	}
-	if input.KycStatus != "" {
-		user.KycStatus = input.KycStatus
-		fields = append(fields, kycStatusFieldName)
-	}
-	if input.PurchaseTxHashesStr != "" {
-		user.PurchaseTxHashesStr = input.PurchaseTxHashesStr
+	if input.PurchaseTxHashes != nil {
+		user.PurchaseTxHashes = input.PurchaseTxHashes
 		fields = append(fields, purchaseTxHashFieldName)
 	}
 	if input.NrStep != nil {
@@ -148,6 +143,10 @@ func (s *UserService) UpdateUser(uid string, input *UserUpdateInput) (*User, err
 	if input.NrLastSeen != nil {
 		user.NewsroomLastSeen = int64(*input.NrLastSeen)
 		fields = append(fields, newsroomLastSeenFieldName)
+	}
+	if input.AssocNewsoomAddr != nil {
+		user.AssocNewsoomAddr = input.AssocNewsoomAddr
+		fields = append(fields, assocNewsroomAddrFieldName)
 	}
 
 	if input.QuizStatus != "" {

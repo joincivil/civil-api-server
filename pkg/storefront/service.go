@@ -133,19 +133,15 @@ func (s *Service) PurchaseTransactionComplete(buyerUID string, txHash string) er
 		return fmt.Errorf("No user found: uid: %v", buyerUID)
 	}
 
-	for _, hash := range user.PurchaseTxHashes() {
+	for _, hash := range user.PurchaseTxHashes {
 		if hash == txHash {
 			return fmt.Errorf("TxHash already in the user hash list: %v", txHash)
 		}
 	}
 
-	err = user.AddPurchaseTxHash(txHash)
-	if err != nil {
-		return err
-	}
-
+	user.PurchaseTxHashes = append(user.PurchaseTxHashes, txHash)
 	update := &users.UserUpdateInput{
-		PurchaseTxHashesStr: user.PurchaseTxHashesStr,
+		PurchaseTxHashes: user.PurchaseTxHashes,
 	}
 	_, err = s.userService.UpdateUser(buyerUID, update)
 	if err != nil {
