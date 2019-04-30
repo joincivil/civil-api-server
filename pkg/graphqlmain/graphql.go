@@ -37,32 +37,32 @@ type resolverConfig struct {
 }
 
 func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
-	listingPersister, err := helpers.ListingPersister(rconfig.config, rconfig.config.PersisterVersion)
+	listingPersister, err := helpers.ListingPersister(rconfig.config, rconfig.config.VersionNumber)
 	if err != nil {
 		log.Errorf("Error w listingPersister: err: %v", err)
 		return nil, err
 	}
-	contentRevisionPersister, err := helpers.ContentRevisionPersister(rconfig.config, rconfig.config.PersisterVersion)
+	contentRevisionPersister, err := helpers.ContentRevisionPersister(rconfig.config, rconfig.config.VersionNumber)
 	if err != nil {
 		log.Errorf("Error w contentRevisionPersister: err: %v", err)
 		return nil, err
 	}
-	governanceEventPersister, err := helpers.GovernanceEventPersister(rconfig.config, rconfig.config.PersisterVersion)
+	governanceEventPersister, err := helpers.GovernanceEventPersister(rconfig.config, rconfig.config.VersionNumber)
 	if err != nil {
 		log.Errorf("Error w governanceEventPersister: err: %v", err)
 		return nil, err
 	}
-	challengePersister, err := helpers.ChallengePersister(rconfig.config, rconfig.config.PersisterVersion)
+	challengePersister, err := helpers.ChallengePersister(rconfig.config, rconfig.config.VersionNumber)
 	if err != nil {
 		log.Errorf("Error w challengePersister: err: %v", err)
 		return nil, err
 	}
-	appealPersister, err := helpers.AppealPersister(rconfig.config, rconfig.config.PersisterVersion)
+	appealPersister, err := helpers.AppealPersister(rconfig.config, rconfig.config.VersionNumber)
 	if err != nil {
 		log.Errorf("Error w appealPersister: err: %v", err)
 		return nil, err
 	}
-	pollPersister, err := helpers.PollPersister(rconfig.config, rconfig.config.PersisterVersion)
+	pollPersister, err := helpers.PollPersister(rconfig.config, rconfig.config.VersionNumber)
 	if err != nil {
 		log.Errorf("Error w pollPersister: err: %v", err)
 		return nil, err
