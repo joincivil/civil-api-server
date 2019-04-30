@@ -15,17 +15,13 @@ import (
 )
 
 const (
-	nilChallengeID          = int64(-1)
-	defaultListingTableName = "listing"
+	// ListingTableBaseName is the type of table this code defines
+	ListingTableBaseName = "listing"
+	nilChallengeID       = int64(-1)
 )
 
 // CreateListingTableQuery returns the query to create the listing table
-func CreateListingTableQuery() string {
-	return CreateListingTableQueryString(defaultListingTableName)
-}
-
-// CreateListingTableQueryString returns the query to create this table
-func CreateListingTableQueryString(tableName string) string {
+func CreateListingTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             name TEXT,
@@ -49,13 +45,8 @@ func CreateListingTableQueryString(tableName string) string {
 	return queryString
 }
 
-// ListingTableIndices returns the query to create indices for this table
-func ListingTableIndices() string {
-	return CreateListingTableIndicesString(defaultListingTableName)
-}
-
-// CreateListingTableIndicesString returns the query to create indices for this table
-func CreateListingTableIndicesString(tableName string) string {
+// CreateListingTableIndicesQuery returns the query to create indices for this table
+func CreateListingTableIndicesQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS listing_whitelisted_type_idx ON %s (whitelisted);
 		CREATE INDEX IF NOT EXISTS listing_creation_timestamp_idx ON %s (creation_timestamp);

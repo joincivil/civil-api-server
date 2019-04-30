@@ -22,6 +22,8 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/civil-events-processor/pkg/persistence/postgres"
 
+	crawlerPostgres "github.com/joincivil/civil-events-crawler/pkg/persistence/postgres"
+
 	cbytes "github.com/joincivil/go-common/pkg/bytes"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
@@ -33,15 +35,8 @@ import (
 // NOTE(IS): cpersist.ErrPersisterNoResults is only returned for single queries
 
 const (
-	listingTableName       = "listing"
-	contRevTableName       = "content_revision"
-	govEventTableName      = "governance_event"
-	cronTableName          = "cron"
-	challengeTableName     = "challenge"
-	pollTableName          = "poll"
-	appealTableName        = "appeal"
-	tokenTransferTableName = "token_transfer"
-
+	// ProcessorServiceName is the name for the processor service
+	ProcessorServiceName       = "processor"
 	lastUpdatedDateDBModelName = "LastUpdatedDateTs"
 
 	// Could make this configurable later if needed
@@ -67,7 +62,13 @@ func NewPostgresPersister(host string, port int, user string, password string, d
 
 // PostgresPersister holds the DB connection and persistence
 type PostgresPersister struct {
-	db *sqlx.DB
+	db      *sqlx.DB
+	version *string
+}
+
+// GetTableName formats tabletype with version of this persister to return the table name
+func (p *PostgresPersister) GetTableName(tableType string) string {
+	return fmt.Sprintf("%s_%s", tableType, *p.version)
 }
 
 // Close shuts down the connections to postgres
@@ -90,237 +91,310 @@ func (p *PostgresPersister) closeRows(rows *sqlx.Rows) {
 
 // ListingsByCriteria returns a slice of Listings by ListingCriteria sorted by creation timestamp
 func (p *PostgresPersister) ListingsByCriteria(criteria *model.ListingCriteria) ([]*model.Listing, error) {
+	listingTableName := p.GetTableName(postgres.ListingTableBaseName)
+	challengeTableName := p.GetTableName(postgres.ChallengeTableBaseName)
 	return p.listingsByCriteriaFromTable(criteria, listingTableName, challengeTableName)
 }
 
 // ListingsByAddresses returns a slice of Listings in order based on addresses
 // NOTE(IS): If one of these listings is not found, empty *model.Listing will be returned in the list
 func (p *PostgresPersister) ListingsByAddresses(addresses []common.Address) ([]*model.Listing, error) {
+	listingTableName := p.GetTableName(postgres.ListingTableBaseName)
 	return p.listingsByAddressesFromTableInOrder(addresses, listingTableName)
 }
 
 // ListingByAddress retrieves listings based on addresses
 func (p *PostgresPersister) ListingByAddress(address common.Address) (*model.Listing, error) {
+	listingTableName := p.GetTableName(postgres.ListingTableBaseName)
 	return p.listingByAddressFromTable(address, listingTableName)
 }
 
 // CreateListing creates a new listing
 func (p *PostgresPersister) CreateListing(listing *model.Listing) error {
+	listingTableName := p.GetTableName(postgres.ListingTableBaseName)
 	return p.createListingForTable(listing, listingTableName)
 }
 
 // UpdateListing updates fields on an existing listing
 func (p *PostgresPersister) UpdateListing(listing *model.Listing, updatedFields []string) error {
+	listingTableName := p.GetTableName(postgres.ListingTableBaseName)
 	return p.updateListingInTable(listing, updatedFields, listingTableName)
 }
 
 // DeleteListing removes a listing
 func (p *PostgresPersister) DeleteListing(listing *model.Listing) error {
+	listingTableName := p.GetTableName(postgres.ListingTableBaseName)
 	return p.deleteListingFromTable(listing, listingTableName)
 }
 
 // CreateContentRevision creates a new content revision
 func (p *PostgresPersister) CreateContentRevision(revision *model.ContentRevision) error {
+	contRevTableName := p.GetTableName(postgres.ContentRevisionTableBaseName)
 	return p.createContentRevisionForTable(revision, contRevTableName)
 }
 
 // ContentRevision retrieves a specific content revision for newsroom content
 func (p *PostgresPersister) ContentRevision(address common.Address, contentID *big.Int, revisionID *big.Int) (*model.ContentRevision, error) {
+	contRevTableName := p.GetTableName(postgres.ContentRevisionTableBaseName)
 	return p.contentRevisionFromTable(address, contentID, revisionID, contRevTableName)
 }
 
 // ContentRevisionsByCriteria returns a list of ContentRevision by ContentRevisionCriteria sorted by revision timestamp
 func (p *PostgresPersister) ContentRevisionsByCriteria(criteria *model.ContentRevisionCriteria) (
 	[]*model.ContentRevision, error) {
+	contRevTableName := p.GetTableName(postgres.ContentRevisionTableBaseName)
 	return p.contentRevisionsByCriteriaFromTable(criteria, contRevTableName)
 }
 
 // ContentRevisions retrieves the revisions for content on a listing sorted by revision timestamp
 func (p *PostgresPersister) ContentRevisions(address common.Address, contentID *big.Int) ([]*model.ContentRevision, error) {
+	contRevTableName := p.GetTableName(postgres.ContentRevisionTableBaseName)
 	return p.contentRevisionsFromTable(address, contentID, contRevTableName)
 }
 
 // UpdateContentRevision updates fields on an existing content revision
 func (p *PostgresPersister) UpdateContentRevision(revision *model.ContentRevision, updatedFields []string) error {
+	contRevTableName := p.GetTableName(postgres.ContentRevisionTableBaseName)
 	return p.updateContentRevisionInTable(revision, updatedFields, contRevTableName)
 }
 
 // DeleteContentRevision removes a content revision
 func (p *PostgresPersister) DeleteContentRevision(revision *model.ContentRevision) error {
+	contRevTableName := p.GetTableName(postgres.ContentRevisionTableBaseName)
 	return p.deleteContentRevisionFromTable(revision, contRevTableName)
 }
 
 // GovernanceEventsByCriteria retrieves governance events based on criteria sorted by revision timestamp
 func (p *PostgresPersister) GovernanceEventsByCriteria(criteria *model.GovernanceEventCriteria) ([]*model.GovernanceEvent, error) {
+	govEventTableName := p.GetTableName(postgres.GovernanceEventTableBaseName)
 	return p.governanceEventsByCriteriaFromTable(criteria, govEventTableName)
 }
 
 // GovernanceEventsByListingAddress retrieves governance events based on listing address
 func (p *PostgresPersister) GovernanceEventsByListingAddress(address common.Address) ([]*model.GovernanceEvent, error) {
+	govEventTableName := p.GetTableName(postgres.GovernanceEventTableBaseName)
 	return p.governanceEventsByListingAddressFromTable(address, govEventTableName)
 }
 
 // GovernanceEventsByTxHash retrieves governance events based on TxHash sorted by revision timestamp
 func (p *PostgresPersister) GovernanceEventsByTxHash(txHash common.Hash) ([]*model.GovernanceEvent, error) {
+	govEventTableName := p.GetTableName(postgres.GovernanceEventTableBaseName)
 	return p.governanceEventsByTxHashFromTable(txHash, govEventTableName)
 }
 
 // CreateGovernanceEvent creates a new governance event
 func (p *PostgresPersister) CreateGovernanceEvent(govEvent *model.GovernanceEvent) error {
+	govEventTableName := p.GetTableName(postgres.GovernanceEventTableBaseName)
 	return p.createGovernanceEventInTable(govEvent, govEventTableName)
 }
 
 // UpdateGovernanceEvent updates fields on an existing governance event
 func (p *PostgresPersister) UpdateGovernanceEvent(govEvent *model.GovernanceEvent, updatedFields []string) error {
+	govEventTableName := p.GetTableName(postgres.GovernanceEventTableBaseName)
 	return p.updateGovernanceEventInTable(govEvent, updatedFields, govEventTableName)
 }
 
 // DeleteGovernanceEvent removes a governance event
 func (p *PostgresPersister) DeleteGovernanceEvent(govEvent *model.GovernanceEvent) error {
+	govEventTableName := p.GetTableName(postgres.GovernanceEventTableBaseName)
 	return p.deleteGovernanceEventFromTable(govEvent, govEventTableName)
 }
 
 // TimestampOfLastEventForCron returns the last timestamp from cron
 func (p *PostgresPersister) TimestampOfLastEventForCron() (int64, error) {
+	cronTableName := p.GetTableName(postgres.CronTableBaseName)
 	return p.lastCronTimestampFromTable(cronTableName)
 }
 
 // EventHashesOfLastTimestampForCron returns the event hashes processed for the last timestamp from cron
 func (p *PostgresPersister) EventHashesOfLastTimestampForCron() ([]string, error) {
+	cronTableName := p.GetTableName(postgres.CronTableBaseName)
 	return p.lastEventHashesFromTable(cronTableName)
 }
 
 // UpdateTimestampForCron updates the timestamp saved in cron table
 func (p *PostgresPersister) UpdateTimestampForCron(timestamp int64) error {
+	cronTableName := p.GetTableName(postgres.CronTableBaseName)
 	return p.updateCronTimestampInTable(timestamp, cronTableName)
 }
 
 // UpdateEventHashesForCron updates the eventHashes saved in cron table
 func (p *PostgresPersister) UpdateEventHashesForCron(eventHashes []string) error {
+	cronTableName := p.GetTableName(postgres.CronTableBaseName)
 	return p.updateEventHashesInTable(eventHashes, cronTableName)
 }
 
 // CreateChallenge creates a new challenge
 func (p *PostgresPersister) CreateChallenge(challenge *model.Challenge) error {
+	challengeTableName := p.GetTableName(postgres.ChallengeTableBaseName)
 	return p.createChallengeInTable(challenge, challengeTableName)
 }
 
 // UpdateChallenge updates a challenge
 func (p *PostgresPersister) UpdateChallenge(challenge *model.Challenge, updatedFields []string) error {
+	challengeTableName := p.GetTableName(postgres.ChallengeTableBaseName)
 	return p.updateChallengeInTable(challenge, updatedFields, challengeTableName)
 }
 
 // ChallengesByChallengeIDs returns a slice of challenges based on challenge IDs. Returns order of given challengeIDs
 func (p *PostgresPersister) ChallengesByChallengeIDs(challengeIDs []int) ([]*model.Challenge, error) {
+	challengeTableName := p.GetTableName(postgres.ChallengeTableBaseName)
 	return p.challengesByChallengeIDsInTableInOrder(challengeIDs, challengeTableName)
 }
 
 // ChallengeByChallengeID gets a challenge by challengeID
 func (p *PostgresPersister) ChallengeByChallengeID(challengeID int) (*model.Challenge, error) {
+	challengeTableName := p.GetTableName(postgres.ChallengeTableBaseName)
 	return p.challengeByChallengeIDFromTable(challengeID, challengeTableName)
 }
 
 // ChallengesByListingAddresses gets slice of challenges for a each listing address in order of given addresses
 func (p *PostgresPersister) ChallengesByListingAddresses(addrs []common.Address) ([][]*model.Challenge, error) {
+	challengeTableName := p.GetTableName(postgres.ChallengeTableBaseName)
 	return p.challengesByListingAddressesInTable(addrs, challengeTableName)
 }
 
 // ChallengesByListingAddress gets a list of challenges for a listing sorted by challenge_id
 func (p *PostgresPersister) ChallengesByListingAddress(addr common.Address) ([]*model.Challenge, error) {
+	challengeTableName := p.GetTableName(postgres.ChallengeTableBaseName)
 	return p.challengesByListingAddressInTable(addr, challengeTableName)
 }
 
 // PollByPollID gets a poll by pollID
 func (p *PostgresPersister) PollByPollID(pollID int) (*model.Poll, error) {
-	return p.pollByPollIDFromTable(pollID)
+	pollTableName := p.GetTableName(postgres.PollTableBaseName)
+	return p.pollByPollIDFromTable(pollID, pollTableName)
 }
 
 // PollsByPollIDs returns a slice of polls in order based on poll IDs
 func (p *PostgresPersister) PollsByPollIDs(pollIDs []int) ([]*model.Poll, error) {
+	pollTableName := p.GetTableName(postgres.PollTableBaseName)
 	return p.pollsByPollIDsInTableInOrder(pollIDs, pollTableName)
 }
 
 // CreatePoll creates a new poll
 func (p *PostgresPersister) CreatePoll(poll *model.Poll) error {
+	pollTableName := p.GetTableName(postgres.PollTableBaseName)
 	return p.createPollInTable(poll, pollTableName)
 }
 
 // UpdatePoll updates a poll
 func (p *PostgresPersister) UpdatePoll(poll *model.Poll, updatedFields []string) error {
+	pollTableName := p.GetTableName(postgres.PollTableBaseName)
 	return p.updatePollInTable(poll, updatedFields, pollTableName)
 }
 
 // AppealByChallengeID gets an appeal by challengeID
 func (p *PostgresPersister) AppealByChallengeID(challengeID int) (*model.Appeal, error) {
-	return p.appealByChallengeIDFromTable(challengeID)
+	appealTableName := p.GetTableName(postgres.AppealTableBaseName)
+	return p.appealByChallengeIDFromTable(challengeID, appealTableName)
 }
 
 // AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
 func (p *PostgresPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
+	appealTableName := p.GetTableName(postgres.AppealTableBaseName)
 	return p.appealsByChallengeIDsInTableInOrder(challengeIDs, appealTableName)
 }
 
 // CreateAppeal creates a new appeal
 func (p *PostgresPersister) CreateAppeal(appeal *model.Appeal) error {
+	appealTableName := p.GetTableName(postgres.AppealTableBaseName)
 	return p.createAppealInTable(appeal, appealTableName)
 }
 
 // UpdateAppeal updates an appeal
 func (p *PostgresPersister) UpdateAppeal(appeal *model.Appeal, updatedFields []string) error {
+	appealTableName := p.GetTableName(postgres.AppealTableBaseName)
 	return p.updateAppealInTable(appeal, updatedFields, appealTableName)
 }
 
 // TokenTransfersByTxHash all the token transfers for a given purchaser address
 func (p *PostgresPersister) TokenTransfersByTxHash(txHash common.Hash) (
 	[]*model.TokenTransfer, error) {
+	tokenTransferTableName := p.GetTableName(postgres.TokenTransferTableBaseName)
 	return p.tokenTransfersByTxHashFromTable(txHash, tokenTransferTableName)
 }
 
 // TokenTransfersByToAddress gets all the token transfers for a given purchaser address
 func (p *PostgresPersister) TokenTransfersByToAddress(addr common.Address) (
 	[]*model.TokenTransfer, error) {
+	tokenTransferTableName := p.GetTableName(postgres.TokenTransferTableBaseName)
 	return p.tokenTransfersByToAddressFromTable(addr, tokenTransferTableName)
 }
 
 // CreateTokenTransfer creates a new token transfer
 func (p *PostgresPersister) CreateTokenTransfer(purchase *model.TokenTransfer) error {
+	tokenTransferTableName := p.GetTableName(postgres.TokenTransferTableBaseName)
 	return p.createTokenTransferInTable(purchase, tokenTransferTableName)
+}
+
+// SaveVersion saves the version for this persistence
+func (p *PostgresPersister) SaveVersion(versionNumber *string) error {
+	err := p.saveVersionToTable(crawlerPostgres.VersionTableName, versionNumber)
+	if err != nil {
+		return err
+	}
+	p.version = versionNumber
+	return nil
+}
+
+// PersisterVersion returns the latest version of this persistence
+func (p *PostgresPersister) PersisterVersion() (*string, error) {
+	return p.persisterVersionFromTable(crawlerPostgres.VersionTableName)
+}
+
+// InitProcessorVersion inits this persistence version to versionNumber if specified, else gets version from db
+func (p *PostgresPersister) InitProcessorVersion(versionNumber *string) error {
+	currentVersion, err := p.PersisterVersion()
+	if err != nil && versionNumber == nil {
+		if err == cpersist.ErrPersisterNoResults {
+			return fmt.Errorf("No version in version table, specify a version: err %v", err)
+		}
+		return err
+	}
+	if currentVersion != versionNumber {
+		err := p.SaveVersion(versionNumber)
+		if err != nil {
+			return err
+		}
+	}
+	p.version = versionNumber
+	return nil
 }
 
 // CreateParameterProposal creates a new parameter proposal
 func (p *PostgresPersister) CreateParameterProposal(paramProposal *model.ParameterProposal) error {
-	return p.createParameterProposalInTable(paramProposal, postgres.ParameterProposalTableName)
+	return p.createParameterProposalInTable(paramProposal, postgres.ParameterProposalTableBaseName)
 }
 
 // ParamProposalByPropID gets parameter proposal by propID
 func (p *PostgresPersister) ParamProposalByPropID(propID [32]byte) (*model.ParameterProposal, error) {
-	return p.paramProposalByPropIDFromTable(propID, postgres.ParameterProposalTableName)
+	return p.paramProposalByPropIDFromTable(propID, postgres.ParameterProposalTableBaseName)
 }
 
 // ParamProposalByName gets parameter proposals by name. active=true will get only active
 func (p *PostgresPersister) ParamProposalByName(name string, active bool) ([]*model.ParameterProposal, error) {
-	return p.paramProposalByNameFromTable(name, active, postgres.ParameterProposalTableName)
+	return p.paramProposalByNameFromTable(name, active, postgres.ParameterProposalTableBaseName)
 }
 
 // UpdateParamProposal updates a parameter proposal
 func (p *PostgresPersister) UpdateParamProposal(paramProposal *model.ParameterProposal,
 	updatedFields []string) error {
 
-	return p.updateParamProposalInTable(paramProposal, updatedFields, postgres.ParameterProposalTableName)
+	return p.updateParamProposalInTable(paramProposal, updatedFields, postgres.ParameterProposalTableBaseName)
 }
 
 // CreateTables creates the tables for processor if they don't exist
 func (p *PostgresPersister) CreateTables() error {
-	// this needs to get all the event tables for processor
-	contRevTableQuery := postgres.CreateContentRevisionTableQuery()
-	govEventTableQuery := postgres.CreateGovernanceEventTableQuery()
-	listingTableQuery := postgres.CreateListingTableQuery()
-	cronTableQuery := postgres.CreateCronTableQuery()
-	challengeTableQuery := postgres.CreateChallengeTableQuery()
-	pollTableQuery := postgres.CreatePollTableQuery()
-	appealTableQuery := postgres.CreateAppealTableQuery()
-	tokenTransferQuery := postgres.CreateTokenTransferTableQuery()
-	parameterProposalQuery := postgres.CreateParameterProposalQuery()
+	contRevTableQuery := postgres.CreateContentRevisionTableQuery(p.GetTableName(postgres.ContentRevisionTableBaseName))
+	govEventTableQuery := postgres.CreateGovernanceEventTableQuery(p.GetTableName(postgres.GovernanceEventTableBaseName))
+	listingTableQuery := postgres.CreateListingTableQuery(p.GetTableName(postgres.ListingTableBaseName))
+	cronTableQuery := postgres.CreateCronTableQuery(p.GetTableName(postgres.CronTableBaseName))
+	challengeTableQuery := postgres.CreateChallengeTableQuery(p.GetTableName(postgres.ChallengeTableBaseName))
+	pollTableQuery := postgres.CreatePollTableQuery(p.GetTableName(postgres.PollTableBaseName))
+	appealTableQuery := postgres.CreateAppealTableQuery(p.GetTableName(postgres.AppealTableBaseName))
+	tokenTransferQuery := postgres.CreateTokenTransferTableQuery(p.GetTableName(postgres.TokenTransferTableBaseName))
+	parameterProposalQuery := postgres.CreateParameterProposalTableQuery(p.GetTableName(postgres.ParameterProposalTableBaseName))
 
 	_, err := p.db.Exec(contRevTableQuery)
 	if err != nil {
@@ -363,37 +437,99 @@ func (p *PostgresPersister) CreateTables() error {
 
 // CreateIndices creates the indices for DB if they don't exist
 func (p *PostgresPersister) CreateIndices() error {
-	indexQuery := postgres.ContentRevisionTableIndices()
+	indexQuery := postgres.CreateContentRevisionTableIndicesQuery(p.GetTableName(postgres.ContentRevisionTableBaseName))
 	_, err := p.db.Exec(indexQuery)
 	if err != nil {
 		return errors.Wrap(err, "error creating content revision table indices")
 	}
-	indexQuery = postgres.GovernanceEventTableIndices()
+	indexQuery = postgres.CreateGovernanceEventTableIndicesQuery(p.GetTableName(postgres.GovernanceEventTableBaseName))
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
 		return errors.Wrap(err, "error creating gov events table indices")
 	}
-	indexQuery = postgres.ListingTableIndices()
+	indexQuery = postgres.CreateListingTableIndicesQuery(p.GetTableName(postgres.ListingTableBaseName))
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
 		return errors.Wrap(err, "error creating listing table indices")
 	}
-	indexQuery = postgres.ChallengeTableIndices()
+	indexQuery = postgres.CreateChallengeTableIndicesQuery(p.GetTableName(postgres.ChallengeTableBaseName))
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
 		return errors.Wrap(err, "error creating challenge table indices")
 	}
-	// indexQuery = postgres.PollTableIndices()
+	// indexQuery = postgres.CreatePollTableIndicesQuery(postgres.PollTableBaseName)
 	// _, err = p.db.Exec(indexQuery)
 	// if err != nil {
 	// 	return errors.Wrap(err, "Error creating poll table indices in postgres")
 	// }
-	// indexQuery = postgres.AppealTableIndices()
+	// indexQuery = postgres.CreateAppealTableIndicesQuery(postgres.AppealTableBaseName)
 	// _, err = p.db.Exec(indexQuery)
 	// if err != nil {
 	// 	return errors.Wrap(err, "Error creating appeal table indices in postgres")
 	// }
+	indexQuery = postgres.CreateTokenTransferTableIndicesQuery(postgres.TokenTransferTableBaseName)
+	_, err = p.db.Exec(indexQuery)
+	if err != nil {
+		return fmt.Errorf("Error creating token_transfer table indices in postgres: %v", err)
+	}
 	return err
+}
+
+func (p *PostgresPersister) persisterVersionFromTable(tableName string) (*string, error) {
+	if p.version == nil {
+		version, err := p.retrieveVersionFromTable(tableName)
+		if err != nil {
+			return nil, err
+		}
+		p.version = version
+	}
+	return p.version, nil
+}
+
+func (p *PostgresPersister) retrieveVersionFromTable(tableName string) (*string, error) {
+	dbVersion := []crawlerPostgres.Version{}
+	queryString := fmt.Sprintf(`SELECT * FROM %s WHERE service_name=$1 ORDER BY last_updated_timestamp DESC LIMIT 1;`, tableName) // nolint: gosec
+	err := p.db.Select(&dbVersion, queryString, ProcessorServiceName)
+	if err != nil {
+		return nil, err
+	}
+	if len(dbVersion) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+	return dbVersion[0].Version, nil
+}
+
+// saveVersionToTable saves the version
+func (p *PostgresPersister) saveVersionToTable(tableName string, versionNumber *string) error {
+	dbVersionStruct := crawlerPostgres.Version{
+		Version:           versionNumber,
+		ServiceName:       ProcessorServiceName,
+		LastUpdatedDateTs: ctime.CurrentEpochSecsInInt64(),
+		Exists:            true}
+	onConflict := fmt.Sprintf("%s, %s", crawlerPostgres.VersionFieldName, crawlerPostgres.ServiceFieldName)
+	updateFields := []string{crawlerPostgres.LastUpdatedTsFieldName, crawlerPostgres.ExistsFieldName}
+	queryString := p.upsertVersionDataQueryString(tableName, dbVersionStruct, onConflict,
+		updateFields)
+	_, err := p.db.NamedExec(queryString, dbVersionStruct)
+	if err != nil {
+		return fmt.Errorf("Error saving version to table: %v", err)
+	}
+	return nil
+}
+
+func (p *PostgresPersister) upsertVersionDataQueryString(tableName string, dbModelStruct interface{},
+	onConflict string, updatedFields []string) string {
+	var queryString strings.Builder
+	fieldNames, fieldNamesColon := cpostgres.StructFieldsForQuery(dbModelStruct, true, "")
+	queryString.WriteString(fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s) ON CONFLICT(%s) DO UPDATE SET ",
+		tableName, fieldNames, fieldNamesColon, onConflict)) // nolint: gosec
+	for idx, field := range updatedFields {
+		queryString.WriteString(fmt.Sprintf("%s=:%s", field, field)) // nolint: gosec
+		if idx+1 < len(updatedFields) {
+			queryString.WriteString(", ") // nolint: gosec
+		}
+	}
+	return queryString.String()
 }
 
 func (p *PostgresPersister) insertIntoDBQueryString(tableName string, dbModelStruct interface{}) string {
@@ -987,7 +1123,7 @@ func (p *PostgresPersister) updateChallengeQuery(updatedFields []string, tableNa
 }
 
 func (p *PostgresPersister) challengeByChallengeIDFromTable(challengeID int, tableName string) (*model.Challenge, error) {
-	challenges, err := p.challengesByChallengeIDsInTableInOrder([]int{challengeID}, challengeTableName)
+	challenges, err := p.challengesByChallengeIDsInTableInOrder([]int{challengeID}, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -1005,12 +1141,10 @@ func (p *PostgresPersister) challengesByChallengeIDsInTableInOrder(challengeIDs 
 
 	challengeIDsString := cstrings.ListIntToListString(challengeIDs)
 	queryString := p.challengesByChallengeIDsQuery(tableName)
-
 	query, args, err := sqlx.In(queryString, challengeIDsString)
 	if err != nil {
 		return nil, errors.Wrap(err, "error preparing 'IN' statement")
 	}
-
 	query = p.db.Rebind(query)
 	rows, err := p.db.Queryx(query, args...)
 	defer p.closeRows(rows)
@@ -1188,8 +1322,8 @@ func (p *PostgresPersister) updatePollQuery(updatedFields []string, tableName st
 	return queryString.String(), nil
 }
 
-func (p *PostgresPersister) pollByPollIDFromTable(pollID int) (*model.Poll, error) {
-	polls, err := p.pollsByPollIDsInTableInOrder([]int{pollID}, pollTableName)
+func (p *PostgresPersister) pollByPollIDFromTable(pollID int, tableName string) (*model.Poll, error) {
+	polls, err := p.pollsByPollIDsInTableInOrder([]int{pollID}, tableName)
 	if err != nil {
 		return nil, err
 	}
@@ -1286,8 +1420,8 @@ func (p *PostgresPersister) updateAppealQuery(updatedFields []string, tableName 
 	return queryString.String(), nil
 }
 
-func (p *PostgresPersister) appealByChallengeIDFromTable(challengeID int) (*model.Appeal, error) {
-	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, appealTableName)
+func (p *PostgresPersister) appealByChallengeIDFromTable(challengeID int, tableName string) (*model.Appeal, error) {
+	appeals, err := p.appealsByChallengeIDsInTableInOrder([]int{challengeID}, tableName)
 	if err != nil {
 		return nil, err
 	}

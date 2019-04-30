@@ -310,7 +310,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:99ccca5a8e11b880e5942d71dfb54c8500f0fd4f424a81e924de2567819775ad"
+  digest = "1:2ec8b0c9dfe3ef484502c2d52677fd76d2615b44dcf23a5454b3538737198ac8"
   name = "github.com/joincivil/civil-events-crawler"
   packages = [
     "pkg/generated/common",
@@ -320,11 +320,11 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "183c0a7952d867e4cf3f15451b197a577fec2d59"
+  revision = "2a38a8f261f571af0c36cd95c3af48e5b5989428"
 
 [[projects]]
-  branch = "png/CIVIL-603/token-events"
-  digest = "1:2ea1b49c85c0935b95ad22b7b28d1dedaf4e5ac4f631e88a33e07dd2b75f2db6"
+  branch = "master"
+  digest = "1:5701ce68721cc405e7b055d86882ba017044965db4755c4cf84f6d0e64149153"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -337,7 +337,7 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "f595d811310fe3540f5e30ef8ddc4e97551d502f"
+  revision = "15f736f61bf7e3f83bc625748ef4cb0d9d9aa568"
 
 [[projects]]
   branch = "master"
