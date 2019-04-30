@@ -12,7 +12,7 @@ import (
 // RunTokenEventsWorkers starts up the CvlToken events pubsub worker(s)
 // Setting this up to live on it own one day
 func RunTokenEventsWorkers(config *utils.GraphQLConfig, quit chan bool) error {
-	tokenPersister, err := helpers.TokenTransferPersister(config)
+	tokenPersister, err := helpers.TokenTransferPersister(config, config.PersisterVersion)
 	if err != nil {
 		return err
 	}
