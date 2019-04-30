@@ -739,6 +739,9 @@ func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pol
 
 	allUserChallengeData, err := r.userChallengeDataPersister.UserChallengeDataByCriteria(criteria)
 	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 
