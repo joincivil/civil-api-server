@@ -9,17 +9,12 @@ import (
 )
 
 const (
-	// PollTableName is the name of this table
-	PollTableName = "poll"
+	// PollTableBaseName is the type of table this code defines
+	PollTableBaseName = "poll"
 )
 
-// CreatePollTableQuery returns the query to create the poll table
-func CreatePollTableQuery() string {
-	return CreatePollTableQueryString(PollTableName)
-}
-
-// CreatePollTableQueryString returns the query to create this table
-func CreatePollTableQueryString(tableName string) string {
+// CreatePollTableQuery returns the query to create this table
+func CreatePollTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             poll_id INT PRIMARY KEY,
@@ -36,13 +31,8 @@ func CreatePollTableQueryString(tableName string) string {
 	return queryString
 }
 
-// PollTableIndices returns the query to create indices for this table
-func PollTableIndices() string {
-	return CreatePollTableIndicesString(PollTableName)
-}
-
-// CreatePollTableIndicesString returns the query to create indices for this table
-func CreatePollTableIndicesString(tableName string) string {
+// CreatePollTableIndicesQuery returns the query to create indices for this table
+func CreatePollTableIndicesQuery(tableName string) string {
 	// queryString := fmt.Sprintf(`
 	// `, tableName)
 	// return queryString

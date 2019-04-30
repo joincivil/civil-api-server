@@ -47,6 +47,7 @@ const (
 
 	didCollectFieldName     = "DidCollectAmount"
 	didUserCollectFieldName = "DidUserCollect"
+	voterRewardFieldName    = "VoterReward"
 
 	isPassedFieldName = "IsPassed"
 
@@ -473,7 +474,10 @@ func (t *TcrEventProcessor) processTCRRewardClaimed(event *crawlermodel.Event) e
 
 	userChallengeData[0].SetDidUserCollect(true)
 	userChallengeData[0].SetDidCollectAmount(reward.(*big.Int))
-	updatedUserFields := []string{didUserCollectFieldName, didCollectFieldName}
+	// NOTE(IS): voterreward may have to be defined earlier?
+	userChallengeData[0].SetVoterReward(reward.(*big.Int))
+
+	updatedUserFields := []string{didUserCollectFieldName, didCollectFieldName, voterRewardFieldName}
 	updateWithUserAddress := true
 
 	err = t.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData[0],

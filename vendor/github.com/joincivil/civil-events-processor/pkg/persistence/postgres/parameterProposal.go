@@ -11,17 +11,12 @@ import (
 )
 
 const (
-	// ParameterProposalTableName is the table name for this model
-	ParameterProposalTableName = "parameter_proposal"
+	// ParameterProposalTableBaseName is the table name for this model
+	ParameterProposalTableBaseName = "parameter_proposal"
 )
 
-// CreateParameterProposalQuery returns the query to create the challenge table
-func CreateParameterProposalQuery() string {
-	return CreateParameterProposalTableQueryString(ParameterProposalTableName)
-}
-
-// CreateParameterProposalTableQueryString returns the query to create this table
-func CreateParameterProposalTableQueryString(tableName string) string {
+// CreateParameterProposalTableQuery returns the query to create this table
+func CreateParameterProposalTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             prop_id TEXT PRIMARY KEY,

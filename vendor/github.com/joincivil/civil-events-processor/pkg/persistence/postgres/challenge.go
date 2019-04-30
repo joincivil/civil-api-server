@@ -10,16 +10,12 @@ import (
 )
 
 const (
-	defaultChallengeTableName = "challenge"
+	// ChallengeTableBaseName is the type of table this code defines
+	ChallengeTableBaseName = "challenge"
 )
 
-// CreateChallengeTableQuery returns the query to create the challenge table
-func CreateChallengeTableQuery() string {
-	return CreateChallengeTableQueryString(defaultChallengeTableName)
-}
-
-// CreateChallengeTableQueryString returns the query to create this table
-func CreateChallengeTableQueryString(tableName string) string {
+// CreateChallengeTableQuery returns the query to create this table
+func CreateChallengeTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             challenge_id INT PRIMARY KEY,
@@ -38,13 +34,8 @@ func CreateChallengeTableQueryString(tableName string) string {
 	return queryString
 }
 
-// ChallengeTableIndices returns the query to create indices for this table
-func ChallengeTableIndices() string {
-	return CreateChallengeTableIndicesString(defaultChallengeTableName)
-}
-
-// CreateChallengeTableIndicesString returns the query to create indices this table
-func CreateChallengeTableIndicesString(tableName string) string {
+// CreateChallengeTableIndicesQuery returns the query to create indices this table
+func CreateChallengeTableIndicesQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS challenge_addr_idx ON %s (listing_address);
 	`, tableName)

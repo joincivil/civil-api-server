@@ -12,20 +12,15 @@ import (
 )
 
 const (
-	// UserChallengeDataTableName is the name of this table
-	UserChallengeDataTableName = "user_challenge_data"
-	defaultNilNum              = 0
+	// UserChallengeDataTableBaseName is the name of this table
+	UserChallengeDataTableBaseName = "user_challenge_data"
+	defaultNilNum                  = 0
 	// Set nil for choice to -1 so that it isn't confused with 0 or 1 for choice
 	choiceNilNum = -1
 )
 
-// CreateUserChallengeDataQuery returns the query to return the userchallengedata table
-func CreateUserChallengeDataQuery() string {
-	return CreateUserChallengeDataQueryString(UserChallengeDataTableName)
-}
-
-// CreateUserChallengeDataQueryString returns the query to create this table
-func CreateUserChallengeDataQueryString(tableName string) string {
+// CreateUserChallengeDataTableQuery returns the query to create the userchallengedata table
+func CreateUserChallengeDataTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             poll_id INT,
@@ -50,13 +45,8 @@ func CreateUserChallengeDataQueryString(tableName string) string {
 	return queryString
 }
 
-// UserChallengeDataTableIndices returns the query to create indices for this table
-func UserChallengeDataTableIndices() string {
-	return CreateUserChallengeDataTableIndicesString(UserChallengeDataTableName)
-}
-
-// CreateUserChallengeDataTableIndicesString returns the query to create indices for this table
-func CreateUserChallengeDataTableIndicesString(tableName string) string {
+// UserChallengeDataTableIndicesQuery returns the query to create indices for this table
+func UserChallengeDataTableIndicesQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE INDEX IF NOT EXISTS poll_id_idx ON %s (poll_id);
         CREATE INDEX IF NOT EXISTS user_address_idx ON %s (user_address);

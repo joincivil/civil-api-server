@@ -11,16 +11,12 @@ import (
 )
 
 const (
-	defaultTokenTransferTableName = "token_transfer"
+	// TokenTransferTableBaseName is the base name of the table this code defines
+	TokenTransferTableBaseName = "token_transfer"
 )
 
 // CreateTokenTransferTableQuery returns the query to create the token_transfer table
-func CreateTokenTransferTableQuery() string {
-	return CreateTokenTransferTableQueryString(defaultTokenTransferTableName)
-}
-
-// CreateTokenTransferTableQueryString returns the query to create the token_transfer table
-func CreateTokenTransferTableQueryString(tableName string) string {
+func CreateTokenTransferTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE TABLE IF NOT EXISTS %s(
 			to_address TEXT,
@@ -33,13 +29,8 @@ func CreateTokenTransferTableQueryString(tableName string) string {
 	return queryString
 }
 
-// CreateTokenTransferEventTableIndices returns the query to create indices for this table
-func CreateTokenTransferEventTableIndices() string {
-	return CreateTokenTransferEventTableIndicesString(defaultTokenTransferTableName)
-}
-
-// CreateTokenTransferEventTableIndicesString returns the query to create indices for this table
-func CreateTokenTransferEventTableIndicesString(tableName string) string {
+// CreateTokenTransferTableIndicesQuery returns the query to create indices for this table
+func CreateTokenTransferTableIndicesQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS tokentransfer_block_data_idx ON %s USING GIN (block_data);
 	`, tableName)
