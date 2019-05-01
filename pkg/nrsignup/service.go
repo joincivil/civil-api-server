@@ -297,6 +297,16 @@ func (s *Service) SaveNewsroomAddress(newsroomOwnerUID string, address string) e
 	return s.alterUserDataInJSONStore(newsroomOwnerUID, newsroomAdressUpdateFn)
 }
 
+// SaveNewsroomApplyTxHash saves the txHash for the newsrooms application transaction
+func (s *Service) SaveNewsroomApplyTxHash(newsroomOwnerUID string, txhash string) error {
+	newsroomApplyTxHashUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
+		d.TcrApplyTx = txhash
+		return d, nil
+	}
+
+	return s.alterUserDataInJSONStore(newsroomOwnerUID, newsroomApplyTxHashUpdateFn)
+}
+
 // StartPollNewsroomDeployTx starts a polling process that detects when a newsroom
 // contract deployment transaction has completed.  Will send emails
 // alerting the Foundation and the newsroom owner that it has completed.

@@ -104,6 +104,20 @@ func (r *mutationResolver) NrsignupSaveAddress(ctx context.Context, address stri
 	return ResponseOK, nil
 }
 
+func (r *mutationResolver) NrsignupSaveNewsroomApplyTxHash(ctx context.Context, txHash string) (string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	err := r.nrsignupService.SaveNewsroomApplyTxHash(token.Sub, txHash)
+	if err != nil {
+		return "", err
+	}
+
+	return ResponseOK, nil
+}
+
 // Not implemented yet
 func (r *mutationResolver) NrsignupPollNewsroomDeploy(ctx context.Context,
 	txHash string) (string, error) {
