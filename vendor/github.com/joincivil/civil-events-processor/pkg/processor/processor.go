@@ -38,10 +38,15 @@ func NewEventProcessor(params *NewEventProcessorParams) *EventProcessor {
 		params.ChallengePersister,
 		params.AppealPersister,
 		params.GovEventPersister,
+		params.UserChallengeDataPersister,
+		params.PollPersister,
 	)
 	plcrEventProcessor := NewPlcrEventProcessor(
 		params.Client,
 		params.PollPersister,
+		params.UserChallengeDataPersister,
+		params.ChallengePersister,
+		params.AppealPersister,
 	)
 	newsroomEventProcessor := NewNewsroomEventProcessor(
 		params.Client,
@@ -56,6 +61,8 @@ func NewEventProcessor(params *NewEventProcessorParams) *EventProcessor {
 		params.Client,
 		params.ChallengePersister,
 		params.ParameterProposalPersister,
+		params.PollPersister,
+		params.UserChallengeDataPersister,
 	)
 	if params.ErrRep == nil {
 		params.ErrRep = &cerrors.NullErrorReporter{}
@@ -84,6 +91,7 @@ type NewEventProcessorParams struct {
 	AppealPersister            model.AppealPersister
 	TokenTransferPersister     model.TokenTransferPersister
 	ParameterProposalPersister model.ParamProposalPersister
+	UserChallengeDataPersister model.UserChallengeDataPersister
 	GooglePubSub               *pubsub.GooglePubSub
 	PubSubEventsTopicName      string
 	PubSubTokenTopicName       string

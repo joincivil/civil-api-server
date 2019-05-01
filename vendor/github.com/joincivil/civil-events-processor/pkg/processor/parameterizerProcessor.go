@@ -23,26 +23,34 @@ import (
 var paramChallengeEventNames = []string{"ChallengeFailed", "ChallengeSucceeded", "NewChallenge"}
 
 const (
-	proposalAcceptedFieldName = "Accepted"
-	proposalExpiredFieldName  = "Expired"
+	proposalAcceptedFieldName      = "Accepted"
+	proposalExpiredFieldName       = "Expired"
+	userChallengeIsPassedFieldName = "PollIsPassed"
+	pollIDFieldName                = "PollID"
 )
 
 // NewParameterizerEventProcessor is a convenience function to init a parameterizer processor
 func NewParameterizerEventProcessor(client bind.ContractBackend,
 	challengePersister model.ChallengePersister,
-	paramProposalPersister model.ParamProposalPersister) *ParameterizerEventProcessor {
+	paramProposalPersister model.ParamProposalPersister,
+	pollPersister model.PollPersister,
+	userChallengeDataPersister model.UserChallengeDataPersister) *ParameterizerEventProcessor {
 	return &ParameterizerEventProcessor{
-		client:                 client,
-		challengePersister:     challengePersister,
-		paramProposalPersister: paramProposalPersister,
+		client:                     client,
+		challengePersister:         challengePersister,
+		paramProposalPersister:     paramProposalPersister,
+		pollPersister:              pollPersister,
+		userChallengeDataPersister: userChallengeDataPersister,
 	}
 }
 
 // ParameterizerEventProcessor handles the processing of raw events into aggregated data
 type ParameterizerEventProcessor struct {
-	client                 bind.ContractBackend
-	challengePersister     model.ChallengePersister
-	paramProposalPersister model.ParamProposalPersister
+	client                     bind.ContractBackend
+	challengePersister         model.ChallengePersister
+	paramProposalPersister     model.ParamProposalPersister
+	pollPersister              model.PollPersister
+	userChallengeDataPersister model.UserChallengeDataPersister
 }
 
 func (p *ParameterizerEventProcessor) isValidParameterizerContractEventName(name string) bool {
@@ -154,11 +162,19 @@ func (p *ParameterizerEventProcessor) processParameterizerChallenge(event *crawl
 
 func (p *ParameterizerEventProcessor) processChallengeFailed(event *crawlermodel.Event,
 	challengeID *big.Int) error {
+	err := p.setPollIsPassed(challengeID, true)
+	if err != nil {
+		return fmt.Errorf("Error setting isPassed field in poll, err: %v", err)
+	}
 	return p.processChallengeResolution(event, challengeID)
 }
 
 func (p *ParameterizerEventProcessor) processChallengeSucceeded(event *crawlermodel.Event,
 	challengeID *big.Int) error {
+	err := p.setPollIsPassed(challengeID, false)
+	if err != nil {
+		return fmt.Errorf("Error setting isPassed field in poll, err: %v", err)
+	}
 	return p.processChallengeResolution(event, challengeID)
 }
 
@@ -341,6 +357,7 @@ func (p *ParameterizerEventProcessor) newChallenge(pAddress common.Address,
 		return nil, fmt.Errorf("Error calling function in TCR contract: err: %v", err)
 	}
 
+	challengeType := model.ParamProposalPollType
 	// NOTE(IS): In parameterizer contract, there's no TotalTokens, but WinningTokens
 	challenge := model.NewChallenge(
 		challengeID,
@@ -352,8 +369,40 @@ func (p *ParameterizerEventProcessor) newChallenge(pAddress common.Address,
 		challengeRes.Stake,
 		challengeRes.WinningTokens,
 		requestAppealExpiry,
+		challengeType,
 		ctime.CurrentEpochSecsInInt64())
 
 	err = p.challengePersister.CreateChallenge(challenge)
 	return challenge, err
+}
+
+func (p *ParameterizerEventProcessor) setPollIsPassed(pollID *big.Int, isPassed bool) error {
+	poll, err := p.pollPersister.PollByPollID(int(pollID.Int64()))
+	if err != nil {
+		return fmt.Errorf("Error getting poll from persistence: %v", err)
+	}
+	// TODO(IS): Shouldn't happen if all events are processed and in order, but create new poll if DNE
+	poll.SetIsPassed(isPassed)
+	updatedFields := []string{isPassedFieldName}
+
+	err = p.pollPersister.UpdatePoll(poll, updatedFields)
+	if err != nil {
+		return fmt.Errorf("Error updating poll in persistence: %v", err)
+	}
+
+	// Batch update of pollIsPassed values of userchallengedata in DB
+	userChallengeData := &model.UserChallengeData{}
+	userChallengeData.SetPollIsPassed(true)
+	userChallengeData.SetPollID(pollID)
+	updatedFields = []string{userChallengeIsPassedFieldName, pollIDFieldName}
+	updateWithUserAddress := false
+
+	err = p.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
+		updateWithUserAddress)
+	if err != nil {
+		return fmt.Errorf("Error updating poll in persistence: %v", err)
+	}
+
+	return nil
+
 }

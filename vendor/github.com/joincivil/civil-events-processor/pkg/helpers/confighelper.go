@@ -129,6 +129,16 @@ func ParameterizerPersister(config cconfig.PersisterConfig, versionNumber string
 	return p.(model.ParamProposalPersister), nil
 }
 
+// UserChallengeDataPersister is a helper function to return the userchallengedatapersister based
+// on the given configuration.
+func UserChallengeDataPersister(config cconfig.PersisterConfig, versionNumber string) (model.UserChallengeDataPersister, error) {
+	p, err := persister(config, versionNumber)
+	if err != nil {
+		return nil, err
+	}
+	return p.(model.UserChallengeDataPersister), nil
+}
+
 func persister(config cconfig.PersisterConfig, versionNumber string) (interface{}, error) {
 	if config.PersistType() == cconfig.PersisterTypePostgresql {
 		return postgresPersister(config, versionNumber)

@@ -67,20 +67,27 @@ func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
 		log.Errorf("Error w pollPersister: err: %v", err)
 		return nil, err
 	}
+	userChallengeDataPersister, err := helpers.UserChallengeDataPersister(rconfig.config,
+		rconfig.config.VersionNumber)
+	if err != nil {
+		log.Errorf("Error w userChallengeDataPersister: err: %v", err)
+		return nil, err
+	}
 
 	return graphql.NewResolver(&graphql.ResolverConfig{
-		AuthService:        rconfig.authService,
-		ListingPersister:   listingPersister,
-		RevisionPersister:  contentRevisionPersister,
-		GovEventPersister:  governanceEventPersister,
-		ChallengePersister: challengePersister,
-		AppealPersister:    appealPersister,
-		PollPersister:      pollPersister,
-		UserService:        rconfig.userService,
-		JSONbService:       rconfig.jsonbService,
-		NrsignupService:    rconfig.nrsignupService,
-		StorefrontService:  rconfig.storefrontService,
-		EmailListMembers:   rconfig.emailListMembers,
+		AuthService:                rconfig.authService,
+		ListingPersister:           listingPersister,
+		RevisionPersister:          contentRevisionPersister,
+		GovEventPersister:          governanceEventPersister,
+		ChallengePersister:         challengePersister,
+		AppealPersister:            appealPersister,
+		PollPersister:              pollPersister,
+		UserChallengeDataPersister: userChallengeDataPersister,
+		UserService:                rconfig.userService,
+		JSONbService:               rconfig.jsonbService,
+		NrsignupService:            rconfig.nrsignupService,
+		StorefrontService:          rconfig.storefrontService,
+		EmailListMembers:           rconfig.emailListMembers,
 	}), nil
 }
 

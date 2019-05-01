@@ -222,6 +222,8 @@ type AppealPersister interface {
 	AppealByChallengeID(challengeID int) (*Appeal, error)
 	// AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
 	AppealsByChallengeIDs(challengeIDs []int) ([]*Appeal, error)
+	// AppealByAppealChallengeID gets an appeal by appealchallengeID
+	AppealByAppealChallengeID(challengeID int) (*Appeal, error)
 	// CreateAppeal creates a new appeal
 	CreateAppeal(appeal *Appeal) error
 	// UpdateAppeal updates an appeal
@@ -256,8 +258,27 @@ type ParamProposalPersister interface {
 	Close() error
 }
 
-// // TCRParameterPersister is the persister interface to store current TCRParameters
-// type TCRParameterPersister interface {
-// 	// Close shuts down the persister
-// 	Close() error
-// }
+// UserChallengeDataCriteria contains the retrieval criteria for the UserChallengeDataByCriteria
+// query
+type UserChallengeDataCriteria struct {
+	UserAddress    string `db:"user_address"`
+	PollID         uint64 `db:"poll_id"`
+	CanUserCollect bool   `db:"can_user_collect"`
+	CanUserReveal  bool   `db:"can_user_reveal"`
+	CanUserRescue  bool   `db:"can_user_rescue"`
+	Offset         int    `db:"offset"`
+	Count          int    `db:"count"`
+}
+
+// UserChallengeDataPersister is the persister interface to store UserChallengeData
+type UserChallengeDataPersister interface {
+	// CreateUserChallengeData creates a new UserChallengeData
+	CreateUserChallengeData(userChallengeData *UserChallengeData) error
+	// UserChallengeDataByCriteria retrieves UserChallengeData based on criteria
+	UserChallengeDataByCriteria(criteria *UserChallengeDataCriteria) ([]*UserChallengeData, error)
+	// UpdateUserChallengeData updates UserChallengeData in table.
+	// user=true updates for user + pollID, user=false updates for pollID
+	UpdateUserChallengeData(userChallengeData *UserChallengeData, updatedFields []string, updateWithUserAddress bool) error
+	// Close shuts down the persister
+	Close() error
+}
