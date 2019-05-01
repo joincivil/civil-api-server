@@ -195,6 +195,11 @@ func (n *NullPersister) AppealByChallengeID(challengeID int) (*model.Appeal, err
 	return &model.Appeal{}, nil
 }
 
+// AppealByAppealChallengeID gets an appeal by appealchallengeID
+func (n *NullPersister) AppealByAppealChallengeID(challengeID int) (*model.Appeal, error) {
+	return &model.Appeal{}, nil
+}
+
 // AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
 func (n *NullPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
 	return []*model.Appeal{}, nil
@@ -222,5 +227,41 @@ func (n *NullPersister) TokenTransfersByToAddress(addr common.Address) ([]*model
 
 // CreateTokenTransfer creates an token transfer
 func (n *NullPersister) CreateTokenTransfer(appeal *model.TokenTransfer) error {
+	return nil
+}
+
+// CreateParameterProposal creates a new parameter proposal
+func (n *NullPersister) CreateParameterProposal(paramProposal *model.ParameterProposal) error {
+	return nil
+}
+
+// ParamProposalByPropID gets a parameter proposal from persistence using propID
+func (n *NullPersister) ParamProposalByPropID(propID [32]byte) (*model.ParameterProposal, error) {
+	return &model.ParameterProposal{}, nil
+}
+
+// ParamProposalByName gets parameter proposals by name from persistence
+func (n *NullPersister) ParamProposalByName(name string, active bool) ([]*model.ParameterProposal, error) {
+	return []*model.ParameterProposal{}, nil
+}
+
+// UpdateParamProposal updates parameter propsal in table
+func (n *NullPersister) UpdateParamProposal(paramProposal *model.ParameterProposal, updatedFields []string) error {
+	return nil
+}
+
+// CreateUserChallengeData creates a new UserChallengeData
+func (n *NullPersister) CreateUserChallengeData(userChallengeData *model.UserChallengeData) error {
+	return nil
+}
+
+// UserChallengeDataByCriteria retrieves UserChallengeData based on criteria
+func (n *NullPersister) UserChallengeDataByCriteria(criteria *model.UserChallengeDataCriteria) ([]*model.UserChallengeData, error) {
+	return []*model.UserChallengeData{}, nil
+}
+
+// UpdateUserChallengeData updates UserChallengeData in table.
+// user=true updates for user + pollID, user=false updates for pollID
+func (n *NullPersister) UpdateUserChallengeData(userChallengeData *model.UserChallengeData, updatedFields []string, updateWithUserAddress bool) error {
 	return nil
 }

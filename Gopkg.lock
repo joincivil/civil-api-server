@@ -323,8 +323,8 @@
   revision = "2a38a8f261f571af0c36cd95c3af48e5b5989428"
 
 [[projects]]
-  branch = "inna/358/user-data"
-  digest = "1:a4910783a8ad9068af6534e2c70470f6007a43eb330cdac2b934c699836dec51"
+  branch = "master"
+  digest = "1:f83b47243d14bdb639650ec20304d6670bfd66c27fca26fae361adeaed34237e"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -337,7 +337,7 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "755d74cb5bfdc69f44aa8283782c7dce60a9e20c"
+  revision = "adc5315abca95db4d3c430d271b6abd9a90171d9"
 
 [[projects]]
   branch = "master"

@@ -62,6 +62,11 @@ func (u *UserChallengeData) PollType() string {
 	return u.pollType
 }
 
+// SetPollType sets the poll type
+func (u *UserChallengeData) SetPollType(pollType string) {
+	u.pollType = pollType
+}
+
 // UserAddress is the address of this user
 func (u *UserChallengeData) UserAddress() common.Address {
 	return u.userAddress

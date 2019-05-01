@@ -33,12 +33,14 @@ const (
 // NewPlcrEventProcessor is a convenience function to init an EventProcessor
 func NewPlcrEventProcessor(client bind.ContractBackend, pollPersister model.PollPersister,
 	userChallengeDataPersister model.UserChallengeDataPersister,
-	challengePersister model.ChallengePersister) *PlcrEventProcessor {
+	challengePersister model.ChallengePersister,
+	appealPersister model.AppealPersister) *PlcrEventProcessor {
 	return &PlcrEventProcessor{
 		client:                     client,
 		pollPersister:              pollPersister,
 		challengePersister:         challengePersister,
 		userChallengeDataPersister: userChallengeDataPersister,
+		appealPersister:            appealPersister,
 	}
 }
 
@@ -49,6 +51,7 @@ type PlcrEventProcessor struct {
 	pollPersister              model.PollPersister
 	challengePersister         model.ChallengePersister
 	userChallengeDataPersister model.UserChallengeDataPersister
+	appealPersister            model.AppealPersister
 }
 
 func (p *PlcrEventProcessor) isValidPLCRContractEventName(name string) bool {
@@ -179,6 +182,16 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 			return err
 		}
 	}
+	var parentChallengeID *big.Int
+	if pollType == model.AppealChallengePollType {
+		// NOTE(IS): set parentchallengeid here from appeal table, but could add an additional field
+		// for parentchallengeID in challenge model
+		appeal, err := p.appealPersister.AppealByAppealChallengeID(int(pollID.Int64()))
+		if err != nil {
+			return err
+		}
+		parentChallengeID = appeal.OriginalChallengeID()
+	}
 
 	userChallengeData := model.NewUserChallengeData(
 		voterAddress.(common.Address),
@@ -189,6 +202,9 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 		pollType,
 		ctime.CurrentEpochSecsInInt64(),
 	)
+	if parentChallengeID != nil {
+		userChallengeData.SetParentChallengeID(parentChallengeID)
+	}
 	return p.userChallengeDataPersister.CreateUserChallengeData(userChallengeData)
 }
 

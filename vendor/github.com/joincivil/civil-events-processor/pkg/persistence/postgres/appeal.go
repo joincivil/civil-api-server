@@ -35,10 +35,11 @@ func CreateAppealTableQuery(tableName string) string {
 
 // CreateAppealTableIndicesQuery returns the query to create indices this table
 func CreateAppealTableIndicesQuery(tableName string) string {
-	// queryString := fmt.Sprintf(`
-	// `, tableName)
-	// return queryString
-	return ""
+	queryString := fmt.Sprintf(`
+		CREATE INDEX IF NOT EXISTS orig_challenge_id_idx ON %s (original_challenge_id);
+		CREATE INDEX IF NOT EXISTS appeal_challenge_id_idx ON %s (appeal_challenge_id);
+	`, tableName, tableName)
+	return queryString
 }
 
 // Appeal is model for appeal object

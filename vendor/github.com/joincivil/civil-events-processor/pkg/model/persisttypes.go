@@ -220,10 +220,10 @@ type PollPersister interface {
 type AppealPersister interface {
 	// AppealByChallengeID gets an appeal by challengeID
 	AppealByChallengeID(challengeID int) (*Appeal, error)
-	// AppealByAppealChallengeID gets an appeal by appealchallengeID
-	// AppealByAppealChallengeID(challengeID int) (*Appeal, error)
 	// AppealsByChallengeIDs returns a slice of appeals in order based on challenge IDs
 	AppealsByChallengeIDs(challengeIDs []int) ([]*Appeal, error)
+	// AppealByAppealChallengeID gets an appeal by appealchallengeID
+	AppealByAppealChallengeID(challengeID int) (*Appeal, error)
 	// CreateAppeal creates a new appeal
 	CreateAppeal(appeal *Appeal) error
 	// UpdateAppeal updates an appeal

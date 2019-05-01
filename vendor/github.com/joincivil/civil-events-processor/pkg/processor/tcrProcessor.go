@@ -772,6 +772,10 @@ func (t *TcrEventProcessor) newAppealChallenge(event *crawlermodel.Event,
 	existingAppeal.SetAppealChallengeID(appealChallengeID.(*big.Int))
 	updatedFields := []string{appealChallengeIDFieldName}
 	err = t.appealPersister.UpdateAppeal(existingAppeal, updatedFields)
+	if err != nil {
+		return errors.WithMessage(err, "error updating appeal")
+	}
+
 	return err
 }
 

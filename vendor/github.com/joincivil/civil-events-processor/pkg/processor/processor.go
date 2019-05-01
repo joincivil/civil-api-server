@@ -46,6 +46,7 @@ func NewEventProcessor(params *NewEventProcessorParams) *EventProcessor {
 		params.PollPersister,
 		params.UserChallengeDataPersister,
 		params.ChallengePersister,
+		params.AppealPersister,
 	)
 	newsroomEventProcessor := NewNewsroomEventProcessor(
 		params.Client,

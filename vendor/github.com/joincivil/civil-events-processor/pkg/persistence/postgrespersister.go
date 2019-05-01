@@ -297,10 +297,11 @@ func (p *PostgresPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.
 	return p.appealsByChallengeIDsInTableInOrder(challengeIDs, appealTableName)
 }
 
-// // AppealsByAppealChallengeIDs returns an appeal based on appealchallengeID
-// func (p *PostgresPersister) AppealsByAppealChallengeIDs(appealChallengeID int) (*model.Appeal, error) {
-// 	return p.appealByAppealChallengeIDInTable(appealChallengeID, appealTableName)
-// }
+// AppealByAppealChallengeID returns an appeal based on appealchallengeID
+func (p *PostgresPersister) AppealByAppealChallengeID(appealChallengeID int) (*model.Appeal, error) {
+	appealTableName := p.GetTableName(postgres.AppealTableBaseName)
+	return p.appealByAppealChallengeIDInTable(appealChallengeID, appealTableName)
+}
 
 // CreateAppeal creates a new appeal
 func (p *PostgresPersister) CreateAppeal(appeal *model.Appeal) error {
@@ -498,17 +499,16 @@ func (p *PostgresPersister) CreateIndices() error {
 	if err != nil {
 		return errors.Wrap(err, "error creating user_challenge_data table indices")
 	}
-
 	// indexQuery = postgres.CreatePollTableIndicesQuery(postgres.PollTableBaseName)
 	// _, err = p.db.Exec(indexQuery)
 	// if err != nil {
 	// 	return errors.Wrap(err, "Error creating poll table indices in postgres")
 	// }
-	// indexQuery = postgres.CreateAppealTableIndicesQuery(postgres.AppealTableBaseName)
-	// _, err = p.db.Exec(indexQuery)
-	// if err != nil {
-	// 	return errors.Wrap(err, "Error creating appeal table indices in postgres")
-	// }
+	indexQuery = postgres.CreateAppealTableIndicesQuery(p.GetTableName(postgres.AppealTableBaseName))
+	_, err = p.db.Exec(indexQuery)
+	if err != nil {
+		return errors.Wrap(err, "Error creating appeal table indices in postgres")
+	}
 	indexQuery = postgres.CreateTokenTransferTableIndicesQuery(p.GetTableName(postgres.TokenTransferTableBaseName))
 	_, err = p.db.Exec(indexQuery)
 	if err != nil {
@@ -777,7 +777,6 @@ func (p *PostgresPersister) createListingForTable(listing *model.Listing, tableN
 }
 
 func (p *PostgresPersister) updateListingInTable(listing *model.Listing, updatedFields []string, tableName string) error {
-	// Update the last updated timestamp
 	listing.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
 	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
 
@@ -1518,21 +1517,21 @@ func (p *PostgresPersister) appealsByChallengeIDsInTableInOrder(challengeIDs []i
 	return appeals, nil
 }
 
-// func (p *PostgresPersister) appealByAppealChallengeIDInTable(appealChallengeID int,
-// 	tableName string) (*model.Appeal, error) {
+func (p *PostgresPersister) appealByAppealChallengeIDInTable(appealChallengeID int,
+	tableName string) (*model.Appeal, error) {
 
-// 	appealData := []postgres.Appeal{}
-// 	queryString := p.appealByAppealChallengeIDQuery(tableName)
-// 	err := p.db.Select(&appealData, queryString, appealChallengeID)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("Error retrieving appeal from table: %v", err)
-// 	}
-// 	if len(appealData) == 0 {
-// 		return nil, cpersist.ErrPersisterNoResults
-// 	}
-// 	appeal := appealData[0].DbToAppealData()
-// 	return appeal, nil
-// }
+	appealData := []postgres.Appeal{}
+	queryString := p.appealByAppealChallengeIDQuery(tableName)
+	err := p.db.Select(&appealData, queryString, appealChallengeID)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving appeal from table: %v", err)
+	}
+	if len(appealData) == 0 {
+		return nil, cpersist.ErrPersisterNoResults
+	}
+	appeal := appealData[0].DbToAppealData()
+	return appeal, nil
+}
 
 func (p *PostgresPersister) appealsByChallengeIDsQuery(tableName string) string {
 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Appeal{}, false, "")
@@ -1540,11 +1539,11 @@ func (p *PostgresPersister) appealsByChallengeIDsQuery(tableName string) string 
 	return queryString
 }
 
-// func (p *PostgresPersister) appealByAppealChallengeIDQuery(tableName string) string {
-// 	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Appeal{}, false, "")
-// 	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE appeal_challenge_id=$1;", fieldNames, tableName) // nolint: gosec
-// 	return queryString
-// }
+func (p *PostgresPersister) appealByAppealChallengeIDQuery(tableName string) string {
+	fieldNames, _ := cpostgres.StructFieldsForQuery(postgres.Appeal{}, false, "")
+	queryString := fmt.Sprintf("SELECT %s FROM %s WHERE appeal_challenge_id=$1;", fieldNames, tableName) // nolint: gosec
+	return queryString
+}
 
 func (p *PostgresPersister) lastCronTimestampFromTable(tableName string) (int64, error) {
 	var timestampInt int64
@@ -1876,6 +1875,9 @@ func (p *PostgresPersister) userChallengeDataByCriteriaQuery(criteria *model.Use
 	if criteria.Count > 0 {
 		queryBuf.WriteString(" LIMIT :count") // nolint: gosec
 	}
+
+	// NOTE(IS): default ordering by pollID
+	queryBuf.WriteString(" ORDER BY poll_id") // nolint: gosec
 	return queryBuf.String(), nil
 }
 

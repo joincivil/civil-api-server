@@ -412,6 +412,16 @@ func (t *TestPersister) AppealByChallengeID(challengeID int) (*model.Appeal, err
 	return appeal, nil
 }
 
+// AppealByAppealChallengeID gets an appeal by appealChallengeID
+func (t *TestPersister) AppealByAppealChallengeID(challengeID int) (*model.Appeal, error) {
+	for _, appeal := range t.Appeals {
+		if int(appeal.OriginalChallengeID().Int64()) == challengeID {
+			return appeal, nil
+		}
+	}
+	return nil, cpersist.ErrPersisterNoResults
+}
+
 // AppealsByChallengeIDs returns a slice of appeals based on challenge IDs
 func (t *TestPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
 	results := []*model.Appeal{}

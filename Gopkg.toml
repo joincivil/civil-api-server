@@ -47,5 +47,5 @@ required = ["github.com/99designs/gqlgen"]
   name = "github.com/joincivil/go-common"
 
 [[constraint]]
-  branch = "inna/358/user-data"
+  branch = "master"
   name = "github.com/joincivil/civil-events-processor"
