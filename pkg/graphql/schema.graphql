@@ -133,6 +133,7 @@ type Mutation {
   nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
   nrsignupSaveTxHash(txHash: String!): String!
   nrsignupSaveAddress(address: String!): String!
+  nrsignupSaveNewsroomApplyTxHash(txHash: String!): String!
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
