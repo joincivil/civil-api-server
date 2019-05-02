@@ -4,6 +4,7 @@ package nrsignup_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -13,6 +14,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 
 	"github.com/joincivil/go-common/pkg/email"
+	ctime "github.com/joincivil/go-common/pkg/time"
 )
 
 const (
@@ -135,19 +137,20 @@ func buildJsonbService(t *testing.T) *jsonstore.Service {
 }
 
 func newTestNewsroomSignupService(t *testing.T, sendGridKey string) (
-	*nrsignup.Service, *jsonstore.Service, error) {
+	*nrsignup.Service, *jsonstore.Service, *users.UserService, error) {
 	jsonbService := buildJsonbService(t)
+	userService := buildUserService()
 	signupService, err := nrsignup.NewNewsroomSignupService(
 		nil,
 		email.NewEmailerWithSandbox(sendGridKey, useSandbox),
-		buildUserService(),
+		userService,
 		jsonbService,
 		auth.NewJwtTokenGenerator([]byte(testSecret)),
 		"http://localhost:8080",
 		"",
 		"",
 	)
-	return signupService, jsonbService, err
+	return signupService, jsonbService, userService, err
 }
 
 func getSendGridKeyFromEnvVar() string {
@@ -161,7 +164,7 @@ func TestSendWelcomeEmail(t *testing.T) {
 		return
 	}
 
-	signup, _, err := newTestNewsroomSignupService(t, sendGridKey)
+	signup, _, _, err := newTestNewsroomSignupService(t, sendGridKey)
 	if err != nil {
 		t.Fatalf("Error init signup service: err: %v", err)
 	}
@@ -179,7 +182,7 @@ func TestSendWelcomeEmailNoUser(t *testing.T) {
 		return
 	}
 
-	signup, _, err := newTestNewsroomSignupService(t, sendGridKey)
+	signup, _, _, err := newTestNewsroomSignupService(t, sendGridKey)
 	if err != nil {
 		t.Fatalf("Error init signup service: err: %v", err)
 	}
@@ -196,7 +199,7 @@ func TestRequestGrant(t *testing.T) {
 		return
 	}
 
-	signup, jsonbService, err := newTestNewsroomSignupService(t, sendGridKey)
+	signup, jsonbService, _, err := newTestNewsroomSignupService(t, sendGridKey)
 	if err != nil {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
@@ -243,7 +246,7 @@ func TestRequestGrantNoUser(t *testing.T) {
 		return
 	}
 
-	signup, _, err := newTestNewsroomSignupService(t, sendGridKey)
+	signup, _, _, err := newTestNewsroomSignupService(t, sendGridKey)
 	if err != nil {
 		t.Fatalf("Error init signup service: err: %v", err)
 	}
@@ -261,7 +264,7 @@ func TestApproveGrant(t *testing.T) {
 		return
 	}
 
-	signup, jsonbService, err := newTestNewsroomSignupService(t, sendGridKey)
+	signup, jsonbService, _, err := newTestNewsroomSignupService(t, sendGridKey)
 	if err != nil {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
@@ -313,7 +316,7 @@ func TestRejectGrant(t *testing.T) {
 		return
 	}
 
-	signup, jsonbService, err := newTestNewsroomSignupService(t, sendGridKey)
+	signup, jsonbService, _, err := newTestNewsroomSignupService(t, sendGridKey)
 	if err != nil {
 		t.Fatalf("Should have init signup service: err: %v", err)
 	}
@@ -355,5 +358,131 @@ func TestRejectGrant(t *testing.T) {
 
 	if !grantApprovedFieldFound {
 		t.Errorf("Should have found grantApproved field")
+	}
+}
+
+func TestUpdateCharter(t *testing.T) {
+	sendGridKey := getSendGridKeyFromEnvVar()
+	if sendGridKey == "" {
+		t.Log("No SENDGRID_TEST_KEY set, skipping test")
+		return
+	}
+
+	signup, _, _, err := newTestNewsroomSignupService(t, sendGridKey)
+	if err != nil {
+		t.Fatalf("Error init signup service: err: %v", err)
+	}
+
+	newName := "This is a new name"
+
+	testNewsroom := buildTestNewsroom()
+	updatedCharter := nrsignup.Charter{
+		Name:        newName,
+		LogoURL:     testNewsroom.Charter.LogoURL,
+		NewsroomURL: testNewsroom.Charter.NewsroomURL,
+		Tagline:     testNewsroom.Charter.Tagline,
+		Roster:      testNewsroom.Charter.Roster,
+		Signatures:  testNewsroom.Charter.Signatures,
+		Mission:     testNewsroom.Charter.Mission,
+		SocialURLs:  testNewsroom.Charter.SocialURLs,
+	}
+
+	err = signup.UpdateCharter("1", updatedCharter)
+	if err != nil {
+		t.Errorf("Error updating charter: %v", err)
+	}
+
+	data, err := signup.RetrieveUserJSONData("1")
+	if err != nil {
+		t.Errorf("Error retrieving json data: %v", err)
+	}
+
+	if data.Charter.Name != newName {
+		t.Errorf("Names should have matched with new name")
+	}
+}
+
+func TestUpdateUserSteps(t *testing.T) {
+	sendGridKey := getSendGridKeyFromEnvVar()
+	if sendGridKey == "" {
+		t.Log("No SENDGRID_TEST_KEY set, skipping test")
+		return
+	}
+
+	signup, _, _, err := newTestNewsroomSignupService(t, sendGridKey)
+	if err != nil {
+		t.Fatalf("Error init signup service: err: %v", err)
+	}
+
+	step := 3
+	furthestStep := 9
+	lastSeen := ctime.CurrentEpochSecsInInt()
+
+	err = signup.UpdateUserSteps("1", &step, &furthestStep, &lastSeen)
+	if err != nil {
+		t.Errorf("Should not have gotten error updating user steps: err: %v", err)
+	}
+
+	// XXX(PN): This needs to be fixed since our testutils persister doesn't
+	// copy objects, it is causing some pointer/same data issues
+	step = 13
+	furthestStep = 13
+	lastSeen = ctime.CurrentEpochSecsInInt()
+
+	err = signup.UpdateUserSteps("1", &step, &furthestStep, &lastSeen)
+	if err != nil {
+		t.Errorf("Should not have gotten error updating user steps: err: %v", err)
+	}
+}
+
+func TestSaveNewsroomAddress(t *testing.T) {
+	sendGridKey := getSendGridKeyFromEnvVar()
+	if sendGridKey == "" {
+		t.Log("No SENDGRID_TEST_KEY set, skipping test")
+		return
+	}
+
+	signup, _, userService, err := newTestNewsroomSignupService(t, sendGridKey)
+	if err != nil {
+		t.Fatalf("Error init signup service: err: %v", err)
+	}
+
+	newAddress := "0x02a8d60444d8aacc1b6c2fcefdca318af1cc5aed"
+
+	err = signup.SaveNewsroomAddress("1", newAddress)
+	if err != nil {
+		t.Errorf("Should not have returned error saving address: err: %v", err)
+	}
+
+	user, err := userService.MaybeGetUser(users.UserCriteria{
+		UID: "1",
+	})
+	if err != nil {
+		t.Errorf("Should not have returned retrieving user: err: %v", err)
+	}
+
+	if len(user.AssocNewsoomAddr) != 1 {
+		t.Errorf("Should have only returned 1 address")
+	}
+
+	found := false
+	for _, addr := range user.AssocNewsoomAddr {
+		if strings.ToLower(addr) == strings.ToLower(newAddress) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Should have added the listing address")
+	}
+
+	// Trying to save the same address
+	err = signup.SaveNewsroomAddress("1", newAddress)
+	if err != nil {
+		t.Errorf("Should not have returned error saving address: err: %v", err)
+	}
+	// Should remain 1 addr since it's the same
+	if len(user.AssocNewsoomAddr) != 1 {
+		t.Errorf("Should have only returned 1 address")
 	}
 }

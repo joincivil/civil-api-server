@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 
+	"github.com/joincivil/go-common/pkg/eth"
 	"github.com/joincivil/go-common/pkg/generated/contract"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -257,7 +259,7 @@ func (s *Service) UpdateUserSteps(newsroomOwnerUID string, step *int,
 
 	// If furthest step hasn't changed or is nil, don't do anything
 	if furthestStep == nil || (user != nil && user.NewsroomFurthestStep >= *furthestStep) {
-		return err
+		return nil
 	}
 
 	if *furthestStep == stepApplyComplete {
@@ -287,14 +289,55 @@ func (s *Service) SaveNewsroomDeployTxHash(newsroomOwnerUID string, txHash strin
 	return s.alterUserDataInJSONStore(newsroomOwnerUID, newsroomDeployTxHashUpdateFn)
 }
 
-// SaveNewsroomAddress saves the newsrooms address
+// SaveNewsroomAddress saves the newsrooms address to the newsroom signup data. It also
+// saves the address to the newsroom owners associated listings list.
 func (s *Service) SaveNewsroomAddress(newsroomOwnerUID string, address string) error {
 	newsroomAdressUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
 		d.NewsroomAddress = address
 		return d, nil
 	}
 
-	return s.alterUserDataInJSONStore(newsroomOwnerUID, newsroomAdressUpdateFn)
+	err := s.alterUserDataInJSONStore(newsroomOwnerUID, newsroomAdressUpdateFn)
+	if err != nil {
+		return err
+	}
+
+	// Save the newsroom address to the newsroomOwner associated listings
+	user, err := s.userService.MaybeGetUser(users.UserCriteria{
+		UID: newsroomOwnerUID,
+	})
+	if err != nil {
+		return err
+	}
+
+	address = eth.NormalizeEthAddress(address)
+
+	if user.AssocNewsoomAddr == nil {
+		user.AssocNewsoomAddr = []string{}
+	}
+
+	// Check to see if the user is already associated with the listing, if not
+	// add the association
+	addrExists := false
+	for _, assocAddress := range user.AssocNewsoomAddr {
+		if strings.ToLower(address) == strings.ToLower(assocAddress) {
+			addrExists = true
+			break
+		}
+	}
+
+	if !addrExists {
+		user.AssocNewsoomAddr = append(user.AssocNewsoomAddr, address)
+		input := &users.UserUpdateInput{
+			AssocNewsoomAddr: user.AssocNewsoomAddr,
+		}
+		_, err = s.userService.UpdateUser(newsroomOwnerUID, input)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // SaveNewsroomApplyTxHash saves the txHash for the newsrooms application transaction
