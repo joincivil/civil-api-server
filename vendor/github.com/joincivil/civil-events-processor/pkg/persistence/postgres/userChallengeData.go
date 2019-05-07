@@ -33,12 +33,14 @@ func CreateUserChallengeDataTableQuery(tableName string) string {
             did_collect_amount NUMERIC,
             is_voter_winner BOOL,
             poll_is_passed BOOL,
+            vote_committed_timestamp INT,
             salt NUMERIC,
             choice NUMERIC,
             num_tokens NUMERIC,
             voter_reward NUMERIC,
             poll_type TEXT,
             parent_challenge_id NUMERIC,
+            latest_vote BOOL,
             last_updated_timestamp INT
         );    
     `, tableName)
@@ -61,6 +63,7 @@ type UserChallengeData struct {
 	PollType          string  `db:"poll_type"`
 	UserAddress       string  `db:"user_address"`
 	UserDidCommit     bool    `db:"user_did_commit"`
+	VoteCommittedTs   int64   `db:"vote_committed_timestamp"`
 	UserDidReveal     bool    `db:"user_did_reveal"`
 	DidUserCollect    bool    `db:"did_user_collect"`
 	DidUserRescue     bool    `db:"did_user_rescue"`
@@ -72,6 +75,7 @@ type UserChallengeData struct {
 	NumTokens         float64 `db:"num_tokens"`
 	VoterReward       float64 `db:"voter_reward"`
 	ParentChallengeID uint64  `db:"parent_challenge_id"`
+	LatestVote        bool    `db:"latest_vote"`
 	LastUpdatedDateTs int64   `db:"last_updated_timestamp"`
 }
 
@@ -89,12 +93,15 @@ func NewUserChallengeData(userChallengeData *model.UserChallengeData) *UserChall
 
 	userChallengePgData.UserAddress = userChallengeData.UserAddress().Hex()
 
+	userChallengePgData.VoteCommittedTs = userChallengeData.VoteCommittedTs()
+
 	userChallengePgData.UserDidCommit = userChallengeData.UserDidCommit()
 	userChallengePgData.UserDidReveal = userChallengeData.UserDidReveal()
 	userChallengePgData.DidUserCollect = userChallengeData.DidUserCollect()
 	userChallengePgData.DidUserRescue = userChallengeData.DidUserRescue()
 	userChallengePgData.IsVoterWinner = userChallengeData.IsVoterWinner()
 	userChallengePgData.PollIsPassed = userChallengeData.PollIsPassed()
+	userChallengePgData.LatestVote = userChallengeData.LatestVote()
 
 	if userChallengeData.DidCollectAmount() != nil {
 		userChallengePgData.DidCollectAmount = numbers.BigIntToFloat64(userChallengeData.DidCollectAmount())
@@ -144,7 +151,7 @@ func (u *UserChallengeData) DbToUserChallengeData() *model.UserChallengeData {
 	userDidCommit := u.UserDidCommit
 	numTokens := numbers.Float64ToBigInt(u.NumTokens)
 	userChallengeData := model.NewUserChallengeData(userAddress, pollID, numTokens,
-		userDidCommit, pollRevealEndDate, u.PollType, u.LastUpdatedDateTs)
+		userDidCommit, pollRevealEndDate, u.PollType, u.VoteCommittedTs, u.LastUpdatedDateTs)
 	userChallengeData.SetDidUserCollect(u.DidUserCollect)
 	userChallengeData.SetUserDidReveal(u.UserDidReveal)
 	userChallengeData.SetDidCollectAmount(numbers.Float64ToBigInt(u.DidCollectAmount))
@@ -155,5 +162,6 @@ func (u *UserChallengeData) DbToUserChallengeData() *model.UserChallengeData {
 	userChallengeData.SetVoterReward(numbers.Float64ToBigInt(u.VoterReward))
 	userChallengeData.SetParentChallengeID(new(big.Int).SetUint64(u.ParentChallengeID))
 	userChallengeData.SetPollIsPassed(u.PollIsPassed)
+	userChallengeData.SetLatestVote(u.LatestVote)
 	return userChallengeData
 }

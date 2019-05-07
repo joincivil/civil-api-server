@@ -278,7 +278,9 @@ type UserChallengeDataPersister interface {
 	UserChallengeDataByCriteria(criteria *UserChallengeDataCriteria) ([]*UserChallengeData, error)
 	// UpdateUserChallengeData updates UserChallengeData in table.
 	// user=true updates for user + pollID, user=false updates for pollID
-	UpdateUserChallengeData(userChallengeData *UserChallengeData, updatedFields []string, updateWithUserAddress bool) error
+	// Since we save on all voteCommitted events, latestVote=True only updates the latest vote
+	UpdateUserChallengeData(userChallengeData *UserChallengeData, updatedFields []string,
+		updateWithUserAddress bool, latestVote bool) error
 	// Close shuts down the persister
 	Close() error
 }

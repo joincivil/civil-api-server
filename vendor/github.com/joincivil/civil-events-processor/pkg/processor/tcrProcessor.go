@@ -45,11 +45,10 @@ const (
 	appealGrantedFieldName               = "AppealGranted"
 	appealGrantedURIFieldName            = "AppealGrantedStatementURI"
 
-	didCollectFieldName     = "DidCollectAmount"
-	didUserCollectFieldName = "DidUserCollect"
-	voterRewardFieldName    = "VoterReward"
-
-	isPassedFieldName = "IsPassed"
+	didCollectAmountFieldName = "DidCollectAmount"
+	didUserCollectFieldName   = "DidUserCollect"
+	voterRewardFieldName      = "VoterReward"
+	isPassedFieldName         = "IsPassed"
 
 	challengeIDResetValue = 0
 )
@@ -472,16 +471,18 @@ func (t *TcrEventProcessor) processTCRRewardClaimed(event *crawlermodel.Event) e
 		return fmt.Errorf("Error getting userChallengedata to update, err: %v", err)
 	}
 
-	userChallengeData[0].SetDidUserCollect(true)
-	userChallengeData[0].SetDidCollectAmount(reward.(*big.Int))
-	// NOTE(IS): voterreward may have to be defined earlier?
-	userChallengeData[0].SetVoterReward(reward.(*big.Int))
+	// NOTE(IS): At this point, we should only have 1 userChallengeData object
+	existingUserChallengeData := userChallengeData[0]
 
-	updatedUserFields := []string{didUserCollectFieldName, didCollectFieldName, voterRewardFieldName}
+	existingUserChallengeData.SetDidUserCollect(true)
+	existingUserChallengeData.SetDidCollectAmount(reward.(*big.Int))
+
+	updatedUserFields := []string{didUserCollectFieldName, didCollectAmountFieldName}
 	updateWithUserAddress := true
+	latestVote := true
 
-	err = t.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData[0],
-		updatedUserFields, updateWithUserAddress)
+	err = t.userChallengeDataPersister.UpdateUserChallengeData(existingUserChallengeData,
+		updatedUserFields, updateWithUserAddress, latestVote)
 	if err != nil {
 		return fmt.Errorf("Error updating UserChallengeData, err: %v", err)
 	}
@@ -506,13 +507,14 @@ func (t *TcrEventProcessor) setPollIsPassed(pollID *big.Int, isPassed bool) erro
 	userChallengeData := &model.UserChallengeData{}
 	userChallengeData.SetPollIsPassed(true)
 	userChallengeData.SetPollID(pollID)
-	updatedFields = []string{userChallengeIsPassedFieldName, pollIDFieldName}
+	updatedFields = []string{userChallengeIsPassedFieldName}
 	updateWithUserAddress := false
+	latestVote := true
 
 	err = t.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
-		updateWithUserAddress)
+		updateWithUserAddress, latestVote)
 	if err != nil {
-		return fmt.Errorf("Error updating poll in persistence: %v", err)
+		return fmt.Errorf("Error updating userChallengeData in persistence: %v", err)
 	}
 	return nil
 }
@@ -560,6 +562,52 @@ func (t *TcrEventProcessor) processChallengeResolution(event *crawlermodel.Event
 	if err != nil {
 		return errors.WithMessagef(err, "error updating challenge %v", existingChallenge.ChallengeID())
 	}
+
+	// NOTE(IS): Update voterReward for each user involved in this challenge
+	return t.updateVoterRewards(challengeID, tcrAddress)
+}
+
+func (t *TcrEventProcessor) updateVoterRewards(pollID *big.Int, tcrAddress common.Address) error {
+	// NOTE(IS): Update userchallengedata with reward
+	// This is literally going to have to go through each user and update their reward
+	// Batch update of pollIsPassed values of userchallengedata in DB
+
+	tcrContract, err := contract.NewCivilTCRContract(tcrAddress, t.client)
+	if err != nil {
+		return errors.WithMessage(err, "error calling tcr contract to update voter rewards")
+	}
+
+	userChallengeDataVotes, err := t.userChallengeDataPersister.UserChallengeDataByCriteria(
+		&model.UserChallengeDataCriteria{
+			PollID: pollID.Uint64(),
+		},
+	)
+	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			log.Infof("No userChallengeData for %v", pollID)
+			return nil
+		}
+		return errors.WithMessage(err, "error getting userchallengedata")
+	}
+
+	for _, userChallengeData := range userChallengeDataVotes {
+		voter := userChallengeData.UserAddress()
+		salt := userChallengeData.Salt()
+		voterReward, err := tcrContract.VoterReward(&bind.CallOpts{}, voter, pollID, salt)
+		if err != nil {
+			return errors.WithMessage(err, "error getting voter reward")
+		}
+		userChallengeData.SetVoterReward(voterReward)
+		updatedFields := []string{voterRewardFieldName}
+		updateWithUserAddress := false
+		latestVote := true
+		err = t.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
+			updateWithUserAddress, latestVote)
+		if err != nil {
+			return errors.WithMessage(err, "error updating userChallengeData in persistence")
+		}
+	}
+
 	return nil
 }
 

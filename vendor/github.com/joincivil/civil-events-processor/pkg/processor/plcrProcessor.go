@@ -28,6 +28,7 @@ const (
 	choiceFieldName        = "Choice"
 	saltFieldName          = "Salt"
 	didUserRescueFieldName = "DidUserRescue"
+	latestVoteFieldName    = "LatestVote"
 )
 
 // NewPlcrEventProcessor is a convenience function to init an EventProcessor
@@ -154,6 +155,8 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 	voterAddress := payload["Voter"]
 	userDidCommit := true
 
+	voteCommittedTimestamp := event.Timestamp()
+
 	poll, err := p.pollPersister.PollByPollID(int(pollID.Int64()))
 	if err != nil {
 		// TOODO: We should do contract call and save to DB bc it should exist in DB
@@ -164,13 +167,13 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 
 	// NOTE: get poll type from challenge and set it in poll.
 	if pollType == "" {
-		challenge, err := p.challengePersister.ChallengeByChallengeID(int(pollID.Int64()))
-		if err != nil && err != cpersist.ErrPersisterNoResults {
-			return err
+		challenge, cErr := p.challengePersister.ChallengeByChallengeID(int(pollID.Int64()))
+		if cErr != nil && cErr != cpersist.ErrPersisterNoResults {
+			return cErr
 		}
 		// NOTE(IS): this will return errpersisternoresults upon gov param challenges
 		// Once processing gov contract, this will be fixed, for now manually add this
-		if err == cpersist.ErrPersisterNoResults {
+		if cErr == cpersist.ErrPersisterNoResults {
 			pollType = model.GovProposalPollType
 		} else {
 			pollType = challenge.ChallengeType()
@@ -186,11 +189,27 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 	if pollType == model.AppealChallengePollType {
 		// NOTE(IS): set parentchallengeid here from appeal table, but could add an additional field
 		// for parentchallengeID in challenge model
-		appeal, err := p.appealPersister.AppealByAppealChallengeID(int(pollID.Int64()))
-		if err != nil {
+		appeal, aErr := p.appealPersister.AppealByAppealChallengeID(int(pollID.Int64()))
+		if aErr != nil {
 			return err
 		}
 		parentChallengeID = appeal.OriginalChallengeID()
+	}
+
+	// NOTE(IS): update existed committed votes to false
+	existingUserChallengeData := &model.UserChallengeData{}
+	existingUserChallengeData.SetLatestVote(false)
+	existingUserChallengeData.SetPollID(pollID)
+	existingUserChallengeData.SetUserAddress(voterAddress.(common.Address))
+	updatedFields := []string{latestVoteFieldName}
+	// NOTE(IS): This is false because we want to update all existing fields.
+	latestVote := false
+	updateWithUserAddress := true
+
+	err = p.userChallengeDataPersister.UpdateUserChallengeData(existingUserChallengeData,
+		updatedFields, updateWithUserAddress, latestVote)
+	if err != nil {
+		return err
 	}
 
 	userChallengeData := model.NewUserChallengeData(
@@ -200,11 +219,13 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 		userDidCommit,
 		poll.RevealEndDate(),
 		pollType,
+		voteCommittedTimestamp,
 		ctime.CurrentEpochSecsInInt64(),
 	)
 	if parentChallengeID != nil {
 		userChallengeData.SetParentChallengeID(parentChallengeID)
 	}
+	userChallengeData.SetLatestVote(true)
 	return p.userChallengeDataPersister.CreateUserChallengeData(userChallengeData)
 }
 
@@ -271,14 +292,16 @@ func (p *PlcrEventProcessor) processVoteRevealed(event *crawlermodel.Event,
 	didReveal := true
 
 	// NOTE: At this point, userChallengeData can only be length 1
-	userChallengeData[0].SetUserDidReveal(didReveal)
-	userChallengeData[0].SetSalt(salt.(*big.Int))
-	userChallengeData[0].SetChoice(choice.(*big.Int))
+	existingUserChallengeData := userChallengeData[0]
+	existingUserChallengeData.SetUserDidReveal(didReveal)
+	existingUserChallengeData.SetSalt(salt.(*big.Int))
+	existingUserChallengeData.SetChoice(choice.(*big.Int))
 
 	updatedUserFields := []string{didUserRevealFieldName, saltFieldName, choiceFieldName}
 	updateWithUserAddress := true
-	err = p.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData[0],
-		updatedUserFields, updateWithUserAddress)
+	latestVote := true
+	err = p.userChallengeDataPersister.UpdateUserChallengeData(existingUserChallengeData,
+		updatedUserFields, updateWithUserAddress, latestVote)
 	if err != nil {
 		return fmt.Errorf("Error updating UserChallengeData, err: %v", err)
 	}
@@ -306,11 +329,14 @@ func (p *PlcrEventProcessor) processTokensRescued(event *crawlermodel.Event,
 		return fmt.Errorf("Error getting userChallengedata to update, err: %v", err)
 	}
 
+	// NOTE: At this point, userChallengeData can only be length 1
+	existingUserChallengeData := userChallengeData[0]
 	updatedUserFields := []string{didUserRescueFieldName}
 	updateWithUserAddress := true
-	// NOTE: At this point, userChallengeData can only be length 1
-	err = p.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData[0],
-		updatedUserFields, updateWithUserAddress)
+	latestVote := true
+
+	err = p.userChallengeDataPersister.UpdateUserChallengeData(existingUserChallengeData,
+		updatedUserFields, updateWithUserAddress, latestVote)
 	if err != nil {
 		return fmt.Errorf("Error updating UserChallengeData, err: %v", err)
 	}
