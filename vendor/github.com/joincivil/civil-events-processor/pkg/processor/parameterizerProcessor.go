@@ -26,7 +26,6 @@ const (
 	proposalAcceptedFieldName      = "Accepted"
 	proposalExpiredFieldName       = "Expired"
 	userChallengeIsPassedFieldName = "PollIsPassed"
-	pollIDFieldName                = "PollID"
 )
 
 // NewParameterizerEventProcessor is a convenience function to init a parameterizer processor
@@ -394,11 +393,12 @@ func (p *ParameterizerEventProcessor) setPollIsPassed(pollID *big.Int, isPassed 
 	userChallengeData := &model.UserChallengeData{}
 	userChallengeData.SetPollIsPassed(true)
 	userChallengeData.SetPollID(pollID)
-	updatedFields = []string{userChallengeIsPassedFieldName, pollIDFieldName}
+	updatedFields = []string{userChallengeIsPassedFieldName}
 	updateWithUserAddress := false
+	latestVote := true
 
 	err = p.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
-		updateWithUserAddress)
+		updateWithUserAddress, latestVote)
 	if err != nil {
 		return fmt.Errorf("Error updating poll in persistence: %v", err)
 	}

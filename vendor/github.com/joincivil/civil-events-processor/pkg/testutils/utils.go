@@ -599,14 +599,35 @@ func (t *TestPersister) UserChallengeDataByCriteria(criteria *model.UserChalleng
 
 // UpdateUserChallengeData updates UserChallengeData in table
 func (t *TestPersister) UpdateUserChallengeData(userChallengeData *model.UserChallengeData,
-	updatedFields []string, updateWithUserAddress bool) error {
+	updatedFields []string, updateWithUserAddress bool, latestVote bool) error {
 	pollID := int(userChallengeData.PollID().Int64())
 	if updateWithUserAddress {
 		address := userChallengeData.UserAddress().Hex()
+		if t.UserChallengeData == nil {
+			t.UserChallengeData = map[int]map[string]*model.UserChallengeData{}
+		}
 		if t.UserChallengeData[pollID] == nil {
 			t.UserChallengeData[pollID] = map[string]*model.UserChallengeData{}
+			return nil
 		}
-		t.UserChallengeData[pollID][address] = userChallengeData
+		if t.UserChallengeData[pollID][address] == nil {
+			return nil
+		}
+		for _, field := range updatedFields {
+			switch field {
+			case "PollIsPassed":
+				t.UserChallengeData[pollID][address].SetPollIsPassed(userChallengeData.PollIsPassed())
+			case "LatestVote":
+				t.UserChallengeData[pollID][address].SetLatestVote(userChallengeData.LatestVote())
+			case "DidUserCollect":
+				t.UserChallengeData[pollID][address].SetDidUserCollect(userChallengeData.DidUserCollect())
+			case "DidCollectAmount":
+				t.UserChallengeData[pollID][address].SetDidCollectAmount(userChallengeData.DidCollectAmount())
+			case "VoterReward":
+				t.UserChallengeData[pollID][address].SetVoterReward(userChallengeData.VoterReward())
+			}
+
+		}
 	} else {
 		// NOTE(IS): should go through update fields in updatedfields,
 		// but assuming the only usecase is to update pollispassed

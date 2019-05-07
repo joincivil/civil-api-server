@@ -9,7 +9,7 @@ import (
 // NewUserChallengeData creates a new userChallengeData
 func NewUserChallengeData(address common.Address, pollID *big.Int,
 	numTokens *big.Int, userDidCommit bool, pollRevealEndDate *big.Int,
-	pollType string, lastUpdatedDateTs int64) *UserChallengeData {
+	pollType string, voteCommittedTs int64, lastUpdatedDateTs int64) *UserChallengeData {
 	return &UserChallengeData{
 		pollID:            pollID,
 		userAddress:       address,
@@ -17,6 +17,7 @@ func NewUserChallengeData(address common.Address, pollID *big.Int,
 		userDidCommit:     userDidCommit,
 		pollRevealEndDate: pollRevealEndDate,
 		pollType:          pollType,
+		voteCommittedTs:   voteCommittedTs,
 		lastUpdatedDateTs: lastUpdatedDateTs,
 	}
 }
@@ -28,6 +29,7 @@ type UserChallengeData struct {
 	pollType          string
 	userAddress       common.Address
 	userDidCommit     bool
+	voteCommittedTs   int64
 	userDidReveal     bool
 	didUserCollect    bool
 	didUserRescue     bool
@@ -39,6 +41,7 @@ type UserChallengeData struct {
 	numTokens         *big.Int
 	voterReward       *big.Int
 	parentChallengeID *big.Int
+	latestVote        bool
 	lastUpdatedDateTs int64
 }
 
@@ -72,9 +75,19 @@ func (u *UserChallengeData) UserAddress() common.Address {
 	return u.userAddress
 }
 
+// SetUserAddress sets the address of this user
+func (u *UserChallengeData) SetUserAddress(address common.Address) {
+	u.userAddress = address
+}
+
 // UserDidCommit is whether this user committed a vote
 func (u *UserChallengeData) UserDidCommit() bool {
 	return u.userDidCommit
+}
+
+// VoteCommittedTs is the timestamp the user committed a vote
+func (u *UserChallengeData) VoteCommittedTs() int64 {
+	return u.voteCommittedTs
 }
 
 // UserDidReveal is whether this user revealed a vote
@@ -185,6 +198,16 @@ func (u *UserChallengeData) ParentChallengeID() *big.Int {
 // SetParentChallengeID sets the parent challenge ID if this is a vote for appeal challenge
 func (u *UserChallengeData) SetParentChallengeID(pChallengeID *big.Int) {
 	u.parentChallengeID = pChallengeID
+}
+
+// LatestVote returns true if this was the latest vote commit for user/poll, else false
+func (u *UserChallengeData) LatestVote() bool {
+	return u.latestVote
+}
+
+// SetLatestVote sets the latest vote flag
+func (u *UserChallengeData) SetLatestVote(latestVote bool) {
+	u.latestVote = latestVote
 }
 
 // LastUpdatedDateTs returns the ts of last update

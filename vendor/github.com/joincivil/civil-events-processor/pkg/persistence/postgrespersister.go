@@ -410,10 +410,10 @@ func (p *PostgresPersister) UserChallengeDataByCriteria(
 // UpdateUserChallengeData updates UserChallengeData in table
 // user=true updates for user + pollID, user=false updates for pollID
 func (p *PostgresPersister) UpdateUserChallengeData(userChallengeData *model.UserChallengeData,
-	updatedFields []string, updateWithUserAddress bool) error {
+	updatedFields []string, updateWithUserAddress bool, latestVote bool) error {
 	userChallengeDataTableName := p.GetTableName(postgres.UserChallengeDataTableBaseName)
 	return p.updateUserChallengeDataInTable(userChallengeData, updatedFields, updateWithUserAddress,
-		userChallengeDataTableName)
+		latestVote, userChallengeDataTableName)
 }
 
 // CreateTables creates the tables for processor if they don't exist
@@ -1823,10 +1823,12 @@ func (p *PostgresPersister) userChallengeDataByCriteriaFromTable(criteria *model
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving listings from table: %v", err)
 	}
+
 	if len(dbUserChalls) == 0 {
 		return nil, cpersist.ErrPersisterNoResults
 	}
 	userChalls := make([]*model.UserChallengeData, len(dbUserChalls))
+
 	for index, dbUserChall := range dbUserChalls {
 		modelUserChall := dbUserChall.DbToUserChallengeData()
 		userChalls[index] = modelUserChall
@@ -1865,8 +1867,12 @@ func (p *PostgresPersister) userChallengeDataByCriteriaQuery(criteria *model.Use
 	} else if criteria.CanUserCollect {
 		p.addWhereAnd(queryBuf)
 		queryBuf.WriteString(` ((u.poll_is_passed = true AND u.choice = 1) OR (u.poll_is_passed = false AND u.choice = 0))
-		AND (u.did_user_collect = false) `) // nolint: gosec
+		AND (u.did_user_collect = false)`) // nolint: gosec
 	}
+
+	// NOTE(IS): We always only return latest votes
+	p.addWhereAnd(queryBuf)
+	queryBuf.WriteString(` u.latest_vote = true`) //nolint: gosec
 
 	if criteria.Offset > 0 {
 		queryBuf.WriteString(" OFFSET :offset") // nolint: gosec
@@ -1877,15 +1883,16 @@ func (p *PostgresPersister) userChallengeDataByCriteriaQuery(criteria *model.Use
 	}
 
 	// NOTE(IS): default ordering by pollID
-	queryBuf.WriteString(" ORDER BY poll_id") // nolint: gosec
+	queryBuf.WriteString(" ORDER BY u.poll_id") // nolint: gosec
 	return queryBuf.String(), nil
 }
 
 func (p *PostgresPersister) updateUserChallengeDataInTable(userChallengeData *model.UserChallengeData,
-	updatedFields []string, updateWithUserAddress bool, tableName string) error {
+	updatedFields []string, updateWithUserAddress bool, latestVote bool, tableName string) error {
 	userChallengeData.SetLastUpdatedDateTs(ctime.CurrentEpochSecsInInt64())
 	updatedFields = append(updatedFields, lastUpdatedDateDBModelName)
-	queryString, err := p.updateUserChallengeDataQuery(updatedFields, tableName, updateWithUserAddress)
+	queryString, err := p.updateUserChallengeDataQuery(updatedFields, tableName,
+		updateWithUserAddress, latestVote)
 	if err != nil {
 		return fmt.Errorf("Error creating query string for update: %v ", err)
 	}
@@ -1898,17 +1905,19 @@ func (p *PostgresPersister) updateUserChallengeDataInTable(userChallengeData *mo
 }
 
 func (p *PostgresPersister) updateUserChallengeDataQuery(updatedFields []string,
-	tableName string, updateWithUserAddress bool) (string, error) {
+	tableName string, updateWithUserAddress bool, latestVote bool) (string, error) {
 	queryString, err := p.updateDBQueryBuffer(updatedFields, tableName, postgres.UserChallengeData{})
 	if err != nil {
 		return "", err
 	}
 	if updateWithUserAddress {
-		queryString.WriteString(" WHERE user_address=:user_address AND poll_id=:poll_id;") // nolint: gosec
+		queryString.WriteString(" WHERE user_address=:user_address AND poll_id=:poll_id") // nolint: gosec
 	} else {
-		queryString.WriteString(" WHERE poll_id=:poll_id;") // nolint: gosec
+		queryString.WriteString(" WHERE poll_id=:poll_id") // nolint: gosec
 	}
-
+	if latestVote {
+		queryString.WriteString(" AND latest_vote=true;") //nolint: gosec
+	}
 	return queryString.String(), nil
 }
 
