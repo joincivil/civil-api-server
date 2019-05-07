@@ -14,7 +14,7 @@ func buildService() *users.UserService {
 	initUsers := map[string]*users.User{
 		"1": {UID: "1", Email: "foo@bar.com"},
 	}
-	persister := &testutils.InMemoryUserPersister{Users: initUsers}
+	persister := &testutils.InMemoryUserPersister{UsersInMemory: initUsers}
 
 	return users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 }
@@ -88,10 +88,7 @@ func TestUpdateUser(t *testing.T) {
 	svc := buildService()
 
 	update := &users.UserUpdateInput{
-		QuizStatus:        "test",
-		OnfidoApplicantID: "test",
-		OnfidoCheckID:     "test",
-		KycStatus:         "test",
+		QuizStatus: "test",
 	}
 	user, err := svc.UpdateUser("1", update)
 
@@ -125,7 +122,7 @@ func TestQuizComplete(t *testing.T) {
 		"2": {UID: "2", Email: "alice@bar.com"},
 		"3": {UID: "3", Email: "bob@bar.com", EthAddress: common.HexToAddress("0x001").String()},
 	}
-	persister := &testutils.InMemoryUserPersister{Users: initUsers}
+	persister := &testutils.InMemoryUserPersister{UsersInMemory: initUsers}
 	updater := &testutils.ControllerUpdaterSpy{}
 	svc := users.NewUserService(persister, updater)
 
