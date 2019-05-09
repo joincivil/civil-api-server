@@ -310,7 +310,7 @@ type UserChallengeVoteData {
   salt: Int!
   choice: Int!
   numTokens: String!
-  voterReward: Int!
+  voterReward: String!
   parentChallengeID: Int!
 }
 

@@ -398,8 +398,8 @@ func (u *userChallengeDataResolver) Choice(ctx context.Context, obj *model.UserC
 func (u *userChallengeDataResolver) NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error) {
 	return obj.NumTokens().String(), nil
 }
-func (u *userChallengeDataResolver) VoterReward(ctx context.Context, obj *model.UserChallengeData) (int, error) {
-	return int(obj.VoterReward().Int64()), nil
+func (u *userChallengeDataResolver) VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+	return obj.VoterReward().String(), nil
 }
 func (u *userChallengeDataResolver) ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.ParentChallengeID().Int64()), nil
