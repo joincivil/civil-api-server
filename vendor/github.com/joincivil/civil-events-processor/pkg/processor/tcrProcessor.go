@@ -49,6 +49,7 @@ const (
 	didUserCollectFieldName   = "DidUserCollect"
 	voterRewardFieldName      = "VoterReward"
 	isPassedFieldName         = "IsPassed"
+	isVoterWinnerFieldName    = "IsVoterWinner"
 
 	challengeIDResetValue = 0
 )
@@ -372,7 +373,8 @@ func (t *TcrEventProcessor) processTCRChallengeFailed(event *crawlermodel.Event,
 		return err
 	}
 
-	err = t.setPollIsPassed(challengeID, true)
+	pollIsPassed := true
+	err = t.setPollIsPassedInPoll(challengeID, pollIsPassed)
 	if err != nil {
 		return errors.WithMessage(err, "Error setting poll isPassed")
 	}
@@ -399,7 +401,7 @@ func (t *TcrEventProcessor) processTCRChallengeFailed(event *crawlermodel.Event,
 		return errors.WithMessage(err, "error updating listing")
 	}
 
-	return t.processChallengeResolution(event, tcrAddress, listingAddress)
+	return t.processChallengeResolution(event, tcrAddress, listingAddress, pollIsPassed)
 }
 
 func (t *TcrEventProcessor) processTCRChallengeSucceeded(event *crawlermodel.Event,
@@ -410,7 +412,8 @@ func (t *TcrEventProcessor) processTCRChallengeSucceeded(event *crawlermodel.Eve
 		return err
 	}
 
-	err = t.setPollIsPassed(challengeID, false)
+	pollIsPassed := false
+	err = t.setPollIsPassedInPoll(challengeID, pollIsPassed)
 	if err != nil {
 		return err
 	}
@@ -420,7 +423,8 @@ func (t *TcrEventProcessor) processTCRChallengeSucceeded(event *crawlermodel.Eve
 	if err != nil {
 		return errors.WithMessage(err, "error updating listing")
 	}
-	return t.processChallengeResolution(event, tcrAddress, listingAddress)
+
+	return t.processChallengeResolution(event, tcrAddress, listingAddress, pollIsPassed)
 }
 
 func (t *TcrEventProcessor) processTCRRewardClaimed(event *crawlermodel.Event) error {
@@ -489,7 +493,7 @@ func (t *TcrEventProcessor) processTCRRewardClaimed(event *crawlermodel.Event) e
 	return nil
 }
 
-func (t *TcrEventProcessor) setPollIsPassed(pollID *big.Int, isPassed bool) error {
+func (t *TcrEventProcessor) setPollIsPassedInPoll(pollID *big.Int, isPassed bool) error {
 	poll, err := t.pollPersister.PollByPollID(int(pollID.Int64()))
 	if err != nil {
 		return err
@@ -502,25 +506,11 @@ func (t *TcrEventProcessor) setPollIsPassed(pollID *big.Int, isPassed bool) erro
 	if err != nil {
 		return fmt.Errorf("Error updating poll in persistence: %v", err)
 	}
-
-	// Batch update of pollIsPassed values of userchallengedata in DB
-	userChallengeData := &model.UserChallengeData{}
-	userChallengeData.SetPollIsPassed(true)
-	userChallengeData.SetPollID(pollID)
-	updatedFields = []string{userChallengeIsPassedFieldName}
-	updateWithUserAddress := false
-	latestVote := true
-
-	err = t.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
-		updateWithUserAddress, latestVote)
-	if err != nil {
-		return fmt.Errorf("Error updating userChallengeData in persistence: %v", err)
-	}
 	return nil
 }
 
 func (t *TcrEventProcessor) processChallengeResolution(event *crawlermodel.Event,
-	tcrAddress common.Address, listingAddress common.Address) error {
+	tcrAddress common.Address, listingAddress common.Address, pollIsPassed bool) error {
 	payload := event.EventPayload()
 	resolved := true
 	challengeID, err := t.challengeIDFromEvent(event)
@@ -563,14 +553,13 @@ func (t *TcrEventProcessor) processChallengeResolution(event *crawlermodel.Event
 		return errors.WithMessagef(err, "error updating challenge %v", existingChallenge.ChallengeID())
 	}
 
-	// NOTE(IS): Update voterReward for each user involved in this challenge
-	return t.updateVoterRewards(challengeID, tcrAddress)
+	// NOTE(IS): update UserChallengeData related fields
+	return t.updateUserChallengeDataForChallengeRes(challengeID, tcrAddress, pollIsPassed)
 }
 
-func (t *TcrEventProcessor) updateVoterRewards(pollID *big.Int, tcrAddress common.Address) error {
-	// NOTE(IS): Update userchallengedata with reward
-	// This is literally going to have to go through each user and update their reward
-	// Batch update of pollIsPassed values of userchallengedata in DB
+func (t *TcrEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.Int,
+	tcrAddress common.Address, pollIsPassed bool) error {
+	// NOTE(IS): We need to go through each user individually to update their reward
 
 	tcrContract, err := contract.NewCivilTCRContract(tcrAddress, t.client)
 	if err != nil {
@@ -582,6 +571,7 @@ func (t *TcrEventProcessor) updateVoterRewards(pollID *big.Int, tcrAddress commo
 			PollID: pollID.Uint64(),
 		},
 	)
+
 	if err != nil {
 		if err == cpersist.ErrPersisterNoResults {
 			log.Infof("No userChallengeData for %v", pollID)
@@ -595,16 +585,27 @@ func (t *TcrEventProcessor) updateVoterRewards(pollID *big.Int, tcrAddress commo
 		salt := userChallengeData.Salt()
 		voterReward, err := tcrContract.VoterReward(&bind.CallOpts{}, voter, pollID, salt)
 		if err != nil {
-			return errors.WithMessage(err, "error getting voter reward")
+			log.Errorf("Error getting voter reward %v", err)
 		}
+		var isVoterWinner bool
+		if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
+			(!pollIsPassed && userChallengeData.Choice().Int64() == 0) {
+			isVoterWinner = true
+		} else {
+			isVoterWinner = false
+		}
+
 		userChallengeData.SetVoterReward(voterReward)
-		updatedFields := []string{voterRewardFieldName}
+		userChallengeData.SetPollIsPassed(pollIsPassed)
+		userChallengeData.SetIsVoterWinner(isVoterWinner)
+		updatedFields := []string{voterRewardFieldName, userChallengeIsPassedFieldName,
+			isVoterWinnerFieldName}
 		updateWithUserAddress := false
 		latestVote := true
 		err = t.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
 			updateWithUserAddress, latestVote)
 		if err != nil {
-			return errors.WithMessage(err, "error updating userChallengeData in persistence")
+			log.Errorf("Error updating poll in persistence: %v", err)
 		}
 	}
 
@@ -667,11 +668,13 @@ func (t *TcrEventProcessor) processTCRAppealGranted(event *crawlermodel.Event,
 
 func (t *TcrEventProcessor) processTCRFailedChallengeOverturned(event *crawlermodel.Event,
 	listingAddress common.Address, tcrAddress common.Address) error {
+
 	err := t.updateListingWithLastGovState(listingAddress, tcrAddress,
 		model.GovernanceStateFailedChallengeOverturned)
 	if err != nil {
 		return err
 	}
+
 	return t.updateChallengeWithOverturnedData(event, tcrAddress, listingAddress, false)
 }
 
@@ -682,6 +685,7 @@ func (t *TcrEventProcessor) processTCRSuccessfulChallengeOverturned(event *crawl
 	if err != nil {
 		return err
 	}
+
 	existingListing, err := t.getExistingListing(tcrAddress, listingAddress)
 	if err != nil {
 		return err
@@ -714,22 +718,62 @@ func (t *TcrEventProcessor) processTCRGrantedAppealChallenged(event *crawlermode
 
 func (t *TcrEventProcessor) processTCRGrantedAppealOverturned(event *crawlermodel.Event,
 	listingAddress common.Address, tcrAddress common.Address) error {
+	eventPayload := event.EventPayload()
+	aChallengeID, ok := eventPayload["AppealChallengeID"]
+	if !ok {
+		return errors.New("Error getting appealChallengeID from event payload")
+	}
+
 	// NOTE(IS): in sol files, Appeal: overturned = TRUE, we don't have an overturned field.
 	err := t.updateListingWithLastGovState(listingAddress, tcrAddress,
 		model.GovernanceStateGrantedAppealOverturned)
 	if err != nil {
 		return err
 	}
+
+	// update pollispassedinpoll
+	pollIsPassed := true
+	err = t.setPollIsPassedInPoll(aChallengeID.(*big.Int), pollIsPassed)
+	if err != nil {
+		return err
+	}
+
+	// update userchallengedata here
+	err = t.updateUserChallengeDataForChallengeRes(aChallengeID.(*big.Int), tcrAddress, pollIsPassed)
+	if err != nil {
+		return err
+	}
+
 	return t.updateChallengeWithOverturnedData(event, tcrAddress, listingAddress, true)
 }
 
 func (t *TcrEventProcessor) processTCRGrantedAppealConfirmed(event *crawlermodel.Event,
 	listingAddress common.Address, tcrAddress common.Address) error {
+	eventPayload := event.EventPayload()
+	aChallengeID, ok := eventPayload["AppealChallengeID"]
+	if !ok {
+		return errors.New("Error getting appealChallengeID from event payload")
+	}
+
 	err := t.updateListingWithLastGovState(listingAddress, tcrAddress,
 		model.GovernanceStateGrantedAppealConfirmed)
 	if err != nil {
 		return err
 	}
+
+	// update pollispassedinpoll
+	pollIsPassed := false
+	err = t.setPollIsPassedInPoll(aChallengeID.(*big.Int), pollIsPassed)
+	if err != nil {
+		return err
+	}
+
+	// update userchallengedata here
+	err = t.updateUserChallengeDataForChallengeRes(aChallengeID.(*big.Int), tcrAddress, pollIsPassed)
+	if err != nil {
+		return err
+	}
+
 	return t.updateChallengeWithOverturnedData(event, tcrAddress, listingAddress, true)
 }
 

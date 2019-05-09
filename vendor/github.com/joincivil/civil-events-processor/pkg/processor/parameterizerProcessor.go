@@ -161,24 +161,28 @@ func (p *ParameterizerEventProcessor) processParameterizerChallenge(event *crawl
 
 func (p *ParameterizerEventProcessor) processChallengeFailed(event *crawlermodel.Event,
 	challengeID *big.Int) error {
-	err := p.setPollIsPassed(challengeID, true)
+
+	pollIsPassed := true
+	err := p.setPollIsPassedInPoll(challengeID, pollIsPassed)
 	if err != nil {
 		return fmt.Errorf("Error setting isPassed field in poll, err: %v", err)
 	}
-	return p.processChallengeResolution(event, challengeID)
+	return p.processChallengeResolution(event, challengeID, pollIsPassed)
 }
 
 func (p *ParameterizerEventProcessor) processChallengeSucceeded(event *crawlermodel.Event,
 	challengeID *big.Int) error {
-	err := p.setPollIsPassed(challengeID, false)
+
+	pollIsPassed := false
+	err := p.setPollIsPassedInPoll(challengeID, pollIsPassed)
 	if err != nil {
 		return fmt.Errorf("Error setting isPassed field in poll, err: %v", err)
 	}
-	return p.processChallengeResolution(event, challengeID)
+	return p.processChallengeResolution(event, challengeID, pollIsPassed)
 }
 
 func (p *ParameterizerEventProcessor) processChallengeResolution(event *crawlermodel.Event,
-	challengeID *big.Int) error {
+	challengeID *big.Int, pollIsPassed bool) error {
 	payload := event.EventPayload()
 	resolved := true
 	totalTokens, ok := payload["TotalTokens"]
@@ -201,6 +205,59 @@ func (p *ParameterizerEventProcessor) processChallengeResolution(event *crawlerm
 		return fmt.Errorf("Error updating challenge %v, err: %v", existingChallenge.ChallengeID(), err)
 	}
 
+	return p.updateUserChallengeDataForChallengeRes(challengeID, pAddress, pollIsPassed)
+}
+
+func (p *ParameterizerEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.Int,
+	pAddress common.Address, pollIsPassed bool) error {
+
+	paramContract, err := contract.NewParameterizerContract(pAddress, p.client)
+	if err != nil {
+		return fmt.Errorf("Error calling parameterizer contract: %v", err)
+	}
+
+	userChallengeDataVotes, err := p.userChallengeDataPersister.UserChallengeDataByCriteria(
+		&model.UserChallengeDataCriteria{
+			PollID: pollID.Uint64(),
+		},
+	)
+
+	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			log.Infof("No userChallengeData for %v", pollID)
+			return nil
+		}
+		return fmt.Errorf("Error getting userchallengedata %v", err)
+	}
+
+	for _, userChallengeData := range userChallengeDataVotes {
+		voter := userChallengeData.UserAddress()
+		salt := userChallengeData.Salt()
+		voterReward, err := paramContract.VoterReward(&bind.CallOpts{}, voter, pollID, salt)
+		if err != nil {
+			log.Errorf("Error getting voter reward %v", err)
+		}
+		var isVoterWinner bool
+		if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
+			(!pollIsPassed && userChallengeData.Choice().Int64() == 0) {
+			isVoterWinner = true
+		} else {
+			isVoterWinner = false
+		}
+		userChallengeData.SetVoterReward(voterReward)
+		userChallengeData.SetIsVoterWinner(isVoterWinner)
+		userChallengeData.SetPollIsPassed(pollIsPassed)
+		updatedFields := []string{voterRewardFieldName, userChallengeIsPassedFieldName,
+			isVoterWinnerFieldName}
+		updateWithUserAddress := false
+		latestVote := true
+
+		err = p.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
+			updateWithUserAddress, latestVote)
+		if err != nil {
+			log.Errorf("Error updating poll in persistence: %v", err)
+		}
+	}
 	return nil
 }
 
@@ -375,7 +432,7 @@ func (p *ParameterizerEventProcessor) newChallenge(pAddress common.Address,
 	return challenge, err
 }
 
-func (p *ParameterizerEventProcessor) setPollIsPassed(pollID *big.Int, isPassed bool) error {
+func (p *ParameterizerEventProcessor) setPollIsPassedInPoll(pollID *big.Int, isPassed bool) error {
 	poll, err := p.pollPersister.PollByPollID(int(pollID.Int64()))
 	if err != nil {
 		return fmt.Errorf("Error getting poll from persistence: %v", err)
@@ -385,20 +442,6 @@ func (p *ParameterizerEventProcessor) setPollIsPassed(pollID *big.Int, isPassed 
 	updatedFields := []string{isPassedFieldName}
 
 	err = p.pollPersister.UpdatePoll(poll, updatedFields)
-	if err != nil {
-		return fmt.Errorf("Error updating poll in persistence: %v", err)
-	}
-
-	// Batch update of pollIsPassed values of userchallengedata in DB
-	userChallengeData := &model.UserChallengeData{}
-	userChallengeData.SetPollIsPassed(true)
-	userChallengeData.SetPollID(pollID)
-	updatedFields = []string{userChallengeIsPassedFieldName}
-	updateWithUserAddress := false
-	latestVote := true
-
-	err = p.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
-		updateWithUserAddress, latestVote)
 	if err != nil {
 		return fmt.Errorf("Error updating poll in persistence: %v", err)
 	}

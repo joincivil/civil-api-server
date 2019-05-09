@@ -46,8 +46,6 @@ required = ["github.com/99designs/gqlgen"]
   branch = "master"
   name = "github.com/joincivil/go-common"
 
-# [[constraint]]
-# TODO: Update this back to master
-[[override]]
-  branch = "png/CIVIL-660/revisions-by-ids"
+[[constraint]]
+  branch = "master"
   name = "github.com/joincivil/civil-events-processor"

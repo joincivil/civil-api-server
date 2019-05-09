@@ -892,7 +892,6 @@ func (p *PostgresPersister) contentRevisionsByCriteriaFromTable(criteria *model.
 	tableName string) ([]*model.ContentRevision, error) {
 	dbContRevs := []postgres.ContentRevision{}
 	queryString := p.contentRevisionsByCriteriaQuery(criteria, tableName)
-	log.Infof("query = %v", queryString)
 
 	nstmt, err := p.db.PrepareNamed(queryString)
 	if err != nil {
