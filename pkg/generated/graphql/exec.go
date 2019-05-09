@@ -486,7 +486,7 @@ type UserChallengeVoteDataResolver interface {
 	Salt(ctx context.Context, obj *model.UserChallengeData) (int, error)
 	Choice(ctx context.Context, obj *model.UserChallengeData) (int, error)
 	NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error)
-	VoterReward(ctx context.Context, obj *model.UserChallengeData) (int, error)
+	VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error)
 	ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error)
 }
 
@@ -11545,10 +11545,10 @@ func (ec *executionContext) _UserChallengeVoteData_voterReward(ctx context.Conte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalInt(res)
+	return graphql.MarshalString(res)
 }
 
 // nolint: vetshadow
@@ -13858,7 +13858,7 @@ type UserChallengeVoteData {
   salt: Int!
   choice: Int!
   numTokens: String!
-  voterReward: Int!
+  voterReward: String!
   parentChallengeID: Int!
 }
 
