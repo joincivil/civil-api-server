@@ -42,10 +42,12 @@ required = ["github.com/99designs/gqlgen"]
   branch = "master"
   name = "github.com/ethereum/go-ethereum"
 
-[[constraint]]  
+[[constraint]]
   branch = "master"
   name = "github.com/joincivil/go-common"
 
-[[constraint]]
-  branch = "master"
+# [[constraint]]
+# TODO: Update this back to master
+[[override]]
+  branch = "png/CIVIL-660/revisions-by-ids"
   name = "github.com/joincivil/civil-events-processor"

@@ -323,8 +323,8 @@
   revision = "2a38a8f261f571af0c36cd95c3af48e5b5989428"
 
 [[projects]]
-  branch = "master"
-  digest = "1:696500f8f572d09d55814bf42320812e7d536dc7f46b9292cae360807ba4885c"
+  branch = "png/CIVIL-660/revisions-by-ids"
+  digest = "1:6e1a06340d24560685e9fbf9b0f13b6029a39d6ac9e7e3a3f8d3dd26c40e6b17"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -337,7 +337,7 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "50b7d8dec8c7e6e9aa86499b3f01bcbf34ac0013"
+  revision = "d8087b882d01821158f85cadc1f1501db55fcfc2"
 
 [[projects]]
   branch = "master"

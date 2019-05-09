@@ -281,7 +281,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Articles                  func(childComplexity int, addr *string, first *int, after *string, lowercaseAddr *bool) int
+		Articles                  func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
 		GovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
 		GovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
@@ -292,7 +292,7 @@ type ComplexityRoot struct {
 		TcrGovernanceEventsTxHash func(childComplexity int, txHash string, lowercaseAddr *bool) int
 		TcrListing                func(childComplexity int, addr string, lowercaseAddr *bool) int
 		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, lowercaseAddr *bool) int
+		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		NrsignupNewsroom          func(childComplexity int) int
 		UserChallengeData         func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
 		CurrentUser               func(childComplexity int) int
@@ -449,7 +449,7 @@ type PollResolver interface {
 	VotesAgainst(ctx context.Context, obj *model.Poll) (string, error)
 }
 type QueryResolver interface {
-	Articles(ctx context.Context, addr *string, first *int, after *string, lowercaseAddr *bool) ([]model.ContentRevision, error)
+	Articles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	Challenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
 	GovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
@@ -460,7 +460,7 @@ type QueryResolver interface {
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
-	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, lowercaseAddr *bool) ([]model.ContentRevision, error)
+	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
@@ -966,12 +966,12 @@ func field_Query_articles_args(rawArgs map[string]interface{}) (map[string]inter
 		}
 	}
 	args["after"] = arg2
-	var arg3 *bool
-	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+	var arg3 *int
+	if tmp, ok := rawArgs["contentID"]; ok {
 		var err error
-		var ptr1 bool
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg3 = &ptr1
 		}
 
@@ -979,7 +979,35 @@ func field_Query_articles_args(rawArgs map[string]interface{}) (map[string]inter
 			return nil, err
 		}
 	}
-	args["lowercaseAddr"] = arg3
+	args["contentID"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["revisionID"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["revisionID"] = arg4
+	var arg5 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg5 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg5
 	return args, nil
 
 }
@@ -1618,12 +1646,12 @@ func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[stri
 		}
 	}
 	args["after"] = arg2
-	var arg3 *bool
-	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+	var arg3 *int
+	if tmp, ok := rawArgs["contentID"]; ok {
 		var err error
-		var ptr1 bool
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg3 = &ptr1
 		}
 
@@ -1631,7 +1659,35 @@ func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[stri
 			return nil, err
 		}
 	}
-	args["lowercaseAddr"] = arg3
+	args["contentID"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["revisionID"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["revisionID"] = arg4
+	var arg5 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg5 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg5
 	return args, nil
 
 }
@@ -3004,7 +3060,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Articles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.Articles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.challenge":
 		if e.complexity.Query.Challenge == nil {
@@ -3136,7 +3192,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NewsroomArticles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.NewsroomArticles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.nrsignupNewsroom":
 		if e.complexity.Query.NrsignupNewsroom == nil {
@@ -9574,7 +9630,7 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Articles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().Articles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -10114,7 +10170,7 @@ func (ec *executionContext) _Query_newsroomArticles(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NewsroomArticles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().NewsroomArticles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -13561,6 +13617,8 @@ type Query {
     addr: String
     first: Int
     after: String
+    contentID: Int
+    revisionID: Int
     lowercaseAddr: Boolean = True
   ): [ContentRevision!]!
   challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
@@ -13619,6 +13677,8 @@ type Query {
     addr: String
     first: Int
     after: String
+    contentID: Int
+    revisionID: Int
     lowercaseAddr: Boolean = True
   ): [ContentRevision!]!
   nrsignupNewsroom: NrsignupNewsroom
