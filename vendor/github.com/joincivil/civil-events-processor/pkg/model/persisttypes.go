@@ -111,6 +111,8 @@ type ListingPersister interface {
 // query.
 type ContentRevisionCriteria struct {
 	ListingAddress string `db:"listing_address"`
+	ContentID      *int64 `db:"content_id"`
+	RevisionID     *int64 `db:"revision_id"`
 	Offset         int    `db:"offset"`
 	Count          int    `db:"count"`
 	LatestOnly     bool   `db:"latest_only"`

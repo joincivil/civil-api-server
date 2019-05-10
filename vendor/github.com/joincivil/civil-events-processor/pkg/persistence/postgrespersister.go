@@ -68,6 +68,9 @@ type PostgresPersister struct {
 
 // GetTableName formats tabletype with version of this persister to return the table name
 func (p *PostgresPersister) GetTableName(tableType string) string {
+	if p.version == nil || *p.version == "" {
+		return tableType
+	}
 	return fmt.Sprintf("%s_%s", tableType, *p.version)
 }
 
@@ -337,6 +340,10 @@ func (p *PostgresPersister) CreateTokenTransfer(purchase *model.TokenTransfer) e
 
 // SaveVersion saves the version for this persistence
 func (p *PostgresPersister) SaveVersion(versionNumber *string) error {
+	if versionNumber == nil || *versionNumber == "" {
+		return nil
+	}
+
 	err := p.saveVersionToTable(crawlerPostgres.VersionTableName, versionNumber)
 	if err != nil {
 		return err
@@ -350,23 +357,35 @@ func (p *PostgresPersister) PersisterVersion() (*string, error) {
 	return p.persisterVersionFromTable(crawlerPostgres.VersionTableName)
 }
 
-// InitProcessorVersion inits this persistence version to versionNumber if specified, else gets version from db
+// InitProcessorVersion inits this persistence version to versionNumber if specified,
+// else gets version from db
 func (p *PostgresPersister) InitProcessorVersion(versionNumber *string) error {
 	currentVersion, err := p.PersisterVersion()
-	if err != nil && versionNumber == nil {
-		if err == cpersist.ErrPersisterNoResults {
-			return fmt.Errorf("No version in version table, specify a version: err %v", err)
-		}
+	if err != nil && err != cpersist.ErrPersisterNoResults {
 		return err
 	}
-	if currentVersion != versionNumber {
-		err := p.SaveVersion(versionNumber)
-		if err != nil {
-			return err
-		}
+
+	// If no version found anywhere, don't use versioned tables
+	if (currentVersion == nil || *currentVersion == "") && (versionNumber == nil || *versionNumber == "") {
+		log.Infof("No version found, not using versioned tables")
+		return nil
 	}
+
+	// If the incoming version is the same as the currentVersion, don't do anything
+	if currentVersion != nil && versionNumber != nil && *currentVersion == *versionNumber {
+		log.Infof("Using data version: %v", *versionNumber)
+		return nil
+	}
+
+	// If version does not exist, but currentVersion does, use currentVersion
+	if currentVersion != nil && (versionNumber == nil || *versionNumber == "") {
+		// NOTE(IS): Use existing version, but update timestamp
+		versionNumber = currentVersion
+	}
+
+	log.Infof("Updated data version: %v", *versionNumber)
 	p.version = versionNumber
-	return nil
+	return p.SaveVersion(versionNumber)
 }
 
 // CreateParameterProposal creates a new parameter proposal
@@ -900,7 +919,8 @@ func (p *PostgresPersister) contentRevisionsByCriteriaQuery(criteria *model.Cont
 	queryBuf.WriteString(" r1 ")     // nolint: gosec
 
 	if criteria.ListingAddress != "" {
-		queryBuf.WriteString(" WHERE r1.listing_address = :listing_address") // nolint: gosec
+		p.addWhereAnd(queryBuf)
+		queryBuf.WriteString(" r1.listing_address = :listing_address") // nolint: gosec
 	}
 	if criteria.LatestOnly {
 		p.addWhereAnd(queryBuf)
@@ -910,6 +930,16 @@ func (p *PostgresPersister) contentRevisionsByCriteriaQuery(criteria *model.Cont
 		queryBuf.WriteString(" r2 WHERE r1.listing_address = r2.listing_address AND") // nolint: gosec
 		queryBuf.WriteString(" r1.contract_content_id = r2.contract_content_id)")     // nolint: gosec
 	} else {
+		// If addr and contentID are passed, only retrieve revisions for that content ID
+		if criteria.ListingAddress != "" && criteria.ContentID != nil {
+			p.addWhereAnd(queryBuf)
+			queryBuf.WriteString(" r1.contract_content_id = :content_id") // nolint: gosec
+			// Retrieve a specific revision
+			if criteria.RevisionID != nil {
+				p.addWhereAnd(queryBuf)
+				queryBuf.WriteString(" r1.contract_revision_id = :revision_id") // nolint: gosec
+			}
+		}
 		if criteria.FromTs > 0 {
 			p.addWhereAnd(queryBuf)
 			queryBuf.WriteString(" r1.revision_timestamp > :fromts") // nolint: gosec

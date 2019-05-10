@@ -44,7 +44,7 @@ func (r *contentRevisionResolver) ContractContentID(ctx context.Context, obj *mo
 	return int(bigInt.Int64()), nil
 }
 func (r *contentRevisionResolver) ContractRevisionID(ctx context.Context, obj *model.ContentRevision) (int, error) {
-	bigInt := obj.ContractContentID()
+	bigInt := obj.ContractRevisionID()
 	return int(bigInt.Int64()), nil
 }
 func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.ContentRevision) (int, error) {
@@ -54,13 +54,13 @@ func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.C
 // QUERIES
 
 func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
-	after *string, lowercaseAddr *bool) ([]model.ContentRevision, error) {
+	after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
-	return r.NewsroomArticles(ctx, addr, first, after, lowercaseAddr)
+	return r.NewsroomArticles(ctx, addr, first, after, contentID, revisionID, lowercaseAddr)
 }
 
 func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, first *int,
-	after *string, lowercaseAddr *bool) ([]model.ContentRevision, error) {
+	after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	criteria := &model.ContentRevisionCriteria{
 		LatestOnly: true,
@@ -77,6 +77,15 @@ func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, firs
 	}
 	if first != nil {
 		criteria.Count = *first
+	}
+	if contentID != nil {
+		criteria.LatestOnly = false
+		cid := int64(*contentID)
+		criteria.ContentID = &cid
+		if revisionID != nil {
+			rid := int64(*revisionID)
+			criteria.RevisionID = &rid
+		}
 	}
 
 	revisions, err := r.revisionPersister.ContentRevisionsByCriteria(criteria)
