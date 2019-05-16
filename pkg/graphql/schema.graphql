@@ -308,7 +308,7 @@ type UserChallengeVoteData {
   userDidReveal: Boolean!
   didUserCollect: Boolean!
   didUserRescue: Boolean!
-  didCollectAmount: Int!
+  didCollectAmount: String!
   isVoterWinner: Boolean!
   pollIsPassed: Boolean!
   salt: Int!
