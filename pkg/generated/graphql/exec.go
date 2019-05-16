@@ -481,7 +481,7 @@ type UserChallengeVoteDataResolver interface {
 
 	UserAddress(ctx context.Context, obj *model.UserChallengeData) (string, error)
 
-	DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (int, error)
+	DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (string, error)
 
 	Salt(ctx context.Context, obj *model.UserChallengeData) (int, error)
 	Choice(ctx context.Context, obj *model.UserChallengeData) (int, error)
@@ -11439,10 +11439,10 @@ func (ec *executionContext) _UserChallengeVoteData_didCollectAmount(ctx context.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalInt(res)
+	return graphql.MarshalString(res)
 }
 
 // nolint: vetshadow
@@ -13912,7 +13912,7 @@ type UserChallengeVoteData {
   userDidReveal: Boolean!
   didUserCollect: Boolean!
   didUserRescue: Boolean!
-  didCollectAmount: Int!
+  didCollectAmount: String!
   isVoterWinner: Boolean!
   pollIsPassed: Boolean!
   salt: Int!

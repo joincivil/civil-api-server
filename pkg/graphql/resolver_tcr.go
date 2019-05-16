@@ -386,8 +386,8 @@ func (u *userChallengeDataResolver) PollRevealDate(ctx context.Context, obj *mod
 func (u *userChallengeDataResolver) UserAddress(ctx context.Context, obj *model.UserChallengeData) (string, error) {
 	return obj.UserAddress().Hex(), nil
 }
-func (u *userChallengeDataResolver) DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (int, error) {
-	return int(obj.DidCollectAmount().Int64()), nil
+func (u *userChallengeDataResolver) DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+	return obj.DidCollectAmount().String(), nil
 }
 func (u *userChallengeDataResolver) Salt(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.Salt().Int64()), nil
