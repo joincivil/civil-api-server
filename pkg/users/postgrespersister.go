@@ -257,6 +257,7 @@ func CreateUserTableQuery(tableName string) string {
 func CreateUserTableMigrationQuery(tableName string) string {
 	// ALTER TABLE %s ALTER COLUMN purchase_txhashes TYPE TEXT[] USING ARRAY[purchase_txhashes];
 	// ALTER TABLE %s ALTER COLUMN purchase_txhashes SET DEFAULT ARRAY[]::TEXT[];
+	// ALTER TABLE %s DROP COLUMN IF EXISTS newsroom_data;
 	queryString := fmt.Sprintf(`
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS app_refer TEXT DEFAULT '';
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_step INT DEFAULT 0;
@@ -266,9 +267,8 @@ func CreateUserTableMigrationQuery(tableName string) string {
 		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_applicant_id;
 		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_check_id;
 		ALTER TABLE %s DROP COLUMN IF EXISTS kyc_status;
-		ALTER TABLE %s DROP COLUMN IF EXISTS newsroom_data;
 	`, tableName, tableName, tableName, tableName, tableName, tableName,
-		tableName, tableName, tableName)
+		tableName, tableName)
 	return queryString
 }
 
