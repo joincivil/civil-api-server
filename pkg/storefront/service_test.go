@@ -32,7 +32,7 @@ func buildUserService(emailAddress string) *users.UserService {
 	initUsers := map[string]*users.User{
 		"1234": {UID: "1234", Email: emailAddress},
 	}
-	persister := &testutils.InMemoryUserPersister{Users: initUsers}
+	persister := &testutils.InMemoryUserPersister{UsersInMemory: initUsers}
 
 	return users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 }
@@ -62,15 +62,15 @@ func TestPurchaseTransactionComplete(t *testing.T) {
 		t.Fatalf("Should not have gotten error getting user: err: %v", err)
 	}
 
-	if user.PurchaseTxHashesStr == "" {
+	if user.PurchaseTxHashes == nil || len(user.PurchaseTxHashes) == 0 {
 		t.Fatal("Should have set the tx hashes string")
 	}
 
-	if len(user.PurchaseTxHashes()) <= 0 {
+	if len(user.PurchaseTxHashes) <= 0 {
 		t.Fatal("Should have set the tx hashes string")
 	}
 
-	if user.PurchaseTxHashes()[0] != testTxHash {
+	if user.PurchaseTxHashes[0] != testTxHash {
 		t.Fatal("Should have set the tx hashes string to the one given")
 	}
 }

@@ -6,10 +6,21 @@ import (
 	"math/big"
 )
 
+const (
+	// ChallengePollType is the name for regular challenge type
+	ChallengePollType = "CHALLENGE"
+	// AppealChallengePollType is the name for appeal challenge type
+	AppealChallengePollType = "APPEAL_CHALLENGE"
+	// ParamProposalPollType is the name for param proposal challenge type
+	ParamProposalPollType = "PARAMETER_PROPOSAL_CHALLENGE"
+	// GovProposalPollType is the name for gov param proposal challenge type
+	GovProposalPollType = "GOVT_PARAMETER_PROPOSAL"
+)
+
 // NewChallenge is a convenience function to initialize a new Challenge struct
 func NewChallenge(challengeID *big.Int, listingAddress common.Address, statement string, rewardPool *big.Int,
 	challenger common.Address, resolved bool, stake *big.Int, totalTokens *big.Int,
-	requestAppealExpiry *big.Int, lastUpdatedDateTs int64) *Challenge {
+	requestAppealExpiry *big.Int, challengeType string, lastUpdatedDateTs int64) *Challenge {
 	return &Challenge{
 		challengeID:         challengeID,
 		listingAddress:      listingAddress,
@@ -20,6 +31,7 @@ func NewChallenge(challengeID *big.Int, listingAddress common.Address, statement
 		stake:               stake,
 		totalTokens:         totalTokens,
 		requestAppealExpiry: requestAppealExpiry,
+		challengeType:       challengeType,
 		lastUpdatedDateTs:   lastUpdatedDateTs,
 	}
 }
@@ -43,6 +55,8 @@ type Challenge struct {
 	totalTokens *big.Int
 
 	requestAppealExpiry *big.Int
+
+	challengeType string
 
 	lastUpdatedDateTs int64
 }
@@ -110,6 +124,11 @@ func (c *Challenge) SetTotalTokens(totalTokens *big.Int) {
 // RequestAppealExpiry returns the requestAppealExpiry from challenge
 func (c *Challenge) RequestAppealExpiry() *big.Int {
 	return c.requestAppealExpiry
+}
+
+// ChallengeType returns the type of challenge this is
+func (c *Challenge) ChallengeType() string {
+	return c.challengeType
 }
 
 // LastUpdatedDateTs returns the ts of last update

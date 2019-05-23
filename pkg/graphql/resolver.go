@@ -39,55 +39,58 @@ var (
 
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
-	AuthService        *auth.Service
-	ListingPersister   pmodel.ListingPersister
-	GovEventPersister  pmodel.GovernanceEventPersister
-	RevisionPersister  pmodel.ContentRevisionPersister
-	ChallengePersister pmodel.ChallengePersister
-	AppealPersister    pmodel.AppealPersister
-	PollPersister      pmodel.PollPersister
-	UserService        *users.UserService
-	JSONbService       *jsonstore.Service
-	NrsignupService    *nrsignup.Service
-	StorefrontService  *storefront.Service
-	EmailListMembers   cemail.ListMemberManager
-	LowercaseAddr      *bool
+	AuthService                *auth.Service
+	ListingPersister           pmodel.ListingPersister
+	GovEventPersister          pmodel.GovernanceEventPersister
+	RevisionPersister          pmodel.ContentRevisionPersister
+	ChallengePersister         pmodel.ChallengePersister
+	AppealPersister            pmodel.AppealPersister
+	PollPersister              pmodel.PollPersister
+	UserChallengeDataPersister pmodel.UserChallengeDataPersister
+	UserService                *users.UserService
+	JSONbService               *jsonstore.Service
+	NrsignupService            *nrsignup.Service
+	StorefrontService          *storefront.Service
+	EmailListMembers           cemail.ListMemberManager
+	LowercaseAddr              *bool
 }
 
 // NewResolver is a convenience function to init a Resolver struct
 func NewResolver(config *ResolverConfig) *Resolver {
 	return &Resolver{
-		authService:        config.AuthService,
-		listingPersister:   config.ListingPersister,
-		revisionPersister:  config.RevisionPersister,
-		govEventPersister:  config.GovEventPersister,
-		challengePersister: config.ChallengePersister,
-		appealPersister:    config.AppealPersister,
-		pollPersister:      config.PollPersister,
-		userService:        config.UserService,
-		jsonbService:       config.JSONbService,
-		nrsignupService:    config.NrsignupService,
-		storefrontService:  config.StorefrontService,
-		emailListMembers:   config.EmailListMembers,
-		lowercaseAddr:      config.LowercaseAddr,
+		authService:                config.AuthService,
+		listingPersister:           config.ListingPersister,
+		revisionPersister:          config.RevisionPersister,
+		govEventPersister:          config.GovEventPersister,
+		challengePersister:         config.ChallengePersister,
+		appealPersister:            config.AppealPersister,
+		pollPersister:              config.PollPersister,
+		userChallengeDataPersister: config.UserChallengeDataPersister,
+		userService:                config.UserService,
+		jsonbService:               config.JSONbService,
+		nrsignupService:            config.NrsignupService,
+		storefrontService:          config.StorefrontService,
+		emailListMembers:           config.EmailListMembers,
+		lowercaseAddr:              config.LowercaseAddr,
 	}
 }
 
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
-	authService        *auth.Service
-	listingPersister   pmodel.ListingPersister
-	revisionPersister  pmodel.ContentRevisionPersister
-	govEventPersister  pmodel.GovernanceEventPersister
-	challengePersister pmodel.ChallengePersister
-	appealPersister    pmodel.AppealPersister
-	pollPersister      pmodel.PollPersister
-	userService        *users.UserService
-	jsonbService       *jsonstore.Service
-	nrsignupService    *nrsignup.Service
-	storefrontService  *storefront.Service
-	emailListMembers   cemail.ListMemberManager
-	lowercaseAddr      *bool
+	authService                *auth.Service
+	listingPersister           pmodel.ListingPersister
+	revisionPersister          pmodel.ContentRevisionPersister
+	govEventPersister          pmodel.GovernanceEventPersister
+	challengePersister         pmodel.ChallengePersister
+	appealPersister            pmodel.AppealPersister
+	pollPersister              pmodel.PollPersister
+	userChallengeDataPersister pmodel.UserChallengeDataPersister
+	userService                *users.UserService
+	jsonbService               *jsonstore.Service
+	nrsignupService            *nrsignup.Service
+	storefrontService          *storefront.Service
+	emailListMembers           cemail.ListMemberManager
+	lowercaseAddr              *bool
 }
 
 // Query is the resolver for the Query type

@@ -2,7 +2,8 @@ package users
 
 import (
 	"errors"
-	"strings"
+
+	"github.com/lib/pq"
 
 	"github.com/ethereum/go-ethereum/common"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
@@ -22,23 +23,28 @@ const (
 
 // User represents a Civil User
 type User struct {
-	UID                   string                 `db:"uid"`
-	Email                 string                 `db:"email"`
-	EthAddress            string                 `db:"eth_address"`
-	OnfidoApplicantID     string                 `db:"onfido_applicant_id"`
-	OnfidoCheckID         string                 `db:"onfido_check_id"`
-	KycStatus             string                 `db:"kyc_status"`
-	QuizPayload           cpostgres.JsonbPayload `db:"quiz_payload"`
-	QuizStatus            string                 `db:"quiz_status"`
-	NewsroomData          cpostgres.JsonbPayload `db:"newsroom_data"`
-	DateCreated           int64                  `db:"date_created"`
-	DateUpdated           int64                  `db:"date_updated"`
-	PurchaseTxHashesStr   string                 `db:"purchase_txhashes"` // Comma separated
-	CivilianWhitelistTxID string                 `db:"civilian_whitelist_tx_id"`
-	AppReferral           string                 `db:"app_refer"`
-	NewsroomStep          int                    `db:"nr_step"`
-	NewsroomFurthestStep  int                    `db:"nr_far_step"`
-	NewsroomLastSeen      int64                  `db:"nr_last_seen"`
+	UID                  string                 `db:"uid"`
+	Email                string                 `db:"email"`
+	EthAddress           string                 `db:"eth_address"`
+	QuizPayload          cpostgres.JsonbPayload `db:"quiz_payload"`
+	QuizStatus           string                 `db:"quiz_status"`
+	DateCreated          int64                  `db:"date_created"`
+	DateUpdated          int64                  `db:"date_updated"`
+	AppReferral          string                 `db:"app_refer"`
+	NewsroomStep         int                    `db:"nr_step"`
+	NewsroomFurthestStep int                    `db:"nr_far_step"`
+	NewsroomLastSeen     int64                  `db:"nr_last_seen"`
+
+	// PurchaseTxHashes is a list of txhashes of all the token purchases for
+	// this user
+	PurchaseTxHashes pq.StringArray `db:"purchase_txhashes"`
+
+	// CivilianWhitelistTxID is the txHash of the whitelisted transaction
+	// which unlocks the user's tokens
+	CivilianWhitelistTxID string `db:"civilian_whitelist_tx_id"`
+
+	// AssocNewsroomAddr is a list of newsroom addresses of which the user is associated
+	AssocNewsoomAddr pq.StringArray `db:"assoc_nr_addr"`
 }
 
 // TokenControllerUpdater describes methods that the user service will use to manage the whitelists a user is a member of
@@ -57,27 +63,5 @@ func (u *User) GenerateUID() error {
 		return err
 	}
 	u.UID = code.String()
-	return nil
-}
-
-// PurchaseTxHashes returns a slice of txhashes of token purchases made by the user
-// Converts in the internal comma separated string into a slice.
-func (u *User) PurchaseTxHashes() []string {
-	if u.PurchaseTxHashesStr == "" {
-		return []string{}
-	}
-	hashes := strings.Split(u.PurchaseTxHashesStr, ",")
-	cleanHashes := make([]string, len(hashes))
-	for ind, hash := range hashes {
-		cleanHashes[ind] = strings.TrimSpace(hash)
-	}
-	return cleanHashes
-}
-
-// AddPurchaseTxHash adds a txHash to the list of purchase tx hashes for a user.
-func (u *User) AddPurchaseTxHash(txHash string) error {
-	hashes := u.PurchaseTxHashes()
-	hashes = append(hashes, strings.TrimSpace(txHash))
-	u.PurchaseTxHashesStr = strings.Join(hashes, ",")
 	return nil
 }

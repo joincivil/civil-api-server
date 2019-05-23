@@ -21,7 +21,6 @@ const (
 
 // ProcessorConfig is the master config for the processor derived from environment
 // variables.
-// TODO(IS): change these configs. cronconfig is not required
 type ProcessorConfig struct {
 	CronConfig string `envconfig:"cron_config" desc:"Cron config string * * * * *"`
 	EthAPIURL  string `envconfig:"eth_api_url" required:"true" desc:"Ethereum API address"`
@@ -39,6 +38,8 @@ type ProcessorConfig struct {
 	PersisterPostgresDbname  string                `split_words:"true" desc:"If persister type is Postgresql, sets the database name"`
 	PersisterPostgresUser    string                `split_words:"true" desc:"If persister type is Postgresql, sets the database user"`
 	PersisterPostgresPw      string                `split_words:"true" desc:"If persister type is Postgresql, sets the database password"`
+
+	VersionNumber string `split_words:"true" desc:"Sets the version to use for Postgres tables"`
 
 	SentryDsn string `split_words:"true" desc:"Sets the Sentry DSN"`
 	SentryEnv string `split_words:"true" desc:"Sets the Sentry environment"`

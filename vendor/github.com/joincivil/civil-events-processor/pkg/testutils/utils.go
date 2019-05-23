@@ -26,6 +26,7 @@ type TestPersister struct {
 	TokenTransfers       map[string][]*model.TokenTransfer
 	TokenTransfersTxHash map[string][]*model.TokenTransfer
 	ParameterProposal    map[[32]byte]*model.ParameterProposal
+	UserChallengeData    map[int]map[string]*model.UserChallengeData
 	Timestamp            int64
 	EventHashes          []string
 }
@@ -411,6 +412,16 @@ func (t *TestPersister) AppealByChallengeID(challengeID int) (*model.Appeal, err
 	return appeal, nil
 }
 
+// AppealByAppealChallengeID gets an appeal by appealChallengeID
+func (t *TestPersister) AppealByAppealChallengeID(challengeID int) (*model.Appeal, error) {
+	for _, appeal := range t.Appeals {
+		if int(appeal.OriginalChallengeID().Int64()) == challengeID {
+			return appeal, nil
+		}
+	}
+	return nil, cpersist.ErrPersisterNoResults
+}
+
 // AppealsByChallengeIDs returns a slice of appeals based on challenge IDs
 func (t *TestPersister) AppealsByChallengeIDs(challengeIDs []int) ([]*model.Appeal, error) {
 	results := []*model.Appeal{}
@@ -556,7 +567,79 @@ func (t *TestPersister) UpdateParamProposal(paramProposal *model.ParameterPropos
 	propID := paramProposal.PropID()
 	t.ParameterProposal[propID] = paramProposal
 	return nil
+}
 
+// CreateUserChallengeData creates a new UserChallengeData
+func (t *TestPersister) CreateUserChallengeData(userChallengeData *model.UserChallengeData) error {
+	pollID := int(userChallengeData.PollID().Int64())
+	address := userChallengeData.UserAddress().Hex()
+	if t.UserChallengeData == nil {
+		t.UserChallengeData = map[int]map[string]*model.UserChallengeData{}
+	}
+	if t.UserChallengeData[pollID] == nil {
+		t.UserChallengeData[pollID] = map[string]*model.UserChallengeData{}
+	}
+	t.UserChallengeData[pollID][address] = userChallengeData
+	return nil
+}
+
+// UserChallengeDataByCriteria retrieves UserChallengeData based on criteria
+func (t *TestPersister) UserChallengeDataByCriteria(criteria *model.UserChallengeDataCriteria) ([]*model.UserChallengeData, error) {
+	address := criteria.UserAddress
+	pollID := int(criteria.PollID)
+	if pollID != 0 && t.UserChallengeData[pollID] == nil {
+		return []*model.UserChallengeData{}, nil
+	}
+	if address != "" && t.UserChallengeData[pollID][address] == nil {
+		return []*model.UserChallengeData{}, nil
+	}
+
+	return []*model.UserChallengeData{t.UserChallengeData[pollID][address]}, nil
+}
+
+// UpdateUserChallengeData updates UserChallengeData in table
+func (t *TestPersister) UpdateUserChallengeData(userChallengeData *model.UserChallengeData,
+	updatedFields []string, updateWithUserAddress bool, latestVote bool) error {
+	pollID := int(userChallengeData.PollID().Int64())
+	if updateWithUserAddress {
+		address := userChallengeData.UserAddress().Hex()
+		if t.UserChallengeData == nil {
+			t.UserChallengeData = map[int]map[string]*model.UserChallengeData{}
+		}
+		if t.UserChallengeData[pollID] == nil {
+			t.UserChallengeData[pollID] = map[string]*model.UserChallengeData{}
+			return nil
+		}
+		if t.UserChallengeData[pollID][address] == nil {
+			return nil
+		}
+		for _, field := range updatedFields {
+			switch field {
+			case "PollIsPassed":
+				t.UserChallengeData[pollID][address].SetPollIsPassed(userChallengeData.PollIsPassed())
+			case "LatestVote":
+				t.UserChallengeData[pollID][address].SetLatestVote(userChallengeData.LatestVote())
+			case "DidUserCollect":
+				t.UserChallengeData[pollID][address].SetDidUserCollect(userChallengeData.DidUserCollect())
+			case "DidCollectAmount":
+				t.UserChallengeData[pollID][address].SetDidCollectAmount(userChallengeData.DidCollectAmount())
+			case "VoterReward":
+				t.UserChallengeData[pollID][address].SetVoterReward(userChallengeData.VoterReward())
+			}
+
+		}
+	} else {
+		// NOTE(IS): should go through update fields in updatedfields,
+		// but assuming the only usecase is to update pollispassed
+		allUSD := t.UserChallengeData[pollID]
+		for pollID, user := range allUSD {
+			user.SetPollIsPassed(userChallengeData.PollIsPassed())
+			allUSD[pollID] = user
+
+		}
+	}
+
+	return nil
 }
 
 // TestScraper is a testscraper

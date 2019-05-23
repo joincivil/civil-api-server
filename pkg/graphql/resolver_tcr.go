@@ -52,6 +52,11 @@ func (r *Resolver) Poll() graphql.PollResolver {
 	return &pollResolver{r}
 }
 
+// UserChallengeVoteData is the resolver for the UserChallengeVote type
+func (r *Resolver) UserChallengeVoteData() graphql.UserChallengeVoteDataResolver {
+	return &userChallengeDataResolver{r}
+}
+
 // TYPE RESOLVERS
 
 type appealResolver struct{ *Resolver }
@@ -370,6 +375,36 @@ func (r *pollResolver) VotesAgainst(ctx context.Context, obj *model.Poll) (strin
 	return obj.VotesAgainst().String(), nil
 }
 
+type userChallengeDataResolver struct{ *Resolver }
+
+func (u *userChallengeDataResolver) PollID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+	return int(obj.PollID().Int64()), nil
+}
+func (u *userChallengeDataResolver) PollRevealDate(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+	return int(obj.PollRevealEndDate().Int64()), nil
+}
+func (u *userChallengeDataResolver) UserAddress(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+	return obj.UserAddress().Hex(), nil
+}
+func (u *userChallengeDataResolver) DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+	return obj.DidCollectAmount().String(), nil
+}
+func (u *userChallengeDataResolver) Salt(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+	return int(obj.Salt().Int64()), nil
+}
+func (u *userChallengeDataResolver) Choice(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+	return int(obj.Choice().Int64()), nil
+}
+func (u *userChallengeDataResolver) NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+	return obj.NumTokens().String(), nil
+}
+func (u *userChallengeDataResolver) VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+	return obj.VoterReward().String(), nil
+}
+func (u *userChallengeDataResolver) ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+	return int(obj.ParentChallengeID().Int64()), nil
+}
+
 // QUERIES
 
 func (r *queryResolver) Challenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error) {
@@ -681,6 +716,41 @@ func (r *queryResolver) TcrListing(ctx context.Context, addr string, lowercaseAd
 		return nil, err
 	}
 	return listing, nil
+}
+
+func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pollID *int,
+	canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]model.UserChallengeData, error) {
+
+	criteria := &model.UserChallengeDataCriteria{}
+
+	if addr != nil && *addr != "" {
+		criteria.UserAddress = eth.NormalizeEthAddress(*addr)
+	}
+	if pollID != nil {
+		criteria.PollID = uint64(*pollID)
+	}
+	if canUserCollect != nil {
+		criteria.CanUserCollect = *canUserCollect
+	} else if canUserRescue != nil {
+		criteria.CanUserRescue = *canUserRescue
+	} else if canUserReveal != nil {
+		criteria.CanUserReveal = *canUserReveal
+	}
+
+	allUserChallengeData, err := r.userChallengeDataPersister.UserChallengeDataByCriteria(criteria)
+	if err != nil {
+		if err == cpersist.ErrPersisterNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	modelEvents := make([]model.UserChallengeData, len(allUserChallengeData))
+	for index, event := range allUserChallengeData {
+		modelEvents[index] = *event
+	}
+
+	return modelEvents, nil
 }
 
 func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,

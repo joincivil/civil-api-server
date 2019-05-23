@@ -10,16 +10,12 @@ import (
 )
 
 const (
-	defaultAppealTableName = "appeal"
+	// AppealTableBaseName is the type of table this code defines
+	AppealTableBaseName = "appeal"
 )
 
-// CreateAppealTableQuery returns the query to create the appeal table
-func CreateAppealTableQuery() string {
-	return CreateAppealTableQueryString(defaultAppealTableName)
-}
-
-// CreateAppealTableQueryString returns the query to create this table
-func CreateAppealTableQueryString(tableName string) string {
+// CreateAppealTableQuery returns the query to create this table
+func CreateAppealTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             original_challenge_id INT PRIMARY KEY,
@@ -37,17 +33,13 @@ func CreateAppealTableQueryString(tableName string) string {
 	return queryString
 }
 
-// AppealTableIndices returns the query to create indices for this table
-func AppealTableIndices() string {
-	return CreateAppealTableIndicesString(defaultAppealTableName)
-}
-
-// CreateAppealTableIndicesString returns the query to create indices this table
-func CreateAppealTableIndicesString(tableName string) string {
-	// queryString := fmt.Sprintf(`
-	// `, tableName)
-	// return queryString
-	return ""
+// CreateAppealTableIndicesQuery returns the query to create indices this table
+func CreateAppealTableIndicesQuery(tableName string) string {
+	queryString := fmt.Sprintf(`
+		CREATE INDEX IF NOT EXISTS orig_challenge_id_idx ON %s (original_challenge_id);
+		CREATE INDEX IF NOT EXISTS appeal_challenge_id_idx ON %s (appeal_challenge_id);
+	`, tableName, tableName)
+	return queryString
 }
 
 // Appeal is model for appeal object

@@ -49,6 +49,7 @@ type ResolverRoot interface {
 	Poll() PollResolver
 	Query() QueryResolver
 	User() UserResolver
+	UserChallengeVoteData() UserChallengeVoteDataResolver
 }
 
 type DirectiveRoot struct {
@@ -280,7 +281,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Articles                  func(childComplexity int, addr *string, first *int, after *string, lowercaseAddr *bool) int
+		Articles                  func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
 		GovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
 		GovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
@@ -291,8 +292,9 @@ type ComplexityRoot struct {
 		TcrGovernanceEventsTxHash func(childComplexity int, txHash string, lowercaseAddr *bool) int
 		TcrListing                func(childComplexity int, addr string, lowercaseAddr *bool) int
 		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, lowercaseAddr *bool) int
+		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		NrsignupNewsroom          func(childComplexity int) int
+		UserChallengeData         func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
 		CurrentUser               func(childComplexity int) int
 		StorefrontEthPrice        func(childComplexity int) int
 		StorefrontCvlPrice        func(childComplexity int) int
@@ -321,6 +323,25 @@ type ComplexityRoot struct {
 		NrStep                func(childComplexity int) int
 		NrFurthestStep        func(childComplexity int) int
 		NrLastSeen            func(childComplexity int) int
+	}
+
+	UserChallengeVoteData struct {
+		PollId            func(childComplexity int) int
+		PollRevealDate    func(childComplexity int) int
+		PollType          func(childComplexity int) int
+		UserAddress       func(childComplexity int) int
+		UserDidCommit     func(childComplexity int) int
+		UserDidReveal     func(childComplexity int) int
+		DidUserCollect    func(childComplexity int) int
+		DidUserRescue     func(childComplexity int) int
+		DidCollectAmount  func(childComplexity int) int
+		IsVoterWinner     func(childComplexity int) int
+		PollIsPassed      func(childComplexity int) int
+		Salt              func(childComplexity int) int
+		Choice            func(childComplexity int) int
+		NumTokens         func(childComplexity int) int
+		VoterReward       func(childComplexity int) int
+		ParentChallengeId func(childComplexity int) int
 	}
 }
 
@@ -428,7 +449,7 @@ type PollResolver interface {
 	VotesAgainst(ctx context.Context, obj *model.Poll) (string, error)
 }
 type QueryResolver interface {
-	Articles(ctx context.Context, addr *string, first *int, after *string, lowercaseAddr *bool) ([]model.ContentRevision, error)
+	Articles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	Challenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
 	GovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
@@ -439,8 +460,9 @@ type QueryResolver interface {
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
-	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, lowercaseAddr *bool) ([]model.ContentRevision, error)
+	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
+	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
 	StorefrontCvlPrice(ctx context.Context) (*float64, error)
@@ -452,6 +474,20 @@ type UserResolver interface {
 	NrStep(ctx context.Context, obj *users.User) (*int, error)
 	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
 	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
+}
+type UserChallengeVoteDataResolver interface {
+	PollID(ctx context.Context, obj *model.UserChallengeData) (int, error)
+	PollRevealDate(ctx context.Context, obj *model.UserChallengeData) (int, error)
+
+	UserAddress(ctx context.Context, obj *model.UserChallengeData) (string, error)
+
+	DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (string, error)
+
+	Salt(ctx context.Context, obj *model.UserChallengeData) (int, error)
+	Choice(ctx context.Context, obj *model.UserChallengeData) (int, error)
+	NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error)
+	VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error)
+	ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error)
 }
 
 func field_Mutation_authSignupEth_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -930,12 +966,12 @@ func field_Query_articles_args(rawArgs map[string]interface{}) (map[string]inter
 		}
 	}
 	args["after"] = arg2
-	var arg3 *bool
-	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+	var arg3 *int
+	if tmp, ok := rawArgs["contentID"]; ok {
 		var err error
-		var ptr1 bool
+		var ptr1 int
 		if tmp != nil {
-			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			ptr1, err = graphql.UnmarshalInt(tmp)
 			arg3 = &ptr1
 		}
 
@@ -943,7 +979,35 @@ func field_Query_articles_args(rawArgs map[string]interface{}) (map[string]inter
 			return nil, err
 		}
 	}
-	args["lowercaseAddr"] = arg3
+	args["contentID"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["revisionID"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["revisionID"] = arg4
+	var arg5 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg5 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg5
 	return args, nil
 
 }
@@ -1582,8 +1646,98 @@ func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[stri
 		}
 	}
 	args["after"] = arg2
-	var arg3 *bool
+	var arg3 *int
+	if tmp, ok := rawArgs["contentID"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg3 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["contentID"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["revisionID"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["revisionID"] = arg4
+	var arg5 *bool
 	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg5 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg5
+	return args, nil
+
+}
+
+func field_Query_userChallengeData_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["userAddr"]; ok {
+		var err error
+		var ptr1 string
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalString(tmp)
+			arg0 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userAddr"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["pollID"]; ok {
+		var err error
+		var ptr1 int
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalInt(tmp)
+			arg1 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pollID"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["canUserCollect"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg2 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["canUserCollect"] = arg2
+	var arg3 *bool
+	if tmp, ok := rawArgs["canUserRescue"]; ok {
 		var err error
 		var ptr1 bool
 		if tmp != nil {
@@ -1595,7 +1749,21 @@ func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[stri
 			return nil, err
 		}
 	}
-	args["lowercaseAddr"] = arg3
+	args["canUserRescue"] = arg3
+	var arg4 *bool
+	if tmp, ok := rawArgs["canUserReveal"]; ok {
+		var err error
+		var ptr1 bool
+		if tmp != nil {
+			ptr1, err = graphql.UnmarshalBoolean(tmp)
+			arg4 = &ptr1
+		}
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["canUserReveal"] = arg4
 	return args, nil
 
 }
@@ -2892,7 +3060,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Articles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.Articles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.challenge":
 		if e.complexity.Query.Challenge == nil {
@@ -3024,7 +3192,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NewsroomArticles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.NewsroomArticles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.nrsignupNewsroom":
 		if e.complexity.Query.NrsignupNewsroom == nil {
@@ -3032,6 +3200,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.NrsignupNewsroom(childComplexity), true
+
+	case "Query.userChallengeData":
+		if e.complexity.Query.UserChallengeData == nil {
+			break
+		}
+
+		args, err := field_Query_userChallengeData_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.UserChallengeData(childComplexity, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool)), true
 
 	case "Query.currentUser":
 		if e.complexity.Query.CurrentUser == nil {
@@ -3201,6 +3381,118 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.NrLastSeen(childComplexity), true
+
+	case "UserChallengeVoteData.pollID":
+		if e.complexity.UserChallengeVoteData.PollId == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.PollId(childComplexity), true
+
+	case "UserChallengeVoteData.pollRevealDate":
+		if e.complexity.UserChallengeVoteData.PollRevealDate == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.PollRevealDate(childComplexity), true
+
+	case "UserChallengeVoteData.pollType":
+		if e.complexity.UserChallengeVoteData.PollType == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.PollType(childComplexity), true
+
+	case "UserChallengeVoteData.userAddress":
+		if e.complexity.UserChallengeVoteData.UserAddress == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.UserAddress(childComplexity), true
+
+	case "UserChallengeVoteData.userDidCommit":
+		if e.complexity.UserChallengeVoteData.UserDidCommit == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.UserDidCommit(childComplexity), true
+
+	case "UserChallengeVoteData.userDidReveal":
+		if e.complexity.UserChallengeVoteData.UserDidReveal == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.UserDidReveal(childComplexity), true
+
+	case "UserChallengeVoteData.didUserCollect":
+		if e.complexity.UserChallengeVoteData.DidUserCollect == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.DidUserCollect(childComplexity), true
+
+	case "UserChallengeVoteData.didUserRescue":
+		if e.complexity.UserChallengeVoteData.DidUserRescue == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.DidUserRescue(childComplexity), true
+
+	case "UserChallengeVoteData.didCollectAmount":
+		if e.complexity.UserChallengeVoteData.DidCollectAmount == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.DidCollectAmount(childComplexity), true
+
+	case "UserChallengeVoteData.isVoterWinner":
+		if e.complexity.UserChallengeVoteData.IsVoterWinner == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.IsVoterWinner(childComplexity), true
+
+	case "UserChallengeVoteData.pollIsPassed":
+		if e.complexity.UserChallengeVoteData.PollIsPassed == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.PollIsPassed(childComplexity), true
+
+	case "UserChallengeVoteData.salt":
+		if e.complexity.UserChallengeVoteData.Salt == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.Salt(childComplexity), true
+
+	case "UserChallengeVoteData.choice":
+		if e.complexity.UserChallengeVoteData.Choice == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.Choice(childComplexity), true
+
+	case "UserChallengeVoteData.numTokens":
+		if e.complexity.UserChallengeVoteData.NumTokens == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.NumTokens(childComplexity), true
+
+	case "UserChallengeVoteData.voterReward":
+		if e.complexity.UserChallengeVoteData.VoterReward == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.VoterReward(childComplexity), true
+
+	case "UserChallengeVoteData.parentChallengeID":
+		if e.complexity.UserChallengeVoteData.ParentChallengeId == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.ParentChallengeId(childComplexity), true
 
 	}
 	return 0, false
@@ -9259,6 +9551,15 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				out.Values[i] = ec._Query_nrsignupNewsroom(ctx, field)
 				wg.Done()
 			}(i, field)
+		case "userChallengeData":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_userChallengeData(ctx, field)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "currentUser":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -9329,7 +9630,7 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Articles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().Articles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9869,7 +10170,7 @@ func (ec *executionContext) _Query_newsroomArticles(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NewsroomArticles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().NewsroomArticles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -9943,6 +10244,72 @@ func (ec *executionContext) _Query_nrsignupNewsroom(ctx context.Context, field g
 	}
 
 	return ec._NrsignupNewsroom(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_userChallengeData(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_userChallengeData_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserChallengeData(rctx, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.UserChallengeData)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._UserChallengeVoteData(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 // nolint: vetshadow
@@ -10691,6 +11058,580 @@ func (ec *executionContext) _User_nrLastSeen(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	return graphql.MarshalInt(*res)
+}
+
+var userChallengeVoteDataImplementors = []string{"UserChallengeVoteData"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _UserChallengeVoteData(ctx context.Context, sel ast.SelectionSet, obj *model.UserChallengeData) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, userChallengeVoteDataImplementors)
+
+	var wg sync.WaitGroup
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserChallengeVoteData")
+		case "pollID":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_pollID(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "pollRevealDate":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_pollRevealDate(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "pollType":
+			out.Values[i] = ec._UserChallengeVoteData_pollType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "userAddress":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_userAddress(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "userDidCommit":
+			out.Values[i] = ec._UserChallengeVoteData_userDidCommit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "userDidReveal":
+			out.Values[i] = ec._UserChallengeVoteData_userDidReveal(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "didUserCollect":
+			out.Values[i] = ec._UserChallengeVoteData_didUserCollect(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "didUserRescue":
+			out.Values[i] = ec._UserChallengeVoteData_didUserRescue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "didCollectAmount":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_didCollectAmount(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "isVoterWinner":
+			out.Values[i] = ec._UserChallengeVoteData_isVoterWinner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "pollIsPassed":
+			out.Values[i] = ec._UserChallengeVoteData_pollIsPassed(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "salt":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_salt(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "choice":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_choice(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "numTokens":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_numTokens(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "voterReward":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_voterReward(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "parentChallengeID":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._UserChallengeVoteData_parentChallengeID(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	wg.Wait()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_pollID(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().PollID(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalInt(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_pollRevealDate(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().PollRevealDate(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalInt(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_pollType(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PollType(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_userAddress(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().UserAddress(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_userDidCommit(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserDidCommit(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_userDidReveal(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserDidReveal(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_didUserCollect(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DidUserCollect(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_didUserRescue(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DidUserRescue(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_didCollectAmount(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().DidCollectAmount(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_isVoterWinner(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsVoterWinner(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_pollIsPassed(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PollIsPassed(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_salt(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().Salt(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalInt(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_choice(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().Choice(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalInt(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_numTokens(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().NumTokens(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_voterReward(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().VoterReward(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _UserChallengeVoteData_parentChallengeID(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "UserChallengeVoteData",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().ParentChallengeID(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalInt(res)
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -12676,6 +13617,8 @@ type Query {
     addr: String
     first: Int
     after: String
+    contentID: Int
+    revisionID: Int
     lowercaseAddr: Boolean = True
   ): [ContentRevision!]!
   challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
@@ -12734,9 +13677,20 @@ type Query {
     addr: String
     first: Int
     after: String
+    contentID: Int
+    revisionID: Int
     lowercaseAddr: Boolean = True
   ): [ContentRevision!]!
   nrsignupNewsroom: NrsignupNewsroom
+
+  # UserChallengeData Queries
+  userChallengeData(
+    userAddr: String
+    pollID: Int
+    canUserCollect: Boolean
+    canUserRescue: Boolean
+    canUserReveal: Boolean
+  ): [UserChallengeVoteData!]!
 
   # User Queries
   currentUser: User
@@ -12946,6 +13900,26 @@ type Poll {
   voteQuorum: Int!
   votesFor: String!
   votesAgainst: String!
+}
+
+# A type that reflects values in model.UserChallengeData
+type UserChallengeVoteData {
+  pollID: Int!
+  pollRevealDate: Int!
+  pollType: String!
+  userAddress: String!
+  userDidCommit: Boolean!
+  userDidReveal: Boolean!
+  didUserCollect: Boolean!
+  didUserRescue: Boolean!
+  didCollectAmount: String!
+  isVoterWinner: Boolean!
+  pollIsPassed: Boolean!
+  salt: Int!
+  choice: Int!
+  numTokens: String!
+  voterReward: String!
+  parentChallengeID: Int!
 }
 
 ## Newsroom object schemas

@@ -10,16 +10,12 @@ import (
 )
 
 const (
-	defaultChallengeTableName = "challenge"
+	// ChallengeTableBaseName is the type of table this code defines
+	ChallengeTableBaseName = "challenge"
 )
 
-// CreateChallengeTableQuery returns the query to create the challenge table
-func CreateChallengeTableQuery() string {
-	return CreateChallengeTableQueryString(defaultChallengeTableName)
-}
-
-// CreateChallengeTableQueryString returns the query to create this table
-func CreateChallengeTableQueryString(tableName string) string {
+// CreateChallengeTableQuery returns the query to create this table
+func CreateChallengeTableQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
         CREATE TABLE IF NOT EXISTS %s(
             challenge_id INT PRIMARY KEY,
@@ -31,19 +27,15 @@ func CreateChallengeTableQueryString(tableName string) string {
             stake NUMERIC,
             total_tokens NUMERIC,
             request_appeal_expiry NUMERIC,
+            challenge_type TEXT,
             last_updated_timestamp INT
         );
     `, tableName)
 	return queryString
 }
 
-// ChallengeTableIndices returns the query to create indices for this table
-func ChallengeTableIndices() string {
-	return CreateChallengeTableIndicesString(defaultChallengeTableName)
-}
-
-// CreateChallengeTableIndicesString returns the query to create indices this table
-func CreateChallengeTableIndicesString(tableName string) string {
+// CreateChallengeTableIndicesQuery returns the query to create indices this table
+func CreateChallengeTableIndicesQuery(tableName string) string {
 	queryString := fmt.Sprintf(`
 		CREATE INDEX IF NOT EXISTS challenge_addr_idx ON %s (listing_address);
 	`, tableName)
@@ -69,6 +61,8 @@ type Challenge struct {
 	TotalTokens float64 `db:"total_tokens"`
 
 	RequestAppealExpiry int64 `db:"request_appeal_expiry"`
+
+	ChallengeType string `db:"challenge_type"`
 
 	LastUpdatedDateTs int64 `db:"last_updated_timestamp"`
 }
@@ -102,6 +96,7 @@ func NewChallenge(challengeData *model.Challenge) *Challenge {
 	} else {
 		challenge.RequestAppealExpiry = 0
 	}
+	challenge.ChallengeType = challengeData.ChallengeType()
 	return challenge
 }
 
@@ -114,5 +109,5 @@ func (c *Challenge) DbToChallengeData() *model.Challenge {
 	stake := numbers.Float64ToBigInt(c.Stake)
 	totalTokens := numbers.Float64ToBigInt(c.TotalTokens)
 	return model.NewChallenge(challengeID, listingAddress, c.Statement, rewardPool, challenger, c.Resolved,
-		stake, totalTokens, big.NewInt(c.RequestAppealExpiry), c.LastUpdatedDateTs)
+		stake, totalTokens, big.NewInt(c.RequestAppealExpiry), c.ChallengeType, c.LastUpdatedDateTs)
 }

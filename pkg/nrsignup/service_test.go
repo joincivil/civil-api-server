@@ -91,7 +91,7 @@ func buildUserService() *users.UserService {
 	initUsers := map[string]*users.User{
 		"1": {UID: "1", Email: testEmailAddress},
 	}
-	persister := &testutils.InMemoryUserPersister{Users: initUsers}
+	persister := &testutils.InMemoryUserPersister{UsersInMemory: initUsers}
 
 	return users.NewUserService(persister, nil)
 }
