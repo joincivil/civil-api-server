@@ -12,7 +12,7 @@ import (
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
-// MarshalJsonbPayloadScalar takes a JsonbPayload and converst it to graphql
+// MarshalJsonbPayloadScalar takes a JsonbPayload and converts it to graphql
 func MarshalJsonbPayloadScalar(payload cpostgres.JsonbPayload) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		jsonBytes, err := json.Marshal(payload)

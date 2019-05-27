@@ -55,7 +55,7 @@ func (s *Service) RetrieveJSONb(id string, namespace string, salt string) (
 
 // SaveRawJSONb stores a raw JSON string to a key derived from the ID.
 // Can place the ID value into the given namespace, but is optional.
-// Can also add an addtional salt to increase uniqueness and prevent overwriting, but
+// Can also add an additional salt to increase uniqueness and prevent overwriting, but
 // is optional.
 func (s *Service) SaveRawJSONb(id string, namespace string, salt string,
 	jsonStr string, uid *string) (*JSONb, error) {

@@ -68,27 +68,27 @@ func TestSaveRetrieveJSONb(t *testing.T) {
 		t.Errorf("Should have retrieved just 1 item from the JSONb store")
 	}
 
-	retrievedJson := jsonbs[0]
+	retrievedJSON := jsonbs[0]
 
-	if retrievedJson.Hash != jsonb.Hash {
+	if retrievedJSON.Hash != jsonb.Hash {
 		t.Errorf("Should have seen the same item hashes")
 	}
-	if retrievedJson.CreatedDate != jsonb.CreatedDate {
+	if retrievedJSON.CreatedDate != jsonb.CreatedDate {
 		t.Errorf("Should have seen the same item creation dates")
 	}
-	if retrievedJson.Key != jsonb.Key {
+	if retrievedJSON.Key != jsonb.Key {
 		t.Errorf("Should have seen the same key")
 	}
-	if retrievedJson.ID != jsonb.ID {
+	if retrievedJSON.ID != jsonb.ID {
 		t.Errorf("Should have seen the same item id")
 	}
-	if retrievedJson.RawJSON != jsonb.RawJSON {
+	if retrievedJSON.RawJSON != jsonb.RawJSON {
 		t.Errorf("Should have seen the same item raw json")
 	}
-	if retrievedJson.Namespace != jsonb.Namespace {
+	if retrievedJSON.Namespace != jsonb.Namespace {
 		t.Errorf("Should have been the correct namespace")
 	}
-	if retrievedJson.Namespace != namespace {
+	if retrievedJSON.Namespace != namespace {
 		t.Errorf("Should have been the correct namespace")
 	}
 
