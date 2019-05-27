@@ -16,9 +16,9 @@ func buildTestKraken(t *testing.T, sendError bool) *httptest.Server {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if sendError {
-			w.Write([]byte(krakenTickerErrorString))
+			w.Write([]byte(krakenTickerErrorString)) // nolint: errcheck
 		} else {
-			w.Write([]byte(krakenTickerString))
+			w.Write([]byte(krakenTickerString)) // nolint: errcheck
 		}
 
 	}))
@@ -76,7 +76,7 @@ func TestUpdatePrice(t *testing.T) {
 		t.Fatal("expecting error to be ErrNoPrice ")
 	}
 
-	conversion.UpdatePrice()
+	conversion.UpdatePrice() // nolint: errcheck
 
 	price, err := conversion.USDToETH()
 	if err != nil {
@@ -102,7 +102,7 @@ func TestUpdatePriceError(t *testing.T) {
 		KrakenURL: ts.URL,
 	}
 
-	conversion.UpdatePrice()
+	conversion.UpdatePrice() // nolint: errcheck
 	_, err := conversion.USDToETH()
 	if err != storefront.ErrNoPrice {
 		t.Fatal("expecting error to be ErrNoPrice")

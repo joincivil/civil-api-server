@@ -38,7 +38,7 @@ func NamespaceIDSaltHashKey(namespace string, ID string, salt string) (string, e
 // CreateHashKey generates the key as a sha256 hash
 func CreateHashKey(bys []byte) (string, error) {
 	hsh := sha256.New()
-	hsh.Write(bys)
+	hsh.Write(bys) // nolint: errcheck
 	return base64.RawStdEncoding.EncodeToString(
 		hsh.Sum(nil)), nil
 }

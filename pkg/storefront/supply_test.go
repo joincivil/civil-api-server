@@ -39,9 +39,9 @@ func setupContracts(t *testing.T, helper *eth.Helper) (common.Address, *contract
 	// this leaves 500k in the "genesis" account
 	tokens := big.NewInt(500000)
 	tokens.Mul(tokens, wei)
-	tokenContract.Transfer(helper.Auth, helper.Accounts["alice"].Address, tokens)
-	tokenContract.Transfer(helper.Auth, helper.Accounts["bob"].Address, tokens)
-	tokenContract.Transfer(helper.Auth, helper.Accounts["carol"].Address, tokens)
+	tokenContract.Transfer(helper.Auth, helper.Accounts["alice"].Address, tokens) // nolint: errcheck
+	tokenContract.Transfer(helper.Auth, helper.Accounts["bob"].Address, tokens)   // nolint: errcheck
+	tokenContract.Transfer(helper.Auth, helper.Accounts["carol"].Address, tokens) // nolint: errcheck
 	backend.Commit()
 
 	return tokenAddress, tokenContract
@@ -88,7 +88,7 @@ func TestSupply(t *testing.T) {
 	}
 
 	// simulate a sale
-	cvlTokenContract.Transfer(helper.Accounts["genesis"].Auth, helper.Accounts["bob"].Address, big.NewInt(1*1e18))
+	cvlTokenContract.Transfer(helper.Accounts["genesis"].Auth, helper.Accounts["bob"].Address, big.NewInt(1*1e18)) // nolint: errcheck
 	backend.Commit()
 
 	tokensSold, err = supplyManager.UpdateTokensSold()
@@ -102,7 +102,7 @@ func TestSupply(t *testing.T) {
 	}
 
 	// simulate a sale
-	cvlTokenContract.Transfer(helper.Accounts["genesis"].Auth, helper.Accounts["bob"].Address, big.NewInt(5*1e17))
+	cvlTokenContract.Transfer(helper.Accounts["genesis"].Auth, helper.Accounts["bob"].Address, big.NewInt(5*1e17)) // nolint: errcheck
 	backend.Commit()
 
 	tokensSold, err = supplyManager.UpdateTokensSold()
