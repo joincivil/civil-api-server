@@ -582,8 +582,9 @@ func (p *PostgresPersister) upsertVersionDataQueryString(tableName string, dbMod
 	onConflict string, updatedFields []string) string {
 	var queryString strings.Builder
 	fieldNames, fieldNamesColon := cpostgres.StructFieldsForQuery(dbModelStruct, true, "")
+	// nolint
 	queryString.WriteString(fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s) ON CONFLICT(%s) DO UPDATE SET ",
-		tableName, fieldNames, fieldNamesColon, onConflict)) // nolint: gosec
+		tableName, fieldNames, fieldNamesColon, onConflict))
 	for idx, field := range updatedFields {
 		queryString.WriteString(fmt.Sprintf("%s=:%s", field, field)) // nolint: gosec
 		if idx+1 < len(updatedFields) {
