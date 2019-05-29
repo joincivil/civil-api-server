@@ -16,6 +16,7 @@ import (
 
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
+	ceth "github.com/joincivil/go-common/pkg/eth"
 	"github.com/joincivil/go-common/pkg/generated/contract"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	ctime "github.com/joincivil/go-common/pkg/time"
@@ -120,7 +121,7 @@ func (t *TcrEventProcessor) Process(event *crawlermodel.Event) (bool, error) {
 	// NOTE(IS): RewardClaimed is the only TCR event that doesn't emit a listingAddress
 	if eventName == "RewardClaimed" {
 		challengeID, errID := t.challengeIDFromEvent(event)
-		if err != nil {
+		if errID != nil {
 			return ran, errID
 		}
 		log.Infof("Handling Reward Claimed for Challenge %v\n", challengeID)
@@ -600,7 +601,7 @@ func (t *TcrEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.I
 		userChallengeData.SetIsVoterWinner(isVoterWinner)
 		updatedFields := []string{voterRewardFieldName, userChallengeIsPassedFieldName,
 			isVoterWinnerFieldName}
-		updateWithUserAddress := false
+		updateWithUserAddress := true
 		latestVote := true
 		err = t.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,
 			updateWithUserAddress, latestVote)
@@ -675,6 +676,23 @@ func (t *TcrEventProcessor) processTCRFailedChallengeOverturned(event *crawlermo
 		return err
 	}
 
+	pollID, err := t.challengeIDFromEvent(event)
+	if err != nil {
+		return err
+	}
+
+	pollIsPassed := true
+	err = t.setPollIsPassedInPoll(pollID, pollIsPassed)
+	if err != nil {
+		return err
+	}
+
+	// update userchallengedata here
+	err = t.updateUserChallengeDataForChallengeRes(pollID, tcrAddress, pollIsPassed)
+	if err != nil {
+		return err
+	}
+
 	return t.updateChallengeWithOverturnedData(event, tcrAddress, listingAddress, false)
 }
 
@@ -682,6 +700,23 @@ func (t *TcrEventProcessor) processTCRSuccessfulChallengeOverturned(event *crawl
 	listingAddress common.Address, tcrAddress common.Address) error {
 
 	err := t.updateChallengeWithOverturnedData(event, tcrAddress, listingAddress, false)
+	if err != nil {
+		return err
+	}
+
+	pollID, err := t.challengeIDFromEvent(event)
+	if err != nil {
+		return err
+	}
+
+	pollIsPassed := false
+	err = t.setPollIsPassedInPoll(pollID, pollIsPassed)
+	if err != nil {
+		return err
+	}
+
+	// update userchallengedata here
+	err = t.updateUserChallengeDataForChallengeRes(pollID, tcrAddress, pollIsPassed)
 	if err != nil {
 		return err
 	}
@@ -829,11 +864,24 @@ func (t *TcrEventProcessor) newAppealChallenge(event *crawlermodel.Event,
 	if err != nil {
 		return errors.WithMessage(err, "error creating TCR contract")
 	}
-	challengeRes, err := tcrContract.Challenges(&bind.CallOpts{}, appealChallengeID.(*big.Int))
+	maxAtts := 5
+	waitMs := 300
+	retryTcrContract := ceth.RetryCivilTCRContract{CivilTCRContract: tcrContract}
+	challengeRes, err := retryTcrContract.ChallengesWithRetry(
+		&bind.CallOpts{},
+		appealChallengeID.(*big.Int),
+		maxAtts,
+		waitMs,
+	)
 	if err != nil {
 		return errors.WithMessage(err, "error retrieving challenges")
 	}
-	requestAppealExpiry, err := tcrContract.ChallengeRequestAppealExpiries(&bind.CallOpts{}, appealChallengeID.(*big.Int))
+	requestAppealExpiry, err := retryTcrContract.ChallengeRequestAppealExpiriesWithRetry(
+		&bind.CallOpts{},
+		appealChallengeID.(*big.Int),
+		maxAtts,
+		waitMs,
+	)
 	if err != nil {
 		return errors.WithMessage(err, "error retrieving requestAppealExpiries")
 	}
@@ -910,7 +958,10 @@ func (t *TcrEventProcessor) getChallengeFromTCRContract(tcrAddress common.Addres
 	if err != nil {
 		return nil, err
 	}
-	challenge, err := tcrContract.Challenges(&bind.CallOpts{}, challengeID)
+	maxAtts := 5
+	waitMs := 300
+	retryTcrContract := ceth.RetryCivilTCRContract{CivilTCRContract: tcrContract}
+	challenge, err := retryTcrContract.ChallengesWithRetry(&bind.CallOpts{}, challengeID, maxAtts, waitMs)
 	return &challenge, err
 }
 
@@ -1094,17 +1145,31 @@ func (t *TcrEventProcessor) newChallengeFromChallenge(event *crawlermodel.Event,
 	tcrAddress := event.ContractAddress()
 	tcrContract, err := contract.NewCivilTCRContract(tcrAddress, t.client)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Error creating TCR contract")
+		return nil, errors.WithMessage(err, "error creating TCR contract")
 	}
-	challengeRes, err := tcrContract.Challenges(&bind.CallOpts{}, challengeID)
+	retryTcrContract := ceth.RetryCivilTCRContract{CivilTCRContract: tcrContract}
+
+	// Retries if the data doesn't look right.  Sometimes the data propagations
+	// within eth node takes some time.
+	maxAttempts := 5
+	waitMs := 300
+
+	challengeRes, err := retryTcrContract.ChallengesWithRetry(&bind.CallOpts{}, challengeID, maxAttempts, waitMs)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Error calling function in TCR contract")
+		return nil, errors.WithMessage(err, "error calling function in TCR contract")
 	}
+
 	// NOTE(IS): You can get requestAppealExpiry from parameterizer contract as well, this is easier.
-	requestAppealExpiry, err := tcrContract.ChallengeRequestAppealExpiries(&bind.CallOpts{}, challengeID)
+	requestAppealExpiry, err := retryTcrContract.ChallengeRequestAppealExpiriesWithRetry(
+		&bind.CallOpts{},
+		challengeID,
+		maxAttempts,
+		waitMs,
+	)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Error calling function in TCR contract")
+		return nil, errors.WithMessage(err, "error calling function in TCR contract")
 	}
+
 	challengeType := model.ChallengePollType
 	challenge := model.NewChallenge(
 		challengeID,
@@ -1117,7 +1182,8 @@ func (t *TcrEventProcessor) newChallengeFromChallenge(event *crawlermodel.Event,
 		challengeRes.TotalTokens,
 		requestAppealExpiry,
 		challengeType,
-		ctime.CurrentEpochSecsInInt64())
+		ctime.CurrentEpochSecsInInt64(),
+	)
 
 	return challenge, nil
 }
@@ -1148,7 +1214,7 @@ func (t *TcrEventProcessor) newAppealFromAppealRequested(event *crawlermodel.Eve
 	}
 	challengeRes, err := tcrContract.Appeals(&bind.CallOpts{}, challengeID.(*big.Int))
 	if err != nil {
-		return errors.WithMessage(err, "Error calling function in TCR contract")
+		return errors.WithMessage(err, "error calling function in TCR contract")
 	}
 	appealGrantedURI := ""
 	appealPhaseExpiry := challengeRes.AppealPhaseExpiry
@@ -1232,11 +1298,19 @@ func (t *TcrEventProcessor) persistNewChallengeFromContract(tcrAddress common.Ad
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error creating TCR contract")
 	}
-	challengeRes, err := tcrContract.Challenges(&bind.CallOpts{}, challengeID)
+	maxAtts := 5
+	waitMs := 300
+	retryTcrContract := ceth.RetryCivilTCRContract{CivilTCRContract: tcrContract}
+	challengeRes, err := retryTcrContract.ChallengesWithRetry(&bind.CallOpts{}, challengeID, maxAtts, waitMs)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error retrieving challenges")
 	}
-	requestAppealExpiry, err := tcrContract.ChallengeRequestAppealExpiries(&bind.CallOpts{}, challengeID)
+	requestAppealExpiry, err := retryTcrContract.ChallengeRequestAppealExpiriesWithRetry(
+		&bind.CallOpts{},
+		challengeID,
+		maxAtts,
+		waitMs,
+	)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Error retrieving requestAppealExpiries")
 	}

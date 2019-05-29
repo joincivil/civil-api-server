@@ -147,8 +147,7 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:5ff50b247ac153c4ac8e4c09d93fbf0fd447c6b0e90d139759b2aeb7f1d34678"
+  digest = "1:a2b2934a5cddefabe8ad32f307ad1ee4ca1d139662958719b43bf75aaf2cbf57"
   name = "github.com/ethereum/go-ethereum"
   packages = [
     ".",
@@ -180,6 +179,8 @@
     "eth/filters",
     "ethclient",
     "ethdb",
+    "ethdb/leveldb",
+    "ethdb/memorydb",
     "event",
     "log",
     "metrics",
@@ -190,7 +191,7 @@
     "trie",
   ]
   pruneopts = "T"
-  revision = "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61"
+  revision = "008d250e3c57e1b8a350c8049fe4af71cf26a7e9"
 
 [[projects]]
   digest = "1:ca82a3b99694824c627573c2a76d0e49719b4a9c02d1d85a2ac91f1c1f52ab9b"
@@ -310,7 +311,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2ec8b0c9dfe3ef484502c2d52677fd76d2615b44dcf23a5454b3538737198ac8"
+  digest = "1:351101186fce1dfb1a381b9ae04bb453cc8fd6bca9f98f1afd10188e6c0548db"
   name = "github.com/joincivil/civil-events-crawler"
   packages = [
     "pkg/generated/common",
@@ -320,11 +321,11 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "2a38a8f261f571af0c36cd95c3af48e5b5989428"
+  revision = "104ac5b260df70d82168cf9d4905326214aef81b"
 
 [[projects]]
   branch = "master"
-  digest = "1:d3830f576ed8619a06af0195a3b0234703a8b0cc54a06caba01469d7790af8d4"
+  digest = "1:c1ba37e70cd1f386764873df195b06f11b0aacf84817955842c767ca51cc66b6"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -337,11 +338,11 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "c6cda792be1c78eb83185eb7999dc14d55548a90"
+  revision = "ee4de49f730b79282c54cf9ddf3a7d942f8d7eb7"
 
 [[projects]]
   branch = "master"
-  digest = "1:ff67ac02481794aec6583dade4b54af05a9c7dba49daaa5cbb79e6f81731c482"
+  digest = "1:784ec248a0629cb371d453f17a24d9e22966f161ec105ceb75190a25ada8ff6a"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -360,7 +361,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "0363615657eccffde8bafc2418e7787a8a568702"
+  revision = "425deb0989eea5bf6c39beb80b35bf327b27eb84"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -379,6 +380,22 @@
   ]
   pruneopts = "UT"
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
+
+[[projects]]
+  digest = "1:0356f3312c9bd1cbeda81505b7fd437501d8e778ab66998ef69f00d7f9b3a0d7"
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
+  version = "v0.0.4"
+
+[[projects]]
+  digest = "1:abcdbf03ca6ca13d3697e2186edc1f33863bbdac2b3a44dfa39015e8903f7409"
+  name = "github.com/olekukonko/tablewriter"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e6d60cf7ba1f42d86d54cdf5508611c4aafb3970"
+  version = "v0.0.1"
 
 [[projects]]
   digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
@@ -403,6 +420,14 @@
   pruneopts = "UT"
   revision = "ba968bfe8b2f7e042a574c888954fccecfa385b4"
   version = "v0.8.1"
+
+[[projects]]
+  digest = "1:1b8344715571e257101066e65d0bc8172715ecf09c8bd09b56763ec6389395e4"
+  name = "github.com/prometheus/tsdb"
+  packages = ["fileutil"]
+  pruneopts = "UT"
+  revision = "d48a5e2d5c34116dfcbc7b935c66157847b2d8b5"
+  version = "v0.8.0"
 
 [[projects]]
   digest = "1:31d83d1b1c288073c91abadee3caec87de2a1fb5dbe589039264a802e67a26b8"
@@ -464,6 +489,22 @@
   ]
   pruneopts = "UT"
   revision = "d48a9a75455f6af30244670bc0c9d0e38e7392b5"
+
+[[projects]]
+  digest = "1:266e2f508feb9a9a765bfeb74d116a88514248b2f8428788dcce574bd026b9c0"
+  name = "github.com/steakknife/bloomfilter"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "99ee86d9200fcc2ffde62f508329bd6627c0a307"
+  version = "1.0.4"
+
+[[projects]]
+  digest = "1:5ca4bdccd72e66aaba5b52f9c4a21f1021102f0919432fe138ad5d48abf06833"
+  name = "github.com/steakknife/hamming"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "003c143a81c25ea5e263d692919c611c7122ae6b"
+  version = "0.2.5"
 
 [[projects]]
   branch = "master"
