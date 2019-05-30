@@ -89,6 +89,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 		jsonbService:      deps.jsonbService,
 		nrsignupService:   deps.nrsignupService,
 		storefrontService: deps.storefrontService,
+		postService:       deps.postService,
 		emailListMembers:  deps.mailchimp,
 	}
 	err = graphQLRouting(router, rconfig)

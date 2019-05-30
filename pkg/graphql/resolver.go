@@ -14,6 +14,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/users"
 
@@ -50,6 +51,7 @@ type ResolverConfig struct {
 	UserService                *users.UserService
 	JSONbService               *jsonstore.Service
 	NrsignupService            *nrsignup.Service
+	PostService                *posts.Service
 	StorefrontService          *storefront.Service
 	EmailListMembers           cemail.ListMemberManager
 	LowercaseAddr              *bool
@@ -69,6 +71,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		userService:                config.UserService,
 		jsonbService:               config.JSONbService,
 		nrsignupService:            config.NrsignupService,
+		postService:                config.PostService,
 		storefrontService:          config.StorefrontService,
 		emailListMembers:           config.EmailListMembers,
 		lowercaseAddr:              config.LowercaseAddr,
@@ -88,6 +91,7 @@ type Resolver struct {
 	userService                *users.UserService
 	jsonbService               *jsonstore.Service
 	nrsignupService            *nrsignup.Service
+	postService                *posts.Service
 	storefrontService          *storefront.Service
 	emailListMembers           cemail.ListMemberManager
 	lowercaseAddr              *bool

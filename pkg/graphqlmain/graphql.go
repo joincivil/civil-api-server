@@ -13,6 +13,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
@@ -32,6 +33,7 @@ type resolverConfig struct {
 	userService       *users.UserService
 	jsonbService      *jsonstore.Service
 	nrsignupService   *nrsignup.Service
+	postService       *posts.Service
 	storefrontService *storefront.Service
 	emailListMembers  cemail.ListMemberManager
 }
@@ -86,6 +88,7 @@ func initResolver(rconfig *resolverConfig) (*graphql.Resolver, error) {
 		UserService:                rconfig.userService,
 		JSONbService:               rconfig.jsonbService,
 		NrsignupService:            rconfig.nrsignupService,
+		PostService:                rconfig.postService,
 		StorefrontService:          rconfig.storefrontService,
 		EmailListMembers:           rconfig.emailListMembers,
 	}), nil
