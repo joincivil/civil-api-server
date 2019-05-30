@@ -79,6 +79,10 @@ type Query {
   ): [ContentRevision!]!
   nrsignupNewsroom: NrsignupNewsroom
 
+  # Post Queries
+  postsGet(id: String!): Post!
+  postsSearch(search: PostSearchInput!): PostSearchResult
+
   # UserChallengeData Queries
   userChallengeData(
     userAddr: String
@@ -141,6 +145,11 @@ type Mutation {
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
+
+  # Post Mutations
+  postsCreateBoost(input: PostCreateBoostInput!): PostBoost
+  postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+  postsCreateComment(input: PostCreateCommentInput!): PostComment
 
   # Storefront Mutations
   storefrontAirswapTxHash(txHash: String!): String!
@@ -336,6 +345,106 @@ type ContentRevision {
   contractRevisionId: Int!
   revisionUri: String!
   revisionDate: Int!
+}
+
+## Post object schemas
+
+# post types
+interface Post {
+  id: String!
+  channelID: String!
+  parentID: String
+  authorID: String!
+  createdAt: Time!
+  updatedAt: Time!
+  children: [Post]
+}
+
+type PostBoost implements Post {
+  id: String!
+  channelID: String!
+  parentID: String
+  authorID: String!
+  createdAt: Time!
+  updatedAt: Time!
+  children: [Post]
+  currencyCode: String
+  goalAmount: Float
+  title: String!
+  why: String
+  what: String
+  about: String
+  items: [PostBoostItem!]
+}
+
+type PostBoostItem {
+  item: String!
+  cost: Float!
+}
+
+type PostComment implements Post {
+  id: String!
+  channelID: String!
+  parentID: String
+  authorID: String!
+  createdAt: Time!
+  updatedAt: Time!
+  children: [Post]
+  text: String!
+}
+
+type PostExternalLink implements Post {
+  id: String!
+  channelID: String!
+  parentID: String
+  authorID: String!
+  createdAt: Time!
+  updatedAt: Time!
+  children: [Post]
+  url: String
+}
+
+type PostSearchResult {
+  posts: [Post!]
+  beforeCursor: String
+  afterCursor: String
+}
+
+# input objects
+input PostSearchInput {
+  postType: String
+  channelID: String
+  authorID: String
+  createdAfter: Time
+  afterCursor: String
+  beforeCursor: String
+  limit: Int
+  order: String
+}
+
+input PostCreateBoostInput {
+  channelID: String!
+  title: String!
+  dateEnd: Time!
+  goalAmount: Float!
+  currencyCode: String!
+  why: String!
+  what: String!
+  about: String!
+  items: [PostCreateBoostItemInput!]
+}
+
+input PostCreateBoostItemInput {
+  item: String
+  cost: Float
+}
+
+input PostCreateExternalLinkInput {
+  url: String!
+}
+
+input PostCreateCommentInput {
+  text: String!
 }
 
 ## User object schemas

@@ -4,10 +4,12 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/jinzhu/gorm"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -97,4 +99,9 @@ func initAuthService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
 func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (
 	*tokencontroller.Service, error) {
 	return tokencontroller.NewService(config.ContractAddresses["CivilTokenController"], ethHelper)
+}
+
+func initPostService(config *utils.GraphQLConfig, db *gorm.DB) *posts.Service {
+	persister := posts.NewDBPostPersister(db)
+	return posts.NewService(persister)
 }

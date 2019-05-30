@@ -300,6 +300,25 @@
   revision = "3605ed457bf7f8caa1371b4fafadadc026673479"
 
 [[projects]]
+  digest = "1:94845588f4062c90f327551b2a50262fae846d1a65beba8058efbdbaaaca7f9e"
+  name = "github.com/jinzhu/gorm"
+  packages = [
+    ".",
+    "dialects/postgres",
+  ]
+  pruneopts = "UT"
+  revision = "b7156195f7f3415f97c20abbd6aff894b847fee8"
+  version = "v1.9.8"
+
+[[projects]]
+  branch = "master"
+  digest = "1:fd97437fbb6b7dce04132cf06775bd258cce305c44add58eb55ca86c6c325160"
+  name = "github.com/jinzhu/inflection"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "04140366298a54a039076d798123ffa108fff46c"
+
+[[projects]]
   digest = "1:7654989089e5bd5b6734ec3be8b695e87d3f1f8d95620b343fd7d3995a5b60d7"
   name = "github.com/jmoiron/sqlx"
   packages = [
@@ -372,10 +391,11 @@
   version = "v1.3.0"
 
 [[projects]]
-  digest = "1:37ce7d7d80531b227023331002c0d42b4b4b291a96798c82a049d03a54ba79e4"
+  digest = "1:2d370ad7a48d3523291ad53a04b9b1510c182880927f800b46221cc465427800"
   name = "github.com/lib/pq"
   packages = [
     ".",
+    "hstore",
     "oid",
   ]
   pruneopts = "UT"
@@ -412,6 +432,14 @@
   pruneopts = "UT"
   revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
   version = "v1.1"
+
+[[projects]]
+  digest = "1:d4a9eb03affc9f2a93cf8f68da206cc53b97608525050255b79f247535c5ba3a"
+  name = "github.com/pilagod/gorm-cursor-paginator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "52ae7acb0d4a9c42c8ad030de1e2169d21514f81"
+  version = "v0.1.0"
 
 [[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
@@ -826,6 +854,8 @@
     "github.com/go-chi/chi/middleware",
     "github.com/golang/glog",
     "github.com/iancoleman/strcase",
+    "github.com/jinzhu/gorm",
+    "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/jmoiron/sqlx",
     "github.com/joincivil/civil-events-processor/pkg/helpers",
     "github.com/joincivil/civil-events-processor/pkg/model",
@@ -844,6 +874,7 @@
     "github.com/joincivil/go-common/pkg/time",
     "github.com/kelseyhightower/envconfig",
     "github.com/lib/pq",
+    "github.com/pilagod/gorm-cursor-paginator",
     "github.com/rs/cors",
     "github.com/satori/go.uuid",
     "github.com/vektah/gqlparser",

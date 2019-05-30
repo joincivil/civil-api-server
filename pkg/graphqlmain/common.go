@@ -10,6 +10,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -39,6 +40,7 @@ type dependencies struct {
 	authService            *auth.Service
 	jsonbService           *jsonstore.Service
 	nrsignupService        *nrsignup.Service
+	postService            *posts.Service
 	ethHelper              *eth.Helper
 	storefrontService      *storefront.Service
 	tokenControllerService *tokencontroller.Service
@@ -46,6 +48,12 @@ type dependencies struct {
 
 func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	var err error
+
+	db, err := initGorm(config)
+	if err != nil {
+		log.Fatalf("Error initializing database: err: %v", err)
+		return nil, err
+	}
 
 	ethHelper, err := initETHHelper(config)
 	if err != nil {
@@ -117,6 +125,8 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
+	postService := initPostService(config, db)
+
 	return &dependencies{
 		emailer:                emailer,
 		mailchimp:              mailchimpAPI,
@@ -126,6 +136,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		jsonbService:           jsonbService,
 		nrsignupService:        nrsignupService,
 		ethHelper:              ethHelper,
+		postService:            postService,
 		storefrontService:      storefrontService,
 		tokenControllerService: tokenControllerService,
 	}, nil
@@ -134,7 +145,6 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 
 func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	if config.EthAPIURL != "" {
-		// todo(dankins): we don't actually need any private keys yet, but we will for CIVIL-5
 		accounts := map[string]string{}
 		if config.EthereumDefaultPrivateKey != "" {
 			log.Infof("Initialized default Ethereum account\n")
