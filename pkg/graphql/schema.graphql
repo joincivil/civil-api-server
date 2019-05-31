@@ -371,6 +371,7 @@ type PostBoost implements Post {
   currencyCode: String
   goalAmount: Float
   title: String!
+  dateEnd: Time!
   why: String
   what: String
   about: String

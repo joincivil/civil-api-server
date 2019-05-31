@@ -299,6 +299,7 @@ type ComplexityRoot struct {
 		CurrencyCode func(childComplexity int) int
 		GoalAmount   func(childComplexity int) int
 		Title        func(childComplexity int) int
+		DateEnd      func(childComplexity int) int
 		Why          func(childComplexity int) int
 		What         func(childComplexity int) int
 		About        func(childComplexity int) int
@@ -3304,6 +3305,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostBoost.Title(childComplexity), true
+
+	case "PostBoost.dateEnd":
+		if e.complexity.PostBoost.DateEnd == nil {
+			break
+		}
+
+		return e.complexity.PostBoost.DateEnd(childComplexity), true
 
 	case "PostBoost.why":
 		if e.complexity.PostBoost.Why == nil {
@@ -10058,6 +10066,11 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "dateEnd":
+			out.Values[i] = ec._PostBoost_dateEnd(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "why":
 			out.Values[i] = ec._PostBoost_why(ctx, field, obj)
 		case "what":
@@ -10374,6 +10387,33 @@ func (ec *executionContext) _PostBoost_title(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PostBoost_dateEnd(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostBoost",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DateEnd, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
 }
 
 // nolint: vetshadow
@@ -16215,6 +16255,7 @@ type PostBoost implements Post {
   currencyCode: String
   goalAmount: Float
   title: String!
+  dateEnd: Time!
   why: String
   what: String
   about: String
