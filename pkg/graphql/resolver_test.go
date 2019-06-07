@@ -233,7 +233,7 @@ func initResolver(t *testing.T) (*graphql.Resolver, common.Address) {
 	govEventsPersister := &testGovernanceEventPersister{
 		Events: events,
 	}
-	resolver := graphql.NewResolver(&graphql.ResolverConfig{
+	resolver := graphql.NewResolver(graphql.ResolverConfig{
 		ListingPersister:   listingPersister,
 		GovEventPersister:  govEventsPersister,
 		RevisionPersister:  nil,

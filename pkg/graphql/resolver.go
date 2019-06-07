@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	pmodel "github.com/joincivil/civil-events-processor/pkg/model"
+	"go.uber.org/fx"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -42,6 +43,7 @@ var (
 
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
+	fx.In
 	AuthService                *auth.Service
 	ListingPersister           pmodel.ListingPersister
 	GovEventPersister          pmodel.GovernanceEventPersister
@@ -62,7 +64,7 @@ type ResolverConfig struct {
 }
 
 // NewResolver is a convenience function to init a Resolver struct
-func NewResolver(config *ResolverConfig) *Resolver {
+func NewResolver(config ResolverConfig) *Resolver {
 	return &Resolver{
 		authService:                config.AuthService,
 		listingPersister:           config.ListingPersister,

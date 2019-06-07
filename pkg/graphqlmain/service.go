@@ -4,14 +4,12 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/jinzhu/gorm"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/payments"
-	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -25,13 +23,6 @@ import (
 func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresPersister,
 	tokenControllerService *tokencontroller.Service) (
 	*users.UserService, error) {
-	if userPersister == nil {
-		var perr error
-		userPersister, perr = initUserPersister(config)
-		if perr != nil {
-			return nil, perr
-		}
-	}
 	userService := users.NewUserService(userPersister, tokenControllerService)
 	if userService == nil {
 		return nil, fmt.Errorf("User service was not initialized")
@@ -40,11 +31,11 @@ func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresP
 
 }
 
-func initNrsignupService(config *utils.GraphQLConfig, client bind.ContractBackend,
+func initNrsignupService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 	emailer *cemail.Emailer, userService *users.UserService, jsonbService *jsonstore.Service,
 	jwtGenerator *auth.JwtTokenGenerator) (*nrsignup.Service, error) {
 	nrsignupService, err := nrsignup.NewNewsroomSignupService(
-		client,
+		ethHelper,
 		emailer,
 		userService,
 		jsonbService,
@@ -73,7 +64,7 @@ func initJsonbService(config *utils.GraphQLConfig, jsonbPersister jsonstore.Json
 }
 
 func initStorefrontService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
-	userService *users.UserService, mailchimp *cemail.MailchimpAPI) (*storefront.Service, error) {
+	userService *users.UserService, mailchimp cemail.ListMemberManager) (*storefront.Service, error) {
 	emailLists := storefront.NewMailchimpServiceEmailLists(mailchimp)
 
 	return storefront.NewService(
@@ -85,27 +76,9 @@ func initStorefrontService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 	)
 }
 
-func initAuthService(config *utils.GraphQLConfig, emailer *cemail.Emailer,
-	userService *users.UserService, jwtGenerator *auth.JwtTokenGenerator) (*auth.Service, error) {
-	return auth.NewAuthService(
-		userService,
-		jwtGenerator,
-		emailer,
-		config.AuthEmailSignupTemplates,
-		config.AuthEmailLoginTemplates,
-		config.SignupLoginProtoHost,
-		config.RefreshTokenBlacklist,
-	)
-}
-
 func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (
 	*tokencontroller.Service, error) {
 	return tokencontroller.NewService(config.ContractAddresses["CivilTokenController"], ethHelper)
-}
-
-func initPostService(config *utils.GraphQLConfig, db *gorm.DB) *posts.Service {
-	persister := posts.NewDBPostPersister(db)
-	return posts.NewService(persister)
 }
 
 func initPaymentService(config *utils.GraphQLConfig, db *gorm.DB, ethHelper *eth.Helper) *payments.Service {

@@ -1,6 +1,7 @@
 package graphqlmain
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -9,8 +10,12 @@ import (
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/graphql"
+	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/rs/cors"
+	"go.uber.org/fx"
 )
 
 const (
@@ -24,15 +29,24 @@ var (
 	}
 )
 
-// RunServer starts up the GraphQL server
-// Normally called from main.go
-func RunServer(config *utils.GraphQLConfig) error {
+// ServerDeps define the fields needed to run the Server
+type ServerDeps struct {
+	fx.In
+	Config                *utils.GraphQLConfig
+	Resolver              *graphql.Resolver
+	JwtGenerator          *auth.JwtTokenGenerator
+	NewsroomSignupService *nrsignup.Service
+	StorefrontService     *storefront.Service
+	Router                chi.Router
+}
+
+// NewRouter builds a new chi router
+func NewRouter(lc fx.Lifecycle, config *utils.GraphQLConfig) chi.Router {
 	log.Infof("proto %v", config.ApproveGrantProtoHost)
 	port := strconv.Itoa(config.Port)
 	if port == "" {
 		port = defaultPort
 	}
-
 	router := chi.NewRouter()
 
 	// Some middleware bits for tracking
@@ -51,8 +65,33 @@ func RunServer(config *utils.GraphQLConfig) error {
 	})
 	router.Use(cors.Handler)
 
+	lc.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			log.Info("Starting HTTP server.")
+			go func() {
+				err := http.ListenAndServe(":"+port, router)
+				if err != nil {
+					log.Errorf("Error starting HTTP server, %v", err)
+				}
+			}()
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			log.Info("Stopping HTTP server.")
+			return nil
+		},
+	})
+
+	return router
+}
+
+// RunServer starts up the GraphQL server
+func RunServer(deps ServerDeps) error {
+
+	router := deps.Router
+
 	// Setup the API services
-	err := enableAPIServices(router, config, port)
+	err := enableAPIServices(router, "8080", deps)
 	if err != nil {
 		log.Fatalf("Error setting up services: err: %v", err)
 	}
@@ -63,38 +102,15 @@ func RunServer(config *utils.GraphQLConfig) error {
 		log.Fatalf("Error setting up health check: err: %v", err)
 	}
 
-	err = http.ListenAndServe(":"+port, router)
-	if err != nil {
-		log.Fatalf("Error starting api service: err: %v", err)
-	}
-
 	return nil
 }
 
-func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port string) error {
-	deps, err := initDependencies(config)
-	if err != nil {
-		log.Fatalf("Error initializing dependencies: err: %v", err)
-		return err
-	}
+func enableAPIServices(router chi.Router, port string, deps ServerDeps) error {
 
 	// Enable authentication/authorization handling
-	router.Use(auth.Middleware(deps.jwtGenerator))
+	router.Use(auth.Middleware(deps.JwtGenerator))
 
-	// GraphQL Query Endpoint (Crawler/KYC)
-	rconfig := &graphqlResolverConfig{
-		config:            config,
-		authService:       deps.authService,
-		userService:       deps.userService,
-		jsonbService:      deps.jsonbService,
-		nrsignupService:   deps.nrsignupService,
-		storefrontService: deps.storefrontService,
-		paymentService:    deps.paymentService,
-		postService:       deps.postService,
-		emailListMembers:  deps.mailchimp,
-		errorReporter:     deps.errRep,
-	}
-	err = graphQLRouting(router, rconfig)
+	err := graphQLRouting(router, deps.Resolver)
 	if err != nil {
 		log.Fatalf("Error setting up graphql routing: err: %v", err)
 	}
@@ -104,13 +120,13 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 		graphQLVersion,
 	)
 	// GraphQL Debug Console
-	if config.Debug {
+	if deps.Config.Debug {
 		debugGraphQLRouting(router, "query")
 		log.Infof("Connect to http://localhost:%v/ for GraphQL playground\n", port)
 	}
 
 	// Newsroom Signup REST endpoints
-	err = nrsignupRouting(router, config, deps.nrsignupService, deps.jwtGenerator)
+	err = nrsignupRouting(router, deps.Config, deps.NewsroomSignupService, deps.JwtGenerator)
 	if err != nil {
 		log.Fatalf("Error setting up newsroom signup routing: err: %v", err)
 	}
@@ -121,7 +137,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 	)
 
 	// airswap REST endpoints
-	airswap.EnableAirswapRouting(router, deps.storefrontService)
+	airswap.EnableAirswapRouting(router, deps.StorefrontService)
 
 	return nil
 }
