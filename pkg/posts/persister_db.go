@@ -6,7 +6,6 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/joincivil/civil-api-server/pkg/payments"
 	paginator "github.com/pilagod/gorm-cursor-paginator"
 	uuid "github.com/satori/go.uuid"
 )
@@ -42,28 +41,6 @@ func (p *DBPostPersister) GetPost(id string) (Post, error) {
 	p.db.First(postModel)
 
 	return BaseToPostInterface(postModel)
-}
-
-func (p *DBPostPersister) GetPayments(post Post) ([]payments.Payment, error) {
-	var pays []payments.PaymentModel
-	postModel := &PostModel{ID: post.GetPostModel().ID}
-
-	if err := p.db.First(postModel).Related(&pays, "PostPayments").Error; err != nil {
-		fmt.Printf("An error occured: %v\n", err)
-		return nil, err
-	}
-
-	var paymentsSlice []payments.Payment
-	for _, result := range pays {
-		payment, err := payments.ModelToInterface(&result)
-		if err != nil {
-			fmt.Printf("An error occured: %v\n", err)
-			return nil, err
-		}
-		paymentsSlice = append(paymentsSlice, payment)
-	}
-
-	return paymentsSlice, nil
 }
 
 // SearchPosts retrieves posts making the search criteria

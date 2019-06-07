@@ -42,28 +42,34 @@ func NewEthereumService(chain ethereum.TransactionReader) *EthereumService {
 // ValidateTransaction accepts a transaction and determines whether it is valid
 func (s *EthereumService) ValidateTransaction(transactionID string, expectedReceiver string) (*ValidateTransactionResponse, error) {
 
+	// parse expectedReceiver into an ETH address
 	receiverAddr := common.HexToAddress(expectedReceiver)
 	if receiverAddr == common.HexToAddress("0x") {
 		return nil, errors.New("invalid expectedReceiver address")
 	}
+
+	// retrieve the transaction information
 	data, _, err := s.chain.TransactionByHash(context.Background(), common.HexToHash(transactionID))
 	if err != nil {
 		return nil, fmt.Errorf("error with transaction: %v", err)
 	}
-	var ether = new(big.Float).SetInt(data.Value())
-	ether = ether.Quo(ether, big.NewFloat(1e18))
 
-	fmt.Println("STRING", ether.String())
-
+	// ensure that we are actually transferring to the correct address
+	// this is to prevent trying to game the system but sending a tx from a payment that wasn't actually to them
 	if data.To().String() != receiverAddr.String() {
 		return nil, fmt.Errorf("transaction sent to %v but was expecting %v", data.To().String(), receiverAddr.String())
 	}
-
+	// convert the transction amount from wei to ether
+	var ether = new(big.Float).SetInt(data.Value())
+	ether = ether.Quo(ether, big.NewFloat(1e18))
 	valueFloat, _ := ether.Float64()
+
+	// retrieve the current exchange rate to USD
 	exchangeRate, err := s.currencyConversion.ETHToUSD()
 	if err != nil {
 		return nil, fmt.Errorf("error getting exchange rate: err: %v", err)
 	}
+
 	return &ValidateTransactionResponse{
 		Amount:        valueFloat,
 		TransactionID: data.Hash().String(),

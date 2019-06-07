@@ -93,24 +93,19 @@ var (
 
 type postBoostResolver struct{ *Resolver }
 
-// TotalPaymentsUSD returns the sum of all the payments associated with this post converted to USD
-func (r *postBoostResolver) TotalPaymentsUSD(ctx context.Context, boost *posts.Boost) (float64, error) {
-	return r.postService.TotalPaymentsUSD(boost.ID)
-}
-
 // Children returns children post of a Boost post
 func (r *postBoostResolver) Children(context.Context, *posts.Boost) ([]*posts.Post, error) {
 	return nil, ErrNotImplemented
 }
 
-// Payments returns children post of a Boost post
+// Payments returns payments associated with this Post
 func (r *postBoostResolver) Payments(ctx context.Context, boost *posts.Boost) ([]payments.Payment, error) {
-	return r.postService.GetPayments(boost)
+	return r.paymentService.GetPayments(boost.ID)
 }
 
-// Payments returns children post of a Boost post
+// PaymentsTotal is the sum if payments for this Post
 func (r *postBoostResolver) PaymentsTotal(ctx context.Context, boost *posts.Boost, currencyCode string) (float64, error) {
-	return r.postService.TotalPaymentsUSD(boost.ID)
+	return r.paymentService.TotalPayments(boost.ID, currencyCode)
 }
 
 type postExternalLinkResolver struct{ *Resolver }
@@ -120,14 +115,14 @@ func (r *postExternalLinkResolver) Children(context.Context, *posts.ExternalLink
 	return nil, ErrNotImplemented
 }
 
-// Payments returns children post of a ExternalLink post
-func (r *postExternalLinkResolver) Payments(context.Context, *posts.ExternalLink) ([]payments.Payment, error) {
-	return nil, ErrNotImplemented
+// Payments returns payments associated with this Post
+func (r *postExternalLinkResolver) Payments(ctx context.Context, post *posts.ExternalLink) ([]payments.Payment, error) {
+	return r.paymentService.GetPayments(post.ID)
 }
 
-// Payments returns children post of a ExternalLink post
+// PaymentsTotal is the sum if payments for this Post
 func (r *postExternalLinkResolver) PaymentsTotal(ctx context.Context, link *posts.ExternalLink, currencyCode string) (float64, error) {
-	return r.postService.TotalPaymentsUSD(link.ID)
+	return r.paymentService.TotalPayments(link.ID, currencyCode)
 }
 
 type postCommentResolver struct{ *Resolver }
@@ -137,12 +132,12 @@ func (r *postCommentResolver) Children(context.Context, *posts.Comment) ([]*post
 	return nil, ErrNotImplemented
 }
 
-// Payments returns children post of a Comment post
-func (r *postCommentResolver) Payments(ctx context.Context, comment *posts.Comment) ([]payments.Payment, error) {
-	return nil, ErrNotImplemented
+// Payments returns payments associated with this Post
+func (r *postCommentResolver) Payments(ctx context.Context, post *posts.Comment) ([]payments.Payment, error) {
+	return r.paymentService.GetPayments(post.ID)
 }
 
-// Payments returns children post of a Comment post
+// PaymentsTotal is the sum if payments for this Post
 func (r *postCommentResolver) PaymentsTotal(ctx context.Context, comment *posts.Comment, currencyCode string) (float64, error) {
-	return r.postService.TotalPaymentsUSD(comment.ID)
+	return r.paymentService.TotalPayments(comment.ID, currencyCode)
 }
