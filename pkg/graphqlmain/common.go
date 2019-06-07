@@ -10,6 +10,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
@@ -40,6 +41,7 @@ type dependencies struct {
 	authService            *auth.Service
 	jsonbService           *jsonstore.Service
 	nrsignupService        *nrsignup.Service
+	paymentService         *payments.Service
 	postService            *posts.Service
 	ethHelper              *eth.Helper
 	storefrontService      *storefront.Service
@@ -127,6 +129,8 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 
 	postService := initPostService(config, db)
 
+	paymentService := initPaymentService(config, db, ethHelper)
+
 	return &dependencies{
 		emailer:                emailer,
 		mailchimp:              mailchimpAPI,
@@ -138,6 +142,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		ethHelper:              ethHelper,
 		postService:            postService,
 		storefrontService:      storefrontService,
+		paymentService:         paymentService,
 		tokenControllerService: tokenControllerService,
 	}, nil
 

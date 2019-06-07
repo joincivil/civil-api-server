@@ -60,6 +60,20 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb
   NrsignupNewsroom:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.SignupUserJSONData
+  Payment: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.Payment
+  PaymentStripe: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
+  PaymentEther: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
+  PaymentToken: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  PaymentsCreateStripePaymentInput: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
+  PaymentsCreateEtherPaymentInput: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
+  PaymentsCreateTokenPaymentInput: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
   Post:
     model: github.com/joincivil/civil-api-server/pkg/posts.Post
   PostBoost:

@@ -4,12 +4,14 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 )
 
 // Post represents a Civil Post
 type Post interface {
-	GetBase() *Base
+	GetPostModel() *PostModel
 	GetType() string
+	GetChannelID() string
 }
 
 // Pagination is used to pass cursors for pagination
@@ -24,27 +26,38 @@ type PostSearchResult struct {
 	Pagination
 }
 
-// Base contains fields common to all types of Posts
-type Base struct {
-	ID        string `gorm:"type:uuid;primary_key" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time
-	ParentID  *string `gorm:"index:parent"`
-	ChannelID string  `gorm:"index:channel"`
-	AuthorID  string  `gorm:"index:author"`
-	PostType  string  `gorm:"index:type"`
-	Data      postgres.Jsonb
+// PostModel contains fields common to all types of Posts
+type PostModel struct {
+	ID           string `gorm:"type:uuid;primary_key"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	DeletedAt    *time.Time
+	ParentID     *string `gorm:"index:parent"`
+	ChannelID    string  `gorm:"index:channel"`
+	AuthorID     string  `gorm:"index:author"`
+	PostType     string  `gorm:"index:type"`
+	Data         postgres.Jsonb
+	PostPayments []*payments.PaymentModel `gorm:"polymorphic:Owner;"`
 }
 
-// GetBase returns itself in order to implement the Post interface
-func (p Base) GetBase() *Base {
+// TableName returns the gorm table name for Base
+func (PostModel) TableName() string {
+	return "posts"
+}
+
+// GetPostModel returns itself in order to implement the Post interface
+func (p PostModel) GetPostModel() *PostModel {
 	return &p
+}
+
+// GetChannelID returns the Channel ID of the post
+func (p PostModel) GetChannelID() string {
+	return p.ChannelID
 }
 
 // Boost is a type of Post that is describes an initiative that can be funded
 type Boost struct {
-	Base         `json:"-"`
+	PostModel    `json:"-"`
 	Title        string      `json:"text"`
 	CurrencyCode string      `json:"currency_code"`
 	GoalAmount   float64     `json:"goal_amount"`
@@ -68,8 +81,8 @@ func (b Boost) GetType() string {
 
 // Comment is a type of Post that contains just type
 type Comment struct {
-	Base `json:"-"`
-	Text string `json:"text"`
+	PostModel `json:"-"`
+	Text      string `json:"text"`
 }
 
 // GetType returns the post type "Boost"
@@ -79,8 +92,8 @@ func (b Comment) GetType() string {
 
 // ExternalLink is a type of Post that links to another web page
 type ExternalLink struct {
-	Base `json:"-"`
-	URL  string `json:"url"`
+	PostModel `json:"-"`
+	URL       string `json:"url"`
 }
 
 // GetType returns the post type "Boost"

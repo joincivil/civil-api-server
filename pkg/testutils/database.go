@@ -5,7 +5,9 @@ import (
 	"os"
 
 	"github.com/jinzhu/gorm"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
+
 	// load postgres specific dialect
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -48,7 +50,7 @@ func GetTestDBConnection() (*gorm.DB, error) {
 	}
 
 	db.LogMode(true)
-	db.AutoMigrate(&posts.Base{})
+	db.AutoMigrate(&posts.PostModel{}, &payments.PaymentModel{})
 
 	return db, err
 }

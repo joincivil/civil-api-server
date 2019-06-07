@@ -53,6 +53,8 @@ type GraphQLConfig struct {
 
 	VersionNumber string `split_words:"true" desc:"Sets the version to use for crawler related Postgres tables"`
 
+	StripeAPIKey string `envconfig:"stripe_api_key" split_words:"true" desc:"API key for stripe"`
+
 	TokenFoundryUser     string `split_words:"true" desc:"TokenFoundry User"`
 	TokenFoundryPassword string `split_words:"true" desc:"TokenFoundry Password"`
 

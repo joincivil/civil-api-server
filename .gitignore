@@ -32,3 +32,5 @@ jwtToken.txt
 **/.gometalinter-*
 
 main
+
+.env.local

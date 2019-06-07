@@ -329,6 +329,14 @@
   revision = "0dae4fefe7c0e190f7b5a78dac28a1c82cc8d849"
 
 [[projects]]
+  digest = "1:ecd9aa82687cf31d1585d4ac61d0ba180e42e8a6182b85bd785fcca8dfeefc1b"
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
   branch = "master"
   digest = "1:351101186fce1dfb1a381b9ae04bb453cc8fd6bca9f98f1afd10188e6c0548db"
   name = "github.com/joincivil/civil-events-crawler"
@@ -533,6 +541,18 @@
   pruneopts = "UT"
   revision = "003c143a81c25ea5e263d692919c611c7122ae6b"
   version = "0.2.5"
+
+[[projects]]
+  digest = "1:bdf266839fe4ac045855ffa266d3cec004f52bf96c6f08c3b62b380cb6a51bb9"
+  name = "github.com/stripe/stripe-go"
+  packages = [
+    ".",
+    "charge",
+    "form",
+  ]
+  pruneopts = "UT"
+  revision = "796c9b9168bb3066a9c944b6200d1453115d574a"
+  version = "v61.0.1"
 
 [[projects]]
   branch = "master"
@@ -857,6 +877,7 @@
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/jmoiron/sqlx",
+    "github.com/joho/godotenv",
     "github.com/joincivil/civil-events-processor/pkg/helpers",
     "github.com/joincivil/civil-events-processor/pkg/model",
     "github.com/joincivil/civil-events-processor/pkg/processor",
@@ -877,6 +898,8 @@
     "github.com/pilagod/gorm-cursor-paginator",
     "github.com/rs/cors",
     "github.com/satori/go.uuid",
+    "github.com/stripe/stripe-go",
+    "github.com/stripe/stripe-go/charge",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
   ]

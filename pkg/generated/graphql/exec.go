@@ -16,6 +16,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
@@ -254,6 +255,9 @@ type ComplexityRoot struct {
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
 		NrsignupUpdateSteps               func(childComplexity int, input NrsignupStepsInput) int
+		PaymentsCreateStripePayment       func(childComplexity int, postID string, input payments.StripePayment) int
+		PaymentsCreateEtherPayment        func(childComplexity int, postID string, input payments.EtherPayment) int
+		PaymentsCreateTokenPayment        func(childComplexity int, postID string, input payments.TokenPayment) int
 		PostsCreateBoost                  func(childComplexity int, input posts.Boost) int
 		PostsCreateExternalLink           func(childComplexity int, input posts.ExternalLink) int
 		PostsCreateComment                func(childComplexity int, input posts.Comment) int
@@ -280,6 +284,41 @@ type ComplexityRoot struct {
 		HasNextPage func(childComplexity int) int
 	}
 
+	PaymentEther struct {
+		Reaction      func(childComplexity int) int
+		Comment       func(childComplexity int) int
+		CurrencyCode  func(childComplexity int) int
+		ExchangeRate  func(childComplexity int) int
+		Amount        func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		TransactionId func(childComplexity int) int
+		UsdEquivalent func(childComplexity int) int
+	}
+
+	PaymentStripe struct {
+		Reaction      func(childComplexity int) int
+		Comment       func(childComplexity int) int
+		CurrencyCode  func(childComplexity int) int
+		ExchangeRate  func(childComplexity int) int
+		Amount        func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		UsdEquivalent func(childComplexity int) int
+	}
+
+	PaymentToken struct {
+		Reaction      func(childComplexity int) int
+		Comment       func(childComplexity int) int
+		CurrencyCode  func(childComplexity int) int
+		ExchangeRate  func(childComplexity int) int
+		Amount        func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		TransactionId func(childComplexity int) int
+		UsdEquivalent func(childComplexity int) int
+	}
+
 	Poll struct {
 		CommitEndDate func(childComplexity int) int
 		RevealEndDate func(childComplexity int) int
@@ -289,21 +328,23 @@ type ComplexityRoot struct {
 	}
 
 	PostBoost struct {
-		Id           func(childComplexity int) int
-		ChannelId    func(childComplexity int) int
-		ParentId     func(childComplexity int) int
-		AuthorId     func(childComplexity int) int
-		CreatedAt    func(childComplexity int) int
-		UpdatedAt    func(childComplexity int) int
-		Children     func(childComplexity int) int
-		CurrencyCode func(childComplexity int) int
-		GoalAmount   func(childComplexity int) int
-		Title        func(childComplexity int) int
-		DateEnd      func(childComplexity int) int
-		Why          func(childComplexity int) int
-		What         func(childComplexity int) int
-		About        func(childComplexity int) int
-		Items        func(childComplexity int) int
+		Id            func(childComplexity int) int
+		ChannelId     func(childComplexity int) int
+		ParentId      func(childComplexity int) int
+		AuthorId      func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		Children      func(childComplexity int) int
+		Payments      func(childComplexity int) int
+		PaymentsTotal func(childComplexity int, currencyCode string) int
+		CurrencyCode  func(childComplexity int) int
+		GoalAmount    func(childComplexity int) int
+		Title         func(childComplexity int) int
+		DateEnd       func(childComplexity int) int
+		Why           func(childComplexity int) int
+		What          func(childComplexity int) int
+		About         func(childComplexity int) int
+		Items         func(childComplexity int) int
 	}
 
 	PostBoostItem struct {
@@ -312,25 +353,29 @@ type ComplexityRoot struct {
 	}
 
 	PostComment struct {
-		Id        func(childComplexity int) int
-		ChannelId func(childComplexity int) int
-		ParentId  func(childComplexity int) int
-		AuthorId  func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Children  func(childComplexity int) int
-		Text      func(childComplexity int) int
+		Id            func(childComplexity int) int
+		ChannelId     func(childComplexity int) int
+		ParentId      func(childComplexity int) int
+		AuthorId      func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		Children      func(childComplexity int) int
+		Payments      func(childComplexity int) int
+		PaymentsTotal func(childComplexity int, currencyCode string) int
+		Text          func(childComplexity int) int
 	}
 
 	PostExternalLink struct {
-		Id        func(childComplexity int) int
-		ChannelId func(childComplexity int) int
-		ParentId  func(childComplexity int) int
-		AuthorId  func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		UpdatedAt func(childComplexity int) int
-		Children  func(childComplexity int) int
-		Url       func(childComplexity int) int
+		Id            func(childComplexity int) int
+		ChannelId     func(childComplexity int) int
+		ParentId      func(childComplexity int) int
+		AuthorId      func(childComplexity int) int
+		CreatedAt     func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+		Children      func(childComplexity int) int
+		Payments      func(childComplexity int) int
+		PaymentsTotal func(childComplexity int, currencyCode string) int
+		Url           func(childComplexity int) int
 	}
 
 	PostSearchResult struct {
@@ -497,6 +542,9 @@ type MutationResolver interface {
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
 	NrsignupUpdateSteps(ctx context.Context, input NrsignupStepsInput) (string, error)
+	PaymentsCreateStripePayment(ctx context.Context, postID string, input payments.StripePayment) (payments.StripePayment, error)
+	PaymentsCreateEtherPayment(ctx context.Context, postID string, input payments.EtherPayment) (payments.EtherPayment, error)
+	PaymentsCreateTokenPayment(ctx context.Context, postID string, input payments.TokenPayment) (payments.TokenPayment, error)
 	PostsCreateBoost(ctx context.Context, input posts.Boost) (*posts.Boost, error)
 	PostsCreateExternalLink(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error)
 	PostsCreateComment(ctx context.Context, input posts.Comment) (*posts.Comment, error)
@@ -514,12 +562,18 @@ type PollResolver interface {
 }
 type PostBoostResolver interface {
 	Children(ctx context.Context, obj *posts.Boost) ([]*posts.Post, error)
+	Payments(ctx context.Context, obj *posts.Boost) ([]payments.Payment, error)
+	PaymentsTotal(ctx context.Context, obj *posts.Boost, currencyCode string) (float64, error)
 }
 type PostCommentResolver interface {
 	Children(ctx context.Context, obj *posts.Comment) ([]*posts.Post, error)
+	Payments(ctx context.Context, obj *posts.Comment) ([]payments.Payment, error)
+	PaymentsTotal(ctx context.Context, obj *posts.Comment, currencyCode string) (float64, error)
 }
 type PostExternalLinkResolver interface {
 	Children(ctx context.Context, obj *posts.ExternalLink) ([]*posts.Post, error)
+	Payments(ctx context.Context, obj *posts.ExternalLink) ([]payments.Payment, error)
+	PaymentsTotal(ctx context.Context, obj *posts.ExternalLink, currencyCode string) (float64, error)
 }
 type QueryResolver interface {
 	Articles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
@@ -933,6 +987,78 @@ func field_Mutation_nrsignupUpdateSteps_args(rawArgs map[string]interface{}) (ma
 
 }
 
+func field_Mutation_paymentsCreateStripePayment_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 payments.StripePayment
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg1, err = UnmarshalPaymentsCreateStripePaymentInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+
+}
+
+func field_Mutation_paymentsCreateEtherPayment_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 payments.EtherPayment
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg1, err = UnmarshalPaymentsCreateEtherPaymentInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+
+}
+
+func field_Mutation_paymentsCreateTokenPayment_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 payments.TokenPayment
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg1, err = UnmarshalPaymentsCreateTokenPaymentInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+
+}
+
 func field_Mutation_postsCreateBoost_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 posts.Boost
@@ -1038,6 +1164,51 @@ func field_Mutation_userUpdate_args(rawArgs map[string]interface{}) (map[string]
 		}
 	}
 	args["input"] = arg1
+	return args, nil
+
+}
+
+func field_PostBoost_paymentsTotal_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["currencyCode"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["currencyCode"] = arg0
+	return args, nil
+
+}
+
+func field_PostComment_paymentsTotal_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["currencyCode"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["currencyCode"] = arg0
+	return args, nil
+
+}
+
+func field_PostExternalLink_paymentsTotal_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["currencyCode"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["currencyCode"] = arg0
 	return args, nil
 
 }
@@ -3045,6 +3216,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.NrsignupUpdateSteps(childComplexity, args["input"].(NrsignupStepsInput)), true
 
+	case "Mutation.paymentsCreateStripePayment":
+		if e.complexity.Mutation.PaymentsCreateStripePayment == nil {
+			break
+		}
+
+		args, err := field_Mutation_paymentsCreateStripePayment_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsCreateStripePayment(childComplexity, args["postID"].(string), args["input"].(payments.StripePayment)), true
+
+	case "Mutation.paymentsCreateEtherPayment":
+		if e.complexity.Mutation.PaymentsCreateEtherPayment == nil {
+			break
+		}
+
+		args, err := field_Mutation_paymentsCreateEtherPayment_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsCreateEtherPayment(childComplexity, args["postID"].(string), args["input"].(payments.EtherPayment)), true
+
+	case "Mutation.paymentsCreateTokenPayment":
+		if e.complexity.Mutation.PaymentsCreateTokenPayment == nil {
+			break
+		}
+
+		args, err := field_Mutation_paymentsCreateTokenPayment_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsCreateTokenPayment(childComplexity, args["postID"].(string), args["input"].(payments.TokenPayment)), true
+
 	case "Mutation.postsCreateBoost":
 		if e.complexity.Mutation.PostsCreateBoost == nil {
 			break
@@ -3201,6 +3408,188 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.HasNextPage(childComplexity), true
 
+	case "PaymentEther.reaction":
+		if e.complexity.PaymentEther.Reaction == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.Reaction(childComplexity), true
+
+	case "PaymentEther.comment":
+		if e.complexity.PaymentEther.Comment == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.Comment(childComplexity), true
+
+	case "PaymentEther.currencyCode":
+		if e.complexity.PaymentEther.CurrencyCode == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.CurrencyCode(childComplexity), true
+
+	case "PaymentEther.exchangeRate":
+		if e.complexity.PaymentEther.ExchangeRate == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.ExchangeRate(childComplexity), true
+
+	case "PaymentEther.amount":
+		if e.complexity.PaymentEther.Amount == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.Amount(childComplexity), true
+
+	case "PaymentEther.createdAt":
+		if e.complexity.PaymentEther.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.CreatedAt(childComplexity), true
+
+	case "PaymentEther.updatedAt":
+		if e.complexity.PaymentEther.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.UpdatedAt(childComplexity), true
+
+	case "PaymentEther.transactionID":
+		if e.complexity.PaymentEther.TransactionId == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.TransactionId(childComplexity), true
+
+	case "PaymentEther.usdEquivalent":
+		if e.complexity.PaymentEther.UsdEquivalent == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.UsdEquivalent(childComplexity), true
+
+	case "PaymentStripe.reaction":
+		if e.complexity.PaymentStripe.Reaction == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.Reaction(childComplexity), true
+
+	case "PaymentStripe.comment":
+		if e.complexity.PaymentStripe.Comment == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.Comment(childComplexity), true
+
+	case "PaymentStripe.currencyCode":
+		if e.complexity.PaymentStripe.CurrencyCode == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.CurrencyCode(childComplexity), true
+
+	case "PaymentStripe.exchangeRate":
+		if e.complexity.PaymentStripe.ExchangeRate == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.ExchangeRate(childComplexity), true
+
+	case "PaymentStripe.amount":
+		if e.complexity.PaymentStripe.Amount == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.Amount(childComplexity), true
+
+	case "PaymentStripe.createdAt":
+		if e.complexity.PaymentStripe.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.CreatedAt(childComplexity), true
+
+	case "PaymentStripe.updatedAt":
+		if e.complexity.PaymentStripe.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.UpdatedAt(childComplexity), true
+
+	case "PaymentStripe.usdEquivalent":
+		if e.complexity.PaymentStripe.UsdEquivalent == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.UsdEquivalent(childComplexity), true
+
+	case "PaymentToken.reaction":
+		if e.complexity.PaymentToken.Reaction == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.Reaction(childComplexity), true
+
+	case "PaymentToken.comment":
+		if e.complexity.PaymentToken.Comment == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.Comment(childComplexity), true
+
+	case "PaymentToken.currencyCode":
+		if e.complexity.PaymentToken.CurrencyCode == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.CurrencyCode(childComplexity), true
+
+	case "PaymentToken.exchangeRate":
+		if e.complexity.PaymentToken.ExchangeRate == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.ExchangeRate(childComplexity), true
+
+	case "PaymentToken.amount":
+		if e.complexity.PaymentToken.Amount == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.Amount(childComplexity), true
+
+	case "PaymentToken.createdAt":
+		if e.complexity.PaymentToken.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.CreatedAt(childComplexity), true
+
+	case "PaymentToken.updatedAt":
+		if e.complexity.PaymentToken.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.UpdatedAt(childComplexity), true
+
+	case "PaymentToken.transactionID":
+		if e.complexity.PaymentToken.TransactionId == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.TransactionId(childComplexity), true
+
+	case "PaymentToken.usdEquivalent":
+		if e.complexity.PaymentToken.UsdEquivalent == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.UsdEquivalent(childComplexity), true
+
 	case "Poll.commitEndDate":
 		if e.complexity.Poll.CommitEndDate == nil {
 			break
@@ -3284,6 +3673,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostBoost.Children(childComplexity), true
+
+	case "PostBoost.payments":
+		if e.complexity.PostBoost.Payments == nil {
+			break
+		}
+
+		return e.complexity.PostBoost.Payments(childComplexity), true
+
+	case "PostBoost.paymentsTotal":
+		if e.complexity.PostBoost.PaymentsTotal == nil {
+			break
+		}
+
+		args, err := field_PostBoost_paymentsTotal_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PostBoost.PaymentsTotal(childComplexity, args["currencyCode"].(string)), true
 
 	case "PostBoost.currencyCode":
 		if e.complexity.PostBoost.CurrencyCode == nil {
@@ -3404,6 +3812,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.Children(childComplexity), true
 
+	case "PostComment.payments":
+		if e.complexity.PostComment.Payments == nil {
+			break
+		}
+
+		return e.complexity.PostComment.Payments(childComplexity), true
+
+	case "PostComment.paymentsTotal":
+		if e.complexity.PostComment.PaymentsTotal == nil {
+			break
+		}
+
+		args, err := field_PostComment_paymentsTotal_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PostComment.PaymentsTotal(childComplexity, args["currencyCode"].(string)), true
+
 	case "PostComment.text":
 		if e.complexity.PostComment.Text == nil {
 			break
@@ -3459,6 +3886,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostExternalLink.Children(childComplexity), true
+
+	case "PostExternalLink.payments":
+		if e.complexity.PostExternalLink.Payments == nil {
+			break
+		}
+
+		return e.complexity.PostExternalLink.Payments(childComplexity), true
+
+	case "PostExternalLink.paymentsTotal":
+		if e.complexity.PostExternalLink.PaymentsTotal == nil {
+			break
+		}
+
+		args, err := field_PostExternalLink_paymentsTotal_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PostExternalLink.PaymentsTotal(childComplexity, args["currencyCode"].(string)), true
 
 	case "PostExternalLink.url":
 		if e.complexity.PostExternalLink.Url == nil {
@@ -8510,6 +8956,21 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "paymentsCreateStripePayment":
+			out.Values[i] = ec._Mutation_paymentsCreateStripePayment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "paymentsCreateEtherPayment":
+			out.Values[i] = ec._Mutation_paymentsCreateEtherPayment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "paymentsCreateTokenPayment":
+			out.Values[i] = ec._Mutation_paymentsCreateTokenPayment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		case "postsCreateBoost":
 			out.Values[i] = ec._Mutation_postsCreateBoost(ctx, field)
 		case "postsCreateExternalLink":
@@ -9211,6 +9672,108 @@ func (ec *executionContext) _Mutation_nrsignupUpdateSteps(ctx context.Context, f
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Mutation_paymentsCreateStripePayment(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_paymentsCreateStripePayment_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsCreateStripePayment(rctx, args["postID"].(string), args["input"].(payments.StripePayment))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(payments.StripePayment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._PaymentStripe(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_paymentsCreateEtherPayment(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_paymentsCreateEtherPayment_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsCreateEtherPayment(rctx, args["postID"].(string), args["input"].(payments.EtherPayment))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(payments.EtherPayment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._PaymentEther(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_paymentsCreateTokenPayment(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_paymentsCreateTokenPayment_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsCreateTokenPayment(rctx, args["postID"].(string), args["input"].(payments.TokenPayment))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(payments.TokenPayment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	return ec._PaymentToken(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Mutation_postsCreateBoost(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -9803,6 +10366,859 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 	return graphql.MarshalBoolean(res)
 }
 
+var paymentEtherImplementors = []string{"PaymentEther", "Payment"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _PaymentEther(ctx context.Context, sel ast.SelectionSet, obj *payments.EtherPayment) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, paymentEtherImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaymentEther")
+		case "reaction":
+			out.Values[i] = ec._PaymentEther_reaction(ctx, field, obj)
+		case "comment":
+			out.Values[i] = ec._PaymentEther_comment(ctx, field, obj)
+		case "currencyCode":
+			out.Values[i] = ec._PaymentEther_currencyCode(ctx, field, obj)
+		case "exchangeRate":
+			out.Values[i] = ec._PaymentEther_exchangeRate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "amount":
+			out.Values[i] = ec._PaymentEther_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "createdAt":
+			out.Values[i] = ec._PaymentEther_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "updatedAt":
+			out.Values[i] = ec._PaymentEther_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "transactionID":
+			out.Values[i] = ec._PaymentEther_transactionID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "usdEquivalent":
+			out.Values[i] = ec._PaymentEther_usdEquivalent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_reaction(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reaction, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_comment(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comment, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_currencyCode(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrencyCode, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_exchangeRate(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExchangeRate, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_amount(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_createdAt(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_updatedAt(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_transactionID(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_usdEquivalent(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.USDEquivalent(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+var paymentStripeImplementors = []string{"PaymentStripe", "Payment"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _PaymentStripe(ctx context.Context, sel ast.SelectionSet, obj *payments.StripePayment) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, paymentStripeImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaymentStripe")
+		case "reaction":
+			out.Values[i] = ec._PaymentStripe_reaction(ctx, field, obj)
+		case "comment":
+			out.Values[i] = ec._PaymentStripe_comment(ctx, field, obj)
+		case "currencyCode":
+			out.Values[i] = ec._PaymentStripe_currencyCode(ctx, field, obj)
+		case "exchangeRate":
+			out.Values[i] = ec._PaymentStripe_exchangeRate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "amount":
+			out.Values[i] = ec._PaymentStripe_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "createdAt":
+			out.Values[i] = ec._PaymentStripe_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "updatedAt":
+			out.Values[i] = ec._PaymentStripe_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "usdEquivalent":
+			out.Values[i] = ec._PaymentStripe_usdEquivalent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_reaction(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reaction, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_comment(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comment, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_currencyCode(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrencyCode, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_exchangeRate(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExchangeRate, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_amount(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_createdAt(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_updatedAt(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_usdEquivalent(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.USDEquivalent(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+var paymentTokenImplementors = []string{"PaymentToken", "Payment"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _PaymentToken(ctx context.Context, sel ast.SelectionSet, obj *payments.TokenPayment) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, paymentTokenImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaymentToken")
+		case "reaction":
+			out.Values[i] = ec._PaymentToken_reaction(ctx, field, obj)
+		case "comment":
+			out.Values[i] = ec._PaymentToken_comment(ctx, field, obj)
+		case "currencyCode":
+			out.Values[i] = ec._PaymentToken_currencyCode(ctx, field, obj)
+		case "exchangeRate":
+			out.Values[i] = ec._PaymentToken_exchangeRate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "amount":
+			out.Values[i] = ec._PaymentToken_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "createdAt":
+			out.Values[i] = ec._PaymentToken_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "updatedAt":
+			out.Values[i] = ec._PaymentToken_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "transactionID":
+			out.Values[i] = ec._PaymentToken_transactionID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "usdEquivalent":
+			out.Values[i] = ec._PaymentToken_usdEquivalent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_reaction(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reaction, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_comment(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comment, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_currencyCode(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrencyCode, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_exchangeRate(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExchangeRate, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_amount(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_createdAt(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_updatedAt(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalTime(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_transactionID(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TransactionID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_usdEquivalent(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.USDEquivalent(), nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
 var pollImplementors = []string{"Poll"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -10055,6 +11471,21 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._PostBoost_children(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "payments":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostBoost_payments(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "paymentsTotal":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostBoost_paymentsTotal(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "currencyCode":
@@ -10312,6 +11743,96 @@ func (ec *executionContext) _PostBoost_children(ctx context.Context, field graph
 	}
 	wg.Wait()
 	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PostBoost_payments(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostBoost",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostBoost().Payments(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]payments.Payment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Payment(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PostBoost_paymentsTotal(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_PostBoost_paymentsTotal_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "PostBoost",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostBoost().PaymentsTotal(rctx, obj, args["currencyCode"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
 }
 
 // nolint: vetshadow
@@ -10682,6 +12203,21 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 				out.Values[i] = ec._PostComment_children(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "payments":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostComment_payments(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "paymentsTotal":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostComment_paymentsTotal(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		case "text":
 			out.Values[i] = ec._PostComment_text(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10923,6 +12459,96 @@ func (ec *executionContext) _PostComment_children(ctx context.Context, field gra
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _PostComment_payments(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostComment",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostComment().Payments(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]payments.Payment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Payment(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PostComment_paymentsTotal(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_PostComment_paymentsTotal_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "PostComment",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostComment().PaymentsTotal(rctx, obj, args["currencyCode"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _PostComment_text(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -10995,6 +12621,21 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._PostExternalLink_children(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "payments":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostExternalLink_payments(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "paymentsTotal":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostExternalLink_paymentsTotal(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
 				wg.Done()
 			}(i, field)
 		case "url":
@@ -11232,6 +12873,96 @@ func (ec *executionContext) _PostExternalLink_children(ctx context.Context, fiel
 	}
 	wg.Wait()
 	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PostExternalLink_payments(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostExternalLink",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostExternalLink().Payments(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]payments.Payment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: &res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				return ec._Payment(ctx, field.Selections, &res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PostExternalLink_paymentsTotal(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_PostExternalLink_paymentsTotal_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "PostExternalLink",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostExternalLink().PaymentsTotal(rctx, obj, args["currencyCode"].(string))
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalFloat(res)
 }
 
 // nolint: vetshadow
@@ -15121,6 +16852,27 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.___Type(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Payment(ctx context.Context, sel ast.SelectionSet, obj *payments.Payment) graphql.Marshaler {
+	switch obj := (*obj).(type) {
+	case nil:
+		return graphql.Null
+	case payments.StripePayment:
+		return ec._PaymentStripe(ctx, sel, &obj)
+	case *payments.StripePayment:
+		return ec._PaymentStripe(ctx, sel, obj)
+	case payments.EtherPayment:
+		return ec._PaymentEther(ctx, sel, &obj)
+	case *payments.EtherPayment:
+		return ec._PaymentEther(ctx, sel, obj)
+	case payments.TokenPayment:
+		return ec._PaymentToken(ctx, sel, &obj)
+	case *payments.TokenPayment:
+		return ec._PaymentToken(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *posts.Post) graphql.Marshaler {
 	switch obj := (*obj).(type) {
 	case nil:
@@ -15456,6 +17208,114 @@ func UnmarshalNrsignupStepsInput(v interface{}) (NrsignupStepsInput, error) {
 				it.LastSeen = &ptr1
 			}
 
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalPaymentsCreateEtherPaymentInput(v interface{}) (payments.EtherPayment, error) {
+	var it payments.EtherPayment
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "reaction":
+			var err error
+			it.Reaction, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "comment":
+			var err error
+			it.Comment, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "transactionID":
+			var err error
+			it.TransactionID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalPaymentsCreateStripePaymentInput(v interface{}) (payments.StripePayment, error) {
+	var it payments.StripePayment
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "reaction":
+			var err error
+			it.Reaction, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "comment":
+			var err error
+			it.Comment, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "currencyCode":
+			var err error
+			it.CurrencyCode, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "amount":
+			var err error
+			it.Amount, err = graphql.UnmarshalFloat(v)
+			if err != nil {
+				return it, err
+			}
+		case "paymentToken":
+			var err error
+			it.PaymentToken, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalPaymentsCreateTokenPaymentInput(v interface{}) (payments.TokenPayment, error) {
+	var it payments.TokenPayment
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "reaction":
+			var err error
+			it.Reaction, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "comment":
+			var err error
+			it.Comment, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "transactionID":
+			var err error
+			it.TransactionID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "tokenAddress":
+			var err error
+			it.TokenAddress, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -16030,6 +17890,20 @@ type Mutation {
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
 
+  # Payment Mutations
+  paymentsCreateStripePayment(
+    postID: String!
+    input: PaymentsCreateStripePaymentInput!
+  ): PaymentStripe!
+  paymentsCreateEtherPayment(
+    postID: String!
+    input: PaymentsCreateEtherPaymentInput!
+  ): PaymentEther!
+  paymentsCreateTokenPayment(
+    postID: String!
+    input: PaymentsCreateTokenPaymentInput!
+  ): PaymentToken!
+
   # Post Mutations
   postsCreateBoost(input: PostCreateBoostInput!): PostBoost
   postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
@@ -16242,6 +18116,8 @@ interface Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
 }
 
 type PostBoost implements Post {
@@ -16252,6 +18128,8 @@ type PostBoost implements Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
   currencyCode: String
   goalAmount: Float
   title: String!
@@ -16275,6 +18153,8 @@ type PostComment implements Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
   text: String!
 }
 
@@ -16286,6 +18166,8 @@ type PostExternalLink implements Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
   url: String
 }
 
@@ -16330,6 +18212,77 @@ input PostCreateExternalLinkInput {
 
 input PostCreateCommentInput {
   text: String!
+}
+
+# Payment types
+interface Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  usdEquivalent: Float!
+}
+
+type PaymentStripe implements Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  usdEquivalent: Float!
+}
+
+type PaymentEther implements Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  transactionID: String!
+  usdEquivalent: Float!
+}
+
+type PaymentToken implements Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  transactionID: String!
+  usdEquivalent: Float!
+}
+
+# Payment inputs
+input PaymentsCreateStripePaymentInput {
+  reaction: String
+  comment: String
+  currencyCode: String!
+  amount: Float!
+  paymentToken: String!
+}
+
+# Payment inputs
+input PaymentsCreateEtherPaymentInput {
+  reaction: String
+  comment: String
+  transactionID: String!
+}
+
+# Payment inputs
+input PaymentsCreateTokenPaymentInput {
+  reaction: String
+  comment: String
+  transactionID: String!
+  tokenAddress: String!
 }
 
 ## User object schemas

@@ -146,6 +146,20 @@ type Mutation {
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
 
+  # Payment Mutations
+  paymentsCreateStripePayment(
+    postID: String!
+    input: PaymentsCreateStripePaymentInput!
+  ): PaymentStripe!
+  paymentsCreateEtherPayment(
+    postID: String!
+    input: PaymentsCreateEtherPaymentInput!
+  ): PaymentEther!
+  paymentsCreateTokenPayment(
+    postID: String!
+    input: PaymentsCreateTokenPaymentInput!
+  ): PaymentToken!
+
   # Post Mutations
   postsCreateBoost(input: PostCreateBoostInput!): PostBoost
   postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
@@ -358,6 +372,8 @@ interface Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
 }
 
 type PostBoost implements Post {
@@ -368,6 +384,8 @@ type PostBoost implements Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
   currencyCode: String
   goalAmount: Float
   title: String!
@@ -391,6 +409,8 @@ type PostComment implements Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
   text: String!
 }
 
@@ -402,6 +422,8 @@ type PostExternalLink implements Post {
   createdAt: Time!
   updatedAt: Time!
   children: [Post]
+  payments: [Payment!]
+  paymentsTotal(currencyCode: String!): Float!
   url: String
 }
 
@@ -446,6 +468,77 @@ input PostCreateExternalLinkInput {
 
 input PostCreateCommentInput {
   text: String!
+}
+
+# Payment types
+interface Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  usdEquivalent: Float!
+}
+
+type PaymentStripe implements Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  usdEquivalent: Float!
+}
+
+type PaymentEther implements Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  transactionID: String!
+  usdEquivalent: Float!
+}
+
+type PaymentToken implements Payment {
+  reaction: String
+  comment: String
+  currencyCode: String
+  exchangeRate: Float!
+  amount: Float!
+  createdAt: Time!
+  updatedAt: Time!
+  transactionID: String!
+  usdEquivalent: Float!
+}
+
+# Payment inputs
+input PaymentsCreateStripePaymentInput {
+  reaction: String
+  comment: String
+  currencyCode: String!
+  amount: Float!
+  paymentToken: String!
+}
+
+# Payment inputs
+input PaymentsCreateEtherPaymentInput {
+  reaction: String
+  comment: String
+  transactionID: String!
+}
+
+# Payment inputs
+input PaymentsCreateTokenPaymentInput {
+  reaction: String
+  comment: String
+  transactionID: String!
+  tokenAddress: String!
 }
 
 ## User object schemas

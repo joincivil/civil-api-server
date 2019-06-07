@@ -6,6 +6,7 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 )
 
@@ -92,7 +93,7 @@ var (
 
 type postBoostResolver struct{ *Resolver }
 
-// TotalPaymentsUSD returns the
+// TotalPaymentsUSD returns the sum of all the payments associated with this post converted to USD
 func (r *postBoostResolver) TotalPaymentsUSD(ctx context.Context, boost *posts.Boost) (float64, error) {
 	return r.postService.TotalPaymentsUSD(boost.ID)
 }
@@ -102,16 +103,46 @@ func (r *postBoostResolver) Children(context.Context, *posts.Boost) ([]*posts.Po
 	return nil, ErrNotImplemented
 }
 
+// Payments returns children post of a Boost post
+func (r *postBoostResolver) Payments(ctx context.Context, boost *posts.Boost) ([]payments.Payment, error) {
+	return r.postService.GetPayments(boost)
+}
+
+// Payments returns children post of a Boost post
+func (r *postBoostResolver) PaymentsTotal(ctx context.Context, boost *posts.Boost, currencyCode string) (float64, error) {
+	return r.postService.TotalPaymentsUSD(boost.ID)
+}
+
 type postExternalLinkResolver struct{ *Resolver }
 
-// Children returns children post of an external link post
+// Children returns children post of an ExternalLink post
 func (r *postExternalLinkResolver) Children(context.Context, *posts.ExternalLink) ([]*posts.Post, error) {
 	return nil, ErrNotImplemented
 }
 
+// Payments returns children post of a ExternalLink post
+func (r *postExternalLinkResolver) Payments(context.Context, *posts.ExternalLink) ([]payments.Payment, error) {
+	return nil, ErrNotImplemented
+}
+
+// Payments returns children post of a ExternalLink post
+func (r *postExternalLinkResolver) PaymentsTotal(ctx context.Context, link *posts.ExternalLink, currencyCode string) (float64, error) {
+	return r.postService.TotalPaymentsUSD(link.ID)
+}
+
 type postCommentResolver struct{ *Resolver }
 
-// Children returns children post of an external link post
+// Children returns children post of an Comment post
 func (r *postCommentResolver) Children(context.Context, *posts.Comment) ([]*posts.Post, error) {
 	return nil, ErrNotImplemented
+}
+
+// Payments returns children post of a Comment post
+func (r *postCommentResolver) Payments(ctx context.Context, comment *posts.Comment) ([]payments.Payment, error) {
+	return nil, ErrNotImplemented
+}
+
+// Payments returns children post of a Comment post
+func (r *postCommentResolver) PaymentsTotal(ctx context.Context, comment *posts.Comment, currencyCode string) (float64, error) {
+	return r.postService.TotalPaymentsUSD(comment.ID)
 }

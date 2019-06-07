@@ -6,14 +6,10 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	paginator "github.com/pilagod/gorm-cursor-paginator"
 	uuid "github.com/satori/go.uuid"
 )
-
-// TableName returns the gorm table name for Base
-func (Base) TableName() string {
-	return "posts"
-}
 
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
 type DBPostPersister struct {
@@ -42,15 +38,37 @@ func (p *DBPostPersister) CreatePost(post Post) (Post, error) {
 
 // GetPost retrieves a Post by the id
 func (p *DBPostPersister) GetPost(id string) (Post, error) {
-	postModel := &Base{ID: id}
+	postModel := &PostModel{ID: id}
 	p.db.First(postModel)
 
 	return BaseToPostInterface(postModel)
 }
 
+func (p *DBPostPersister) GetPayments(post Post) ([]payments.Payment, error) {
+	var pays []payments.PaymentModel
+	postModel := &PostModel{ID: post.GetPostModel().ID}
+
+	if err := p.db.First(postModel).Related(&pays, "PostPayments").Error; err != nil {
+		fmt.Printf("An error occured: %v\n", err)
+		return nil, err
+	}
+
+	var paymentsSlice []payments.Payment
+	for _, result := range pays {
+		payment, err := payments.ModelToInterface(&result)
+		if err != nil {
+			fmt.Printf("An error occured: %v\n", err)
+			return nil, err
+		}
+		paymentsSlice = append(paymentsSlice, payment)
+	}
+
+	return paymentsSlice, nil
+}
+
 // SearchPosts retrieves posts making the search criteria
 func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, error) {
-	var dbResults []Base
+	var dbResults []PostModel
 	pager := initModelPaginatorFrom(search.Paging)
 	stmt := p.db
 
@@ -114,13 +132,13 @@ func initModelPaginatorFrom(page Paging) paginator.Paginator {
 }
 
 // PostInterfaceToBase takes a post and turns it into a Base ready to go in the database
-func PostInterfaceToBase(post Post) (*Base, error) {
+func PostInterfaceToBase(post Post) (*PostModel, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return nil, err
 	}
 
-	base := post.GetBase()
+	base := post.GetPostModel()
 	base.ID = id.String()
 	base.PostType = post.GetType()
 
@@ -137,22 +155,22 @@ func PostInterfaceToBase(post Post) (*Base, error) {
 }
 
 // BaseToPostInterface accepts a database Base and returns a Post object
-func BaseToPostInterface(base *Base) (Post, error) {
+func BaseToPostInterface(base *PostModel) (Post, error) {
 
 	var post Post
 	// TODO(dankins): this should probably use reflection?
 	switch base.PostType {
 	case "boost":
 		post = &Boost{
-			Base: *base,
+			PostModel: *base,
 		}
 	case "externallink":
 		post = &ExternalLink{
-			Base: *base,
+			PostModel: *base,
 		}
 	case "comment":
 		post = &Comment{
-			Base: *base,
+			PostModel: *base,
 		}
 	}
 	err := json.Unmarshal(base.Data.RawMessage, post)
