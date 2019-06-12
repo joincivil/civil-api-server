@@ -11,7 +11,3 @@ func NewService(persister PostPersister) *Service {
 		PostPersister: persister,
 	}
 }
-
-func (s *Service) TotalPaymentsUSD(postID string) (float64, error) {
-	return 100, nil
-}

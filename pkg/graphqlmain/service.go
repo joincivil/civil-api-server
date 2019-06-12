@@ -3,12 +3,14 @@ package graphqlmain
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/jinzhu/gorm"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
@@ -104,4 +106,10 @@ func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Help
 func initPostService(config *utils.GraphQLConfig, db *gorm.DB) *posts.Service {
 	persister := posts.NewDBPostPersister(db)
 	return posts.NewService(persister)
+}
+
+func initPaymentService(config *utils.GraphQLConfig, db *gorm.DB, ethHelper *eth.Helper) *payments.Service {
+	stripe := payments.NewStripeService(config.StripeAPIKey)
+	ethereum := payments.NewEthereumService(ethHelper.Blockchain.(ethereum.TransactionReader))
+	return payments.NewService(db, stripe, ethereum)
 }

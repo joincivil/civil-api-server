@@ -16,7 +16,7 @@ func TestPersistPost(t *testing.T) {
 	persister := posts.NewDBPostPersister(db)
 
 	boost := &posts.Boost{
-		Base: posts.Base{
+		PostModel: posts.PostModel{
 			ChannelID: "alice_newsrooom",
 			AuthorID:  "alice",
 		},
@@ -35,7 +35,7 @@ func TestPersistPost(t *testing.T) {
 		},
 	}
 	link := &posts.ExternalLink{
-		Base: posts.Base{
+		PostModel: posts.PostModel{
 			ChannelID: "bob_newsroom",
 			AuthorID:  "bob",
 		},
@@ -52,15 +52,15 @@ func TestPersistPost(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	t.Logf("created external link: %v", linkPost.GetBase().ID)
+	t.Logf("created external link: %v", linkPost.GetPostModel().ID)
 
-	linkReceived, err := persister.GetPost(linkPost.GetBase().ID)
+	linkReceived, err := persister.GetPost(linkPost.GetPostModel().ID)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
 	t.Logf("got external link: %v", linkReceived)
 
-	boostReceived, err := persister.GetPost(boostPost.GetBase().ID)
+	boostReceived, err := persister.GetPost(boostPost.GetPostModel().ID)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}

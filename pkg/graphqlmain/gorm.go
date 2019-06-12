@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jinzhu/gorm"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
@@ -19,7 +20,7 @@ func initGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
 	))
 
 	db.LogMode(config.Debug)
-	db.AutoMigrate(&posts.Base{})
+	db.AutoMigrate(&posts.PostModel{}, &payments.PaymentModel{})
 
 	return db, err
 }

@@ -10,11 +10,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// TableName returns the gorm table name for Base
-func (Base) TableName() string {
-	return "posts"
-}
-
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
 type DBPostPersister struct {
 	db *gorm.DB
@@ -42,7 +37,7 @@ func (p *DBPostPersister) CreatePost(post Post) (Post, error) {
 
 // GetPost retrieves a Post by the id
 func (p *DBPostPersister) GetPost(id string) (Post, error) {
-	postModel := &Base{ID: id}
+	postModel := &PostModel{ID: id}
 	p.db.First(postModel)
 
 	return BaseToPostInterface(postModel)
@@ -50,7 +45,7 @@ func (p *DBPostPersister) GetPost(id string) (Post, error) {
 
 // SearchPosts retrieves posts making the search criteria
 func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, error) {
-	var dbResults []Base
+	var dbResults []PostModel
 	pager := initModelPaginatorFrom(search.Paging)
 	stmt := p.db
 
@@ -114,13 +109,13 @@ func initModelPaginatorFrom(page Paging) paginator.Paginator {
 }
 
 // PostInterfaceToBase takes a post and turns it into a Base ready to go in the database
-func PostInterfaceToBase(post Post) (*Base, error) {
+func PostInterfaceToBase(post Post) (*PostModel, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return nil, err
 	}
 
-	base := post.GetBase()
+	base := post.GetPostModel()
 	base.ID = id.String()
 	base.PostType = post.GetType()
 
@@ -137,22 +132,22 @@ func PostInterfaceToBase(post Post) (*Base, error) {
 }
 
 // BaseToPostInterface accepts a database Base and returns a Post object
-func BaseToPostInterface(base *Base) (Post, error) {
+func BaseToPostInterface(base *PostModel) (Post, error) {
 
 	var post Post
 	// TODO(dankins): this should probably use reflection?
 	switch base.PostType {
 	case "boost":
 		post = &Boost{
-			Base: *base,
+			PostModel: *base,
 		}
 	case "externallink":
 		post = &ExternalLink{
-			Base: *base,
+			PostModel: *base,
 		}
 	case "comment":
 		post = &Comment{
-			Base: *base,
+			PostModel: *base,
 		}
 	}
 	err := json.Unmarshal(base.Data.RawMessage, post)

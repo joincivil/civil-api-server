@@ -6,6 +6,7 @@ import (
 
 	log "github.com/golang/glog"
 
+	"github.com/joho/godotenv"
 	"github.com/joincivil/civil-api-server/pkg/graphqlmain"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
@@ -18,7 +19,31 @@ func main() {
 	}
 	flag.Parse()
 
-	err := config.PopulateFromEnv()
+	env := os.Getenv("GRAPHQL_ENV")
+	if "" == env {
+		env = "development"
+	}
+
+	err := godotenv.Load(".env." + env + ".local")
+	if err != nil {
+		log.Errorf("Did not load .env.%v.local", env)
+	}
+	if "test" != env {
+		err := godotenv.Load(".env.local")
+		if err != nil {
+			log.Errorf("Did not load .env.local")
+		}
+	}
+	err = godotenv.Load(".env." + env)
+	if err != nil {
+		log.Errorf("Did not load .env." + env)
+	}
+	err = godotenv.Load()
+	if err != nil {
+		log.Errorf("Did not load .env")
+	}
+
+	err = config.PopulateFromEnv()
 	if err != nil {
 		config.OutputUsage()
 		log.Errorf("Invalid graphql config: err: %v\n", err)
