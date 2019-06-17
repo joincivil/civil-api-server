@@ -20,6 +20,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 
 	cemail "github.com/joincivil/go-common/pkg/email"
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 )
 
 var (
@@ -57,6 +58,7 @@ type ResolverConfig struct {
 	StorefrontService          *storefront.Service
 	EmailListMembers           cemail.ListMemberManager
 	LowercaseAddr              *bool
+	ErrorReporter              cerrors.ErrorReporter
 }
 
 // NewResolver is a convenience function to init a Resolver struct
@@ -78,6 +80,7 @@ func NewResolver(config *ResolverConfig) *Resolver {
 		storefrontService:          config.StorefrontService,
 		emailListMembers:           config.EmailListMembers,
 		lowercaseAddr:              config.LowercaseAddr,
+		errorReporter:              config.ErrorReporter,
 	}
 }
 
@@ -99,6 +102,7 @@ type Resolver struct {
 	storefrontService          *storefront.Service
 	emailListMembers           cemail.ListMemberManager
 	lowercaseAddr              *bool
+	errorReporter              cerrors.ErrorReporter
 }
 
 // Query is the resolver for the Query type
