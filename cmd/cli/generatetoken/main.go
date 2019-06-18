@@ -13,13 +13,13 @@ import (
 )
 
 func main() {
-	secret := []byte(os.Getenv("GRAPHQL_JWT_SECRET"))
+	secret := []byte(os.Args[1])
 	jwt := auth.NewJwtTokenGenerator(secret)
 	// Generate a new code for a user
-	token, err := jwt.GenerateToken(os.Args[1], 604800)
+	token, err := jwt.GenerateToken(os.Args[2], 604800)
 	if err != nil {
 		log.Fatalf("Error generating token: err: %v", err)
 	}
 
-	fmt.Printf("JWT Token for %v: %v\n", os.Args[1], token)
+	fmt.Printf("JWT Token for %v: %v\n", os.Args[2], token)
 }

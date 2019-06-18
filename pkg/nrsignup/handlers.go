@@ -17,7 +17,7 @@ const (
 	// the URI
 	GrantApproveTokenURLParam = "grantApproveToken"
 
-	invalidTokenResponse = "Hmm, sorry, but the token is invalid. Could be expired, missing data or tampered with."
+	invalidTokenResponse = "Hmm, sorry, but the token is invalid. Could be expired, missing data or tampered with." // nolint: gosec
 	errorResponse        = "Uh oh, there appears to be some internal problem, contact the devs."
 	okResponse           = "Thanks, it worked! Grant approval was successfully set to %v."
 )

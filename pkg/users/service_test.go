@@ -104,7 +104,7 @@ func TestUpdateUser(t *testing.T) {
 func TestSetEthAddress(t *testing.T) {
 	svc := buildService()
 	crit := users.UserCriteria{Email: "foo@bar.com"}
-	svc.CreateUser(crit)
+	svc.CreateUser(crit) // nolint: errcheck
 
 	user, err := svc.SetEthAddress(crit, "foobar")
 	if err != nil {

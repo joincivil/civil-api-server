@@ -68,6 +68,9 @@ func (p *PostgresPersister) OldVersions(serviceName string) ([]string, error) {
 
 // GetTableName formats tabletype with version of this persister to return the table name
 func (p *PostgresPersister) GetTableName(tableType string) string {
+	if p.version == nil || *p.version == "" {
+		return tableType
+	}
 	return fmt.Sprintf("%s_%s", tableType, *p.version)
 }
 
@@ -80,6 +83,9 @@ func (p *PostgresPersister) DropTable(tableName string) error {
 // UpdateExistenceFalseForVersionTable updates the tableName's exists field to false in the version table
 func (p *PostgresPersister) UpdateExistenceFalseForVersionTable(tableName string, versionNumber string,
 	serviceName string) error {
+	if versionNumber == "" {
+		return nil
+	}
 	dbVersionStruct := postgres.Version{
 		Version:     &versionNumber,
 		ServiceName: serviceName,
@@ -97,6 +103,9 @@ func (p *PostgresPersister) UpdateExistenceFalseForVersionTable(tableName string
 
 // SaveVersion saves the version for this persistence
 func (p *PostgresPersister) SaveVersion(versionNumber *string) error {
+	if versionNumber == nil || *versionNumber == "" {
+		return nil
+	}
 	err := p.saveVersionToTable(postgres.VersionTableName, versionNumber)
 	if err != nil {
 		return err
@@ -183,20 +192,31 @@ func (p *PostgresPersister) CreateVersionTable(version *string) error {
 		return err
 	}
 
+	// Check to see if there is an existing latest version
 	currentVersion, err := p.PersisterVersion()
-	if err != nil && version == nil {
-		if err == cpersist.ErrPersisterNoResults {
-			return fmt.Errorf("No version in version table, specify a version: err %v", err)
-		}
+	if err != nil && err != cpersist.ErrPersisterNoResults {
 		return err
 	}
-	if currentVersion == version {
+
+	// If no version found anywhere, don't use versioned tables
+	if (currentVersion == nil || *currentVersion == "") && (version == nil || *version == "") {
+		log.Infof("No version found, not using versioned tables")
 		return nil
 	}
-	if version == nil {
+
+	// If the incoming version is the same as the currentVersion, don't do anything
+	if currentVersion != nil && version != nil && *currentVersion == *version {
+		log.Infof("Using data version: %v", *version)
+		return nil
+	}
+
+	// If version does not exist, but currentVersion does, use currentVersion
+	if currentVersion != nil && (version == nil || *version == "") {
 		// NOTE(IS): Use existing version, but update timestamp
 		version = currentVersion
 	}
+
+	log.Infof("Updated data version: %v", *version)
 	p.version = version
 	return p.SaveVersion(version)
 }
@@ -230,10 +250,18 @@ func (p *PostgresPersister) persisterVersionFromTable(tableName string) (*string
 
 func (p *PostgresPersister) oldVersionsFromTable(serviceName string, tableName string) ([]string, error) {
 	dbVersions := []postgres.Version{}
-	queryStringLargest := fmt.Sprintf(`SELECT MAX(last_updated_timestamp) FROM %s WHERE service_name='%s'`,
-		tableName, serviceName) // nolint: gosec
-	queryString := fmt.Sprintf(`SELECT * FROM %s WHERE service_name=$1 AND exists=true AND last_updated_timestamp !=(%s)`,
-		tableName, queryStringLargest) // nolint: gosec
+	// nolint
+	queryStringLargest := fmt.Sprintf(
+		`SELECT MAX(last_updated_timestamp) FROM %s WHERE service_name='%s'`,
+		tableName,
+		serviceName,
+	)
+	// nolint
+	queryString := fmt.Sprintf(
+		`SELECT * FROM %s WHERE service_name=$1 AND exists=true AND last_updated_timestamp !=(%s)`, // nolint: gosec
+		tableName,
+		queryStringLargest,
+	)
 	err := p.db.Select(&dbVersions, queryString, serviceName)
 	if err != nil {
 		return []string{}, err
@@ -281,10 +309,12 @@ func (p *PostgresPersister) upsertVersionDataQueryString(tableName string, dbMod
 	onConflict string, updatedFields []string) string {
 	var queryString strings.Builder
 	fieldNames, fieldNamesColon := cpostgres.StructFieldsForQuery(dbModelStruct, true, "")
+	// nolint
 	queryString.WriteString(fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s) ON CONFLICT(%s) DO UPDATE SET ",
-		tableName, fieldNames, fieldNamesColon, onConflict)) // nolint: gosec
+		tableName, fieldNames, fieldNamesColon, onConflict))
 	for idx, field := range updatedFields {
-		queryString.WriteString(fmt.Sprintf("%s=:%s", field, field)) // nolint: gosec
+		// nolint
+		queryString.WriteString(fmt.Sprintf("%s=:%s", field, field))
 		if idx+1 < len(updatedFields) {
 			queryString.WriteString(", ") // nolint: gosec
 		}
@@ -364,6 +394,7 @@ func (p *PostgresPersister) retrieveEventsQuery(tableName string, criteria *mode
 		if len(criteria.ExcludeHashes) > 0 {
 			sFields, _ := cpostgres.StructFieldsForQuery(postgres.Event{}, false, "")
 			p.addWhereAnd(queryBuf)
+			// nolint
 			notInQuery := fmt.Sprintf(" NOT EXISTS (SELECT %v FROM %v WHERE e.hash IN ('%v'))", sFields,
 				tableName, strings.Join(criteria.ExcludeHashes, "','"))
 			queryBuf.WriteString(notInQuery) // nolint: gosec

@@ -249,7 +249,7 @@ func (p *ParameterizerEventProcessor) updateUserChallengeDataForChallengeRes(pol
 		userChallengeData.SetPollIsPassed(pollIsPassed)
 		updatedFields := []string{voterRewardFieldName, userChallengeIsPassedFieldName,
 			isVoterWinnerFieldName}
-		updateWithUserAddress := false
+		updateWithUserAddress := true
 		latestVote := true
 
 		err = p.userChallengeDataPersister.UpdateUserChallengeData(userChallengeData, updatedFields,

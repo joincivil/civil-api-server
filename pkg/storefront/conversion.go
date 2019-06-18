@@ -24,7 +24,7 @@ const (
 	stalePriceTimeSecs = 120
 )
 
-// CurrencyConversion provides an interace to return the price of a currency pair
+// CurrencyConversion provides an interface to return the price of a currency pair
 type CurrencyConversion interface {
 	USDToETH() (float64, error)
 	ETHToUSD() (float64, error)

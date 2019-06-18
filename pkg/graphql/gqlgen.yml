@@ -60,6 +60,42 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb
   NrsignupNewsroom:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.SignupUserJSONData
+  Payment: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.Payment
+  PaymentStripe: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
+  PaymentEther: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
+  PaymentToken: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  PaymentsCreateStripePaymentInput: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
+  PaymentsCreateEtherPaymentInput: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
+  PaymentsCreateTokenPaymentInput: 
+    model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  Post:
+    model: github.com/joincivil/civil-api-server/pkg/posts.Post
+  PostBoost:
+    model: github.com/joincivil/civil-api-server/pkg/posts.Boost
+  PostBoostItem:
+    model: github.com/joincivil/civil-api-server/pkg/posts.BoostItem
+  PostExternalLink:
+    model: github.com/joincivil/civil-api-server/pkg/posts.ExternalLink
+  PostComment:
+    model: github.com/joincivil/civil-api-server/pkg/posts.Comment
+  PostSearchInput:
+    model: github.com/joincivil/civil-api-server/pkg/posts.SearchInput
+  PostSearchResult:
+    model: github.com/joincivil/civil-api-server/pkg/posts.PostSearchResult
+  PostCreateBoostInput:
+    model: github.com/joincivil/civil-api-server/pkg/posts.Boost
+  PostCreateBoostItemInput:
+    model: github.com/joincivil/civil-api-server/pkg/posts.BoostItem
+  PostCreateCommentInput:
+    model: github.com/joincivil/civil-api-server/pkg/posts.Comment
+  PostCreateExternalLinkInput:
+    model: github.com/joincivil/civil-api-server/pkg/posts.ExternalLink
   CharterContent:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.Charter
   CharterInput:

@@ -352,7 +352,7 @@ func TestLoginEth(t *testing.T) {
 		DateCreated: ctime.CurrentEpochSecsInInt64(),
 		DateUpdated: ctime.CurrentEpochSecsInInt64(),
 	}
-	user1.GenerateUID()
+	user1.GenerateUID() // nolint: errcheck
 
 	persister := &testutils.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{
@@ -604,7 +604,7 @@ func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
 		DateCreated: ctime.CurrentEpochSecsInInt64(),
 		DateUpdated: ctime.CurrentEpochSecsInInt64(),
 	}
-	user1.GenerateUID()
+	user1.GenerateUID() // nolint: errcheck
 
 	persister := &testutils.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{

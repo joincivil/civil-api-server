@@ -143,14 +143,14 @@ func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error)
 }
 
 // SignupEmailSend sends an email to allow the user to confirm before creating the User
-// Returns the repsonse code, the token generated for the email, and a potential error
+// Returns the response code, the token generated for the email, and a potential error
 func (s *Service) SignupEmailSend(emailAddress string) (string, string, error) {
 	return s.SignupEmailSendForApplication(emailAddress, ApplicationEnumDefault)
 }
 
 // SignupEmailSendForApplication sends an email for the given application to allow the user
 // to confirm before creating the User
-// Returns the repsonse code, the token generated for the email, and a potential error
+// Returns the response code, the token generated for the email, and a potential error
 func (s *Service) SignupEmailSendForApplication(emailAddress string,
 	application ApplicationEnum) (string, string, error) {
 	identifier := users.UserCriteria{
@@ -239,14 +239,14 @@ func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) 
 }
 
 // LoginEmailSend sends an email to allow the user to confirm before creating the User
-// Returns the repsonse code, the token generated for the email, and a potential error
+// Returns the response code, the token generated for the email, and a potential error
 func (s *Service) LoginEmailSend(emailAddress string) (string, string, error) {
 	return s.LoginEmailSendForApplication(emailAddress, ApplicationEnumDefault)
 }
 
 // LoginEmailSendForApplication sends an email for the given application to allow
 // the user to confirm before creating the User
-// Returns the repsonse code, the token generated for the email, and a potential error
+// Returns the response code, the token generated for the email, and a potential error
 func (s *Service) LoginEmailSendForApplication(emailAddress string,
 	application ApplicationEnum) (string, string, error) {
 	identifier := users.UserCriteria{

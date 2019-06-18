@@ -10,11 +10,14 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/payments"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	"github.com/joincivil/go-common/pkg/eth"
 
 	cemail "github.com/joincivil/go-common/pkg/email"
@@ -39,13 +42,22 @@ type dependencies struct {
 	authService            *auth.Service
 	jsonbService           *jsonstore.Service
 	nrsignupService        *nrsignup.Service
+	paymentService         *payments.Service
+	postService            *posts.Service
 	ethHelper              *eth.Helper
 	storefrontService      *storefront.Service
 	tokenControllerService *tokencontroller.Service
+	errRep                 cerrors.ErrorReporter
 }
 
 func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 	var err error
+
+	db, err := initGorm(config)
+	if err != nil {
+		log.Fatalf("Error initializing database: err: %v", err)
+		return nil, err
+	}
 
 	ethHelper, err := initETHHelper(config)
 	if err != nil {
@@ -117,6 +129,16 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		return nil, err
 	}
 
+	postService := initPostService(config, db)
+
+	paymentService := initPaymentService(config, db, ethHelper)
+
+	errRep, err := initErrorReporter(config)
+	if err != nil {
+		log.Fatalf("Error w init error reporter: err: %v", err)
+		return nil, err
+	}
+
 	return &dependencies{
 		emailer:                emailer,
 		mailchimp:              mailchimpAPI,
@@ -126,15 +148,17 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		jsonbService:           jsonbService,
 		nrsignupService:        nrsignupService,
 		ethHelper:              ethHelper,
+		postService:            postService,
 		storefrontService:      storefrontService,
+		paymentService:         paymentService,
 		tokenControllerService: tokenControllerService,
+		errRep:                 errRep,
 	}, nil
 
 }
 
 func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	if config.EthAPIURL != "" {
-		// todo(dankins): we don't actually need any private keys yet, but we will for CIVIL-5
 		accounts := map[string]string{}
 		if config.EthereumDefaultPrivateKey != "" {
 			log.Infof("Initialized default Ethereum account\n")
@@ -154,4 +178,34 @@ func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	}
 	log.Infof("Connected to Ethereum using Simulated Backend\n")
 	return ethHelper, nil
+}
+
+func initErrorReporter(config *utils.GraphQLConfig) (cerrors.ErrorReporter, error) {
+	if config.StackDriverProjectID == "" && config.SentryDsn == "" {
+		log.Infof("Enabling null error reporter")
+		return &cerrors.NullErrorReporter{}, nil
+	}
+
+	errRepConfig := &cerrors.MetaErrorReporterConfig{
+		StackDriverProjectID:      config.StackDriverProjectID,
+		StackDriverServiceName:    "api-server",
+		StackDriverServiceVersion: "1.0",
+		SentryDSN:                 config.SentryDsn,
+		SentryDebug:               false,
+		SentryEnv:                 config.SentryEnv,
+		SentryLoggerName:          "api_logger",
+		SentryRelease:             "1.0",
+		SentrySampleRate:          1.0,
+	}
+	reporter, err := cerrors.NewMetaErrorReporter(errRepConfig)
+	if err != nil {
+		log.Errorf("Error creating meta reporter: %v", err)
+		return nil, err
+	}
+	if reporter == nil {
+		log.Infof("Enabling null error reporter")
+		return &cerrors.NullErrorReporter{}, nil
+	}
+
+	return reporter, nil
 }
