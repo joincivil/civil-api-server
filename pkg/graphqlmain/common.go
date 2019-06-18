@@ -17,6 +17,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	"github.com/joincivil/go-common/pkg/eth"
 
 	cemail "github.com/joincivil/go-common/pkg/email"
@@ -46,6 +47,7 @@ type dependencies struct {
 	ethHelper              *eth.Helper
 	storefrontService      *storefront.Service
 	tokenControllerService *tokencontroller.Service
+	errRep                 cerrors.ErrorReporter
 }
 
 func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
@@ -131,6 +133,12 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 
 	paymentService := initPaymentService(config, db, ethHelper)
 
+	errRep, err := initErrorReporter(config)
+	if err != nil {
+		log.Fatalf("Error w init error reporter: err: %v", err)
+		return nil, err
+	}
+
 	return &dependencies{
 		emailer:                emailer,
 		mailchimp:              mailchimpAPI,
@@ -144,6 +152,7 @@ func initDependencies(config *utils.GraphQLConfig) (*dependencies, error) {
 		storefrontService:      storefrontService,
 		paymentService:         paymentService,
 		tokenControllerService: tokenControllerService,
+		errRep:                 errRep,
 	}, nil
 
 }
@@ -169,4 +178,34 @@ func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	}
 	log.Infof("Connected to Ethereum using Simulated Backend\n")
 	return ethHelper, nil
+}
+
+func initErrorReporter(config *utils.GraphQLConfig) (cerrors.ErrorReporter, error) {
+	if config.StackDriverProjectID == "" && config.SentryDsn == "" {
+		log.Infof("Enabling null error reporter")
+		return &cerrors.NullErrorReporter{}, nil
+	}
+
+	errRepConfig := &cerrors.MetaErrorReporterConfig{
+		StackDriverProjectID:      config.StackDriverProjectID,
+		StackDriverServiceName:    "api-server",
+		StackDriverServiceVersion: "1.0",
+		SentryDSN:                 config.SentryDsn,
+		SentryDebug:               false,
+		SentryEnv:                 config.SentryEnv,
+		SentryLoggerName:          "api_logger",
+		SentryRelease:             "1.0",
+		SentrySampleRate:          1.0,
+	}
+	reporter, err := cerrors.NewMetaErrorReporter(errRepConfig)
+	if err != nil {
+		log.Errorf("Error creating meta reporter: %v", err)
+		return nil, err
+	}
+	if reporter == nil {
+		log.Infof("Enabling null error reporter")
+		return &cerrors.NullErrorReporter{}, nil
+	}
+
+	return reporter, nil
 }

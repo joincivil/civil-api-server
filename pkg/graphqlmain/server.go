@@ -82,7 +82,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 	router.Use(auth.Middleware(deps.jwtGenerator))
 
 	// GraphQL Query Endpoint (Crawler/KYC)
-	rconfig := &resolverConfig{
+	rconfig := &graphqlResolverConfig{
 		config:            config,
 		authService:       deps.authService,
 		userService:       deps.userService,
@@ -92,6 +92,7 @@ func enableAPIServices(router chi.Router, config *utils.GraphQLConfig, port stri
 		paymentService:    deps.paymentService,
 		postService:       deps.postService,
 		emailListMembers:  deps.mailchimp,
+		errorReporter:     deps.errRep,
 	}
 	err = graphQLRouting(router, rconfig)
 	if err != nil {

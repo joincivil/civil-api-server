@@ -75,6 +75,10 @@ type GraphQLConfig struct {
 	PubSubProjectID      string `split_words:"true" desc:"Sets GPubSub project ID. If not set, will not pub or sub."`
 	PubSubTokenTopicName string `split_words:"true" desc:"Sets GPubSub topic name for cvltoken events."`
 	PubSubTokenSubName   string `split_words:"true" desc:"Sets GPubSub subscription name for cvltoken events."`
+
+	StackDriverProjectID string `split_words:"true" desc:"Sets the Stackdriver project ID"`
+	SentryDsn            string `split_words:"true" desc:"Sets the Sentry DSN"`
+	SentryEnv            string `split_words:"true" desc:"Sets the Sentry environment"`
 }
 
 // PersistType returns the persister type, implements PersisterConfig
