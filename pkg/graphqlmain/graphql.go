@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	gqlgen "github.com/99designs/gqlgen/graphql"
+	"github.com/vektah/gqlparser/gqlerror"
+
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
@@ -13,6 +16,8 @@ import (
 	"github.com/joincivil/go-common/pkg/email"
 	cemail "github.com/joincivil/go-common/pkg/email"
 	"go.uber.org/fx"
+
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 
 	"github.com/99designs/gqlgen/handler"
 	"github.com/go-chi/chi"
@@ -43,6 +48,7 @@ var GraphqlModule = fx.Options(
 		posts.NewService,
 		users.NewPersisterFromGorm,
 		initUserService,
+		initErrorReporter,
 		func(config *utils.GraphQLConfig) *auth.JwtTokenGenerator {
 			return auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
 		},
@@ -64,7 +70,7 @@ func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {
 		fmt.Sprintf("/%v/%v", graphQLVersion, graphQlEndpoint)))
 }
 
-func graphQLRouting(router chi.Router, resolver *graphql.Resolver) error {
+func graphQLRouting(router chi.Router, errorReporter cerrors.ErrorReporter, resolver *graphql.Resolver) error {
 
 	queryHandler := handler.GraphQL(
 		graphqlgen.NewExecutableSchema(
@@ -73,7 +79,7 @@ func graphQLRouting(router chi.Router, resolver *graphql.Resolver) error {
 		handler.ErrorPresenter(
 			func(ctx context.Context, e error) *gqlerror.Error {
 				// Send the error to the error reporter
-				rconfig.errorReporter.Error(e, nil)
+				errorReporter.Error(e, nil)
 				return gqlgen.DefaultErrorPresenter(ctx, e)
 			},
 		),
@@ -81,7 +87,7 @@ func graphQLRouting(router chi.Router, resolver *graphql.Resolver) error {
 			// Send the error to the error reporter
 			switch val := err.(type) {
 			case error:
-				rconfig.errorReporter.Error(val, nil)
+				errorReporter.Error(val, nil)
 			}
 			return fmt.Errorf("Internal server error: %v", err)
 		}),

@@ -14,6 +14,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/utils"
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	"github.com/rs/cors"
 	"go.uber.org/fx"
 )
@@ -34,6 +35,7 @@ type ServerDeps struct {
 	fx.In
 	Config                *utils.GraphQLConfig
 	Resolver              *graphql.Resolver
+	ErrorReporter         cerrors.ErrorReporter
 	JwtGenerator          *auth.JwtTokenGenerator
 	NewsroomSignupService *nrsignup.Service
 	StorefrontService     *storefront.Service
@@ -110,7 +112,7 @@ func enableAPIServices(router chi.Router, port string, deps ServerDeps) error {
 	// Enable authentication/authorization handling
 	router.Use(auth.Middleware(deps.JwtGenerator))
 
-	err := graphQLRouting(router, deps.Resolver)
+	err := graphQLRouting(router, deps.ErrorReporter, deps.Resolver)
 	if err != nil {
 		log.Fatalf("Error setting up graphql routing: err: %v", err)
 	}

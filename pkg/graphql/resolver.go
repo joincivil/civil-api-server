@@ -59,7 +59,7 @@ type ResolverConfig struct {
 	PostService                *posts.Service
 	StorefrontService          *storefront.Service
 	EmailListMembers           cemail.ListMemberManager
-	LowercaseAddr              *bool
+	LowercaseAddr              *bool `optional:"true"`
 	ErrorReporter              cerrors.ErrorReporter
 }
 
