@@ -2,10 +2,11 @@ package processor
 
 import (
 	"fmt"
-	log "github.com/golang/glog"
-	"github.com/pkg/errors"
 	"math/big"
 	"strings"
+
+	log "github.com/golang/glog"
+	"github.com/pkg/errors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	ctime "github.com/joincivil/go-common/pkg/time"
 )
@@ -35,13 +37,14 @@ const (
 func NewPlcrEventProcessor(client bind.ContractBackend, pollPersister model.PollPersister,
 	userChallengeDataPersister model.UserChallengeDataPersister,
 	challengePersister model.ChallengePersister,
-	appealPersister model.AppealPersister) *PlcrEventProcessor {
+	appealPersister model.AppealPersister, errRep cerrors.ErrorReporter) *PlcrEventProcessor {
 	return &PlcrEventProcessor{
 		client:                     client,
 		pollPersister:              pollPersister,
 		challengePersister:         challengePersister,
 		userChallengeDataPersister: userChallengeDataPersister,
 		appealPersister:            appealPersister,
+		errRep:                     errRep,
 	}
 }
 
@@ -53,6 +56,7 @@ type PlcrEventProcessor struct {
 	challengePersister         model.ChallengePersister
 	userChallengeDataPersister model.UserChallengeDataPersister
 	appealPersister            model.AppealPersister
+	errRep                     cerrors.ErrorReporter
 }
 
 func (p *PlcrEventProcessor) isValidPLCRContractEventName(name string) bool {
@@ -85,6 +89,7 @@ func (p *PlcrEventProcessor) Process(event *crawlermodel.Event) (bool, error) {
 		pollID, pollIDerr := p.pollIDFromEvent(event)
 		if pollIDerr != nil {
 			log.Infof("Error retrieving pollID: %v", err)
+			p.errRep.Error(err, nil)
 		}
 		log.Infof("Handling PollCreated for pollID %v\n", pollID)
 		err = p.processPollCreated(event, pollID)
@@ -92,6 +97,7 @@ func (p *PlcrEventProcessor) Process(event *crawlermodel.Event) (bool, error) {
 		pollID, pollIDerr := p.pollIDFromEvent(event)
 		if pollIDerr != nil {
 			log.Infof("Error retrieving pollID: %v", err)
+			p.errRep.Error(err, nil)
 		}
 		log.Infof("Handling VoteCommitted for pollID %v\n", pollID)
 		err = p.processVoteCommitted(event, pollID)
@@ -99,6 +105,7 @@ func (p *PlcrEventProcessor) Process(event *crawlermodel.Event) (bool, error) {
 		pollID, pollIDerr := p.pollIDFromEvent(event)
 		if pollIDerr != nil {
 			log.Infof("Error retrieving pollID: %v", err)
+			p.errRep.Error(err, nil)
 		}
 		log.Infof("Handling VoteRevealed for pollID %v\n", pollID)
 		err = p.processVoteRevealed(event, pollID)
@@ -106,6 +113,7 @@ func (p *PlcrEventProcessor) Process(event *crawlermodel.Event) (bool, error) {
 		pollID, pollIDerr := p.pollIDFromEvent(event)
 		if pollIDerr != nil {
 			log.Infof("Error retrieving pollID: %v", err)
+			p.errRep.Error(err, nil)
 		}
 		log.Infof("Handling TokensRescued for pollID %v\n", pollID)
 		err = p.processTokensRescued(event, pollID)

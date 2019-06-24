@@ -1,11 +1,13 @@
 package processor
 
 import (
-	"errors"
 	"fmt"
-	log "github.com/golang/glog"
 	"math/big"
 	"strings"
+
+	"github.com/pkg/errors"
+
+	log "github.com/golang/glog"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -13,6 +15,7 @@ import (
 	commongen "github.com/joincivil/civil-events-crawler/pkg/generated/common"
 	crawlermodel "github.com/joincivil/civil-events-crawler/pkg/model"
 
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	"github.com/joincivil/go-common/pkg/generated/contract"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	ctime "github.com/joincivil/go-common/pkg/time"
@@ -29,17 +32,16 @@ const (
 )
 
 // NewParameterizerEventProcessor is a convenience function to init a parameterizer processor
-func NewParameterizerEventProcessor(client bind.ContractBackend,
-	challengePersister model.ChallengePersister,
-	paramProposalPersister model.ParamProposalPersister,
-	pollPersister model.PollPersister,
-	userChallengeDataPersister model.UserChallengeDataPersister) *ParameterizerEventProcessor {
+func NewParameterizerEventProcessor(client bind.ContractBackend, challengePersister model.ChallengePersister,
+	paramProposalPersister model.ParamProposalPersister, pollPersister model.PollPersister,
+	userChallengeDataPersister model.UserChallengeDataPersister, errRep cerrors.ErrorReporter) *ParameterizerEventProcessor {
 	return &ParameterizerEventProcessor{
 		client:                     client,
 		challengePersister:         challengePersister,
 		paramProposalPersister:     paramProposalPersister,
 		pollPersister:              pollPersister,
 		userChallengeDataPersister: userChallengeDataPersister,
+		errRep:                     errRep,
 	}
 }
 
@@ -50,6 +52,7 @@ type ParameterizerEventProcessor struct {
 	paramProposalPersister     model.ParamProposalPersister
 	pollPersister              model.PollPersister
 	userChallengeDataPersister model.UserChallengeDataPersister
+	errRep                     cerrors.ErrorReporter
 }
 
 func (p *ParameterizerEventProcessor) isValidParameterizerContractEventName(name string) bool {
@@ -236,6 +239,7 @@ func (p *ParameterizerEventProcessor) updateUserChallengeDataForChallengeRes(pol
 		voterReward, err := paramContract.VoterReward(&bind.CallOpts{}, voter, pollID, salt)
 		if err != nil {
 			log.Errorf("Error getting voter reward %v", err)
+			p.errRep.Error(errors.Wrap(err, "error getting voter reward"), nil)
 		}
 		var isVoterWinner bool
 		if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
@@ -256,6 +260,7 @@ func (p *ParameterizerEventProcessor) updateUserChallengeDataForChallengeRes(pol
 			updateWithUserAddress, latestVote)
 		if err != nil {
 			log.Errorf("Error updating poll in persistence: %v", err)
+			p.errRep.Error(errors.Wrap(err, "error updating poll"), nil)
 		}
 	}
 	return nil

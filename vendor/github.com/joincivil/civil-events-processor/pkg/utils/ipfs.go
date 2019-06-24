@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	chttp "github.com/joincivil/go-common/pkg/http"
 )
 
 const (
 	ipfsNodeURI = "https://ipfs.infura.io"
+	timeout     = 3 * time.Second
 )
 
 // RetrieveIPFSLink retrieves data from a given IPFS link via the given IPFS
@@ -26,8 +28,17 @@ func RetrieveIPFSLink(uri string) ([]byte, error) {
 	}
 
 	addr := u.Host
-	client := chttp.NewRestHelper(ipfsNodeURI, "")
-	targetURI := fmt.Sprintf("/ipfs/%v", addr)
+	client := chttp.NewRestHelperWithTimeout(ipfsNodeURI, "", timeout)
+	targetURI := fmt.Sprintf("ipfs/%v", addr)
 
-	return client.SendRequest(targetURI, http.MethodGet, nil, nil)
+	maxAtts := 3
+	baseWaitMs := 500
+	return client.SendRequestWithRetry(
+		targetURI,
+		http.MethodGet,
+		nil,
+		nil,
+		maxAtts,
+		baseWaitMs,
+	)
 }
