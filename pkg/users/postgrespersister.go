@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jinzhu/gorm"
 	// "database/sql"
 	// log "github.com/golang/glog"
 
@@ -55,6 +56,13 @@ func NewPostgresPersister(host string, port int, user string, password string,
 // PostgresPersister implements the persister for Postgresql
 type PostgresPersister struct {
 	db *sqlx.DB
+}
+
+// NewPersisterFromGorm creates a persister using an existing gorm connection
+func NewPersisterFromGorm(gormDB *gorm.DB) *PostgresPersister {
+	db := sqlx.NewDb(gormDB.DB(), "postgres")
+
+	return &PostgresPersister{db}
 }
 
 // Users retrieves a list of users based on the given UserCriteria

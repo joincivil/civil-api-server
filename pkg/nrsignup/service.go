@@ -11,6 +11,7 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 
+	"github.com/joincivil/go-common/pkg/eth"
 	"github.com/joincivil/go-common/pkg/generated/contract"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -68,11 +69,11 @@ const (
 
 // NewNewsroomSignupService is a convenience function to initialize a new newsroom
 // signup service struct
-func NewNewsroomSignupService(client bind.ContractBackend, emailer *email.Emailer, userService *users.UserService,
+func NewNewsroomSignupService(helper *eth.Helper, emailer *email.Emailer, userService *users.UserService,
 	jsonbService *jsonstore.Service, tokenGenerator *auth.JwtTokenGenerator,
 	grantLandingProtoHost string, paramAddr string, registryListID string) (*Service, error) {
 	return &Service{
-		client:                client,
+		client:                helper.Blockchain,
 		emailer:               emailer,
 		userService:           userService,
 		jsonbService:          jsonbService,

@@ -8,30 +8,22 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
-func initUserPersister(config *utils.GraphQLConfig) (*users.PostgresPersister, error) {
-	persister, err := users.NewPostgresPersister(
-		config.PostgresAddress(),
-		config.PostgresPort(),
-		config.PostgresUser(),
-		config.PostgresPw(),
-		config.PostgresDbname(),
-	)
+// RunPersisterMigrations creates tables, indices, and migrations for persisters
+func RunPersisterMigrations(userPersister *users.PostgresPersister) error {
+	err := userPersister.CreateTables()
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("Error creating tables: err: %v", err)
 	}
-	err = persister.CreateTables()
+	err = userPersister.CreateIndices()
 	if err != nil {
-		return nil, fmt.Errorf("Error creating tables: err: %v", err)
+		return fmt.Errorf("Error creating indices: err: %v", err)
 	}
-	err = persister.CreateIndices()
+	err = userPersister.RunMigrations()
 	if err != nil {
-		return nil, fmt.Errorf("Error creating indices: err: %v", err)
+		return fmt.Errorf("Error running migrations: err: %v", err)
 	}
-	err = persister.RunMigrations()
-	if err != nil {
-		return nil, fmt.Errorf("Error running migrations: err: %v", err)
-	}
-	return persister, nil
+
+	return nil
 }
 
 func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, error) {
