@@ -169,6 +169,12 @@ type Mutation {
   storefrontAirswapTxHash(txHash: String!): String!
   storefrontAirswapCancelled: String!
 
+  # Listing Mutations
+  tcrListingSaveTopicID(
+    addr: String!,
+    topicID: Int!
+  ): String!
+
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
@@ -281,6 +287,7 @@ type Listing {
   appExpiry: Int!
   unstakedDeposit: String!
   challengeID: Int!
+  discourseTopicID: Int
   challenge: Challenge
   prevChallenge: Challenge
 }

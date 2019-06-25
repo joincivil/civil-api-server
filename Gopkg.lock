@@ -352,7 +352,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c1ba37e70cd1f386764873df195b06f11b0aacf84817955842c767ca51cc66b6"
+  digest = "1:94d38d307097cad91a6f7f0f46f8a3bc36278eed904de9acbe8adbaedadb4038"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -365,11 +365,11 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "ee4de49f730b79282c54cf9ddf3a7d942f8d7eb7"
+  revision = "4e3c273f2b65f2abe77c3eba5ccf1f2edfb7cd90"
 
 [[projects]]
   branch = "master"
-  digest = "1:784ec248a0629cb371d453f17a24d9e22966f161ec105ceb75190a25ada8ff6a"
+  digest = "1:0b211be755305f3acc0959f0e87899a790cd7e390125fc2f9ad8442b3fc3c418"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -388,7 +388,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "425deb0989eea5bf6c39beb80b35bf327b27eb84"
+  revision = "bb68c50b19ab4a2b8691e524ff600b1f25e7612d"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -927,6 +927,7 @@
     "github.com/joincivil/go-common/pkg/bytes",
     "github.com/joincivil/go-common/pkg/config",
     "github.com/joincivil/go-common/pkg/email",
+    "github.com/joincivil/go-common/pkg/errors",
     "github.com/joincivil/go-common/pkg/eth",
     "github.com/joincivil/go-common/pkg/generated/contract",
     "github.com/joincivil/go-common/pkg/http",
@@ -944,6 +945,7 @@
     "github.com/stripe/stripe-go/charge",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
+    "github.com/vektah/gqlparser/gqlerror",
     "go.uber.org/fx",
   ]
   solver-name = "gps-cdcl"

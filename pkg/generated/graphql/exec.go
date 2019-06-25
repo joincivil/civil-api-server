@@ -215,6 +215,7 @@ type ComplexityRoot struct {
 		AppExpiry            func(childComplexity int) int
 		UnstakedDeposit      func(childComplexity int) int
 		ChallengeId          func(childComplexity int) int
+		DiscourseTopicId     func(childComplexity int) int
 		Challenge            func(childComplexity int) int
 		PrevChallenge        func(childComplexity int) int
 	}
@@ -263,6 +264,7 @@ type ComplexityRoot struct {
 		PostsCreateComment                func(childComplexity int, input posts.Comment) int
 		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
 		StorefrontAirswapCancelled        func(childComplexity int) int
+		TcrListingSaveTopicId             func(childComplexity int, addr string, topicID int) int
 		UserSetEthAddress                 func(childComplexity int, input users.SignatureInput) int
 		UserUpdate                        func(childComplexity int, uid *string, input *users.UserUpdateInput) int
 	}
@@ -518,6 +520,7 @@ type ListingResolver interface {
 	AppExpiry(ctx context.Context, obj *model.Listing) (int, error)
 	UnstakedDeposit(ctx context.Context, obj *model.Listing) (string, error)
 	ChallengeID(ctx context.Context, obj *model.Listing) (int, error)
+	DiscourseTopicID(ctx context.Context, obj *model.Listing) (*int, error)
 	Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
 	PrevChallenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
 }
@@ -550,6 +553,7 @@ type MutationResolver interface {
 	PostsCreateComment(ctx context.Context, input posts.Comment) (*posts.Comment, error)
 	StorefrontAirswapTxHash(ctx context.Context, txHash string) (string, error)
 	StorefrontAirswapCancelled(ctx context.Context) (string, error)
+	TcrListingSaveTopicID(ctx context.Context, addr string, topicID int) (string, error)
 	UserSetEthAddress(ctx context.Context, input users.SignatureInput) (*string, error)
 	UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error)
 }
@@ -1115,6 +1119,30 @@ func field_Mutation_storefrontAirswapTxHash_args(rawArgs map[string]interface{})
 		}
 	}
 	args["txHash"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_tcrListingSaveTopicID_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["addr"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["addr"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["topicID"]; ok {
+		var err error
+		arg1, err = graphql.UnmarshalInt(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["topicID"] = arg1
 	return args, nil
 
 }
@@ -2925,6 +2953,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Listing.ChallengeId(childComplexity), true
 
+	case "Listing.discourseTopicID":
+		if e.complexity.Listing.DiscourseTopicId == nil {
+			break
+		}
+
+		return e.complexity.Listing.DiscourseTopicId(childComplexity), true
+
 	case "Listing.challenge":
 		if e.complexity.Listing.Challenge == nil {
 			break
@@ -3306,6 +3341,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.StorefrontAirswapCancelled(childComplexity), true
+
+	case "Mutation.tcrListingSaveTopicID":
+		if e.complexity.Mutation.TcrListingSaveTopicId == nil {
+			break
+		}
+
+		args, err := field_Mutation_tcrListingSaveTopicID_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.TcrListingSaveTopicId(childComplexity, args["addr"].(string), args["topicID"].(int)), true
 
 	case "Mutation.userSetEthAddress":
 		if e.complexity.Mutation.UserSetEthAddress == nil {
@@ -8024,6 +8071,12 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 				}
 				wg.Done()
 			}(i, field)
+		case "discourseTopicID":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Listing_discourseTopicID(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		case "challenge":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -8499,6 +8552,34 @@ func (ec *executionContext) _Listing_challengeID(ctx context.Context, field grap
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalInt(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Listing_discourseTopicID(ctx context.Context, field graphql.CollectedField, obj *model.Listing) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Listing",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Listing().DiscourseTopicID(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*res)
 }
 
 // nolint: vetshadow
@@ -8984,6 +9065,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "storefrontAirswapCancelled":
 			out.Values[i] = ec._Mutation_storefrontAirswapCancelled(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "tcrListingSaveTopicID":
+			out.Values[i] = ec._Mutation_tcrListingSaveTopicID(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
@@ -9925,6 +10011,39 @@ func (ec *executionContext) _Mutation_storefrontAirswapCancelled(ctx context.Con
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().StorefrontAirswapCancelled(rctx)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_tcrListingSaveTopicID(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_tcrListingSaveTopicID_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().TcrListingSaveTopicID(rctx, args["addr"].(string), args["topicID"].(int))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -17913,6 +18032,12 @@ type Mutation {
   storefrontAirswapTxHash(txHash: String!): String!
   storefrontAirswapCancelled: String!
 
+  # Listing Mutations
+  tcrListingSaveTopicID(
+    addr: String!,
+    topicID: Int!
+  ): String!
+
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
@@ -18025,6 +18150,7 @@ type Listing {
   appExpiry: Int!
   unstakedDeposit: String!
   challengeID: Int!
+  discourseTopicID: Int
   challenge: Challenge
   prevChallenge: Challenge
 }

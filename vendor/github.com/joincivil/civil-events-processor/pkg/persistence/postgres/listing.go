@@ -39,7 +39,8 @@ func CreateListingTableQuery(tableName string) string {
             last_updated_timestamp INT,
             app_expiry INT,
             challenge_id INT,
-            unstaked_deposit NUMERIC
+			unstaked_deposit NUMERIC,
+			discourse_topic_id INT
         );
     `, tableName)
 	return queryString
@@ -51,6 +52,14 @@ func CreateListingTableIndicesQuery(tableName string) string {
 		CREATE INDEX IF NOT EXISTS listing_whitelisted_type_idx ON %s (whitelisted);
 		CREATE INDEX IF NOT EXISTS listing_creation_timestamp_idx ON %s (creation_timestamp);
 	`, tableName, tableName)
+	return queryString
+}
+
+// CreateListingTableMigrationQuery returns the query to do db migrations
+func CreateListingTableMigrationQuery(tableName string) string {
+	queryString := fmt.Sprintf(`
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS discourse_topic_id INT DEFAULT 0;
+	`, tableName)
 	return queryString
 }
 
@@ -90,6 +99,8 @@ type Listing struct {
 	UnstakedDeposit float64 `db:"unstaked_deposit"`
 
 	ChallengeID int64 `db:"challenge_id"`
+
+	DiscourseTopicID int64 `db:"discourse_topic_id"`
 }
 
 // NewListing constructs a listing for DB from a model.Listing
@@ -133,6 +144,7 @@ func NewListing(listing *model.Listing) *Listing {
 		AppExpiry:            appExpiry,
 		UnstakedDeposit:      unstakedDeposit,
 		ChallengeID:          challengeID,
+		DiscourseTopicID:     listing.DiscourseTopicID(),
 	}
 }
 
@@ -176,6 +188,7 @@ func (l *Listing) DbToListingData() *model.Listing {
 		AppExpiry:            appExpiry,
 		UnstakedDeposit:      unstakedDeposit,
 		ChallengeID:          challengeID,
+		DiscourseTopicID:     l.DiscourseTopicID,
 	}
 	return model.NewListing(testListingParams)
 }

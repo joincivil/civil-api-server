@@ -13,6 +13,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 
 	"github.com/joincivil/go-common/pkg/email"
+	"github.com/joincivil/go-common/pkg/eth"
 )
 
 const (
@@ -138,7 +139,7 @@ func newTestNewsroomSignupService(t *testing.T, sendGridKey string) (
 	*nrsignup.Service, *jsonstore.Service, error) {
 	jsonbService := buildJsonbService(t)
 	signupService, err := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		email.NewEmailerWithSandbox(sendGridKey, useSandbox),
 		buildUserService(),
 		jsonbService,

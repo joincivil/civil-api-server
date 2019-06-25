@@ -536,6 +536,15 @@ func (p *PostgresPersister) CreateIndices() error {
 	return err
 }
 
+func (p *PostgresPersister) RunMigrations() error {
+	migrationQuery := postgres.CreateListingTableMigrationQuery(p.GetTableName(postgres.ListingTableBaseName))
+	_, err := p.db.Exec(migrationQuery)
+	if err != nil {
+		return errors.Wrap(err, "Error running migrations on listing table")
+	}
+	return err
+}
+
 func (p *PostgresPersister) persisterVersionFromTable(tableName string) (*string, error) {
 	if p.version == nil {
 		version, err := p.retrieveVersionFromTable(tableName)

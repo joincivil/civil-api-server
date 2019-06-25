@@ -41,8 +41,9 @@ type ProcessorConfig struct {
 
 	VersionNumber string `split_words:"true" desc:"Sets the version to use for Postgres tables"`
 
-	SentryDsn string `split_words:"true" desc:"Sets the Sentry DSN"`
-	SentryEnv string `split_words:"true" desc:"Sets the Sentry environment"`
+	StackDriverProjectID string `split_words:"true" desc:"Sets the Stackdriver project ID"`
+	SentryDsn            string `split_words:"true" desc:"Sets the Sentry DSN"`
+	SentryEnv            string `split_words:"true" desc:"Sets the Sentry environment"`
 }
 
 // PersistType returns the persister type, implements PersisterConfig

@@ -32,6 +32,9 @@ func isStringInSlice(slice []string, target string) bool {
 
 // NewEventProcessor is a convenience function to init an EventProcessor
 func NewEventProcessor(params *NewEventProcessorParams) *EventProcessor {
+	if params.ErrRep == nil {
+		params.ErrRep = &cerrors.NullErrorReporter{}
+	}
 	tcrEventProcessor := NewTcrEventProcessor(
 		params.Client,
 		params.ListingPersister,
@@ -40,6 +43,7 @@ func NewEventProcessor(params *NewEventProcessorParams) *EventProcessor {
 		params.GovEventPersister,
 		params.UserChallengeDataPersister,
 		params.PollPersister,
+		params.ErrRep,
 	)
 	plcrEventProcessor := NewPlcrEventProcessor(
 		params.Client,
@@ -47,11 +51,13 @@ func NewEventProcessor(params *NewEventProcessorParams) *EventProcessor {
 		params.UserChallengeDataPersister,
 		params.ChallengePersister,
 		params.AppealPersister,
+		params.ErrRep,
 	)
 	newsroomEventProcessor := NewNewsroomEventProcessor(
 		params.Client,
 		params.ListingPersister,
 		params.RevisionPersister,
+		params.ErrRep,
 	)
 	cvlTokenProcessor := NewCvlTokenEventProcessor(
 		params.Client,
@@ -63,10 +69,8 @@ func NewEventProcessor(params *NewEventProcessorParams) *EventProcessor {
 		params.ParameterProposalPersister,
 		params.PollPersister,
 		params.UserChallengeDataPersister,
+		params.ErrRep,
 	)
-	if params.ErrRep == nil {
-		params.ErrRep = &cerrors.NullErrorReporter{}
-	}
 	return &EventProcessor{
 		tcrEventProcessor:      tcrEventProcessor,
 		plcrEventProcessor:     plcrEventProcessor,
