@@ -15,11 +15,13 @@ import (
 	"github.com/joincivil/go-common/pkg/eth"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
+	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )
 
 const (
-	defaultCriteriaCount = 25
+	defaultCriteriaCount   = 25
+	tcrMutationInternalSub = "xqJQLan7NMWXabiL6P3i6LDhjkxAAChb"
 )
 
 // Appeal is the resolver for the Appeal type
@@ -310,6 +312,10 @@ func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (
 		return 0, nil
 	}
 	return int(challengeID), nil
+}
+func (r *listingResolver) DiscourseTopicID(ctx context.Context, obj *model.Listing) (*int, error) {
+	retval := int(obj.DiscourseTopicID())
+	return &retval, nil
 }
 func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
 	loaders := ctxLoaders(ctx)
@@ -785,4 +791,37 @@ func (r *queryResolver) criteriaCount(first *int) int {
 	// another query by the caller.
 	criteriaCount++
 	return criteriaCount
+}
+
+func (m *mutationResolver) TcrListingSaveTopicID(ctx context.Context, addr string,
+	topicID int) (string, error) {
+	// Needs to have a valid auth token
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	// Verify that the sub matches our internal "secret" sub.
+	// Since this mutation will mainly be used internally, we can generate
+	// a JWT with this secret sub to be used by other Civil services.
+	// It then can't be hijacked and used to access any other services based
+	// on user creds (user id, email) and would require both this and the JWT secret
+	// to generate a new token. We could update this secret if an
+	// existing token is compromised.
+	if token.Sub != tcrMutationInternalSub {
+		return "", ErrAccessDenied
+	}
+
+	listing := model.NewListing(&model.NewListingParams{
+		ContractAddress:  common.HexToAddress(addr),
+		DiscourseTopicID: int64(topicID),
+	})
+
+	updatedFields := []string{"DiscourseTopicID"}
+	err := m.listingPersister.UpdateListing(listing, updatedFields)
+	if err != nil {
+		return ResponseError, err
+	}
+
+	return ResponseOK, nil
 }

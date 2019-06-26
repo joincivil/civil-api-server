@@ -19,7 +19,7 @@ type ServiceEmailLists interface {
 
 // NewMailchimpServiceEmailLists is a convenience function that returns
 // a new MailchimpServiceEmailLists
-func NewMailchimpServiceEmailLists(mailchimpAPI *email.MailchimpAPI) *MailchimpServiceEmailLists {
+func NewMailchimpServiceEmailLists(mailchimpAPI email.ListMemberManager) *MailchimpServiceEmailLists {
 	return &MailchimpServiceEmailLists{
 		mailchimpAPI: mailchimpAPI,
 	}
@@ -27,7 +27,7 @@ func NewMailchimpServiceEmailLists(mailchimpAPI *email.MailchimpAPI) *MailchimpS
 
 // MailchimpServiceEmailLists implements ServiceEmailLists on top of Mailchimp
 type MailchimpServiceEmailLists struct {
-	mailchimpAPI *email.MailchimpAPI
+	mailchimpAPI email.ListMemberManager
 }
 
 // PurchaseCompleteAddToMembersList adds email to the members list and unsubscribes the user

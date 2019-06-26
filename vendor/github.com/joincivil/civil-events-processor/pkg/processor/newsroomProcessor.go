@@ -14,6 +14,7 @@ import (
 	crawlermodel "github.com/joincivil/civil-events-crawler/pkg/model"
 
 	cbytes "github.com/joincivil/go-common/pkg/bytes"
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	"github.com/joincivil/go-common/pkg/generated/contract"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 	ctime "github.com/joincivil/go-common/pkg/time"
@@ -34,11 +35,12 @@ const (
 
 // NewNewsroomEventProcessor is a convenience function to init an EventProcessor
 func NewNewsroomEventProcessor(client bind.ContractBackend, listingPersister model.ListingPersister,
-	revisionPersister model.ContentRevisionPersister) *NewsroomEventProcessor {
+	revisionPersister model.ContentRevisionPersister, errRep cerrors.ErrorReporter) *NewsroomEventProcessor {
 	return &NewsroomEventProcessor{
 		client:            client,
 		listingPersister:  listingPersister,
 		revisionPersister: revisionPersister,
+		errRep:            errRep,
 	}
 }
 
@@ -48,6 +50,7 @@ type NewsroomEventProcessor struct {
 	client            bind.ContractBackend
 	listingPersister  model.ListingPersister
 	revisionPersister model.ContentRevisionPersister
+	errRep            cerrors.ErrorReporter
 }
 
 // Process processes Newsroom Events into aggregated data
@@ -199,23 +202,18 @@ func (n *NewsroomEventProcessor) processNewsroomOwnershipTransferred(event *craw
 	listing.RemoveOwnerAddress(previousOwner.(common.Address))
 	listing.AddOwnerAddress(newOwner.(common.Address))
 	updatedFields = append(updatedFields, ownerAddressesFieldName)
-	err = n.listingPersister.UpdateListing(listing, updatedFields)
-	return err
+	return n.listingPersister.UpdateListing(listing, updatedFields)
 }
 
 func (n *NewsroomEventProcessor) updateListingCharterRevision(revision *model.ContentRevision) error {
+	if revision.ContractContentID().Int64() != int64(defaultCharterContentID) {
+		return errors.New("incorrect content revision ID for charter")
+	}
+
 	listing, err := n.listingPersister.ListingByAddress(revision.ListingAddress())
 	if err != nil {
 		return err
 	}
-
-	// NOTE(IS): Commenting this out. This doesn't check if charter data is correct and if
-	// events are out of order it will be incorrect.
-	// if listing.Charter() != nil {
-	// 	if revision.ContractRevisionID().Cmp(listing.Charter().RevisionID()) == 0 {
-	// 		return errors.New("Not updating listing charter, revision ids are the same")
-	// 	}
-	// }
 
 	newsroom, newsErr := contract.NewNewsroomContract(revision.ListingAddress(), n.client)
 	if newsErr != nil {
@@ -224,7 +222,7 @@ func (n *NewsroomEventProcessor) updateListingCharterRevision(revision *model.Co
 
 	charterContent, contErr := newsroom.GetRevision(
 		&bind.CallOpts{},
-		revision.ContractContentID(),
+		big.NewInt(defaultCharterContentID),
 		revision.ContractRevisionID(),
 	)
 	if contErr != nil {
@@ -234,7 +232,7 @@ func (n *NewsroomEventProcessor) updateListingCharterRevision(revision *model.Co
 	updatedFields := []string{"Charter"}
 	updatedCharter := model.NewCharter(&model.CharterParams{
 		URI:         revision.RevisionURI(),
-		ContentID:   revision.ContractContentID(),
+		ContentID:   big.NewInt(defaultCharterContentID),
 		RevisionID:  revision.ContractRevisionID(),
 		Signature:   charterContent.Signature,
 		Author:      charterContent.Author,
@@ -245,14 +243,16 @@ func (n *NewsroomEventProcessor) updateListingCharterRevision(revision *model.Co
 
 	// Try to get the charter data to get newsroom URL
 	// TODO(PN): Perhaps use the content revision here? Might not be in DB at this point.
-	_, charterData, chartErr := n.scrapeData(revision.ContractContentID(), revision.RevisionURI())
+	_, charterData, chartErr := n.scrapeData(big.NewInt(defaultCharterContentID), revision.RevisionURI())
 	if chartErr != nil {
-		log.Errorf("Error retrieving charter data from IPFS: err: %v", chartErr)
+		log.Errorf("Error retrieving charter data from %v: err: %v", revision.RevisionURI(), chartErr)
+		n.errRep.Error(errors.Wrapf(chartErr, "error retrieving charter data from %v", revision.RevisionURI()), nil)
 	}
 	if charterData != nil {
 		nrURL, ok := charterData.Data()["newsroomUrl"]
 		if !ok {
-			log.Errorf("Could not find newsroomUrl in the charter IPFS data: %v", charterData.URI())
+			log.Errorf("Could not find newsroomUrl in the charter data: %v", charterData.URI())
+			n.errRep.Error(errors.Errorf("could not find newsroomUrl in charter data: %v", charterData.URI()), nil)
 		} else {
 			listing.SetURL(nrURL.(string))
 			updatedFields = append(updatedFields, urlFieldName)
@@ -312,14 +312,16 @@ func (n *NewsroomEventProcessor) persistNewListing(listingAddress common.Address
 
 	// Try to get the charter data to get newsroom URL
 	// TODO(PN): Perhaps use the content revision here? Might not be in DB at this point.
-	_, charterData, chartErr := n.scrapeData(big.NewInt(0), charterContent.Uri)
+	_, charterData, chartErr := n.scrapeData(big.NewInt(defaultCharterContentID), charterContent.Uri)
 	if chartErr != nil {
-		log.Errorf("Error retrieving charter data from IPFS: err: %v", chartErr)
+		log.Errorf("Error retrieving charter data from %v: err: %v", charterContent.Uri, chartErr)
+		n.errRep.Error(errors.Wrapf(chartErr, "error retrieving charter data from %v", charterContent.Uri), nil)
 	}
 	if charterData != nil {
 		nrURL, ok := charterData.Data()["newsroomUrl"]
 		if !ok {
-			log.Errorf("Could not find newsroomUrl in the charter IPFS data: %v", charterData.URI())
+			log.Errorf("Could not find newsroomUrl in the charter data: %v", charterData.URI())
+			n.errRep.Error(errors.Errorf("could not find newsroomUrl in charter data: %v", charterData.URI()), nil)
 		} else {
 			url = nrURL.(string)
 		}

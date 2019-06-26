@@ -16,7 +16,7 @@ type DBPostPersister struct {
 }
 
 // NewDBPostPersister builds a new DbPostPersister
-func NewDBPostPersister(db *gorm.DB) *DBPostPersister {
+func NewDBPostPersister(db *gorm.DB) PostPersister {
 	return &DBPostPersister{
 		db,
 	}

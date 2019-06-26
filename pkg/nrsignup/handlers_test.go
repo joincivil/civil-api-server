@@ -16,6 +16,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 
 	cemail "github.com/joincivil/go-common/pkg/email"
+	"github.com/joincivil/go-common/pkg/eth"
 	ctime "github.com/joincivil/go-common/pkg/time"
 )
 
@@ -32,7 +33,7 @@ func TestHandleGrantApprovalNotRequested(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -73,7 +74,7 @@ func TestHandleGrantApprovalApproved(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -119,7 +120,7 @@ func TestHandleGrantApprovalRejected(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -165,7 +166,7 @@ func TestHandleGrantApprovalInvalidToken(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -205,7 +206,7 @@ func TestHandleGrantApprovalNoApprovedValue(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -252,7 +253,7 @@ func TestHandleGrantApprovalBadApprovedValue(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -299,7 +300,7 @@ func TestApproveGrantHandler(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -368,7 +369,7 @@ func TestApproveGrantHandlerInvalidToken(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,
@@ -437,7 +438,7 @@ func TestApproveGrantHandlerError(t *testing.T) {
 	jsonbService := buildJsonbService(t)
 
 	signupService, _ := nrsignup.NewNewsroomSignupService(
-		nil,
+		&eth.Helper{},
 		emailer,
 		userService,
 		jsonbService,

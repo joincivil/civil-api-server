@@ -352,7 +352,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c1ba37e70cd1f386764873df195b06f11b0aacf84817955842c767ca51cc66b6"
+  digest = "1:94d38d307097cad91a6f7f0f46f8a3bc36278eed904de9acbe8adbaedadb4038"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -365,11 +365,11 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "ee4de49f730b79282c54cf9ddf3a7d942f8d7eb7"
+  revision = "4e3c273f2b65f2abe77c3eba5ccf1f2edfb7cd90"
 
 [[projects]]
   branch = "master"
-  digest = "1:784ec248a0629cb371d453f17a24d9e22966f161ec105ceb75190a25ada8ff6a"
+  digest = "1:0b211be755305f3acc0959f0e87899a790cd7e390125fc2f9ad8442b3fc3c418"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -388,7 +388,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "425deb0989eea5bf6c39beb80b35bf327b27eb84"
+  revision = "bb68c50b19ab4a2b8691e524ff600b1f25e7612d"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -624,6 +624,47 @@
   pruneopts = "UT"
   revision = "75c0cca22312e51bfd4fafdbe9197ae399e18b38"
   version = "v0.20.2"
+
+[[projects]]
+  digest = "1:a5158647b553c61877aa9ae74f4015000294e47981e6b8b07525edcbb0747c81"
+  name = "go.uber.org/atomic"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "df976f2515e274675050de7b3f42545de80594fd"
+  version = "v1.4.0"
+
+[[projects]]
+  digest = "1:2773e4e922e5af534775962ffef08770b8114e177590f7605886528d37417105"
+  name = "go.uber.org/dig"
+  packages = [
+    ".",
+    "internal/digreflect",
+    "internal/dot",
+  ]
+  pruneopts = "UT"
+  revision = "7ff117f761a3f1b3eb521945c17a1091438eb6de"
+  version = "v1.7.0"
+
+[[projects]]
+  digest = "1:74e59bc785a76b467b9a5c0353193e8befa0c27863413e5fc52e87cf3d24fa4e"
+  name = "go.uber.org/fx"
+  packages = [
+    ".",
+    "internal/fxlog",
+    "internal/fxreflect",
+    "internal/lifecycle",
+  ]
+  pruneopts = "UT"
+  revision = "3de044da969b90ad0a3e4a7867a74662f645f3f9"
+  version = "v1.9.0"
+
+[[projects]]
+  digest = "1:60bf2a5e347af463c42ed31a493d817f8a72f102543060ed992754e689805d1a"
+  name = "go.uber.org/multierr"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "3c4937480c32f4c13a875a1829af76c98ca3d40a"
+  version = "v1.1.0"
 
 [[projects]]
   branch = "master"
@@ -864,6 +905,7 @@
     "github.com/dgrijalva/jwt-go",
     "github.com/didip/tollbooth",
     "github.com/didip/tollbooth_chi",
+    "github.com/ethereum/go-ethereum",
     "github.com/ethereum/go-ethereum/accounts/abi/bind",
     "github.com/ethereum/go-ethereum/accounts/abi/bind/backends",
     "github.com/ethereum/go-ethereum/common",
@@ -885,6 +927,7 @@
     "github.com/joincivil/go-common/pkg/bytes",
     "github.com/joincivil/go-common/pkg/config",
     "github.com/joincivil/go-common/pkg/email",
+    "github.com/joincivil/go-common/pkg/errors",
     "github.com/joincivil/go-common/pkg/eth",
     "github.com/joincivil/go-common/pkg/generated/contract",
     "github.com/joincivil/go-common/pkg/http",
@@ -902,6 +945,8 @@
     "github.com/stripe/stripe-go/charge",
     "github.com/vektah/gqlparser",
     "github.com/vektah/gqlparser/ast",
+    "github.com/vektah/gqlparser/gqlerror",
+    "go.uber.org/fx",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

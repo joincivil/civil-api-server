@@ -12,11 +12,16 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 )
 
+const (
+	// 5 year expiration
+	expireInSecs = 60 * 60 * 24 * 30 * 12 * 5
+)
+
 func main() {
 	secret := []byte(os.Args[1])
 	jwt := auth.NewJwtTokenGenerator(secret)
 	// Generate a new code for a user
-	token, err := jwt.GenerateToken(os.Args[2], 604800)
+	token, err := jwt.GenerateToken(os.Args[2], expireInSecs)
 	if err != nil {
 		log.Fatalf("Error generating token: err: %v", err)
 	}

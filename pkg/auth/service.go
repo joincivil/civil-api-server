@@ -8,6 +8,7 @@ import (
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
 	"github.com/joincivil/civil-api-server/pkg/users"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -87,11 +88,22 @@ type Service struct {
 	refreshBlacklist       []string
 }
 
+// NewAuthServiceFromConfig creates a new auth.Service using the main graphql config
+func NewAuthServiceFromConfig(userService *users.UserService, tokenGenerator *JwtTokenGenerator,
+	emailer *email.Emailer, config *utils.GraphQLConfig) (*Service, error) {
+	signupTemplateIDs := config.AuthEmailSignupTemplates
+	loginTemplateIDs := config.AuthEmailLoginTemplates
+	signupLoginProtoHost := config.SignupLoginProtoHost
+	refreshBlacklist := config.RefreshTokenBlacklist
+	return NewAuthService(userService, tokenGenerator, emailer, signupTemplateIDs, loginTemplateIDs, signupLoginProtoHost, refreshBlacklist)
+}
+
 // NewAuthService creates a new AuthService instance
 func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGenerator,
 	emailer *email.Emailer, signupTemplateIDs map[string]string,
 	loginTemplateIDs map[string]string, signupLoginProtoHost string,
 	refreshBlacklist []string) (*Service, error) {
+
 	var signupIDs ApplicationEmailTemplateMap
 	if signupTemplateIDs != nil {
 		signupIDs = ApplicationEmailTemplateMap{}

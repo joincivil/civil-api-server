@@ -16,6 +16,7 @@ import (
 
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	ceth "github.com/joincivil/go-common/pkg/eth"
 	"github.com/joincivil/go-common/pkg/generated/contract"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
@@ -60,7 +61,7 @@ func NewTcrEventProcessor(client bind.ContractBackend, listingPersister model.Li
 	challengePersister model.ChallengePersister, appealPersister model.AppealPersister,
 	govEventPersister model.GovernanceEventPersister,
 	userChallengeDataPersister model.UserChallengeDataPersister,
-	pollPersister model.PollPersister) *TcrEventProcessor {
+	pollPersister model.PollPersister, errRep cerrors.ErrorReporter) *TcrEventProcessor {
 	return &TcrEventProcessor{
 		client:                     client,
 		listingPersister:           listingPersister,
@@ -69,6 +70,7 @@ func NewTcrEventProcessor(client bind.ContractBackend, listingPersister model.Li
 		govEventPersister:          govEventPersister,
 		userChallengeDataPersister: userChallengeDataPersister,
 		pollPersister:              pollPersister,
+		errRep:                     errRep,
 	}
 }
 
@@ -82,6 +84,7 @@ type TcrEventProcessor struct {
 	govEventPersister          model.GovernanceEventPersister
 	userChallengeDataPersister model.UserChallengeDataPersister
 	pollPersister              model.PollPersister
+	errRep                     cerrors.ErrorReporter
 }
 
 func (t *TcrEventProcessor) isValidCivilTCRContractEventName(name string) bool {
@@ -586,7 +589,7 @@ func (t *TcrEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.I
 		salt := userChallengeData.Salt()
 		voterReward, err := tcrContract.VoterReward(&bind.CallOpts{}, voter, pollID, salt)
 		if err != nil {
-			log.Errorf("Error getting voter reward %v", err)
+			log.Errorf("Error getting voter reward: %v, %v, %v, err: %v", voter.Hex(), pollID, salt, err)
 		}
 		var isVoterWinner bool
 		if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
@@ -607,6 +610,7 @@ func (t *TcrEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.I
 			updateWithUserAddress, latestVote)
 		if err != nil {
 			log.Errorf("Error updating poll in persistence: %v", err)
+			t.errRep.Error(err, nil)
 		}
 	}
 
