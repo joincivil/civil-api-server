@@ -13,6 +13,8 @@ import (
 
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 	"github.com/joincivil/civil-events-processor/pkg/model"
+
+	"github.com/joincivil/go-common/pkg/pubsub"
 )
 
 // PubSubModule initializes and starts EventHandlers
@@ -65,14 +67,14 @@ func buildCvlTokenTransferEventHandler(tokenPersister model.TokenTransferPersist
 	)
 }
 
-func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, quit QuitChannel) (*events.Workers, error) {
+func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, quit QuitChannel) (*pubsub.Workers, error) {
 
 	if config.PubSubProjectID == "" {
 		return nil, nil
 	}
 
-	handlers := []events.EventHandler{transferHandler}
-	return events.NewWorkers(&events.WorkersConfig{
+	handlers := []pubsub.EventHandler{transferHandler}
+	return pubsub.NewWorkers(&pubsub.WorkersConfig{
 		PubSubProjectID:        config.PubSubProjectID,
 		PubSubTopicName:        config.PubSubTokenTopicName,
 		PubSubSubscriptionName: config.PubSubTokenSubName,
@@ -86,7 +88,7 @@ func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransfer
 type PubSubDependencies struct {
 	fx.In
 	Config  *PubSubConfig
-	Workers *events.Workers `optional:"true"`
+	Workers *pubsub.Workers `optional:"true"`
 	Quit    QuitChannel
 }
 

@@ -1,4 +1,4 @@
-package events
+package pubsub
 
 // EventHandler is an interface to a governance event handler.
 type EventHandler interface {

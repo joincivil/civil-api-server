@@ -369,7 +369,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0b211be755305f3acc0959f0e87899a790cd7e390125fc2f9ad8442b3fc3c418"
+  digest = "1:c8042abbf18502748d3848e52544f96fea14ca9d0c2032642b7bd2131d61afcd"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -388,7 +388,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "bb68c50b19ab4a2b8691e524ff600b1f25e7612d"
+  revision = "c57639221f171e32d068293b0cfeb2a256ddd8ab"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"

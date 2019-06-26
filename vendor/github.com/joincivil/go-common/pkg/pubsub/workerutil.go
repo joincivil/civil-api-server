@@ -1,25 +1,23 @@
-package events
+package pubsub
 
 import (
 	"errors"
-
-	cpubsub "github.com/joincivil/go-common/pkg/pubsub"
 )
 
-func initPubSub(projectID string) (*cpubsub.GooglePubSub, error) {
+func initPubSub(projectID string) (*GooglePubSub, error) {
 	// If no project ID, quit
 	if projectID == "" {
 		return nil, errors.New("Need PubSubProjectID")
 	}
 
-	ps, err := cpubsub.NewGooglePubSub(projectID)
+	ps, err := NewGooglePubSub(projectID)
 	if err != nil {
 		return nil, err
 	}
 	return ps, err
 }
 
-func initPubSubSubscribers(ps *cpubsub.GooglePubSub, topicName string, subName string) error {
+func initPubSubSubscribers(ps *GooglePubSub, topicName string, subName string) error {
 	// If no crawl topic name, quit
 	if topicName == "" {
 		return errors.New("Pubsub topic name should be specified")
@@ -30,7 +28,7 @@ func initPubSubSubscribers(ps *cpubsub.GooglePubSub, topicName string, subName s
 	}
 
 	return ps.StartSubscribersWithConfig(
-		cpubsub.SubscribeConfig{
+		SubscribeConfig{
 			Name:    subName,
 			AutoAck: false,
 		},
