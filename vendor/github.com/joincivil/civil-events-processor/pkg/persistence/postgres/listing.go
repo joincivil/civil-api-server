@@ -108,28 +108,43 @@ func NewListing(listing *model.Listing) *Listing {
 	ownerAddresses := cstrings.ListCommonAddressesToString(listing.OwnerAddresses())
 	contributorAddresses := cstrings.ListCommonAddressesToString(listing.ContributorAddresses())
 	lastGovernanceState := int(listing.LastGovernanceState())
-	owner := listing.Owner().Hex()
 
+	var owner string
+	var contractAddress string
 	var appExpiry int64
 	var unstakedDeposit float64
 	var challengeID int64
+	var charter cpostgres.JsonbPayload
+
+	if listing.ContractAddress() != (common.Address{}) {
+		contractAddress = listing.ContractAddress().Hex()
+	}
+
+	if listing.Owner() != (common.Address{}) {
+		owner = listing.Owner().Hex()
+	}
+
 	if listing.AppExpiry() != nil {
 		appExpiry = listing.AppExpiry().Int64()
 	}
+
 	if listing.UnstakedDeposit() != nil {
 		f := new(big.Float).SetInt(listing.UnstakedDeposit())
 		unstakedDeposit, _ = f.Float64()
 	}
+
+	challengeID = nilChallengeID
 	if listing.ChallengeID() != nil {
 		challengeID = listing.ChallengeID().Int64()
-	} else {
-		challengeID = nilChallengeID
 	}
-	charter := cpostgres.JsonbPayload(listing.Charter().AsMap())
+
+	if listing.Charter() != nil {
+		charter = cpostgres.JsonbPayload(listing.Charter().AsMap())
+	}
 
 	return &Listing{
 		Name:                 listing.Name(),
-		ContractAddress:      listing.ContractAddress().Hex(),
+		ContractAddress:      contractAddress,
 		Whitelisted:          listing.Whitelisted(),
 		LastGovernanceState:  lastGovernanceState,
 		URL:                  listing.URL(),
