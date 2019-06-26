@@ -1,6 +1,8 @@
 package events
 
 import (
+	"encoding/json"
+
 	log "github.com/golang/glog"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -43,8 +45,14 @@ func (t *CvlTokenTransferEventHandler) Name() string {
 }
 
 // Handle runs the logic to handle the event as appropriate for the event
-func (t *CvlTokenTransferEventHandler) Handle(event *processor.PubSubMessage) (bool, error) {
-	transfers, err := t.tokenPersister.TokenTransfersByTxHash(common.HexToHash(event.TxHash))
+func (t *CvlTokenTransferEventHandler) Handle(event []byte) (bool, error) {
+	// Unmarshal into the processor pubsub message
+	p := &processor.PubSubMessage{}
+	err := json.Unmarshal(event, p)
+	if err != nil {
+		return false, err
+	}
+	transfers, err := t.tokenPersister.TokenTransfersByTxHash(common.HexToHash(p.TxHash))
 	if err != nil {
 		return false, err
 	}

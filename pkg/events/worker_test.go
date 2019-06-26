@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"encoding/json"
 
 	"github.com/joincivil/civil-events-processor/pkg/processor"
 	"github.com/joincivil/go-common/pkg/pubsub"
@@ -27,10 +28,16 @@ func (t *TestEventHandler) TheMsg() *processor.PubSubMessage {
 	return t.Msg
 }
 
-func (t *TestEventHandler) Handle(msg *processor.PubSubMessage) (bool, error) {
+func (t *TestEventHandler) Handle(msg []byte) (bool, error) {
 	t.m.Lock()
 	defer t.m.Unlock()
-	t.Msg = msg
+	// Unmarshal into the processor pubsub message
+	p := &processor.PubSubMessage{}
+	err := json.Unmarshal(msg, p)
+	if err != nil {
+		return false, err
+	}
+	t.Msg = p
 	return t.HandleBool, t.HandleErr
 }
 
