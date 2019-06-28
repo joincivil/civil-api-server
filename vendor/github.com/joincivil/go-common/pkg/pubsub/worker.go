@@ -1,14 +1,11 @@
-package events
+package pubsub
 
 import (
-	"encoding/json"
 	"errors"
 	"sync"
 	"time"
 
 	log "github.com/golang/glog"
-
-	processor "github.com/joincivil/civil-events-processor/pkg/processor"
 )
 
 // WorkersConfig configures the governance event pubsub workers
@@ -151,18 +148,10 @@ Loop:
 				break Loop
 			}
 
-			// Unmarshal into the processor pubsub message
-			p := &processor.PubSubMessage{}
-			err := json.Unmarshal(msg.Data, p)
-			if err != nil {
-				log.Errorf("Error unmarshalling pubsub payload: err: %v", err)
-				continue
-			}
-
 			// Run the event through all the event handlers
 		HandlerLoop:
 			for _, handler := range w.eventHandlers {
-				ran, err := handler.Handle(p)
+				ran, err := handler.Handle(msg.Data)
 				if err != nil {
 					log.Errorf("Error handling event on handler %v: err: %v", handler.Name(), err)
 					continue

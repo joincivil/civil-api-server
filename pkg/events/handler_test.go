@@ -3,6 +3,7 @@ package events_test
 import (
 	"math/big"
 	"testing"
+	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-api-server/pkg/events"
@@ -49,13 +50,18 @@ func TestCvlTokenTransferEventHandler(t *testing.T) {
 	pubsubMsg := &processor.PubSubMessage{
 		TxHash: "0x4fa779b4dbf20f8df5b4e523c49920858234172492dc4fb477aee4f7abd67899",
 	}
+
+	data, err := json.Marshal(pubsubMsg)
+	if err != nil {
+		t.Errorf("Problem marshalling json: %v", err)
+	}
 	handler := events.NewCvlTokenTransferEventHandler(
 		persister,
 		userService,
 		[]common.Address{common.HexToAddress("0x3e39fa983abcd349d95aed608e798817397cf0d1")},
 		"6933914", // pete test list
 	)
-	ran, err := handler.Handle(pubsubMsg)
+	ran, err := handler.Handle(data)
 	if err != nil {
 		t.Errorf("Should have not returned an error: err: %v", err)
 	}
