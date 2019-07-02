@@ -260,8 +260,11 @@ type ComplexityRoot struct {
 		PaymentsCreateEtherPayment        func(childComplexity int, postID string, input payments.EtherPayment) int
 		PaymentsCreateTokenPayment        func(childComplexity int, postID string, input payments.TokenPayment) int
 		PostsCreateBoost                  func(childComplexity int, input posts.Boost) int
+		PostsUpdateBoost                  func(childComplexity int, postID string, input posts.Boost) int
 		PostsCreateExternalLink           func(childComplexity int, input posts.ExternalLink) int
+		PostsUpdateExternalLink           func(childComplexity int, postID string, input posts.ExternalLink) int
 		PostsCreateComment                func(childComplexity int, input posts.Comment) int
+		PostsUpdateComment                func(childComplexity int, postID string, input posts.Comment) int
 		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
 		StorefrontAirswapCancelled        func(childComplexity int) int
 		TcrListingSaveTopicId             func(childComplexity int, addr string, topicID int) int
@@ -549,8 +552,11 @@ type MutationResolver interface {
 	PaymentsCreateEtherPayment(ctx context.Context, postID string, input payments.EtherPayment) (payments.EtherPayment, error)
 	PaymentsCreateTokenPayment(ctx context.Context, postID string, input payments.TokenPayment) (payments.TokenPayment, error)
 	PostsCreateBoost(ctx context.Context, input posts.Boost) (*posts.Boost, error)
+	PostsUpdateBoost(ctx context.Context, postID string, input posts.Boost) (*posts.Boost, error)
 	PostsCreateExternalLink(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error)
+	PostsUpdateExternalLink(ctx context.Context, postID string, input posts.ExternalLink) (*posts.ExternalLink, error)
 	PostsCreateComment(ctx context.Context, input posts.Comment) (*posts.Comment, error)
+	PostsUpdateComment(ctx context.Context, postID string, input posts.Comment) (*posts.Comment, error)
 	StorefrontAirswapTxHash(ctx context.Context, txHash string) (string, error)
 	StorefrontAirswapCancelled(ctx context.Context) (string, error)
 	TcrListingSaveTopicID(ctx context.Context, addr string, topicID int) (string, error)
@@ -1078,6 +1084,30 @@ func field_Mutation_postsCreateBoost_args(rawArgs map[string]interface{}) (map[s
 
 }
 
+func field_Mutation_postsUpdateBoost_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 posts.Boost
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg1, err = UnmarshalPostCreateBoostInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+
+}
+
 func field_Mutation_postsCreateExternalLink_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 posts.ExternalLink
@@ -1093,6 +1123,30 @@ func field_Mutation_postsCreateExternalLink_args(rawArgs map[string]interface{})
 
 }
 
+func field_Mutation_postsUpdateExternalLink_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 posts.ExternalLink
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg1, err = UnmarshalPostCreateExternalLinkInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+
+}
+
 func field_Mutation_postsCreateComment_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 posts.Comment
@@ -1104,6 +1158,30 @@ func field_Mutation_postsCreateComment_args(rawArgs map[string]interface{}) (map
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_postsUpdateComment_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 posts.Comment
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg1, err = UnmarshalPostCreateCommentInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 
 }
@@ -3299,6 +3377,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PostsCreateBoost(childComplexity, args["input"].(posts.Boost)), true
 
+	case "Mutation.postsUpdateBoost":
+		if e.complexity.Mutation.PostsUpdateBoost == nil {
+			break
+		}
+
+		args, err := field_Mutation_postsUpdateBoost_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PostsUpdateBoost(childComplexity, args["postID"].(string), args["input"].(posts.Boost)), true
+
 	case "Mutation.postsCreateExternalLink":
 		if e.complexity.Mutation.PostsCreateExternalLink == nil {
 			break
@@ -3311,6 +3401,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PostsCreateExternalLink(childComplexity, args["input"].(posts.ExternalLink)), true
 
+	case "Mutation.postsUpdateExternalLink":
+		if e.complexity.Mutation.PostsUpdateExternalLink == nil {
+			break
+		}
+
+		args, err := field_Mutation_postsUpdateExternalLink_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PostsUpdateExternalLink(childComplexity, args["postID"].(string), args["input"].(posts.ExternalLink)), true
+
 	case "Mutation.postsCreateComment":
 		if e.complexity.Mutation.PostsCreateComment == nil {
 			break
@@ -3322,6 +3424,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PostsCreateComment(childComplexity, args["input"].(posts.Comment)), true
+
+	case "Mutation.postsUpdateComment":
+		if e.complexity.Mutation.PostsUpdateComment == nil {
+			break
+		}
+
+		args, err := field_Mutation_postsUpdateComment_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PostsUpdateComment(childComplexity, args["postID"].(string), args["input"].(posts.Comment)), true
 
 	case "Mutation.storefrontAirswapTxHash":
 		if e.complexity.Mutation.StorefrontAirswapTxHash == nil {
@@ -9054,10 +9168,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "postsCreateBoost":
 			out.Values[i] = ec._Mutation_postsCreateBoost(ctx, field)
+		case "postsUpdateBoost":
+			out.Values[i] = ec._Mutation_postsUpdateBoost(ctx, field)
 		case "postsCreateExternalLink":
 			out.Values[i] = ec._Mutation_postsCreateExternalLink(ctx, field)
+		case "postsUpdateExternalLink":
+			out.Values[i] = ec._Mutation_postsUpdateExternalLink(ctx, field)
 		case "postsCreateComment":
 			out.Values[i] = ec._Mutation_postsCreateComment(ctx, field)
+		case "postsUpdateComment":
+			out.Values[i] = ec._Mutation_postsUpdateComment(ctx, field)
 		case "storefrontAirswapTxHash":
 			out.Values[i] = ec._Mutation_storefrontAirswapTxHash(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -9895,6 +10015,41 @@ func (ec *executionContext) _Mutation_postsCreateBoost(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Mutation_postsUpdateBoost(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_postsUpdateBoost_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PostsUpdateBoost(rctx, args["postID"].(string), args["input"].(posts.Boost))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*posts.Boost)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._PostBoost(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Mutation_postsCreateExternalLink(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -9930,6 +10085,41 @@ func (ec *executionContext) _Mutation_postsCreateExternalLink(ctx context.Contex
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Mutation_postsUpdateExternalLink(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_postsUpdateExternalLink_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PostsUpdateExternalLink(rctx, args["postID"].(string), args["input"].(posts.ExternalLink))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*posts.ExternalLink)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._PostExternalLink(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Mutation_postsCreateComment(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -9949,6 +10139,41 @@ func (ec *executionContext) _Mutation_postsCreateComment(ctx context.Context, fi
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().PostsCreateComment(rctx, args["input"].(posts.Comment))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*posts.Comment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._PostComment(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_postsUpdateComment(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_postsUpdateComment_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PostsUpdateComment(rctx, args["postID"].(string), args["input"].(posts.Comment))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -18025,8 +18250,19 @@ type Mutation {
 
   # Post Mutations
   postsCreateBoost(input: PostCreateBoostInput!): PostBoost
+  postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
+
   postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+  postsUpdateExternalLink(
+    postID: String!
+    input: PostCreateExternalLinkInput!
+  ): PostExternalLink
+
   postsCreateComment(input: PostCreateCommentInput!): PostComment
+  postsUpdateComment(
+    postID: String!
+    input: PostCreateCommentInput!
+  ): PostComment
 
   # Storefront Mutations
   storefrontAirswapTxHash(txHash: String!): String!

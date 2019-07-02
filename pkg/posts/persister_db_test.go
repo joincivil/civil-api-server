@@ -7,21 +7,23 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 )
 
-func TestPersistPost(t *testing.T) {
-	db, err := testutils.GetTestDBConnection()
+func helperCreatePost(t *testing.T, persister posts.PostPersister, post posts.Post) posts.Post {
+	createdPost, err := persister.CreatePost("alice", post)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
 
-	persister := posts.NewDBPostPersister(db)
+	return createdPost
+}
 
-	boost := &posts.Boost{
+func makeBoost() *posts.Boost {
+	return &posts.Boost{
 		PostModel: posts.PostModel{
 			ChannelID: "alice_newsrooom",
-			AuthorID:  "alice",
 		},
 		CurrencyCode: "USD",
 		GoalAmount:   100.10,
+		Title:        "some title",
 		About:        "_abouttest_",
 		Items: []posts.BoostItem{
 			{
@@ -34,6 +36,17 @@ func TestPersistPost(t *testing.T) {
 			},
 		},
 	}
+}
+
+func TestCreatePost(t *testing.T) {
+	db, err := testutils.GetTestDBConnection()
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+
+	persister := posts.NewDBPostPersister(db)
+
+	boost := makeBoost()
 	link := &posts.ExternalLink{
 		PostModel: posts.PostModel{
 			ChannelID: "bob_newsroom",
@@ -42,29 +55,18 @@ func TestPersistPost(t *testing.T) {
 		URL: "https://totallylegitnews.com",
 	}
 
-	boostPost, err := persister.CreatePost(boost)
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-	t.Logf("created boost: %v", boostPost)
+	boostPost := helperCreatePost(t, persister, boost)
+	linkPost := helperCreatePost(t, persister, link)
 
-	linkPost, err := persister.CreatePost(link)
+	_, err = persister.GetPost(linkPost.GetPostModel().ID)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	t.Logf("created external link: %v", linkPost.GetPostModel().ID)
-
-	linkReceived, err := persister.GetPost(linkPost.GetPostModel().ID)
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-	t.Logf("got external link: %v", linkReceived)
 
 	boostReceived, err := persister.GetPost(boostPost.GetPostModel().ID)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	t.Logf("got boost: %v", boostReceived)
 	if boostReceived.(*posts.Boost).About != "_abouttest_" {
 		t.Fatal("expected Boost to have a value of `_abouttest_` for About field ")
 	}
@@ -74,5 +76,106 @@ func TestPersistPost(t *testing.T) {
 	}
 	if items[0].Item != "foo" || items[1].Item != "bar" {
 		t.Fatal("expected Boost boost items to be `foo` and `bar`")
+	}
+
+	if boostReceived.GetPostModel().AuthorID != "alice" {
+		t.Fatal("expected AuthorID to be `alice`")
+	}
+}
+
+func TestEditPost(t *testing.T) {
+	userID := "alice"
+	db, err := testutils.GetTestDBConnection()
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+
+	persister := posts.NewDBPostPersister(db)
+
+	boost := makeBoost()
+	boostPost := helperCreatePost(t, persister, boost)
+
+	patch := &posts.Boost{
+		Title: "changed title",
+		Why:   "changed value",
+	}
+
+	_, err = persister.EditPost(userID, boostPost.GetID(), patch)
+	if err != nil {
+		t.Fatalf("was not expecting an error: %v", err)
+	}
+
+	returnedPost, err := persister.GetPost(boostPost.GetID())
+	if err != nil {
+		t.Fatalf("was not expecting an error: %v", err)
+	}
+	if returnedPost.GetID() != boostPost.GetID() {
+		t.Fatalf("was not expecting the ID to change after the edit")
+	}
+
+	returnedBoost := returnedPost.(*posts.Boost)
+
+	if returnedBoost.Title != "changed title" {
+		t.Fatalf("expecting the returned boost to have the new title")
+	}
+	if returnedBoost.About != "_abouttest_" {
+		t.Fatalf("fields that were not changed should still exist")
+	}
+
+	_, err = persister.EditPost("some dude", boostPost.GetID(), patch)
+	if err != posts.ErrorNotAuthorized {
+		t.Fatalf("was expecting ErrorNotAuthorized: %v", err)
+	}
+
+	// t.Fatal("need to implement: edit post by another author")
+
+}
+
+func TestGetPost(t *testing.T) {
+
+	db, err := testutils.GetTestDBConnection()
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+
+	persister := posts.NewDBPostPersister(db)
+
+	_, err = persister.GetPost("70f163b2-9c1e-11e9-a2a3-2a2ae2dbcce4")
+	if err != posts.ErrorNotFound {
+		t.Fatalf("expecting posts.ErrorNotFound but instead received: %v", err)
+	}
+
+	boost := makeBoost()
+	boostPost := helperCreatePost(t, persister, boost)
+
+	retrievedPost, err := persister.GetPost(boostPost.GetID())
+	if err != nil {
+		t.Fatalf("was not expecting an error: %v", err)
+	}
+
+	if retrievedPost.GetPostModel().ID != boostPost.GetID() {
+		t.Fatalf("expecting retrieved post to have the same ad as created post")
+	}
+}
+
+func TestDelete(t *testing.T) {
+	db, err := testutils.GetTestDBConnection()
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+
+	persister := posts.NewDBPostPersister(db)
+
+	boost := makeBoost()
+	boostPost := helperCreatePost(t, persister, boost)
+
+	err = persister.DeletePost("alice", boostPost.GetID())
+	if err != nil {
+		t.Fatalf("was not expecting an error: %v", err)
+	}
+
+	_, err = persister.GetPost(boostPost.GetID())
+	if err != posts.ErrorNotFound {
+		t.Fatalf("expecting ErrorNotFound: %v", err)
 	}
 }

@@ -162,8 +162,19 @@ type Mutation {
 
   # Post Mutations
   postsCreateBoost(input: PostCreateBoostInput!): PostBoost
+  postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
+
   postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+  postsUpdateExternalLink(
+    postID: String!
+    input: PostCreateExternalLinkInput!
+  ): PostExternalLink
+
   postsCreateComment(input: PostCreateCommentInput!): PostComment
+  postsUpdateComment(
+    postID: String!
+    input: PostCreateCommentInput!
+  ): PostComment
 
   # Storefront Mutations
   storefrontAirswapTxHash(txHash: String!): String!
