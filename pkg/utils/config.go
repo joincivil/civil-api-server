@@ -3,6 +3,8 @@ package utils
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	cconfig "github.com/joincivil/go-common/pkg/config"
@@ -119,7 +121,13 @@ func (c *GraphQLConfig) OutputUsage() {
 // PopulateFromEnv processes the environment vars, populates GraphQLConfig
 // with the respective values, and validates the values.
 func (c *GraphQLConfig) PopulateFromEnv() error {
-	err := envconfig.Process(envVarPrefixGraphQL, c)
+	envEnvVar := fmt.Sprintf("%v_ENV", strings.ToUpper(envVarPrefixGraphQL))
+	err := cconfig.PopulateFromDotEnv(envEnvVar)
+	if err != nil {
+		return err
+	}
+
+	err = envconfig.Process(envVarPrefixGraphQL, c)
 	if err != nil {
 		return err
 	}

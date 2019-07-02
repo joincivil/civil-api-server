@@ -1,21 +1,19 @@
-package testutils
+package users
 
 import (
 	"strings"
-
-	"github.com/joincivil/civil-api-server/pkg/users"
 
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 )
 
 // InMemoryUserPersister is an implementation of users.UserPersister for testing
 type InMemoryUserPersister struct {
-	UsersInMemory map[string]*users.User
+	UsersInMemory map[string]*User
 }
 
 // Users returns a list of users
-func (r *InMemoryUserPersister) Users(criteria *users.UserCriteria) ([]*users.User, error) {
-	var u []*users.User
+func (r *InMemoryUserPersister) Users(criteria *UserCriteria) ([]*User, error) {
+	var u []*User
 	var target string
 
 	if criteria.Email != "" {
@@ -26,7 +24,7 @@ func (r *InMemoryUserPersister) Users(criteria *users.UserCriteria) ([]*users.Us
 		target = criteria.UID
 	}
 
-	u = []*users.User{}
+	u = []*User{}
 	for _, user := range r.UsersInMemory {
 		if target == user.Email || strings.ToLower(target) == strings.ToLower(user.EthAddress) || target == user.UID {
 			u = append(u, user)
@@ -42,8 +40,8 @@ func (r *InMemoryUserPersister) Users(criteria *users.UserCriteria) ([]*users.Us
 }
 
 // User persists users
-func (r *InMemoryUserPersister) User(criteria *users.UserCriteria) (*users.User, error) {
-	var u *users.User
+func (r *InMemoryUserPersister) User(criteria *UserCriteria) (*User, error) {
+	var u *User
 	var target string
 
 	if criteria.Email != "" {
@@ -70,7 +68,7 @@ func (r *InMemoryUserPersister) User(criteria *users.UserCriteria) (*users.User,
 }
 
 // SaveUser saves user instances
-func (r *InMemoryUserPersister) SaveUser(user *users.User) error {
+func (r *InMemoryUserPersister) SaveUser(user *User) error {
 	if user.UID == "" {
 		user.GenerateUID() // nolint: errcheck
 	}
@@ -80,7 +78,7 @@ func (r *InMemoryUserPersister) SaveUser(user *users.User) error {
 }
 
 // UpdateUser updates user instances
-func (r *InMemoryUserPersister) UpdateUser(user *users.User, updatedFields []string) error {
+func (r *InMemoryUserPersister) UpdateUser(user *User, updatedFields []string) error {
 	r.UsersInMemory[user.UID] = user
 
 	return nil

@@ -254,7 +254,7 @@ func TestSignupEmailSendNoEmailer(t *testing.T) {
 		return
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -278,7 +278,7 @@ func TestSignupEmailSendNoProtoHost(t *testing.T) {
 		return
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -354,7 +354,7 @@ func TestLoginEth(t *testing.T) {
 	}
 	user1.GenerateUID() // nolint: errcheck
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{
 			user1.UID: user1,
 		},
@@ -427,7 +427,7 @@ func TestConfigTemplateIDs(t *testing.T) {
 		"STOREFRONT": "d-88f731b52a524e6cafc308d0359b84a6",
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -452,7 +452,7 @@ func TestBadConfigTemplateIDsAppName(t *testing.T) {
 		"STOREFRONT": "d-88f731b52a524e6cafc308d0359b84a6",
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -476,7 +476,7 @@ func TestBadConfigTemplateIDsAppNameCase(t *testing.T) {
 		"STOREFRONT": "d-88f731b52a524e6cafc308d0359b84a6",
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -500,7 +500,7 @@ func TestBadConfigTemplateIDs(t *testing.T) {
 		"STOREFRONT": "d-88f731b52a524e6cafc308d0359b84a6",
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -522,7 +522,7 @@ func TestConfigTemplateIDsNotAll(t *testing.T) {
 		"STOREFRONT": "d-88f731b52a524e6cafc308d0359b84a6",
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -542,7 +542,7 @@ func TestSignupTemplateIDFromApplication(t *testing.T) {
 		"DEFAULT": "d-88f731b52a524e6cafc308d0359b84a6",
 	}
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -587,7 +587,7 @@ func TestSignupTemplateIDFromApplication(t *testing.T) {
 }
 
 func buildService(sendGridKey string) (*auth.Service, error) {
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
@@ -606,7 +606,7 @@ func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
 	}
 	user1.GenerateUID() // nolint: errcheck
 
-	persister := &testutils.InMemoryUserPersister{
+	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{
 			user1.UID: user1,
 		},
