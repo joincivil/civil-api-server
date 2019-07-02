@@ -9,6 +9,9 @@ defaults: &defaults
       environment:
         POSTGRES_USER: root
         POSTGRES_DB: circle_test
+    # Run the Google Pub Sub emulator
+    - image: kinok/google-pubsub-emulator:latest
+
 jobs:
   build:
     <<: *defaults
@@ -53,7 +56,7 @@ jobs:
             - vendor
             - cmd
             - scripts
-            - .gometalinter.json
+            - .golangci.yml
 
   lint:
     <<: *defaults
@@ -89,7 +92,7 @@ jobs:
       - run:
           name: Run unit tests
           command: |
-            make test
+            make test-integration
 
   setup-gcp:
     docker:

@@ -9,7 +9,6 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
-	"github.com/joincivil/civil-api-server/pkg/testutils"
 	"github.com/joincivil/civil-api-server/pkg/users"
 
 	"github.com/joincivil/go-common/pkg/email"
@@ -92,7 +91,7 @@ func buildUserService() *users.UserService {
 	initUsers := map[string]*users.User{
 		"1": {UID: "1", Email: testEmailAddress},
 	}
-	persister := &testutils.InMemoryUserPersister{UsersInMemory: initUsers}
+	persister := &users.InMemoryUserPersister{UsersInMemory: initUsers}
 
 	return users.NewUserService(persister, nil)
 }
@@ -129,7 +128,7 @@ func buildJsonbService(t *testing.T) *jsonstore.Service {
 	initStore := map[string]*jsonstore.JSONb{
 		key: json,
 	}
-	persister := &testutils.InMemoryJSONbPersister{
+	persister := &jsonstore.InMemoryJSONbPersister{
 		Store: initStore,
 	}
 	return jsonstore.NewJsonbService(persister)
