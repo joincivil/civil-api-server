@@ -9,6 +9,7 @@ import (
 
 // Post represents a Civil Post
 type Post interface {
+	GetID() string
 	GetPostModel() *PostModel
 	GetType() string
 	GetChannelID() string
@@ -34,7 +35,7 @@ type PostModel struct {
 	DeletedAt    *time.Time
 	ParentID     *string `gorm:"index:parent"`
 	ChannelID    string  `gorm:"index:channel"`
-	AuthorID     string  `gorm:"index:author"`
+	AuthorID     string  `gorm:"index:author;not null"`
 	PostType     string  `gorm:"index:type"`
 	Data         postgres.Jsonb
 	PostPayments []*payments.PaymentModel `gorm:"polymorphic:Owner;"`
@@ -43,6 +44,11 @@ type PostModel struct {
 // TableName returns the gorm table name for Base
 func (PostModel) TableName() string {
 	return "posts"
+}
+
+// GetID returns the ID of the post
+func (p PostModel) GetID() string {
+	return p.ID
 }
 
 // GetPostModel returns itself in order to implement the Post interface

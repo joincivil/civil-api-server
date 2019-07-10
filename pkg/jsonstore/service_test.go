@@ -3,8 +3,6 @@ package jsonstore_test
 import (
 	"testing"
 
-	"github.com/joincivil/civil-api-server/pkg/testutils"
-
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 )
 
@@ -39,7 +37,7 @@ const (
 )
 
 func TestSaveRetrieveJSONb(t *testing.T) {
-	persister := &testutils.InMemoryJSONbPersister{
+	persister := &jsonstore.InMemoryJSONbPersister{
 		Store: map[string]*jsonstore.JSONb{},
 	}
 	jsonbService := jsonstore.NewJsonbService(persister)
@@ -95,7 +93,7 @@ func TestSaveRetrieveJSONb(t *testing.T) {
 }
 
 func TestInvalidJSONStr(t *testing.T) {
-	persister := &testutils.InMemoryJSONbPersister{
+	persister := &jsonstore.InMemoryJSONbPersister{
 		Store: map[string]*jsonstore.JSONb{},
 	}
 	jsonbService := jsonstore.NewJsonbService(persister)

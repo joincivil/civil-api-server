@@ -7,14 +7,7 @@ import (
 	"testing"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
-)
-
-const (
-	postgresPort   = 5432
-	postgresDBName = "civil_crawler"
-	postgresUser   = "docker"
-	postgresPswd   = "docker"
-	postgresHost   = "localhost"
+	"github.com/joincivil/civil-api-server/pkg/testutils"
 )
 
 var (
@@ -56,7 +49,8 @@ var (
 )
 
 func setupDBConnection() (*PostgresPersister, error) {
-	return NewPostgresPersister(postgresHost, postgresPort, postgresUser, postgresPswd, postgresDBName)
+	creds := testutils.GetTestDBCreds()
+	return NewPostgresPersister(creds.Host, creds.Port, creds.User, creds.Password, creds.Dbname)
 }
 
 func setupTestTable(tableName string) (*PostgresPersister, error) {
@@ -91,7 +85,7 @@ func deleteTestTable(persister *PostgresPersister, tableName string) error {
 func checkTableExists(tableName string, persister *PostgresPersister) error {
 	var exists bool
 	queryString := fmt.Sprintf(`SELECT EXISTS ( SELECT 1
-        FROM   information_schema.tables 
+        FROM   information_schema.tables
         WHERE  table_schema = 'public'
         AND    table_name = '%s'
         );`, tableName)

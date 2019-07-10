@@ -32,7 +32,7 @@ func buildUserService(emailAddress string) *users.UserService {
 	initUsers := map[string]*users.User{
 		"1234": {UID: "1234", Email: emailAddress},
 	}
-	persister := &testutils.InMemoryUserPersister{UsersInMemory: initUsers}
+	persister := &users.InMemoryUserPersister{UsersInMemory: initUsers}
 
 	return users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
 }

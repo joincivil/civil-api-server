@@ -8,22 +8,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joincivil/civil-api-server/pkg/testutils"
 	uuid "github.com/satori/go.uuid"
 )
 
 const (
-	tpostgresPort   = 5432
-	tpostgresDBName = "civil_crawler"
-	tpostgresUser   = "docker"
-	tpostgresPswd   = "docker"
-	tpostgresHost   = "localhost"
-
 	defaultUserTestTableName = "civil_user_test"
 )
 
 func setupDBConnection() (*PostgresPersister, error) {
-	return NewPostgresPersister(tpostgresHost, tpostgresPort, tpostgresUser,
-		tpostgresPswd, tpostgresDBName)
+	creds := testutils.GetTestDBCreds()
+	return NewPostgresPersister(creds.Host, creds.Port, creds.User, creds.Password, creds.Dbname)
 }
 
 func setupTestTable(tableName string) (*PostgresPersister, error) {
@@ -95,13 +90,13 @@ func TestTableSetup(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error connecting to DB: %v", err)
 	}
-	err = persister.RunMigrations()
-	if err != nil {
-		t.Errorf("Error running migrations: %v", err)
-	}
 	err = persister.CreateTables()
 	if err != nil {
 		t.Errorf("Error creating tables: %v", err)
+	}
+	err = persister.RunMigrations()
+	if err != nil {
+		t.Errorf("Error running migrations: %v", err)
 	}
 	err = checkTableExists(defaultUserTableName, persister)
 	if err != nil {

@@ -1,9 +1,9 @@
 package events_test
 
 import (
+	"encoding/json"
 	"math/big"
 	"testing"
-	"encoding/json"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-api-server/pkg/events"
@@ -43,7 +43,7 @@ func TestCvlTokenTransferEventHandler(t *testing.T) {
 			EthAddress: "0x3e39fa983abcd349d95aed608e798817397cf0d1",
 		},
 	}
-	userPersister := &testutils.InMemoryUserPersister{UsersInMemory: initUsers}
+	userPersister := &users.InMemoryUserPersister{UsersInMemory: initUsers}
 	controller := &testutils.ControllerUpdaterSpy{}
 	userService := users.NewUserService(userPersister, controller)
 

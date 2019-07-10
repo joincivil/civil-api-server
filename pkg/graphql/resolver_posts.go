@@ -39,49 +39,85 @@ func (r *queryResolver) PostsSearch(ctx context.Context, input posts.SearchInput
 }
 
 // MUTATIONS
-
-func (r *mutationResolver) PostsCreateBoost(ctx context.Context, boost posts.Boost) (*posts.Boost, error) {
+func (r *mutationResolver) postCreate(ctx context.Context, post posts.Post) (posts.Post, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return nil, ErrAccessDenied
 	}
 
-	boost.AuthorID = token.Sub
-	result, err := r.postService.CreatePost(&boost)
+	result, err := r.postService.CreatePost(token.Sub, post)
 	if err != nil {
 		return nil, err
 	}
 
-	return result.(*posts.Boost), nil
+	return result, nil
 }
 
-func (r *mutationResolver) PostsCreateComment(ctx context.Context, comment posts.Comment) (*posts.Comment, error) {
+func (r *mutationResolver) postUpdate(ctx context.Context, postID string, input posts.Post) (posts.Post, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return nil, ErrAccessDenied
 	}
 
-	comment.AuthorID = token.Sub
-	result, err := r.postService.CreatePost(&comment)
+	result, err := r.postService.EditPost(token.Sub, postID, input)
 	if err != nil {
 		return nil, err
 	}
 
-	return result.(*posts.Comment), nil
+	return result, nil
 }
-func (r *mutationResolver) PostsCreateExternalLink(ctx context.Context, linkPost posts.ExternalLink) (*posts.ExternalLink, error) {
-	token := auth.ForContext(ctx)
-	if token == nil {
-		return nil, ErrAccessDenied
-	}
 
-	linkPost.AuthorID = token.Sub
-	result, err := r.postService.CreatePost(&linkPost)
+func (r *mutationResolver) PostsCreateBoost(ctx context.Context, input posts.Boost) (*posts.Boost, error) {
+	post, err := r.postCreate(ctx, input)
 	if err != nil {
 		return nil, err
 	}
 
-	return result.(*posts.ExternalLink), nil
+	return post.(*posts.Boost), nil
+}
+
+func (r *mutationResolver) PostsUpdateBoost(ctx context.Context, postID string, input posts.Boost) (*posts.Boost, error) {
+	post, err := r.postUpdate(ctx, postID, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return post.(*posts.Boost), nil
+}
+
+func (r *mutationResolver) PostsCreateComment(ctx context.Context, input posts.Comment) (*posts.Comment, error) {
+	post, err := r.postCreate(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return post.(*posts.Comment), nil
+}
+
+func (r *mutationResolver) PostsUpdateComment(ctx context.Context, postID string, input posts.Comment) (*posts.Comment, error) {
+	post, err := r.postUpdate(ctx, postID, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return post.(*posts.Comment), nil
+}
+
+func (r *mutationResolver) PostsCreateExternalLink(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error) {
+	post, err := r.postCreate(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return post.(*posts.ExternalLink), nil
+}
+func (r *mutationResolver) PostsUpdateExternalLink(ctx context.Context, postID string, input posts.ExternalLink) (*posts.ExternalLink, error) {
+	post, err := r.postUpdate(ctx, postID, input)
+	if err != nil {
+		return nil, err
+	}
+
+	return post.(*posts.ExternalLink), nil
 }
 
 // errors

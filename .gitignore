@@ -34,3 +34,4 @@ jwtToken.txt
 main
 
 .env.local
+.env.development.local
