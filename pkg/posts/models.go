@@ -33,9 +33,9 @@ type PostModel struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    *time.Time
-	ParentID     *string `gorm:"index:parent"`
-	ChannelID    string  `gorm:"index:channel"`
-	AuthorID     string  `gorm:"index:author;not null"`
+	ParentID     *string `gorm:"type:uuid;index:parent"`
+	ChannelID    string  `gorm:"type:uuid;index:channel"`
+	AuthorID     string  `gorm:"type:uuid;index:author;not null"`
 	PostType     string  `gorm:"index:type"`
 	Data         postgres.Jsonb
 	PostPayments []*payments.PaymentModel `gorm:"polymorphic:Owner;"`

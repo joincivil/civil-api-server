@@ -134,6 +134,9 @@ type Mutation {
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
 
+  # Channels Mutations
+  channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
+
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
   nrsignupSaveCharter(charterData: CharterInput!): String!
@@ -181,10 +184,7 @@ type Mutation {
   storefrontAirswapCancelled: String!
 
   # Listing Mutations
-  tcrListingSaveTopicID(
-    addr: String!,
-    topicID: Int!
-  ): String!
+  tcrListingSaveTopicID(addr: String!, topicID: Int!): String!
 
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
@@ -379,8 +379,18 @@ type ContentRevision {
   revisionDate: Int!
 }
 
-## Post object schemas
+## Channel object schemas
 
+type Channel {
+  id: String!
+  channelType: String!
+}
+type ChannelMember {
+  channel: Channel
+  role: String
+}
+
+## Post object schemas
 # post types
 interface Post {
   id: String!
@@ -392,6 +402,7 @@ interface Post {
   children: [Post]
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
+  channel: Channel
 }
 
 type PostBoost implements Post {
@@ -412,6 +423,7 @@ type PostBoost implements Post {
   what: String
   about: String
   items: [PostBoostItem!]
+  channel: Channel
 }
 
 type PostBoostItem {
@@ -430,6 +442,7 @@ type PostComment implements Post {
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
   text: String!
+  channel: Channel
 }
 
 type PostExternalLink implements Post {
@@ -443,6 +456,7 @@ type PostExternalLink implements Post {
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
   url: String
+  channel: Channel
 }
 
 type PostSearchResult {
@@ -572,6 +586,7 @@ type User {
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
+  channels: [ChannelMember]
 }
 
 input UserSignatureInput {

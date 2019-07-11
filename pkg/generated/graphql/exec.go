@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/payments"
@@ -106,6 +107,16 @@ type ComplexityRoot struct {
 		RequestAppealExpiry func(childComplexity int) int
 		Appeal              func(childComplexity int) int
 		LastUpdatedDateTs   func(childComplexity int) int
+	}
+
+	Channel struct {
+		Id          func(childComplexity int) int
+		ChannelType func(childComplexity int) int
+	}
+
+	ChannelMember struct {
+		Channel func(childComplexity int) int
+		Role    func(childComplexity int) int
 	}
 
 	Charter struct {
@@ -246,6 +257,7 @@ type ComplexityRoot struct {
 		AuthLoginEmailConfirm             func(childComplexity int, loginJWT string) int
 		AuthRefresh                       func(childComplexity int, token string) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
+		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupSaveCharter               func(childComplexity int, charterData nrsignup.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -350,6 +362,7 @@ type ComplexityRoot struct {
 		What          func(childComplexity int) int
 		About         func(childComplexity int) int
 		Items         func(childComplexity int) int
+		Channel       func(childComplexity int) int
 	}
 
 	PostBoostItem struct {
@@ -368,6 +381,7 @@ type ComplexityRoot struct {
 		Payments      func(childComplexity int) int
 		PaymentsTotal func(childComplexity int, currencyCode string) int
 		Text          func(childComplexity int) int
+		Channel       func(childComplexity int) int
 	}
 
 	PostExternalLink struct {
@@ -381,6 +395,7 @@ type ComplexityRoot struct {
 		Payments      func(childComplexity int) int
 		PaymentsTotal func(childComplexity int, currencyCode string) int
 		Url           func(childComplexity int) int
+		Channel       func(childComplexity int) int
 	}
 
 	PostSearchResult struct {
@@ -434,6 +449,7 @@ type ComplexityRoot struct {
 		NrStep                func(childComplexity int) int
 		NrFurthestStep        func(childComplexity int) int
 		NrLastSeen            func(childComplexity int) int
+		Channels              func(childComplexity int) int
 	}
 
 	UserChallengeVoteData struct {
@@ -538,6 +554,7 @@ type MutationResolver interface {
 	AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error)
 	AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error)
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
+	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData nrsignup.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -574,16 +591,22 @@ type PostBoostResolver interface {
 	Children(ctx context.Context, obj *posts.Boost) ([]*posts.Post, error)
 	Payments(ctx context.Context, obj *posts.Boost) ([]payments.Payment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Boost, currencyCode string) (float64, error)
+
+	Channel(ctx context.Context, obj *posts.Boost) (*channels.Channel, error)
 }
 type PostCommentResolver interface {
 	Children(ctx context.Context, obj *posts.Comment) ([]*posts.Post, error)
 	Payments(ctx context.Context, obj *posts.Comment) ([]payments.Payment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Comment, currencyCode string) (float64, error)
+
+	Channel(ctx context.Context, obj *posts.Comment) (*channels.Channel, error)
 }
 type PostExternalLinkResolver interface {
 	Children(ctx context.Context, obj *posts.ExternalLink) ([]*posts.Post, error)
 	Payments(ctx context.Context, obj *posts.ExternalLink) ([]payments.Payment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.ExternalLink, currencyCode string) (float64, error)
+
+	Channel(ctx context.Context, obj *posts.ExternalLink) (*channels.Channel, error)
 }
 type QueryResolver interface {
 	Articles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
@@ -613,6 +636,7 @@ type UserResolver interface {
 	NrStep(ctx context.Context, obj *users.User) (*int, error)
 	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
 	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
+	Channels(ctx context.Context, obj *users.User) ([]*channels.ChannelMember, error)
 }
 type UserChallengeVoteDataResolver interface {
 	PollID(ctx context.Context, obj *model.UserChallengeData) (int, error)
@@ -849,6 +873,21 @@ func field_Mutation_jsonbSave_args(rawArgs map[string]interface{}) (map[string]i
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsCreateNewsroomChannel_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["newsroomContractAddress"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["newsroomContractAddress"] = arg0
 	return args, nil
 
 }
@@ -2520,6 +2559,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Challenge.LastUpdatedDateTs(childComplexity), true
 
+	case "Channel.id":
+		if e.complexity.Channel.Id == nil {
+			break
+		}
+
+		return e.complexity.Channel.Id(childComplexity), true
+
+	case "Channel.channelType":
+		if e.complexity.Channel.ChannelType == nil {
+			break
+		}
+
+		return e.complexity.Channel.ChannelType(childComplexity), true
+
+	case "ChannelMember.channel":
+		if e.complexity.ChannelMember.Channel == nil {
+			break
+		}
+
+		return e.complexity.ChannelMember.Channel(childComplexity), true
+
+	case "ChannelMember.role":
+		if e.complexity.ChannelMember.Role == nil {
+			break
+		}
+
+		return e.complexity.ChannelMember.Role(childComplexity), true
+
 	case "Charter.uri":
 		if e.complexity.Charter.Uri == nil {
 			break
@@ -3213,6 +3280,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.JsonbSave(childComplexity, args["input"].(JsonbInput)), true
+
+	case "Mutation.channelsCreateNewsroomChannel":
+		if e.complexity.Mutation.ChannelsCreateNewsroomChannel == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsCreateNewsroomChannel_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsCreateNewsroomChannel(childComplexity, args["newsroomContractAddress"].(string)), true
 
 	case "Mutation.nrsignupSendWelcomeEmail":
 		if e.complexity.Mutation.NrsignupSendWelcomeEmail == nil {
@@ -3910,6 +3989,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostBoost.Items(childComplexity), true
 
+	case "PostBoost.channel":
+		if e.complexity.PostBoost.Channel == nil {
+			break
+		}
+
+		return e.complexity.PostBoost.Channel(childComplexity), true
+
 	case "PostBoostItem.item":
 		if e.complexity.PostBoostItem.Item == nil {
 			break
@@ -3999,6 +4085,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.Text(childComplexity), true
 
+	case "PostComment.channel":
+		if e.complexity.PostComment.Channel == nil {
+			break
+		}
+
+		return e.complexity.PostComment.Channel(childComplexity), true
+
 	case "PostExternalLink.id":
 		if e.complexity.PostExternalLink.Id == nil {
 			break
@@ -4073,6 +4166,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostExternalLink.Url(childComplexity), true
+
+	case "PostExternalLink.channel":
+		if e.complexity.PostExternalLink.Channel == nil {
+			break
+		}
+
+		return e.complexity.PostExternalLink.Channel(childComplexity), true
 
 	case "PostSearchResult.posts":
 		if e.complexity.PostSearchResult.Posts == nil {
@@ -4450,6 +4550,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.NrLastSeen(childComplexity), true
+
+	case "User.channels":
+		if e.complexity.User.Channels == nil {
+			break
+		}
+
+		return e.complexity.User.Channels(childComplexity), true
 
 	case "UserChallengeVoteData.pollID":
 		if e.complexity.UserChallengeVoteData.PollId == nil {
@@ -5769,6 +5876,177 @@ func (ec *executionContext) _Challenge_lastUpdatedDateTs(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalInt(res)
+}
+
+var channelImplementors = []string{"Channel"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, obj *channels.Channel) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, channelImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Channel")
+		case "id":
+			out.Values[i] = ec._Channel_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "channelType":
+			out.Values[i] = ec._Channel_channelType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_id(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_channelType(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChannelType, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+var channelMemberImplementors = []string{"ChannelMember"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ChannelMember(ctx context.Context, sel ast.SelectionSet, obj *channels.ChannelMember) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, channelMemberImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChannelMember")
+		case "channel":
+			out.Values[i] = ec._ChannelMember_channel(ctx, field, obj)
+		case "role":
+			out.Values[i] = ec._ChannelMember_role(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelMember_channel(ctx context.Context, field graphql.CollectedField, obj *channels.ChannelMember) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelMember",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Channel, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelMember_role(ctx context.Context, field graphql.CollectedField, obj *channels.ChannelMember) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelMember",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Role, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var charterImplementors = []string{"Charter"}
@@ -9101,6 +9379,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "channelsCreateNewsroomChannel":
+			out.Values[i] = ec._Mutation_channelsCreateNewsroomChannel(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -9551,6 +9831,41 @@ func (ec *executionContext) _Mutation_jsonbSave(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._Jsonb(ctx, field.Selections, &res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsCreateNewsroomChannel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsCreateNewsroomChannel_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsCreateNewsroomChannel(rctx, args["newsroomContractAddress"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -11854,6 +12169,12 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._PostBoost_about(ctx, field, obj)
 		case "items":
 			out.Values[i] = ec._PostBoost_items(ctx, field, obj)
+		case "channel":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostBoost_channel(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12410,6 +12731,35 @@ func (ec *executionContext) _PostBoost_items(ctx context.Context, field graphql.
 	return arr1
 }
 
+// nolint: vetshadow
+func (ec *executionContext) _PostBoost_channel(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostBoost",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostBoost().Channel(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
 var postBoostItemImplementors = []string{"PostBoostItem"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -12567,6 +12917,12 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "channel":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostComment_channel(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12919,6 +13275,35 @@ func (ec *executionContext) _PostComment_text(ctx context.Context, field graphql
 	return graphql.MarshalString(res)
 }
 
+// nolint: vetshadow
+func (ec *executionContext) _PostComment_channel(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostComment",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostComment().Channel(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
 var postExternalLinkImplementors = []string{"PostExternalLink", "Post"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -12984,6 +13369,12 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 			}(i, field)
 		case "url":
 			out.Values[i] = ec._PostExternalLink_url(ctx, field, obj)
+		case "channel":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostExternalLink_channel(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13331,6 +13722,35 @@ func (ec *executionContext) _PostExternalLink_url(ctx context.Context, field gra
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PostExternalLink_channel(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostExternalLink",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostExternalLink().Channel(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
 }
 
 var postSearchResultImplementors = []string{"PostSearchResult"}
@@ -14938,6 +15358,12 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				out.Values[i] = ec._User_nrLastSeen(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "channels":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_channels(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15175,6 +15601,67 @@ func (ec *executionContext) _User_nrLastSeen(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	return graphql.MarshalInt(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_channels(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().Channels(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*channels.ChannelMember)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._ChannelMember(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 var userChallengeVoteDataImplementors = []string{"UserChallengeVoteData"}
@@ -18222,6 +18709,9 @@ type Mutation {
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
 
+  # Channels Mutations
+  channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
+
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
   nrsignupSaveCharter(charterData: CharterInput!): String!
@@ -18269,10 +18759,7 @@ type Mutation {
   storefrontAirswapCancelled: String!
 
   # Listing Mutations
-  tcrListingSaveTopicID(
-    addr: String!,
-    topicID: Int!
-  ): String!
+  tcrListingSaveTopicID(addr: String!, topicID: Int!): String!
 
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
@@ -18467,8 +18954,18 @@ type ContentRevision {
   revisionDate: Int!
 }
 
-## Post object schemas
+## Channel object schemas
 
+type Channel {
+  id: String!
+  channelType: String!
+}
+type ChannelMember {
+  channel: Channel
+  role: String
+}
+
+## Post object schemas
 # post types
 interface Post {
   id: String!
@@ -18480,6 +18977,7 @@ interface Post {
   children: [Post]
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
+  channel: Channel
 }
 
 type PostBoost implements Post {
@@ -18500,6 +18998,7 @@ type PostBoost implements Post {
   what: String
   about: String
   items: [PostBoostItem!]
+  channel: Channel
 }
 
 type PostBoostItem {
@@ -18518,6 +19017,7 @@ type PostComment implements Post {
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
   text: String!
+  channel: Channel
 }
 
 type PostExternalLink implements Post {
@@ -18531,6 +19031,7 @@ type PostExternalLink implements Post {
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
   url: String
+  channel: Channel
 }
 
 type PostSearchResult {
@@ -18660,6 +19161,7 @@ type User {
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
+  channels: [ChannelMember]
 }
 
 input UserSignatureInput {

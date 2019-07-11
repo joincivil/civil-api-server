@@ -12,6 +12,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
@@ -52,6 +53,7 @@ type ResolverConfig struct {
 	AppealPersister            pmodel.AppealPersister
 	PollPersister              pmodel.PollPersister
 	UserChallengeDataPersister pmodel.UserChallengeDataPersister
+	ChannelService             *channels.Service
 	UserService                *users.UserService
 	JSONbService               *jsonstore.Service
 	NrsignupService            *nrsignup.Service
@@ -73,6 +75,7 @@ func NewResolver(config ResolverConfig) *Resolver {
 		challengePersister:         config.ChallengePersister,
 		appealPersister:            config.AppealPersister,
 		pollPersister:              config.PollPersister,
+		channelService:             config.ChannelService,
 		userChallengeDataPersister: config.UserChallengeDataPersister,
 		userService:                config.UserService,
 		jsonbService:               config.JSONbService,
@@ -99,6 +102,7 @@ type Resolver struct {
 	userService                *users.UserService
 	jsonbService               *jsonstore.Service
 	nrsignupService            *nrsignup.Service
+	channelService             *channels.Service
 	paymentService             *payments.Service
 	postService                *posts.Service
 	storefrontService          *storefront.Service

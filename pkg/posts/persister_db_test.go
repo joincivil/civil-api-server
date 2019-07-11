@@ -8,8 +8,15 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 )
 
+var (
+	aliceUserUUID     = "7497e091-fa1c-47c4-88ca-5680f25c5729"
+	aliceNewsroomUUID = "e9e86977-9d45-416c-83f2-9b70253174f3"
+	bobNewsroomUUID   = "8124bc09-94eb-4694-bb25-88c0af262577"
+	bobUserUUID       = "e684d748-80ae-4e42-a096-9314cf4f605e"
+)
+
 func helperCreatePost(t *testing.T, persister posts.PostPersister, post posts.Post) posts.Post {
-	createdPost, err := persister.CreatePost("alice", post)
+	createdPost, err := persister.CreatePost(aliceUserUUID, post)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
@@ -20,7 +27,7 @@ func helperCreatePost(t *testing.T, persister posts.PostPersister, post posts.Po
 func makeBoost() *posts.Boost {
 	return &posts.Boost{
 		PostModel: posts.PostModel{
-			ChannelID: "alice_newsrooom",
+			ChannelID: aliceNewsroomUUID,
 		},
 		CurrencyCode: "USD",
 		GoalAmount:   100.10,
@@ -51,8 +58,8 @@ func TestCreatePost(t *testing.T) {
 	boost := makeBoost()
 	link := &posts.ExternalLink{
 		PostModel: posts.PostModel{
-			ChannelID: "bob_newsroom",
-			AuthorID:  "bob",
+			ChannelID: bobNewsroomUUID,
+			AuthorID:  bobUserUUID,
 		},
 		URL: "https://totallylegitnews.com",
 	}
@@ -80,13 +87,12 @@ func TestCreatePost(t *testing.T) {
 		t.Fatal("expected Boost boost items to be `foo` and `bar`")
 	}
 
-	if boostReceived.GetPostModel().AuthorID != "alice" {
-		t.Fatal("expected AuthorID to be `alice`")
+	if boostReceived.GetPostModel().AuthorID != aliceUserUUID {
+		t.Fatalf("expected AuthorID to be `%v`", aliceUserUUID)
 	}
 }
 
 func TestEditPost(t *testing.T) {
-	userID := "alice"
 	db, err := testutils.GetTestDBConnection()
 	if err != nil {
 		t.Errorf("error: %v", err)
@@ -102,7 +108,7 @@ func TestEditPost(t *testing.T) {
 		Why:   "changed value",
 	}
 
-	_, err = persister.EditPost(userID, boostPost.GetID(), patch)
+	_, err = persister.EditPost(aliceUserUUID, boostPost.GetID(), patch)
 	if err != nil {
 		t.Fatalf("was not expecting an error: %v", err)
 	}
@@ -171,7 +177,7 @@ func TestDelete(t *testing.T) {
 	boost := makeBoost()
 	boostPost := helperCreatePost(t, persister, boost)
 
-	err = persister.DeletePost("alice", boostPost.GetID())
+	err = persister.DeletePost(aliceUserUUID, boostPost.GetID())
 	if err != nil {
 		t.Fatalf("was not expecting an error: %v", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jinzhu/gorm"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -85,4 +86,22 @@ func initPaymentService(config *utils.GraphQLConfig, db *gorm.DB, ethHelper *eth
 	stripe := payments.NewStripeService(config.StripeAPIKey)
 	ethereum := payments.NewEthereumService(ethHelper.Blockchain.(ethereum.TransactionReader))
 	return payments.NewService(db, stripe, ethereum)
+}
+
+func initContractAddresses(config *utils.GraphQLConfig) eth.DeployerContractAddresses {
+	return eth.DeployerContractAddresses{
+		NewsroomFactory:       extractContractAddress(config, "NewsroomFactory"),
+		MultisigFactory:       extractContractAddress(config, "MultisigFactory"),
+		CivilTokenController:  extractContractAddress(config, "CivilTokenController"),
+		CreateNewsroomInGroup: extractContractAddress(config, "CreateNewsroomInGroup"),
+		PLCR:                  extractContractAddress(config, "PLCR"),
+		TCR:                   extractContractAddress(config, "PLCR"),
+		CVLToken:              extractContractAddress(config, "CVLToken"),
+		Parameterizer:         extractContractAddress(config, "Parameterizer"),
+		Government:            extractContractAddress(config, "Government"),
+	}
+}
+
+func extractContractAddress(config *utils.GraphQLConfig, contractName string) common.Address {
+	return common.HexToAddress(config.ContractAddresses[contractName])
 }

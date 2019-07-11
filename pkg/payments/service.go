@@ -141,7 +141,7 @@ func (s *Service) TotalPayments(postID string, currencyCode string) (float64, er
 		return 0, errors.New("USD is the only `currencyCode` supported")
 	}
 	var totals []float64
-	s.db.Table("payments").Where(&PaymentModel{OwnerType: "posts", OwnerID: postID}).Select("sum(amount * exchange_rate) as total").Pluck("total", &totals)
+	s.db.Table("payments").Where(&PaymentModel{OwnerType: "posts", OwnerID: postID}).Select("coalesce(sum(amount * exchange_rate), 0) as total").Pluck("total", &totals)
 
 	return totals[0], nil
 }

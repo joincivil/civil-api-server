@@ -4,19 +4,52 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/golang/glog"
+	"github.com/joincivil/civil-api-server/pkg/users"
+	"github.com/joincivil/go-common/pkg/newsroom"
 	uuid "github.com/satori/go.uuid"
 )
 
 // Service provides methods to interact with Channels
 type Service struct {
-	persister Persister
+	persister              Persister
+	newsroomMultisigGetter NewsroomMultisigGetter
+	userEthAddressGetter   UserEthAddressGetter
+}
+
+// NewsroomMultisigGetter describes methods needed to get the members of a newsroom multisig
+type NewsroomMultisigGetter interface {
+	GetMultisigMembers(newsroomAddress common.Address) ([]common.Address, error)
+}
+
+// UserEthAddressGetter describes methods needed to get the ETH addresses of a User
+type UserEthAddressGetter interface {
+	GetETHAddresses(userID string) ([]common.Address, error)
 }
 
 // NewService builds a new Service instance
-func NewService(persister Persister) *Service {
+func NewService(persister Persister, newsroomMultisigGetter NewsroomMultisigGetter, userEthAddressGetter UserEthAddressGetter) *Service {
+
 	return &Service{
 		persister,
+		newsroomMultisigGetter,
+		userEthAddressGetter,
 	}
+}
+
+// NewServiceWithImplementations builds a new Service instance concrete implementations
+func NewServiceWithImplementations(persister *DBPersister, newsroomService *newsroom.Service, userService *users.UserService) *Service {
+	return NewService(
+		persister,
+		newsroomService,
+		userService,
+	)
+}
+
+// GetUserChannels retrieves the Channels a user is a member of
+func (s *Service) GetUserChannels(userID string) ([]*ChannelMember, error) {
+	return s.persister.GetUserChannels(userID)
 }
 
 // CreateUserChannel creates a channel with type "user"
@@ -56,7 +89,43 @@ func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChann
 		return nil, ErrorNotUnique
 	}
 
-	// TODO(dankins): check if userID.eth_address is on the multisig for `input.ContractAddress` newsroom contract
+	// convert contract address string to common.Address
+	newsroomAddress := common.HexToAddress(reference)
+	if (newsroomAddress == common.Address{}) {
+		return nil, ErrorInvalidHandle
+	}
+
+	// get the owners of the multisig
+	multisigMembers, err := s.newsroomMultisigGetter.GetMultisigMembers(newsroomAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	// get user's ETH addresses
+	userAddresses, err := s.userEthAddressGetter.GetETHAddresses(userID)
+	if err != nil {
+		glog.Errorf("error getting ETH addresses for user: %v", err)
+		return nil, ErrorUnauthorized
+	}
+
+	// check if userID.eth_address is on the multisig for `input.ContractAddress` newsroom contract
+	var isMember bool
+	for _, member := range multisigMembers {
+		for _, userAddress := range userAddresses {
+			if member == userAddress {
+				isMember = true
+				break
+			}
+		}
+
+		if isMember {
+			break
+		}
+	}
+
+	if !isMember {
+		return nil, ErrorUnauthorized
+	}
 
 	return s.persister.CreateChannel(CreateChannelInput{
 		CreatorUserID: userID,
