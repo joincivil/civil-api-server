@@ -46,7 +46,8 @@ func GetTestDBCreds() DBCreds {
 func GetTestDBConnection() (*gorm.DB, error) {
 	creds := GetTestDBCreds()
 
-	connStr := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable", creds.Host, creds.Port, creds.User, creds.Dbname, creds.Password)
+	connStr := fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
+		creds.Host, creds.Port, creds.User, creds.Dbname, creds.Password)
 	fmt.Printf("Connecting to database: %v\n", connStr)
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {
