@@ -36,12 +36,12 @@ type StaticCurrencyConversion struct {
 }
 
 // USDToETH returns the price of 1 USD in ETH
-func (s *StaticCurrencyConversion) USDToETH() (float64, error) {
+func (s StaticCurrencyConversion) USDToETH() (float64, error) {
 	return 1.0 / s.PriceOfETH, nil
 }
 
 // ETHToUSD returns the price of 1 ETH in USD
-func (s *StaticCurrencyConversion) ETHToUSD() (float64, error) {
+func (s StaticCurrencyConversion) ETHToUSD() (float64, error) {
 	return s.PriceOfETH, nil
 }
 
@@ -65,6 +65,11 @@ func NewKrakenCurrencyConversion(frequencySeconds uint) *KrakenCurrencyConversio
 	}
 
 	return k
+}
+
+// NewKrakenCurrencyConversionWithDefault creates a new CurrencyConversion with default config
+func NewKrakenCurrencyConversionWithDefault() *KrakenCurrencyConversion {
+	return NewKrakenCurrencyConversion(30)
 }
 
 // KrakenPriceUpdate contains the latest price

@@ -3,8 +3,8 @@ package posts_test
 import (
 	"testing"
 
-	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
+	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 )
 
@@ -51,7 +51,10 @@ func TestCreatePost(t *testing.T) {
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
-	db.AutoMigrate(&posts.PostModel{}, &payments.PaymentModel{})
+	err = testruntime.CleanDatabase(db)
+	if err != nil {
+		t.Fatalf("error cleaning DB: %v", err)
+	}
 
 	persister := posts.NewDBPostPersister(db)
 

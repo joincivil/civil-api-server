@@ -18,7 +18,7 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 
 	channelID := post.GetChannelID()
 
-	return r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment)
+	return r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment.TransactionID)
 }
 
 func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, postID string, payment payments.StripePayment) (payments.StripePayment, error) {

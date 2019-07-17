@@ -1,26 +1,26 @@
 package channels
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/golang/glog"
-	"github.com/joincivil/civil-api-server/pkg/users"
-	"github.com/joincivil/go-common/pkg/newsroom"
+	log "github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 )
 
 // Service provides methods to interact with Channels
 type Service struct {
-	persister              Persister
-	newsroomMultisigGetter NewsroomMultisigGetter
-	userEthAddressGetter   UserEthAddressGetter
+	persister            Persister
+	newsroomHelper       NewsroomHelper
+	userEthAddressGetter UserEthAddressGetter
 }
 
-// NewsroomMultisigGetter describes methods needed to get the members of a newsroom multisig
-type NewsroomMultisigGetter interface {
+// NewsroomHelper describes methods needed to get the members of a newsroom multisig
+type NewsroomHelper interface {
 	GetMultisigMembers(newsroomAddress common.Address) ([]common.Address, error)
+	GetOwner(newsroomAddress common.Address) (common.Address, error)
 }
 
 // UserEthAddressGetter describes methods needed to get the ETH addresses of a User
@@ -29,22 +29,13 @@ type UserEthAddressGetter interface {
 }
 
 // NewService builds a new Service instance
-func NewService(persister Persister, newsroomMultisigGetter NewsroomMultisigGetter, userEthAddressGetter UserEthAddressGetter) *Service {
+func NewService(persister Persister, newsroomHelper NewsroomHelper, userEthAddressGetter UserEthAddressGetter) *Service {
 
 	return &Service{
 		persister,
-		newsroomMultisigGetter,
+		newsroomHelper,
 		userEthAddressGetter,
 	}
-}
-
-// NewServiceWithImplementations builds a new Service instance concrete implementations
-func NewServiceWithImplementations(persister *DBPersister, newsroomService *newsroom.Service, userService *users.UserService) *Service {
-	return NewService(
-		persister,
-		newsroomService,
-		userService,
-	)
 }
 
 // GetUserChannels retrieves the Channels a user is a member of
@@ -96,7 +87,7 @@ func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChann
 	}
 
 	// get the owners of the multisig
-	multisigMembers, err := s.newsroomMultisigGetter.GetMultisigMembers(newsroomAddress)
+	multisigMembers, err := s.newsroomHelper.GetMultisigMembers(newsroomAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -104,22 +95,19 @@ func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChann
 	// get user's ETH addresses
 	userAddresses, err := s.userEthAddressGetter.GetETHAddresses(userID)
 	if err != nil {
-		glog.Errorf("error getting ETH addresses for user: %v", err)
+		log.Errorf("error getting ETH addresses for user: %v", err)
 		return nil, ErrorUnauthorized
 	}
 
 	// check if userID.eth_address is on the multisig for `input.ContractAddress` newsroom contract
 	var isMember bool
+Loop:
 	for _, member := range multisigMembers {
 		for _, userAddress := range userAddresses {
 			if member == userAddress {
 				isMember = true
-				break
+				break Loop
 			}
-		}
-
-		if isMember {
-			break
 		}
 	}
 
@@ -165,6 +153,27 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 		Reference:     reference,
 		Handle:        &handle,
 	})
+}
+
+// GetStripePaymentAccount returns the stripe account associated with the channel
+func (s *Service) GetStripePaymentAccount(channelID string) (string, error) {
+	// TODO(dankins): this needs to be implemented, this is just a test account
+	return "acct_1C4vupLMQdVwYica", nil
+}
+
+// GetEthereumPaymentAddress returns the Ethereum account associated with the channel
+func (s *Service) GetEthereumPaymentAddress(channelID string) (common.Address, error) {
+
+	ch, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	if ch.ChannelType != "newsroom" {
+		return common.Address{}, errors.New("GetEthereumPaymentAddress only supports channels with type `newsroom`")
+	}
+
+	return s.newsroomHelper.GetOwner(common.HexToAddress(ch.Reference))
 }
 
 // GetChannel saves a new channel

@@ -11,7 +11,10 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
+	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
@@ -33,29 +36,27 @@ const (
 
 // GraphqlModule provides the graphql server
 var GraphqlModule = fx.Options(
+	payments.PaymentModule,
+	channels.ChannelModule,
+	posts.PostModule,
+	users.UserModule,
+	storefront.StorefrontModule,
 	fx.Provide(
 		NewRouter,
 		graphql.NewResolver,
 		BuildConfig,
-		channels.NewDBPersister,
-		channels.NewServiceWithImplementations,
 		initJsonbPersister,
-		initGorm,
-		initETHHelper,
-		initTokenControllerService,
+		NewGorm,
+		NewETHHelper,
 		initJsonbService,
 		initDiscourseService,
 		initNrsignupService,
 		auth.NewAuthServiceFromConfig,
 		initStorefrontService,
-		initPaymentService,
-		posts.NewDBPostPersister,
-		posts.NewService,
-		users.NewPersisterFromGorm,
-		initUserService,
 		initErrorReporter,
 		newsroom.NewService,
-		initContractAddresses,
+		NewDeployerContractAddresses,
+		tokencontroller.NewService,
 		func(config *utils.GraphQLConfig) *auth.JwtTokenGenerator {
 			return auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
 		},
@@ -67,8 +68,6 @@ var GraphqlModule = fx.Options(
 			return cemail.NewMailchimpAPI(config.MailchimpKey)
 		},
 	),
-	fx.Invoke(RunPersisterMigrations),
-	fx.Invoke(RunServer),
 )
 
 func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {
