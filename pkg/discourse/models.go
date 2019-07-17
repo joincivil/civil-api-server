@@ -1,14 +1,27 @@
 package discourse
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+)
+
+const (
+	defaultTableName = "listing_discourse_map"
+)
 
 // ListingMap is the model definition for a listing to discourse mapping table
 // in postgresql.
 type ListingMap struct {
-	ListingAddress string `db:"listing_address"`
-	TopicID        int64  `db:"topic_id"`
-	CreatedTs      int64  `db:"created_ts"`
-	UpdatedTs      int64  `db:"updated_ts"`
+	ListingAddress string `gorm:"primary_key"`
+	TopicID        int64  `gorm:"not null;default: 0"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      *time.Time
+}
+
+func (l *ListingMap) TableName() string {
+	return defaultTableName
 }
 
 // ListingAddressAsAddr returns the listing address as a common.Address

@@ -108,7 +108,11 @@ func extractContractAddress(config *utils.GraphQLConfig, contractName string) co
 	return common.HexToAddress(config.ContractAddresses[contractName])
 }
 
-func initDiscourseService(config *utils.GraphQLConfig, listingMapPersister discourse.ListingMapPersister) (
+func initDiscourseService(config *utils.GraphQLConfig, db *gorm.DB) (
 	*discourse.Service, error) {
+	listingMapPersister, err := discourse.NewPostgresPersister(db)
+	if err != nil {
+		return nil, err
+	}
 	return discourse.NewService(listingMapPersister), nil
 }

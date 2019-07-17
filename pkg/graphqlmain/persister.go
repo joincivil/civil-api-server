@@ -3,8 +3,6 @@ package graphqlmain
 import (
 	"fmt"
 
-	"github.com/joincivil/civil-api-server/pkg/discourse"
-
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
@@ -52,30 +50,4 @@ func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, 
 		return nil, fmt.Errorf("Error running migrations: err: %v", err)
 	}
 	return jsonbPersister, nil
-}
-
-func initDiscourseListingMapPersister(config *utils.GraphQLConfig) (discourse.ListingMapPersister, error) {
-	listingMapPersister, err := discourse.NewPostgresPersister(
-		config.PostgresAddress(),
-		config.PostgresPort(),
-		config.PostgresUser(),
-		config.PostgresPw(),
-		config.PostgresDbname(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	err = listingMapPersister.CreateTables()
-	if err != nil {
-		return nil, fmt.Errorf("Error creating tables: err: %v", err)
-	}
-	// err = listingMapPersister.CreateIndices()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error creating indices: err: %v", err)
-	// }
-	// err = listingMapPersister.RunMigrations()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("Error running migrations: err: %v", err)
-	// }
-	return listingMapPersister, nil
 }

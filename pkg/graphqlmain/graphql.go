@@ -40,7 +40,6 @@ var GraphqlModule = fx.Options(
 		channels.NewDBPersister,
 		channels.NewServiceWithImplementations,
 		initJsonbPersister,
-		initDiscourseListingMapPersister,
 		initGorm,
 		initETHHelper,
 		initTokenControllerService,

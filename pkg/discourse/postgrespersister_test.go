@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
@@ -12,63 +13,36 @@ import (
 )
 
 func setupDBConnection() (*PostgresPersister, error) {
-	creds := testutils.GetTestDBCreds()
-	return NewPostgresPersister(creds.Host, creds.Port, creds.User, creds.Password, creds.Dbname)
+	db, err := testutils.GetTestDBConnection()
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.AutoMigrate(&ListingMap{}).Error
+	if err != nil {
+		return nil, err
+	}
+	return NewPostgresPersister(db)
 }
 
-func setupTestTable(tableName string) (*PostgresPersister, error) {
+func setupTestTable() (*PostgresPersister, error) {
 	persister, err := setupDBConnection()
 	if err != nil {
 		return persister, fmt.Errorf("Error connecting to DB: %v", err)
 	}
-	var queryString string
-	switch tableName {
-	case "listing_discourse_map_test":
-		queryString = CreateListingMapTableQuery(tableName)
-	}
-	_, err = persister.db.Query(queryString)
-	if err != nil {
-		return persister, fmt.Errorf("Couldn't create test table %s: %v", tableName, err)
-	}
 	return persister, nil
 }
 
-func deleteTestTable(persister *PostgresPersister, tableName string) error {
-	var err error
-	switch tableName {
-	case "listing_discourse_map_test":
-		_, err = persister.db.Query("DROP TABLE listing_discourse_map_test;")
-	}
-	if err != nil {
-		return fmt.Errorf("Couldn't delete test table %s: %v", tableName, err)
-	}
-	return nil
-}
-
-// TestDBConnection tests that we can connect to DB
-func TestDBConnection(t *testing.T) {
-	persister, err := setupDBConnection()
-	if err != nil {
-		t.Errorf("Error connecting to DB: %v", err)
-	}
-	var result int
-	err = persister.db.QueryRow("SELECT 1;").Scan(&result)
-	if err != nil {
-		t.Errorf("Error querying DB: %v", err)
-	}
-	if result != 1 {
-		t.Errorf("Wrong result from DB")
-	}
+func deleteTestTable(persister *PostgresPersister) error {
+	return persister.db.DropTable(&ListingMap{}).Error
 }
 
 func TestSaveRetrieveListingMap(t *testing.T) {
-	tableName := "listing_discourse_map_test"
-
-	persister, err := setupTestTable(tableName)
+	persister, err := setupTestTable()
 	if err != nil {
 		t.Errorf("Error connecting to DB: %v", err)
 	}
-	defer deleteTestTable(persister, tableName) // nolint: errcheck
+	defer deleteTestTable(persister) // nolint: errcheck
 
 	addr := "0x49fd8f1d3e6f88a4d08cd4a6e445f848e9475caf"
 	cappedAddr := strings.ToUpper(addr)
@@ -76,7 +50,7 @@ func TestSaveRetrieveListingMap(t *testing.T) {
 	topicID := int64(1010101)
 
 	// Try to retrieve from an empty table
-	_, err = persister.listingMapFromTable(addr, tableName)
+	_, err = persister.RetrieveListingMap(addr)
 	if err == nil {
 		t.Errorf("Should have failed since nothing in table")
 	}
@@ -90,13 +64,13 @@ func TestSaveRetrieveListingMap(t *testing.T) {
 	ldm.ListingAddress = addr
 	ldm.TopicID = topicID
 
-	err = persister.saveListingMapForTable(ldm, tableName)
+	err = persister.SaveListingMap(ldm)
 	if err != nil {
 		t.Errorf("Should not have failed saving a mapping to the table: err: %v", err)
 	}
 
 	// Try retrieving the mapping
-	ldm, err = persister.listingMapFromTable(addr, tableName)
+	ldm, err = persister.RetrieveListingMap(addr)
 	if err != nil {
 		t.Errorf("Should not have failed: err: %v", err)
 	}
@@ -113,7 +87,7 @@ func TestSaveRetrieveListingMap(t *testing.T) {
 	}
 
 	// Try retrieving the mapping using the capped addr
-	ldm, err = persister.listingMapFromTable(cappedAddr, tableName)
+	ldm, err = persister.RetrieveListingMap(cappedAddr)
 	if err != nil {
 		t.Errorf("Should not have failed: err: %v", err)
 	}
@@ -130,19 +104,19 @@ func TestSaveRetrieveListingMap(t *testing.T) {
 	}
 
 	// Save the same address should not fail
-	err = persister.saveListingMapForTable(ldm, tableName)
+	err = persister.SaveListingMap(ldm)
 	if err != nil {
 		t.Errorf("Should not have failed saving a mapping to the table: err: %v", err)
 	}
 
 	// Save the same address with a new topic ID
 	ldm.TopicID = int64(100)
-	err = persister.saveListingMapForTable(ldm, tableName)
+	err = persister.SaveListingMap(ldm)
 	if err != nil {
 		t.Errorf("Should not have failed saving a mapping to the table: err: %v", err)
 	}
 
-	ldm, err = persister.listingMapFromTable(cappedAddr, tableName)
+	ldm, err = persister.RetrieveListingMap(cappedAddr)
 	if err != nil {
 		t.Errorf("Should not have failed: err: %v", err)
 	}
@@ -156,5 +130,23 @@ func TestSaveRetrieveListingMap(t *testing.T) {
 	}
 	if ldm.TopicID != int64(100) {
 		t.Errorf("Topic IDs don't match")
+	}
+
+	// Test to see the updated ts is working
+	time.Sleep(1 * time.Second)
+	err = persister.SaveListingMap(ldm)
+	if err != nil {
+		t.Errorf("Should not have failed saving a mapping to the table: err: %v", err)
+	}
+
+	ldm, err = persister.RetrieveListingMap(cappedAddr)
+	if err != nil {
+		t.Errorf("Should not have failed: err: %v", err)
+	}
+	if err == cpersist.ErrPersisterNoResults {
+		t.Errorf("Should have not failed")
+	}
+	if ldm.CreatedAt == ldm.UpdatedAt {
+		t.Errorf("Should have updated the updatedTs")
 	}
 }
