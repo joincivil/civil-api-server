@@ -55,9 +55,10 @@ type ChannelMember struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time
-	ChannelID string `gorm:"type:uuid;not null;index:channel;unique_index:idx_channel_user"`
-	UserID    string `gorm:"type:uuid;not null;index:useridx;unique_index:idx_channel_user"`
-	Role      string `gorm:"not null"`
+	ChannelID string   `gorm:"type:uuid;not null;index:channel;unique_index:idx_channel_user"`
+	UserID    string   `gorm:"type:uuid;not null;index:useridx;unique_index:idx_channel_user"`
+	Role      string   `gorm:"not null"`
+	Channel   *Channel `gorm:"foreignkey:ChannelID"`
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted

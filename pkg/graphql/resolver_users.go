@@ -4,6 +4,7 @@ import (
 	context "context"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/users"
 )
@@ -32,6 +33,12 @@ func (r *userResolver) NrFurthestStep(ctx context.Context, obj *users.User) (*in
 func (r *userResolver) NrLastSeen(ctx context.Context, obj *users.User) (*int, error) {
 	asInt := int(obj.NewsroomLastSeen)
 	return &asInt, nil
+}
+
+// Channels returns the channels that the user is a member of
+func (r *userResolver) Channels(ctx context.Context, obj *users.User) ([]*channels.ChannelMember, error) {
+
+	return r.channelService.GetUserChannels(obj.UID)
 }
 
 // QUERIES
