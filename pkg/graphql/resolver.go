@@ -13,6 +13,7 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
+	"github.com/joincivil/civil-api-server/pkg/discourse"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
@@ -60,6 +61,7 @@ type ResolverConfig struct {
 	PaymentService             *payments.Service
 	PostService                *posts.Service
 	StorefrontService          *storefront.Service
+	DiscourseService           *discourse.Service
 	EmailListMembers           cemail.ListMemberManager
 	LowercaseAddr              *bool `optional:"true"`
 	ErrorReporter              cerrors.ErrorReporter
@@ -83,6 +85,7 @@ func NewResolver(config ResolverConfig) *Resolver {
 		paymentService:             config.PaymentService,
 		postService:                config.PostService,
 		storefrontService:          config.StorefrontService,
+		discourseService:           config.DiscourseService,
 		emailListMembers:           config.EmailListMembers,
 		lowercaseAddr:              config.LowercaseAddr,
 		errorReporter:              config.ErrorReporter,
@@ -106,6 +109,7 @@ type Resolver struct {
 	paymentService             *payments.Service
 	postService                *posts.Service
 	storefrontService          *storefront.Service
+	discourseService           *discourse.Service
 	emailListMembers           cemail.ListMemberManager
 	lowercaseAddr              *bool
 	errorReporter              cerrors.ErrorReporter

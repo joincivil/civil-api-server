@@ -45,23 +45,6 @@ func deleteTestTable(persister *PostgresPersister, tableName string) error {
 	return nil
 }
 
-func checkTableExists(tableName string, persister *PostgresPersister) error {
-	var exists bool
-	queryString := fmt.Sprintf(`SELECT EXISTS ( SELECT 1
-        FROM   information_schema.tables
-        WHERE  table_schema = 'public'
-        AND    table_name = '%s'
-        );`, tableName)
-	err := persister.db.QueryRow(queryString).Scan(&exists)
-	if err != nil {
-		return fmt.Errorf("Couldn't get %s table", tableName)
-	}
-	if !exists {
-		return fmt.Errorf("%s table does not exist", tableName)
-	}
-	return nil
-}
-
 // TestDBConnection tests that we can connect to DB
 func TestDBConnection(t *testing.T) {
 	persister, err := setupDBConnection()
@@ -85,7 +68,7 @@ func TestSaveRetrieveListingMap(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error connecting to DB: %v", err)
 	}
-	defer deleteTestTable(persister, tableName)
+	defer deleteTestTable(persister, tableName) // nolint: errcheck
 
 	addr := "0x49fd8f1d3e6f88a4d08cd4a6e445f848e9475caf"
 	cappedAddr := strings.ToUpper(addr)

@@ -3,6 +3,8 @@ package graphqlmain
 import (
 	"fmt"
 
+	"github.com/joincivil/civil-api-server/pkg/discourse"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/jinzhu/gorm"
@@ -104,4 +106,9 @@ func initContractAddresses(config *utils.GraphQLConfig) eth.DeployerContractAddr
 
 func extractContractAddress(config *utils.GraphQLConfig, contractName string) common.Address {
 	return common.HexToAddress(config.ContractAddresses[contractName])
+}
+
+func initDiscourseService(config *utils.GraphQLConfig, listingMapPersister discourse.ListingMapPersister) (
+	*discourse.Service, error) {
+	return discourse.NewService(listingMapPersister), nil
 }
