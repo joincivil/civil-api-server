@@ -13,6 +13,7 @@ import (
 
 	"github.com/joincivil/go-common/pkg/eth"
 	"github.com/joincivil/go-common/pkg/generated/contract"
+	"github.com/joincivil/go-common/pkg/newsroom"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -127,7 +128,7 @@ func (s *Service) SendWelcomeEmail(newsroomOwnerUID string) error {
 
 // UpdateCharter takes a user id and a charter object and updates the SignupUserJSONData
 // for that user with that charter. it creates it if it doesnt exist
-func (s *Service) UpdateCharter(newsroomOwnerUID string, charter Charter) error {
+func (s *Service) UpdateCharter(newsroomOwnerUID string, charter newsroom.Charter) error {
 	charterUpdateFn := func(d *SignupUserJSONData) (*SignupUserJSONData, error) {
 		d.Charter = &charter
 		return d, nil

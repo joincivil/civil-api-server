@@ -13,8 +13,9 @@ import (
 
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/joincivil/go-common/pkg/eth"
+	"github.com/joincivil/go-common/pkg/newsroom"
 )
-
+ 
 const (
 	sendGridKeyEnvVar = "SENDGRID_TEST_KEY"
 	testEmailAddress  = "foo@bar.com"
@@ -25,37 +26,37 @@ const (
 	// useSandbox = false
 )
 
-func buildTestNewsroom() *nrsignup.Newsroom {
-	member1 := &nrsignup.CharterRosterMember{
+func buildTestNewsroom() *newsroom.Newsroom {
+	member1 := &newsroom.CharterRosterMember{
 		Name:       "Michael Bluth",
 		Role:       "Chief Banana Man",
 		Bio:        "Part of the Bluth family",
 		EthAddress: "thisissomehexaddress",
-		SocialURLs: &nrsignup.CharterSocialURLs{
+		SocialURLs: &newsroom.CharterSocialURLs{
 			Twitter: "http://twitter.com/mbluth",
 		},
 		AvatarURL: "",
 		Signature: "",
 	}
 
-	member2 := &nrsignup.CharterRosterMember{
+	member2 := &newsroom.CharterRosterMember{
 		Name:       "G.O.B",
 		Role:       "Magic Man",
 		Bio:        "Part of the Bluth family",
 		EthAddress: "thisissomehexaddress2",
-		SocialURLs: &nrsignup.CharterSocialURLs{
+		SocialURLs: &newsroom.CharterSocialURLs{
 			Twitter: "http://twitter.com/thenotoriousgob",
 		},
 		AvatarURL: "",
 		Signature: "",
 	}
 
-	roster := []*nrsignup.CharterRosterMember{member1, member2}
+	roster := []*newsroom.CharterRosterMember{member1, member2}
 
-	social_urls := &nrsignup.CharterSocialURLs{
+	social_urls := &newsroom.CharterSocialURLs{
 		Twitter: "http://twitter.com/testnewsroom",
 	}
-	signatures := []*nrsignup.CharterConstitutionSignature{
+	signatures := []*newsroom.CharterConstitutionSignature{
 		{
 			Signer:    "signervalue",
 			Signature: "signaturevlaue",
@@ -63,12 +64,12 @@ func buildTestNewsroom() *nrsignup.Newsroom {
 		},
 	}
 
-	testCharter := &nrsignup.Charter{
+	testCharter := &newsroom.Charter{
 		LogoURL:     "https://logopond.com/logos/23a5bbd721473954cb21e7404c51c2b8.png",
 		NewsroomURL: "http://civil.co",
 		Tagline:     "All the news that's fit to print",
 		Roster:      roster,
-		Mission: &nrsignup.CharterMission{
+		Mission: &newsroom.CharterMission{
 			Purpose:       "To save the world",
 			Structure:     "This is the structure",
 			Revenue:       "We are going to make money",
@@ -79,7 +80,7 @@ func buildTestNewsroom() *nrsignup.Newsroom {
 		Signatures: signatures,
 	}
 
-	testNewsroom := &nrsignup.Newsroom{
+	testNewsroom := &newsroom.Newsroom{
 		Name:    "Test Newsroom",
 		Charter: testCharter,
 	}
