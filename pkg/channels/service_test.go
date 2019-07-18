@@ -154,59 +154,53 @@ func TestCreateChannel(t *testing.T) {
 		}
 
 	})
+
+	t.Run("newsroom type", func(t *testing.T) {
+		t.Run("invalid address", func(t *testing.T) {
+			newsroomAddress := "hello"
+			userID := userUUID.String()
+			_, err := svc.CreateNewsroomChannel(userID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroomAddress,
+			})
+			if err != channels.ErrorInvalidHandle {
+				t.Fatalf("was expecting error `channels.ErrorInvalidHandle`")
+			}
+		})
+
+		t.Run("user doesn't have ethereum address", func(t *testing.T) {
+			newsroomAddress := newsroom1Address.String()
+			userID := userUUID.String()
+			_, err := svc.CreateNewsroomChannel(userID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroomAddress,
+			})
+			if err != channels.ErrorUnauthorized {
+				t.Fatalf("was expecting error `channels.ErrorUnauthorized` but received: %v", err)
+			}
+		})
+		t.Run("user not member of multisig", func(t *testing.T) {
+			newsroomAddress := newsroom1Address.String()
+			_, err := svc.CreateNewsroomChannel(user2ID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroomAddress,
+			})
+			if err != channels.ErrorUnauthorized {
+				t.Fatalf("was expecting error `channels.ErrorUnauthorized`")
+			}
+		})
+
+		t.Run("success", func(t *testing.T) {
+			channel, err := svc.CreateNewsroomChannel(user1ID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroom1Address.String(),
+			})
+			if err != nil {
+				t.Fatalf("not expecting error: %v", err)
+			}
+			if channel.Reference != newsroom1Address.String() {
+				t.Fatalf("expecting newsroom `reference` field to be " + newsroom1Address.String())
+			}
+		})
+	})
 }
 
-func TestNewsroomChannel(t *testing.T) {
-	svc := buildService(t)
-	userUUID, err := uuid.NewV4()
-	if err != nil {
-		t.Fatalf("not expecting error: %v", err)
-	}
-
-	t.Run("invalid address", func(t *testing.T) {
-		newsroomAddress := "hello"
-		userID := userUUID.String()
-		_, err := svc.CreateNewsroomChannel(userID, channels.CreateNewsroomChannelInput{
-			ContractAddress: newsroomAddress,
-		})
-		if err != channels.ErrorInvalidHandle {
-			t.Fatalf("was expecting error `channels.ErrorInvalidHandle`")
-		}
-	})
-
-	t.Run("user doesn't have ethereum address", func(t *testing.T) {
-		newsroomAddress := newsroom1Address.String()
-		userID := userUUID.String()
-		_, err := svc.CreateNewsroomChannel(userID, channels.CreateNewsroomChannelInput{
-			ContractAddress: newsroomAddress,
-		})
-		if err != channels.ErrorUnauthorized {
-			t.Fatalf("was expecting error `channels.ErrorUnauthorized` but received: %v", err)
-		}
-	})
-	t.Run("user not member of multisig", func(t *testing.T) {
-		newsroomAddress := newsroom1Address.String()
-		_, err := svc.CreateNewsroomChannel(user2ID, channels.CreateNewsroomChannelInput{
-			ContractAddress: newsroomAddress,
-		})
-		if err != channels.ErrorUnauthorized {
-			t.Fatalf("was expecting error `channels.ErrorUnauthorized`")
-		}
-	})
-
-	t.Run("success", func(t *testing.T) {
-		channel, err := svc.CreateNewsroomChannel(user1ID, channels.CreateNewsroomChannelInput{
-			ContractAddress: newsroom1Address.String(),
-		})
-		if err != nil {
-			t.Fatalf("not expecting error: %v", err)
-		}
-		if channel.Reference != newsroom1Address.String() {
-			t.Fatalf("expecting newsroom `reference` field to be " + newsroom1Address.String())
-		}
-	})
-
-}
 func TestChannelMembers(t *testing.T) {
 	// admin can add members
 	// admin can add admin

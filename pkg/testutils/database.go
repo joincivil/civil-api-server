@@ -54,6 +54,9 @@ func GetTestDBConnection() (*gorm.DB, error) {
 		fmt.Printf("Error opening database connection:: err: %v", err)
 	}
 
+	db.Exec("CREATE SCHEMA IF NOT EXISTS test;")
+	db.Exec("SET search_path TO test;")
+
 	db.LogMode(false)
 	return db, err
 }
