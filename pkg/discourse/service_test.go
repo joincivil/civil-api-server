@@ -14,6 +14,11 @@ type InMemoryPersister struct {
 	store map[string]*discourse.ListingMap
 }
 
+func (i *InMemoryPersister) RetrieveListingMaps(listingAddress []string) ([]*discourse.ListingMap, error) {
+	// Not implemented, just for interface
+	return nil, nil
+}
+
 func (i *InMemoryPersister) RetrieveListingMap(listingAddress string) (*discourse.ListingMap, error) {
 	listingAddress = ceth.NormalizeEthAddress(listingAddress)
 	val, ok := i.store[listingAddress]
