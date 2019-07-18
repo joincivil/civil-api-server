@@ -44,6 +44,7 @@ var GraphqlModule = fx.Options(
 		initETHHelper,
 		initTokenControllerService,
 		initJsonbService,
+		initDiscourseService,
 		initNrsignupService,
 		auth.NewAuthServiceFromConfig,
 		initStorefrontService,
