@@ -8,28 +8,39 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-api-server/pkg/channels"
+	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 	uuid "github.com/satori/go.uuid"
 )
 
 var (
-	user1ID          = "ceaf1993-2912-4b02-b8c4-3809aa9a12fb"
-	user1Address     = common.HexToAddress("0xa6210D155a96dd11604626a86D7498a3d0959932")
-	user2ID          = "9d87acbb-d876-48b2-90ac-78820bd1d88c"
-	user2Address     = common.HexToAddress("0xD55f67fFEE825e98c9ed2223505755eFF22Ea297")
-	newsroom1Address = common.HexToAddress("0xc187a99320195EF6c83894e5920577dad306e3Dd")
-	newsroom2Address = common.HexToAddress("0x259439bC023932a75e41D5d1e3Aa7D60Bb20A6C8")
+	user1ID           = "ceaf1993-2912-4b02-b8c4-3809aa9a12fb"
+	user1Address      = common.HexToAddress("0xa6210D155a96dd11604626a86D7498a3d0959932")
+	user2ID           = "9d87acbb-d876-48b2-90ac-78820bd1d88c"
+	user2Address      = common.HexToAddress("0xD55f67fFEE825e98c9ed2223505755eFF22Ea297")
+	newsroom1Address  = common.HexToAddress("0xc187a99320195EF6c83894e5920577dad306e3Dd")
+	newsroom1Multisig = common.HexToAddress("0x030a7DDB19D3cEc37031838aa77830CCFC495372")
+	newsroom2Address  = common.HexToAddress("0x259439bC023932a75e41D5d1e3Aa7D60Bb20A6C8")
+	newsroom2Multisig = common.HexToAddress("0x6626F2c20dc807892c20d94507947aeec0aeDCB2")
 )
 
-type MockGetMultisigMembers struct{}
+type MockGetNewsroomHelper struct{}
 
-func (g MockGetMultisigMembers) GetMultisigMembers(newsroomAddress common.Address) ([]common.Address, error) {
+func (g MockGetNewsroomHelper) GetMultisigMembers(newsroomAddress common.Address) ([]common.Address, error) {
 	if newsroomAddress == newsroom1Address {
 		return []common.Address{user1Address}, nil
 	} else if newsroomAddress == newsroom2Address {
 		return []common.Address{user2Address}, nil
 	}
 	return nil, errors.New("found found")
+}
+func (g MockGetNewsroomHelper) GetOwner(newsroomAddress common.Address) (common.Address, error) {
+	if newsroomAddress == newsroom1Address {
+		return newsroom1Multisig, nil
+	} else if newsroomAddress == newsroom2Address {
+		return newsroom2Multisig, nil
+	}
+	return common.Address{}, errors.New("found found")
 }
 
 type MockUserEthAddressGetter struct{}
@@ -45,13 +56,16 @@ func (g MockUserEthAddressGetter) GetETHAddresses(userID string) ([]common.Addre
 
 func buildService(t *testing.T) *channels.Service {
 	db, err := testutils.GetTestDBConnection()
-	db.AutoMigrate(&channels.Channel{}, &channels.ChannelMember{})
-	db.Unscoped().Delete(&channels.Channel{})
 	if err != nil {
-		t.Fatalf("error getting DB")
+		t.Fatalf("error getting DB: %v", err)
 	}
+	err = testruntime.CleanDatabase(db)
+	if err != nil {
+		t.Fatalf("error cleaning DB: %v", err)
+	}
+
 	persister := channels.NewDBPersister(db)
-	return channels.NewService(persister, MockGetMultisigMembers{}, MockUserEthAddressGetter{})
+	return channels.NewService(persister, MockGetNewsroomHelper{}, MockUserEthAddressGetter{})
 }
 
 func TestCreateChannel(t *testing.T) {

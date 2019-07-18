@@ -504,6 +504,7 @@ input PostCreateCommentInput {
 
 # Payment types
 interface Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String
@@ -515,6 +516,7 @@ interface Payment {
 }
 
 type PaymentStripe implements Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String
@@ -526,6 +528,7 @@ type PaymentStripe implements Payment {
 }
 
 type PaymentEther implements Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String
@@ -538,6 +541,7 @@ type PaymentEther implements Payment {
 }
 
 type PaymentToken implements Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String

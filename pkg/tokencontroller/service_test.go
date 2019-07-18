@@ -25,7 +25,10 @@ func TestAddToCivilian(t *testing.T) {
 	}
 	blockchain.Commit()
 
-	service, err := tokencontroller.NewService(tokenControllerAddr.String(), ethHelper)
+	contractAddresses := eth.DeployerContractAddresses{
+		CivilTokenController: tokenControllerAddr,
+	}
+	service, err := tokencontroller.NewService(contractAddresses, ethHelper)
 	if err != nil {
 		t.Fatalf("error creating token controller service: %v", err)
 	}

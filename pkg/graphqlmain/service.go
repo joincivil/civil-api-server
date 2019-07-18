@@ -1,20 +1,15 @@
 package graphqlmain
 
 import (
-	"fmt"
-
+	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/discourse"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jinzhu/gorm"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
-	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
-	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
@@ -22,17 +17,6 @@ import (
 
 	cemail "github.com/joincivil/go-common/pkg/email"
 )
-
-func initUserService(config *utils.GraphQLConfig, userPersister *users.PostgresPersister,
-	tokenControllerService *tokencontroller.Service) (
-	*users.UserService, error) {
-	userService := users.NewUserService(userPersister, tokenControllerService)
-	if userService == nil {
-		return nil, fmt.Errorf("User service was not initialized")
-	}
-	return userService, nil
-
-}
 
 func initNrsignupService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 	emailer *cemail.Emailer, userService *users.UserService, jsonbService *jsonstore.Service,
@@ -79,18 +63,8 @@ func initStorefrontService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 	)
 }
 
-func initTokenControllerService(config *utils.GraphQLConfig, ethHelper *eth.Helper) (
-	*tokencontroller.Service, error) {
-	return tokencontroller.NewService(config.ContractAddresses["CivilTokenController"], ethHelper)
-}
-
-func initPaymentService(config *utils.GraphQLConfig, db *gorm.DB, ethHelper *eth.Helper) *payments.Service {
-	stripe := payments.NewStripeService(config.StripeAPIKey)
-	ethereum := payments.NewEthereumService(ethHelper.Blockchain.(ethereum.TransactionReader))
-	return payments.NewService(db, stripe, ethereum)
-}
-
-func initContractAddresses(config *utils.GraphQLConfig) eth.DeployerContractAddresses {
+// NewDeployerContractAddresses builds a new DeployerContractAddresses instance
+func NewDeployerContractAddresses(config *utils.GraphQLConfig) eth.DeployerContractAddresses {
 	return eth.DeployerContractAddresses{
 		NewsroomFactory:       extractContractAddress(config, "NewsroomFactory"),
 		MultisigFactory:       extractContractAddress(config, "MultisigFactory"),

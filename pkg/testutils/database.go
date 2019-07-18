@@ -54,6 +54,6 @@ func GetTestDBConnection() (*gorm.DB, error) {
 		fmt.Printf("Error opening database connection:: err: %v", err)
 	}
 
-	db.LogMode(true)
+	db.LogMode(false)
 	return db, err
 }

@@ -23,9 +23,9 @@ type Service struct {
 }
 
 // NewService builds a new Service instance
-func NewService(civilTokenControllerAddress string, ethHelper *eth.Helper) (*Service, error) {
-	tokenControllerAddress := common.HexToAddress(civilTokenControllerAddress)
-	if tokenControllerAddress == common.HexToAddress("") {
+func NewService(contractAddresses eth.DeployerContractAddresses, ethHelper *eth.Helper) (*Service, error) {
+	tokenControllerAddress := contractAddresses.CivilTokenController
+	if (tokenControllerAddress == common.Address{}) {
 		return nil, ErrNoCivilTokenControllerAddress
 	}
 	tokenController, err := contract.NewCivilTokenControllerContract(tokenControllerAddress, ethHelper.Blockchain)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	log "github.com/golang/glog"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/charge"
@@ -31,6 +32,13 @@ type CreateChargeResponse struct {
 func NewStripeService(apiKey string) *StripeService {
 	return &StripeService{
 		apiKey: apiKey,
+	}
+}
+
+// NewStripeServiceFromConfig constructs an instance of the stripe Service
+func NewStripeServiceFromConfig(config *utils.GraphQLConfig) *StripeService {
+	return &StripeService{
+		apiKey: config.StripeAPIKey,
 	}
 }
 

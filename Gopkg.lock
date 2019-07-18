@@ -819,10 +819,11 @@
   version = "v1.7.0"
 
 [[projects]]
-  digest = "1:74e59bc785a76b467b9a5c0353193e8befa0c27863413e5fc52e87cf3d24fa4e"
+  digest = "1:9eaa7eeb162a91d1027838e1c12802acdbc72e9962e3043cc4a3e02ad7f3f205"
   name = "go.uber.org/fx"
   packages = [
     ".",
+    "fxtest",
     "internal/fxlog",
     "internal/fxreflect",
     "internal/lifecycle",
@@ -1124,6 +1125,7 @@
     "github.com/vektah/gqlparser/ast",
     "github.com/vektah/gqlparser/gqlerror",
     "go.uber.org/fx",
+    "go.uber.org/fx/fxtest",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

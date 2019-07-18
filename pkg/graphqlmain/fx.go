@@ -5,17 +5,33 @@ import (
 	"os"
 
 	log "github.com/golang/glog"
+	"github.com/joincivil/civil-api-server/pkg/channels"
+	"github.com/joincivil/civil-api-server/pkg/payments"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
+	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 	pconfig "github.com/joincivil/go-common/pkg/config"
 	"go.uber.org/fx"
 )
 
+// RuntimeModule provides concrete implementations
+var RuntimeModule = fx.Options(
+	channels.RuntimeModule,
+	users.RuntimeModule,
+	payments.RuntimeModule,
+	storefront.RuntimeModule,
+)
+
 // MainModule provides the main module for the graphql server
 var MainModule = fx.Options(
+	RuntimeModule,
 	GraphqlModule,
 	EventProcessorModule,
 	PubSubModule,
+	fx.Invoke(RunPersisterMigrations),
+	fx.Invoke(RunServer),
+	fx.Invoke(payments.PaymentUpdaterCron),
 )
 
 // EventProcessorModule defines the dependencies for the Event Processor

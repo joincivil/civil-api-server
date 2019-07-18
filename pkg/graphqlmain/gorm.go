@@ -14,7 +14,8 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
-func initGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
+// NewGorm initializes a new gorm instance and runs migrations
+func NewGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
 
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
 		config.PostgresAddress(),
