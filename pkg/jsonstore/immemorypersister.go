@@ -9,7 +9,7 @@ type InMemoryJSONbPersister struct {
 	Store map[string]*JSONb
 }
 
-// RetrieveJsonb retrieves JSONb from the inmemory store
+// RetrieveJsonb retrieves JSONb from the in memory store
 func (p *InMemoryJSONbPersister) RetrieveJsonb(id string, hash string) ([]*JSONb, error) {
 	jsonb, ok := p.Store[id]
 	if !ok {

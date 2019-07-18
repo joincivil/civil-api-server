@@ -37,6 +37,9 @@ func (l *ListingMap) AddrToListingAddress(a common.Address) {
 // ListingMapPersister defines the interface for a listing discourse map
 // persister
 type ListingMapPersister interface {
+	// RetrieveListingMaps returns the listing discourse map for each item in a
+	// slice of listing addresses
+	RetrieveListingMaps(listingAddresses []string) ([]*ListingMap, error)
 	// RetrieveListingMap returns the listing discourse map from a listing address
 	RetrieveListingMap(listingAddress string) (*ListingMap, error)
 	// SaveListingMap stores the given listing discourse map to the store.

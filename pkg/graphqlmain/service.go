@@ -1,7 +1,6 @@
 package graphqlmain
 
 import (
-	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/discourse"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -82,11 +81,7 @@ func extractContractAddress(config *utils.GraphQLConfig, contractName string) co
 	return common.HexToAddress(config.ContractAddresses[contractName])
 }
 
-func initDiscourseService(config *utils.GraphQLConfig, db *gorm.DB) (
+func initDiscourseService(config *utils.GraphQLConfig, listingMapPersister discourse.ListingMapPersister) (
 	*discourse.Service, error) {
-	listingMapPersister, err := discourse.NewPostgresPersister(db)
-	if err != nil {
-		return nil, err
-	}
 	return discourse.NewService(listingMapPersister), nil
 }
