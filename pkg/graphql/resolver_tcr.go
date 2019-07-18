@@ -316,14 +316,22 @@ func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (
 	return int(challengeID), nil
 }
 func (r *listingResolver) DiscourseTopicID(ctx context.Context, obj *model.Listing) (*int, error) {
-	topicID, err := r.discourseService.RetrieveDiscourseTopicID(obj.ContractAddress())
+	loaders := ctxLoaders(ctx)
+	ldm, err := loaders.discourseListingMapLoader.Load(obj.ContractAddress().Hex())
 	if err != nil {
 		return nil, err
 	}
+	if ldm == nil {
+		return nil, nil
+	}
+
+	topicID := ldm.TopicID
+
 	// If no topicID found, return nil
 	if topicID <= 0 {
 		return nil, nil
 	}
+
 	retval := int(topicID)
 	return &retval, nil
 }
