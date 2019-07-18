@@ -1,11 +1,9 @@
 package graphqlmain
 
 import (
-	"fmt"
-
+	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/discourse"
 
-	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
