@@ -320,6 +320,10 @@ func (r *listingResolver) DiscourseTopicID(ctx context.Context, obj *model.Listi
 	if err != nil {
 		return nil, err
 	}
+	// If no topicID found, return nil
+	if topicID <= 0 {
+		return nil, nil
+	}
 	retval := int(topicID)
 	return &retval, nil
 }
