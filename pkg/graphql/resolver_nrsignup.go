@@ -5,7 +5,8 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
-	model "github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	model "github.com/joincivil/go-common/pkg/newsroom"
 )
 
 func (r *mutationResolver) NrsignupSendWelcomeEmail(ctx context.Context) (string, error) {
@@ -138,7 +139,7 @@ func (r *mutationResolver) NrsignupPollTcrApplication(ctx context.Context,
 	return ResponseNotImplemented, nil
 }
 
-func (r *queryResolver) NrsignupNewsroom(ctx context.Context) (*model.SignupUserJSONData, error) {
+func (r *queryResolver) NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return nil, ErrAccessDenied

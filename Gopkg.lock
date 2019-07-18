@@ -396,7 +396,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:df026eca3bef28424225ce9eeb781b1370dba1e92b98a121b053692c624b8a93"
+  digest = "1:29927dddc1960f192e8b129f0a77680903ddfebab710eb61da134f800654bbf1"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -416,7 +416,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "536fb16a60e1713ddd0f011c4d5f5ce34a481e99"
+  revision = "8e2d9cc84c59925bec0266f8874e002e212129ae"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -1117,6 +1117,7 @@
     "github.com/kelseyhightower/envconfig",
     "github.com/lib/pq",
     "github.com/pilagod/gorm-cursor-paginator",
+    "github.com/pkg/errors",
     "github.com/rs/cors",
     "github.com/satori/go.uuid",
     "github.com/stripe/stripe-go",

@@ -384,6 +384,7 @@ type ContentRevision {
 type Channel {
   id: String!
   channelType: String!
+  newsroom: Newsroom
 }
 type ChannelMember {
   channel: Channel
@@ -615,6 +616,14 @@ input NrsignupStepsInput {
   step: Int
   furthestStep: Int
   lastSeen: Int
+}
+
+type Newsroom {
+  newsroomDeployTx: String
+  contractAddress: String
+  multisigAddress: String
+  name: String
+  charter: CharterContent
 }
 
 type NrsignupNewsroom {

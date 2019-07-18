@@ -35,21 +35,21 @@ models:
   Charter:
     model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   CharterContent:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.Charter
+    model: github.com/joincivil/go-common/pkg/newsroom.Charter
   CharterInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.Charter
+    model: github.com/joincivil/go-common/pkg/newsroom.Charter
   CharterMission:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterMission
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterMission
   CharterMissionInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterMission
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterMission
   CharterSocialUrls:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterSocialURLs
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterSocialURLs
   CharterSocialUrlsInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterSocialURLs
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterSocialURLs
   ConstitutionSignature:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterConstitutionSignature
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterConstitutionSignature
   ConstitutionSignatureInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterConstitutionSignature
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterConstitutionSignature
   ContentRevision:
     model: github.com/joincivil/civil-events-processor/pkg/model.ContentRevision
   CurrentUser:
@@ -66,6 +66,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONField
   Jsonb:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb
+  Newsroom:
+    model: github.com/joincivil/go-common/pkg/newsroom.Newsroom
   NrsignupNewsroom:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.SignupUserJSONData
   Poll:
@@ -109,9 +111,9 @@ models:
   RawObject:
     model: github.com/joincivil/civil-api-server/pkg/utils.JsonbPayloadScalar
   RosterMember:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterRosterMember
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterRosterMember
   RosterMemberInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterRosterMember
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterRosterMember
   User:
     model: github.com/joincivil/civil-api-server/pkg/users.User
   UserChallengeVoteData:
