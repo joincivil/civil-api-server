@@ -419,28 +419,31 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Articles                  func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
-		Challenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
-		GovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
-		GovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		Listing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
-		Listings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		TcrChallenge              func(childComplexity int, id int, lowercaseAddr *bool) int
-		TcrGovernanceEvents       func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
-		TcrGovernanceEventsTxHash func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		TcrListing                func(childComplexity int, addr string, lowercaseAddr *bool) int
-		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
-		NrsignupNewsroom          func(childComplexity int) int
-		PostsGet                  func(childComplexity int, id string) int
-		PostsSearch               func(childComplexity int, search posts.SearchInput) int
-		UserChallengeData         func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
-		CurrentUser               func(childComplexity int) int
-		StorefrontEthPrice        func(childComplexity int) int
-		StorefrontCvlPrice        func(childComplexity int) int
-		StorefrontCvlQuoteUsd     func(childComplexity int, usdToSpend float64) int
-		StorefrontCvlQuoteTokens  func(childComplexity int, tokensToBuy float64) int
-		Jsonb                     func(childComplexity int, id *string) int
+		Articles                     func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
+		Challenge                    func(childComplexity int, id int, lowercaseAddr *bool) int
+		GovernanceEvents             func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		GovernanceEventsTxHash       func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		Listing                      func(childComplexity int, addr string, lowercaseAddr *bool) int
+		Listings                     func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
+		TcrChallenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
+		TcrGovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		TcrGovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		TcrListing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
+		TcrListings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
+		ChannelsGetById              func(childComplexity int, id string) int
+		ChannelsGetByNewsroomAddress func(childComplexity int, contractAddress string) int
+		ChannelsGetByHandle          func(childComplexity int, handle string) int
+		NewsroomArticles             func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
+		NrsignupNewsroom             func(childComplexity int) int
+		PostsGet                     func(childComplexity int, id string) int
+		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
+		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
+		CurrentUser                  func(childComplexity int) int
+		StorefrontEthPrice           func(childComplexity int) int
+		StorefrontCvlPrice           func(childComplexity int) int
+		StorefrontCvlQuoteUsd        func(childComplexity int, usdToSpend float64) int
+		StorefrontCvlQuoteTokens     func(childComplexity int, tokensToBuy float64) int
+		Jsonb                        func(childComplexity int, id *string) int
 	}
 
 	RosterMember struct {
@@ -637,6 +640,9 @@ type QueryResolver interface {
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
+	ChannelsGetByID(ctx context.Context, id string) (*channels.Channel, error)
+	ChannelsGetByNewsroomAddress(ctx context.Context, contractAddress string) (*channels.Channel, error)
+	ChannelsGetByHandle(ctx context.Context, handle string) (*channels.Channel, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
@@ -2051,6 +2057,51 @@ func field_Query_tcrListings_args(rawArgs map[string]interface{}) (map[string]in
 		}
 	}
 	args["sortDesc"] = arg8
+	return args, nil
+
+}
+
+func field_Query_channelsGetByID_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+
+}
+
+func field_Query_channelsGetByNewsroomAddress_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["contractAddress"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["contractAddress"] = arg0
+	return args, nil
+
+}
+
+func field_Query_channelsGetByHandle_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["handle"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["handle"] = arg0
 	return args, nil
 
 }
@@ -4406,6 +4457,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.TcrListings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool), args["sortBy"].(*model.SortByType), args["sortDesc"].(*bool)), true
+
+	case "Query.channelsGetByID":
+		if e.complexity.Query.ChannelsGetById == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByID_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetById(childComplexity, args["id"].(string)), true
+
+	case "Query.channelsGetByNewsroomAddress":
+		if e.complexity.Query.ChannelsGetByNewsroomAddress == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByNewsroomAddress_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetByNewsroomAddress(childComplexity, args["contractAddress"].(string)), true
+
+	case "Query.channelsGetByHandle":
+		if e.complexity.Query.ChannelsGetByHandle == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByHandle_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetByHandle(childComplexity, args["handle"].(string)), true
 
 	case "Query.newsroomArticles":
 		if e.complexity.Query.NewsroomArticles == nil {
@@ -14343,6 +14430,24 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				out.Values[i] = ec._Query_tcrListings(ctx, field)
 				wg.Done()
 			}(i, field)
+		case "channelsGetByID":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByID(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "channelsGetByNewsroomAddress":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByNewsroomAddress(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "channelsGetByHandle":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByHandle(ctx, field)
+				wg.Done()
+			}(i, field)
 		case "newsroomArticles":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -14971,6 +15076,111 @@ func (ec *executionContext) _Query_tcrListings(ctx context.Context, field graphq
 	}
 
 	return ec._ListingResultCursor(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByID(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByID_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByID(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByNewsroomAddress(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByNewsroomAddress_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByNewsroomAddress(rctx, args["contractAddress"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByHandle(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByHandle_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByHandle(rctx, args["handle"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -18996,6 +19206,11 @@ type Query {
     sortBy: ListingSort
     sortDesc: Boolean = False
   ): ListingResultCursor
+
+  # Channel Queries
+  channelsGetByID(id: String!): Channel
+  channelsGetByNewsroomAddress(contractAddress: String!): Channel
+  channelsGetByHandle(handle: String!): Channel
 
   # Newsroom Queries
   newsroomArticles(

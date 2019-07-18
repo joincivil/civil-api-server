@@ -68,6 +68,11 @@ type Query {
     sortDesc: Boolean = False
   ): ListingResultCursor
 
+  # Channel Queries
+  channelsGetByID(id: String!): Channel
+  channelsGetByNewsroomAddress(contractAddress: String!): Channel
+  channelsGetByHandle(handle: String!): Channel
+
   # Newsroom Queries
   newsroomArticles(
     addr: String

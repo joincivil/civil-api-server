@@ -176,9 +176,19 @@ func (s *Service) GetEthereumPaymentAddress(channelID string) (common.Address, e
 	return s.newsroomHelper.GetOwner(common.HexToAddress(ch.Reference))
 }
 
-// GetChannel saves a new channel
+// GetChannel gets a channel by ID
 func (s *Service) GetChannel(id string) (*Channel, error) {
 	return s.persister.GetChannel(id)
+}
+
+// GetChannelByReference retrieves a channel by the reference field
+func (s *Service) GetChannelByReference(channelType string, reference string) (*Channel, error) {
+	return s.persister.GetChannelByReference(channelType, reference)
+}
+
+// GetChannelByHandle retrieves a channel by the handle
+func (s *Service) GetChannelByHandle(handle string) (*Channel, error) {
+	return s.persister.GetChannelByHandle(handle)
 }
 
 // NormalizeHandle takes a string handle and removes
