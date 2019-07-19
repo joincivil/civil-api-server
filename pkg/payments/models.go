@@ -18,7 +18,9 @@ type PaymentModel struct {
 	CreatedAt    time.Time `gorm:"not null"`
 	UpdatedAt    time.Time `gorm:"not null"`
 	DeletedAt    *time.Time
-	PaymentType  string  `gorm:"not null"`
+	PaymentType  string  `gorm:"not null;unique_index:payments_idx_type_reference"`
+	Reference    string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Status       string  `gorm:"not null"`
 	CurrencyCode string  `gorm:"not null"`
 	Amount       float64 `gorm:"not null"`
 	ExchangeRate float64 `gorm:"not null"`
@@ -76,8 +78,9 @@ func (p StripePayment) Type() string {
 
 // EtherPayment is a payment in Ether
 type EtherPayment struct {
-	PaymentModel  `json:"-"`
-	TransactionID string `gorm:"-"`
+	PaymentModel   `json:"-"`
+	TransactionID  string `gorm:"-"`
+	PaymentAddress string `gorm:"-"`
 }
 
 // Type is the type of payment for EtherPayment

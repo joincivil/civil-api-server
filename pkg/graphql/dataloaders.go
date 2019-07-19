@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/joincivil/civil-api-server/pkg/discourse"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
@@ -19,10 +21,11 @@ type ctxKeyType struct{ name string }
 var ctxKey = ctxKeyType{"userCtx"}
 
 type loaders struct {
-	listingLoader            *ListingLoader
-	challengeLoader          *ChallengeLoader
-	challengeAddressesLoader *ChallengeSliceByAddressesLoader
-	appealLoader             *AppealLoader
+	listingLoader             *ListingLoader
+	challengeLoader           *ChallengeLoader
+	challengeAddressesLoader  *ChallengeSliceByAddressesLoader
+	appealLoader              *AppealLoader
+	discourseListingMapLoader *ListingMapLoader
 }
 
 // DataloaderMiddleware defines the listingLoader
@@ -74,6 +77,16 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 				appeals, err := g.appealPersister.AppealsByChallengeIDs(keys)
 				errors := []error{err}
 				return appeals, errors
+			},
+		}
+
+		ldrs.discourseListingMapLoader = &ListingMapLoader{
+			maxBatch: 100,
+			wait:     100 * time.Millisecond,
+			fetch: func(keys []string) ([]*discourse.ListingMap, []error) {
+				ldms, err := g.discourseListingMapPersister.RetrieveListingMaps(keys)
+				errors := []error{err}
+				return ldms, errors
 			},
 		}
 

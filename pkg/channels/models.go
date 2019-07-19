@@ -33,10 +33,10 @@ type Channel struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time
-	ChannelType string          `gorm:"not_null;unique_index:idx_type_reference"` // user, newsroom, group
-	Reference   string          `gorm:"not_null;unique_index:idx_type_reference"` // user_id, newsroom smart contract address, group DID
-	Handle      *string         `gorm:"unique_index:idx_handle"`                  // globally unique identifier for channels
-	Members     []ChannelMember `gorm:"foreignkey:ChannelID"`
+	ChannelType string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user, newsroom, group
+	Reference   string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Handle      *string `gorm:"unique_index:channel_idx_handle"`                  // globally unique identifier for channels
+	Members     []ChannelMember
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted
@@ -55,9 +55,10 @@ type ChannelMember struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time
-	ChannelID string `gorm:"type:uuid;not null;index:channel;unique_index:idx_channel_user"`
-	UserID    string `gorm:"type:uuid;not null;index:useridx;unique_index:idx_channel_user"`
+	ChannelID string `gorm:"type:uuid;not null;index:idx_chanmember_channel_id;unique_index:idx_channel_user"`
+	UserID    string `gorm:"type:uuid;not null;index:idx_chanmember_user_id;unique_index:idx_channel_user"`
 	Role      string `gorm:"not null"`
+	Channel   *Channel
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted

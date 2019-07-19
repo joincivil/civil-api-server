@@ -3,13 +3,21 @@ package posts_test
 import (
 	"testing"
 
-	"github.com/joincivil/civil-api-server/pkg/payments"
+	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/posts"
+	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 )
 
+var (
+	aliceUserUUID     = "7497e091-fa1c-47c4-88ca-5680f25c5729"
+	aliceNewsroomUUID = "e9e86977-9d45-416c-83f2-9b70253174f3"
+	bobNewsroomUUID   = "8124bc09-94eb-4694-bb25-88c0af262577"
+	bobUserUUID       = "e684d748-80ae-4e42-a096-9314cf4f605e"
+)
+
 func helperCreatePost(t *testing.T, persister posts.PostPersister, post posts.Post) posts.Post {
-	createdPost, err := persister.CreatePost("alice", post)
+	createdPost, err := persister.CreatePost(aliceUserUUID, post)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
@@ -20,7 +28,7 @@ func helperCreatePost(t *testing.T, persister posts.PostPersister, post posts.Po
 func makeBoost() *posts.Boost {
 	return &posts.Boost{
 		PostModel: posts.PostModel{
-			ChannelID: "alice_newsrooom",
+			ChannelID: aliceNewsroomUUID,
 		},
 		CurrencyCode: "USD",
 		GoalAmount:   100.10,
@@ -39,20 +47,32 @@ func makeBoost() *posts.Boost {
 	}
 }
 
-func TestCreatePost(t *testing.T) {
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-	db.AutoMigrate(&posts.PostModel{}, &payments.PaymentModel{})
+var db *gorm.DB
 
-	persister := posts.NewDBPostPersister(db)
+func initPersister(t *testing.T) posts.PostPersister {
+	if db == nil {
+		testDB, err := testutils.GetTestDBConnection()
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+		db = testDB
+		err = testruntime.RunMigrations(db)
+		if err != nil {
+			t.Fatalf("error cleaning DB: %v", err)
+		}
+	}
+
+	return posts.NewDBPostPersister(db)
+}
+
+func TestCreatePost(t *testing.T) {
+	persister := initPersister(t)
 
 	boost := makeBoost()
 	link := &posts.ExternalLink{
 		PostModel: posts.PostModel{
-			ChannelID: "bob_newsroom",
-			AuthorID:  "bob",
+			ChannelID: bobNewsroomUUID,
+			AuthorID:  bobUserUUID,
 		},
 		URL: "https://totallylegitnews.com",
 	}
@@ -60,7 +80,7 @@ func TestCreatePost(t *testing.T) {
 	boostPost := helperCreatePost(t, persister, boost)
 	linkPost := helperCreatePost(t, persister, link)
 
-	_, err = persister.GetPost(linkPost.GetPostModel().ID)
+	_, err := persister.GetPost(linkPost.GetPostModel().ID)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
@@ -80,19 +100,13 @@ func TestCreatePost(t *testing.T) {
 		t.Fatal("expected Boost boost items to be `foo` and `bar`")
 	}
 
-	if boostReceived.GetPostModel().AuthorID != "alice" {
-		t.Fatal("expected AuthorID to be `alice`")
+	if boostReceived.GetPostModel().AuthorID != aliceUserUUID {
+		t.Fatalf("expected AuthorID to be `%v`", aliceUserUUID)
 	}
 }
 
 func TestEditPost(t *testing.T) {
-	userID := "alice"
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-
-	persister := posts.NewDBPostPersister(db)
+	persister := initPersister(t)
 
 	boost := makeBoost()
 	boostPost := helperCreatePost(t, persister, boost)
@@ -102,7 +116,7 @@ func TestEditPost(t *testing.T) {
 		Why:   "changed value",
 	}
 
-	_, err = persister.EditPost(userID, boostPost.GetID(), patch)
+	_, err := persister.EditPost(aliceUserUUID, boostPost.GetID(), patch)
 	if err != nil {
 		t.Fatalf("was not expecting an error: %v", err)
 	}
@@ -135,14 +149,9 @@ func TestEditPost(t *testing.T) {
 
 func TestGetPost(t *testing.T) {
 
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
+	persister := initPersister(t)
 
-	persister := posts.NewDBPostPersister(db)
-
-	_, err = persister.GetPost("70f163b2-9c1e-11e9-a2a3-2a2ae2dbcce4")
+	_, err := persister.GetPost("70f163b2-9c1e-11e9-a2a3-2a2ae2dbcce4")
 	if err != posts.ErrorNotFound {
 		t.Fatalf("expecting posts.ErrorNotFound but instead received: %v", err)
 	}
@@ -161,17 +170,12 @@ func TestGetPost(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-
-	persister := posts.NewDBPostPersister(db)
+	persister := initPersister(t)
 
 	boost := makeBoost()
 	boostPost := helperCreatePost(t, persister, boost)
 
-	err = persister.DeletePost("alice", boostPost.GetID())
+	err := persister.DeletePost(aliceUserUUID, boostPost.GetID())
 	if err != nil {
 		t.Fatalf("was not expecting an error: %v", err)
 	}

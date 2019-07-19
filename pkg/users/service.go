@@ -66,6 +66,21 @@ func (s *UserService) GetUser(identifier UserCriteria) (*User, error) {
 	return user, nil
 }
 
+// GetETHAddresses returns the ETH addresses associated with a user
+func (s *UserService) GetETHAddresses(userID string) ([]common.Address, error) {
+	user, err := s.GetUser(UserCriteria{})
+	if err != nil {
+		return nil, err
+	}
+
+	if user.EthAddress == "" {
+		return []common.Address{}, nil
+	}
+
+	addr := common.HexToAddress(user.EthAddress)
+	return []common.Address{addr}, nil
+}
+
 // MaybeGetUser retrieves a user from the database or returns nil if no results
 func (s *UserService) MaybeGetUser(identifier UserCriteria) (*User, error) {
 

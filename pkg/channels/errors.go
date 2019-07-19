@@ -9,4 +9,6 @@ var (
 	ErrorNotUnique = errors.New("not unique")
 	// ErrorInvalidHandle is returned when a handle does not match the expected expression
 	ErrorInvalidHandle = errors.New("invalid handle")
+	// ErrorUnauthorized is returned when attempting to perform an action the user is not authorized to do
+	ErrorUnauthorized = errors.New("unauthorized")
 )

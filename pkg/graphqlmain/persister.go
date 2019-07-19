@@ -3,6 +3,9 @@ package graphqlmain
 import (
 	"fmt"
 
+	"github.com/jinzhu/gorm"
+	"github.com/joincivil/civil-api-server/pkg/discourse"
+
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
@@ -50,4 +53,12 @@ func initJsonbPersister(config *utils.GraphQLConfig) (jsonstore.JsonbPersister, 
 		return nil, fmt.Errorf("Error running migrations: err: %v", err)
 	}
 	return jsonbPersister, nil
+}
+
+func initDiscourseListingMapPersister(db *gorm.DB) (discourse.ListingMapPersister, error) {
+	listingMapPersister, err := discourse.NewPostgresPersister(db)
+	if err != nil {
+		return nil, err
+	}
+	return listingMapPersister, nil
 }

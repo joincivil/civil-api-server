@@ -3,13 +3,19 @@ package graphqlmain
 import (
 	"fmt"
 
+	log "github.com/golang/glog"
+
+	"github.com/joincivil/civil-api-server/pkg/discourse"
+
 	"github.com/jinzhu/gorm"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
-func initGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
+// NewGorm initializes a new gorm instance and runs migrations
+func NewGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
 
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
 		config.PostgresAddress(),
@@ -20,7 +26,23 @@ func initGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
 	))
 
 	db.LogMode(config.Debug)
-	db.AutoMigrate(&posts.PostModel{}, &payments.PaymentModel{})
+
+	amErr := db.AutoMigrate(
+		&posts.PostModel{},
+		&payments.PaymentModel{},
+		&channels.Channel{},
+		&channels.ChannelMember{},
+	).Error
+	if amErr != nil {
+		log.Errorf("automigration error: %v", amErr)
+	}
+
+	amErr = db.AutoMigrate(
+		&discourse.ListingMap{},
+	).Error
+	if amErr != nil {
+		log.Errorf("automigration error: %v", amErr)
+	}
 
 	return db, err
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/pkg/errors"
+
 	"github.com/iancoleman/strcase"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -314,7 +316,23 @@ func (r *listingResolver) ChallengeID(ctx context.Context, obj *model.Listing) (
 	return int(challengeID), nil
 }
 func (r *listingResolver) DiscourseTopicID(ctx context.Context, obj *model.Listing) (*int, error) {
-	retval := int(obj.DiscourseTopicID())
+	loaders := ctxLoaders(ctx)
+	ldm, err := loaders.discourseListingMapLoader.Load(obj.ContractAddress().Hex())
+	if err != nil {
+		return nil, err
+	}
+	if ldm == nil {
+		return nil, nil
+	}
+
+	topicID := ldm.TopicID
+
+	// If no topicID found, return nil
+	if topicID <= 0 {
+		return nil, nil
+	}
+
+	retval := int(topicID)
 	return &retval, nil
 }
 func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
@@ -812,13 +830,26 @@ func (m *mutationResolver) TcrListingSaveTopicID(ctx context.Context, addr strin
 		return "", ErrAccessDenied
 	}
 
-	listing := model.NewListing(&model.NewListingParams{
-		ContractAddress:  common.HexToAddress(addr),
-		DiscourseTopicID: int64(topicID),
-	})
+	if addr == "" {
+		return ResponseError, errors.Errorf("valid listing address required")
+	}
 
-	updatedFields := []string{"DiscourseTopicID"}
-	err := m.listingPersister.UpdateListing(listing, updatedFields)
+	listingAddr := common.HexToAddress(addr)
+
+	// Verify that the listing exists
+	existingListing, err := m.listingPersister.ListingByAddress(listingAddr)
+	if err != nil && err != cpersist.ErrPersisterNoResults {
+		return ResponseError, err
+	}
+	if err == cpersist.ErrPersisterNoResults || existingListing == nil {
+		return ResponseError, errors.Errorf("no listing found for address %v", listingAddr.Hex())
+	}
+
+	// If listing exists, store the topic ID
+	err = m.discourseService.SaveDiscourseTopicID(
+		common.HexToAddress(addr),
+		int64(topicID),
+	)
 	if err != nil {
 		return ResponseError, err
 	}

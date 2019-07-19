@@ -1,35 +1,96 @@
 package channels_test
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"testing"
+	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-api-server/pkg/channels"
+	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 	uuid "github.com/satori/go.uuid"
 )
 
-func buildService(t *testing.T) *channels.Service {
-	db, err := testutils.GetTestDBConnection()
-	db.AutoMigrate(&channels.Channel{}, &channels.ChannelMember{})
-	db.Unscoped().Delete(&channels.Channel{})
+var r = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func randomAddress() common.Address {
+	str := strconv.FormatInt(r.Int63(), 10)
+	return common.HexToAddress(str)
+}
+
+func randomUUID() string {
+	u, err := uuid.NewV4()
 	if err != nil {
-		t.Fatalf("error getting DB")
+		panic("couldnt generate uuid")
 	}
-	persister := channels.NewDBPersister(db)
-	return channels.NewService(persister)
+	return u.String()
+}
+
+var (
+	user1ID           = randomUUID()
+	user1Address      = randomAddress()
+	user2ID           = randomUUID()
+	user2Address      = randomAddress()
+	newsroom1Address  = randomAddress()
+	newsroom1Multisig = randomAddress()
+	newsroom2Address  = randomAddress()
+	newsroom2Multisig = randomAddress()
+	newsroom3Address  = randomAddress()
+	newsroom3Multisig = randomAddress()
+)
+
+type MockGetNewsroomHelper struct{}
+
+func (g MockGetNewsroomHelper) GetMultisigMembers(newsroomAddress common.Address) ([]common.Address, error) {
+	if newsroomAddress == newsroom1Address {
+		return []common.Address{user1Address}, nil
+	} else if newsroomAddress == newsroom2Address {
+		return []common.Address{user2Address}, nil
+	} else if newsroomAddress == newsroom3Address {
+		return []common.Address{user1Address}, nil
+	}
+	return nil, errors.New("not found")
+}
+func (g MockGetNewsroomHelper) GetOwner(newsroomAddress common.Address) (common.Address, error) {
+	if newsroomAddress == newsroom1Address {
+		return newsroom1Multisig, nil
+	} else if newsroomAddress == newsroom2Address {
+		return newsroom2Multisig, nil
+	} else if newsroomAddress == newsroom3Address {
+		return newsroom3Multisig, nil
+	}
+	return common.Address{}, errors.New("found found")
+}
+
+type MockUserEthAddressGetter struct{}
+
+func (g MockUserEthAddressGetter) GetETHAddresses(userID string) ([]common.Address, error) {
+	if userID == user1ID {
+		return []common.Address{user1Address}, nil
+	} else if userID == user2ID {
+		return []common.Address{user2Address}, nil
+	}
+	return nil, errors.New("not found")
 }
 
 func TestCreateChannel(t *testing.T) {
-	svc := buildService(t)
-	userUUID, err := uuid.NewV4()
+	db, err := testutils.GetTestDBConnection()
 	if err != nil {
-		t.Fatalf("not expecting error: %v", err)
+		t.Fatalf("error getting DB: %v", err)
 	}
-	userID := userUUID.String()
+	err = testruntime.RunMigrations(db)
+	if err != nil {
+		t.Fatalf("error cleaning DB: %v", err)
+	}
 
-	channel, err := svc.CreateUserChannel(userID)
+	persister := channels.NewDBPersister(db)
+	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockUserEthAddressGetter{})
+
+	channel, err := svc.CreateUserChannel(user1ID)
 	if err != nil {
 		t.Fatalf("not expecting error: %v", err)
 	}
@@ -54,7 +115,7 @@ func TestCreateChannel(t *testing.T) {
 		}
 		member := channel.Members[0]
 
-		if member.UserID != userID {
+		if member.UserID != user1ID {
 			t.Fatal("initial member should be the creator")
 		}
 		if member.Role != channels.RoleAdmin {
@@ -63,11 +124,7 @@ func TestCreateChannel(t *testing.T) {
 	})
 
 	t.Run("user type", func(t *testing.T) {
-		userUUID, err := uuid.NewV4()
-		if err != nil {
-			t.Fatalf("not expecting error: %v", err)
-		}
-		userID := userUUID.String()
+		userID := randomUUID()
 
 		_, err = svc.CreateUserChannel(userID)
 		if err != nil {
@@ -80,37 +137,10 @@ func TestCreateChannel(t *testing.T) {
 			t.Fatalf("was expecting ErrorNotUnique")
 		}
 	})
-	t.Run("newsroom type", func(t *testing.T) {
-		userUUID, err := uuid.NewV4()
-		if err != nil {
-			t.Fatalf("not expecting error: %v", err)
-		}
-		userID := userUUID.String()
 
-		input := channels.CreateNewsroomChannelInput{
-			ContractAddress: fmt.Sprintf("testaddress%v", rand.Intn(10000)),
-		}
-		_, err = svc.CreateNewsroomChannel(userID, input)
-		if err != nil {
-			t.Fatalf("not expecting error: %v", err)
-		}
-
-		// only allow a newsroom to have 1 channel
-		_, err = svc.CreateNewsroomChannel(userID, input)
-		if err != channels.ErrorNotUnique {
-			t.Fatalf("was expecting ErrorNotUnique")
-		}
-
-		// TODO(dankins): make sure that user is on the newsroom smart contract
-
-	})
 	t.Run("group type", func(t *testing.T) {
-		userUUID, err := uuid.NewV4()
-		if err != nil {
-			t.Fatalf("not expecting error: %v", err)
-		}
-		userID := userUUID.String()
-		handle := fmt.Sprintf("test%v", rand.Intn(10000))
+		userID := randomUUID()
+		handle := fmt.Sprintf("test%v", r.Int31())
 
 		_, err = svc.CreateGroupChannel(userID, handle)
 		if err != nil {
@@ -129,6 +159,50 @@ func TestCreateChannel(t *testing.T) {
 			t.Fatalf("was expecting ErrorInvalidHandle")
 		}
 
+	})
+
+	t.Run("newsroom type", func(t *testing.T) {
+		t.Run("invalid address", func(t *testing.T) {
+			newsroomAddress := "hello"
+			_, err := svc.CreateNewsroomChannel(user1ID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroomAddress,
+			})
+			if err != channels.ErrorInvalidHandle {
+				t.Fatalf("was expecting error `channels.ErrorInvalidHandle`")
+			}
+		})
+
+		t.Run("user doesn't have ethereum address", func(t *testing.T) {
+			newsroomAddress := newsroom1Address.String()
+			userID := randomUUID()
+			_, err := svc.CreateNewsroomChannel(userID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroomAddress,
+			})
+			if err != channels.ErrorUnauthorized {
+				t.Fatalf("was expecting error `channels.ErrorUnauthorized` but received: %v", err)
+			}
+		})
+		t.Run("user not member of multisig", func(t *testing.T) {
+			newsroomAddress := newsroom3Address.String()
+			_, err := svc.CreateNewsroomChannel(user2ID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroomAddress,
+			})
+			if err != channels.ErrorUnauthorized {
+				t.Fatalf("was expecting error `channels.ErrorUnauthorized` but received: %v", err)
+			}
+		})
+
+		t.Run("success", func(t *testing.T) {
+			channel, err := svc.CreateNewsroomChannel(user1ID, channels.CreateNewsroomChannelInput{
+				ContractAddress: newsroom1Address.String(),
+			})
+			if err != nil {
+				t.Fatalf("not expecting error: %v", err)
+			}
+			if channel.Reference != newsroom1Address.String() {
+				t.Fatalf("expecting newsroom `reference` field to be " + newsroom1Address.String())
+			}
+		})
 	})
 }
 

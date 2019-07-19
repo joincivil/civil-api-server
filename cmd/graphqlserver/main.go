@@ -8,7 +8,6 @@ import (
 func main() {
 	app := fx.New(
 		graphqlmain.MainModule,
-		fx.Provide(),
 	)
 
 	app.Run()

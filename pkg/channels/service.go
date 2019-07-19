@@ -1,22 +1,46 @@
 package channels
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common"
+	log "github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 )
 
 // Service provides methods to interact with Channels
 type Service struct {
-	persister Persister
+	persister            Persister
+	newsroomHelper       NewsroomHelper
+	userEthAddressGetter UserEthAddressGetter
+}
+
+// NewsroomHelper describes methods needed to get the members of a newsroom multisig
+type NewsroomHelper interface {
+	GetMultisigMembers(newsroomAddress common.Address) ([]common.Address, error)
+	GetOwner(newsroomAddress common.Address) (common.Address, error)
+}
+
+// UserEthAddressGetter describes methods needed to get the ETH addresses of a User
+type UserEthAddressGetter interface {
+	GetETHAddresses(userID string) ([]common.Address, error)
 }
 
 // NewService builds a new Service instance
-func NewService(persister Persister) *Service {
+func NewService(persister Persister, newsroomHelper NewsroomHelper, userEthAddressGetter UserEthAddressGetter) *Service {
+
 	return &Service{
 		persister,
+		newsroomHelper,
+		userEthAddressGetter,
 	}
+}
+
+// GetUserChannels retrieves the Channels a user is a member of
+func (s *Service) GetUserChannels(userID string) ([]*ChannelMember, error) {
+	return s.persister.GetUserChannels(userID)
 }
 
 // CreateUserChannel creates a channel with type "user"
@@ -44,6 +68,13 @@ type CreateNewsroomChannelInput struct {
 
 // CreateNewsroomChannel creates a channel with type "user"
 func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChannelInput) (*Channel, error) {
+	// get user's ETH addresses
+	userAddresses, err := s.userEthAddressGetter.GetETHAddresses(userID)
+	if err != nil {
+		log.Errorf("error getting ETH addresses for user: %v", err)
+		return nil, ErrorUnauthorized
+	}
+
 	channelType := TypeNewsroom
 	reference := input.ContractAddress
 
@@ -56,7 +87,33 @@ func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChann
 		return nil, ErrorNotUnique
 	}
 
-	// TODO(dankins): check if userID.eth_address is on the multisig for `input.ContractAddress` newsroom contract
+	// convert contract address string to common.Address
+	newsroomAddress := common.HexToAddress(reference)
+	if (newsroomAddress == common.Address{}) {
+		return nil, ErrorInvalidHandle
+	}
+
+	// get the owners of the multisig
+	multisigMembers, err := s.newsroomHelper.GetMultisigMembers(newsroomAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if userID.eth_address is on the multisig for `input.ContractAddress` newsroom contract
+	var isMember bool
+Loop:
+	for _, member := range multisigMembers {
+		for _, userAddress := range userAddresses {
+			if member == userAddress {
+				isMember = true
+				break Loop
+			}
+		}
+	}
+
+	if !isMember {
+		return nil, ErrorUnauthorized
+	}
 
 	return s.persister.CreateChannel(CreateChannelInput{
 		CreatorUserID: userID,
@@ -98,9 +155,40 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
-// GetChannel saves a new channel
+// GetStripePaymentAccount returns the stripe account associated with the channel
+func (s *Service) GetStripePaymentAccount(channelID string) (string, error) {
+	// TODO(dankins): this needs to be implemented, this is just a test account
+	return "acct_1C4vupLMQdVwYica", nil
+}
+
+// GetEthereumPaymentAddress returns the Ethereum account associated with the channel
+func (s *Service) GetEthereumPaymentAddress(channelID string) (common.Address, error) {
+
+	ch, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	if ch.ChannelType != "newsroom" {
+		return common.Address{}, errors.New("GetEthereumPaymentAddress only supports channels with type `newsroom`")
+	}
+
+	return s.newsroomHelper.GetOwner(common.HexToAddress(ch.Reference))
+}
+
+// GetChannel gets a channel by ID
 func (s *Service) GetChannel(id string) (*Channel, error) {
 	return s.persister.GetChannel(id)
+}
+
+// GetChannelByReference retrieves a channel by the reference field
+func (s *Service) GetChannelByReference(channelType string, reference string) (*Channel, error) {
+	return s.persister.GetChannelByReference(channelType, reference)
+}
+
+// GetChannelByHandle retrieves a channel by the handle
+func (s *Service) GetChannelByHandle(handle string) (*Channel, error) {
+	return s.persister.GetChannelByHandle(handle)
 }
 
 // NormalizeHandle takes a string handle and removes

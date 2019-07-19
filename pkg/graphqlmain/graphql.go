@@ -9,12 +9,17 @@ import (
 
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
+	"github.com/joincivil/civil-api-server/pkg/storefront"
+	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
 	cemail "github.com/joincivil/go-common/pkg/email"
+	"github.com/joincivil/go-common/pkg/newsroom"
 	"go.uber.org/fx"
 
 	cerrors "github.com/joincivil/go-common/pkg/errors"
@@ -31,24 +36,28 @@ const (
 
 // GraphqlModule provides the graphql server
 var GraphqlModule = fx.Options(
+	payments.PaymentModule,
+	channels.ChannelModule,
+	posts.PostModule,
+	users.UserModule,
+	storefront.StorefrontModule,
 	fx.Provide(
 		NewRouter,
 		graphql.NewResolver,
 		BuildConfig,
 		initJsonbPersister,
-		initGorm,
-		initETHHelper,
-		initTokenControllerService,
+		NewGorm,
+		NewETHHelper,
+		initDiscourseListingMapPersister,
 		initJsonbService,
+		initDiscourseService,
 		initNrsignupService,
 		auth.NewAuthServiceFromConfig,
 		initStorefrontService,
-		initPaymentService,
-		posts.NewDBPostPersister,
-		posts.NewService,
-		users.NewPersisterFromGorm,
-		initUserService,
 		initErrorReporter,
+		newsroom.NewService,
+		NewDeployerContractAddresses,
+		tokencontroller.NewService,
 		func(config *utils.GraphQLConfig) *auth.JwtTokenGenerator {
 			return auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
 		},
@@ -60,8 +69,6 @@ var GraphqlModule = fx.Options(
 			return cemail.NewMailchimpAPI(config.MailchimpKey)
 		},
 	),
-	fx.Invoke(RunPersisterMigrations),
-	fx.Invoke(RunServer),
 )
 
 func debugGraphQLRouting(router chi.Router, graphQlEndpoint string) {

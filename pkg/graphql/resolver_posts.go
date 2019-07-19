@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
@@ -12,17 +13,17 @@ import (
 
 // PostBoost is the resolver for the PostBoost type
 func (r *Resolver) PostBoost() graphql.PostBoostResolver {
-	return &postBoostResolver{r}
+	return &postBoostResolver{Resolver: r, postResolver: &postResolver{r}}
 }
 
 // PostExternalLink is the resolver for the PostExternalLink type
 func (r *Resolver) PostExternalLink() graphql.PostExternalLinkResolver {
-	return &postExternalLinkResolver{r}
+	return &postExternalLinkResolver{Resolver: r, postResolver: &postResolver{r}}
 }
 
 // PostComment is the resolver for the PostComment type
 func (r *Resolver) PostComment() graphql.PostCommentResolver {
-	return &postCommentResolver{r}
+	return &postCommentResolver{Resolver: r, postResolver: &postResolver{r}}
 }
 
 // QUERIES
@@ -111,6 +112,7 @@ func (r *mutationResolver) PostsCreateExternalLink(ctx context.Context, input po
 
 	return post.(*posts.ExternalLink), nil
 }
+
 func (r *mutationResolver) PostsUpdateExternalLink(ctx context.Context, postID string, input posts.ExternalLink) (*posts.ExternalLink, error) {
 	post, err := r.postUpdate(ctx, postID, input)
 	if err != nil {
@@ -126,12 +128,25 @@ var (
 )
 
 // TYPE RESOLVERS
+type postResolver struct{ *Resolver }
 
-type postBoostResolver struct{ *Resolver }
+func (r *postResolver) getChannel(ctx context.Context, post posts.Post) (*channels.Channel, error) {
+	return r.channelService.GetChannel(post.GetChannelID())
+}
+
+type postBoostResolver struct {
+	*Resolver
+	*postResolver
+}
 
 // Children returns children post of a Boost post
 func (r *postBoostResolver) Children(context.Context, *posts.Boost) ([]*posts.Post, error) {
 	return nil, ErrNotImplemented
+}
+
+// Channel returns children post of a Boost post
+func (r *postBoostResolver) Channel(ctx context.Context, post *posts.Boost) (*channels.Channel, error) {
+	return r.getChannel(ctx, post)
 }
 
 // Payments returns payments associated with this Post
@@ -144,11 +159,19 @@ func (r *postBoostResolver) PaymentsTotal(ctx context.Context, boost *posts.Boos
 	return r.paymentService.TotalPayments(boost.ID, currencyCode)
 }
 
-type postExternalLinkResolver struct{ *Resolver }
+type postExternalLinkResolver struct {
+	*Resolver
+	*postResolver
+}
 
 // Children returns children post of an ExternalLink post
 func (r *postExternalLinkResolver) Children(context.Context, *posts.ExternalLink) ([]*posts.Post, error) {
 	return nil, ErrNotImplemented
+}
+
+// Channel returns children post of a ExternalLink post
+func (r *postExternalLinkResolver) Channel(ctx context.Context, post *posts.ExternalLink) (*channels.Channel, error) {
+	return r.getChannel(ctx, post)
 }
 
 // Payments returns payments associated with this Post
@@ -161,7 +184,15 @@ func (r *postExternalLinkResolver) PaymentsTotal(ctx context.Context, link *post
 	return r.paymentService.TotalPayments(link.ID, currencyCode)
 }
 
-type postCommentResolver struct{ *Resolver }
+type postCommentResolver struct {
+	*Resolver
+	*postResolver
+}
+
+// Channel returns children post of a ExternalLink post
+func (r *postCommentResolver) Channel(ctx context.Context, post *posts.Comment) (*channels.Channel, error) {
+	return r.getChannel(ctx, post)
+}
 
 // Children returns children post of an Comment post
 func (r *postCommentResolver) Children(context.Context, *posts.Comment) ([]*posts.Post, error) {

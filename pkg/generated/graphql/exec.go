@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/payments"
@@ -21,6 +22,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/go-common/pkg/newsroom"
 	"github.com/joincivil/go-common/pkg/persistence/postgres"
 	"github.com/vektah/gqlparser"
 	"github.com/vektah/gqlparser/ast"
@@ -44,6 +46,7 @@ type Config struct {
 type ResolverRoot interface {
 	Appeal() AppealResolver
 	Challenge() ChallengeResolver
+	Channel() ChannelResolver
 	Charter() CharterResolver
 	ContentRevision() ContentRevisionResolver
 	GovernanceEvent() GovernanceEventResolver
@@ -106,6 +109,17 @@ type ComplexityRoot struct {
 		RequestAppealExpiry func(childComplexity int) int
 		Appeal              func(childComplexity int) int
 		LastUpdatedDateTs   func(childComplexity int) int
+	}
+
+	Channel struct {
+		Id          func(childComplexity int) int
+		ChannelType func(childComplexity int) int
+		Newsroom    func(childComplexity int) int
+	}
+
+	ChannelMember struct {
+		Channel func(childComplexity int) int
+		Role    func(childComplexity int) int
 	}
 
 	Charter struct {
@@ -246,8 +260,9 @@ type ComplexityRoot struct {
 		AuthLoginEmailConfirm             func(childComplexity int, loginJWT string) int
 		AuthRefresh                       func(childComplexity int, token string) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
+		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
-		NrsignupSaveCharter               func(childComplexity int, charterData nrsignup.Charter) int
+		NrsignupSaveCharter               func(childComplexity int, charterData newsroom.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
 		NrsignupSaveTxHash                func(childComplexity int, txHash string) int
@@ -272,6 +287,14 @@ type ComplexityRoot struct {
 		UserUpdate                        func(childComplexity int, uid *string, input *users.UserUpdateInput) int
 	}
 
+	Newsroom struct {
+		NewsroomDeployTx func(childComplexity int) int
+		ContractAddress  func(childComplexity int) int
+		MultisigAddress  func(childComplexity int) int
+		Name             func(childComplexity int) int
+		Charter          func(childComplexity int) int
+	}
+
 	NrsignupNewsroom struct {
 		OnboardedTs        func(childComplexity int) int
 		Charter            func(childComplexity int) int
@@ -290,6 +313,7 @@ type ComplexityRoot struct {
 	}
 
 	PaymentEther struct {
+		Status        func(childComplexity int) int
 		Reaction      func(childComplexity int) int
 		Comment       func(childComplexity int) int
 		CurrencyCode  func(childComplexity int) int
@@ -302,6 +326,7 @@ type ComplexityRoot struct {
 	}
 
 	PaymentStripe struct {
+		Status        func(childComplexity int) int
 		Reaction      func(childComplexity int) int
 		Comment       func(childComplexity int) int
 		CurrencyCode  func(childComplexity int) int
@@ -313,6 +338,7 @@ type ComplexityRoot struct {
 	}
 
 	PaymentToken struct {
+		Status        func(childComplexity int) int
 		Reaction      func(childComplexity int) int
 		Comment       func(childComplexity int) int
 		CurrencyCode  func(childComplexity int) int
@@ -350,6 +376,7 @@ type ComplexityRoot struct {
 		What          func(childComplexity int) int
 		About         func(childComplexity int) int
 		Items         func(childComplexity int) int
+		Channel       func(childComplexity int) int
 	}
 
 	PostBoostItem struct {
@@ -368,6 +395,7 @@ type ComplexityRoot struct {
 		Payments      func(childComplexity int) int
 		PaymentsTotal func(childComplexity int, currencyCode string) int
 		Text          func(childComplexity int) int
+		Channel       func(childComplexity int) int
 	}
 
 	PostExternalLink struct {
@@ -381,6 +409,7 @@ type ComplexityRoot struct {
 		Payments      func(childComplexity int) int
 		PaymentsTotal func(childComplexity int, currencyCode string) int
 		Url           func(childComplexity int) int
+		Channel       func(childComplexity int) int
 	}
 
 	PostSearchResult struct {
@@ -390,28 +419,31 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Articles                  func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
-		Challenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
-		GovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
-		GovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		Listing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
-		Listings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		TcrChallenge              func(childComplexity int, id int, lowercaseAddr *bool) int
-		TcrGovernanceEvents       func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
-		TcrGovernanceEventsTxHash func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		TcrListing                func(childComplexity int, addr string, lowercaseAddr *bool) int
-		TcrListings               func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		NewsroomArticles          func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
-		NrsignupNewsroom          func(childComplexity int) int
-		PostsGet                  func(childComplexity int, id string) int
-		PostsSearch               func(childComplexity int, search posts.SearchInput) int
-		UserChallengeData         func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
-		CurrentUser               func(childComplexity int) int
-		StorefrontEthPrice        func(childComplexity int) int
-		StorefrontCvlPrice        func(childComplexity int) int
-		StorefrontCvlQuoteUsd     func(childComplexity int, usdToSpend float64) int
-		StorefrontCvlQuoteTokens  func(childComplexity int, tokensToBuy float64) int
-		Jsonb                     func(childComplexity int, id *string) int
+		Articles                     func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
+		Challenge                    func(childComplexity int, id int, lowercaseAddr *bool) int
+		GovernanceEvents             func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		GovernanceEventsTxHash       func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		Listing                      func(childComplexity int, addr string, lowercaseAddr *bool) int
+		Listings                     func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
+		TcrChallenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
+		TcrGovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		TcrGovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		TcrListing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
+		TcrListings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
+		ChannelsGetById              func(childComplexity int, id string) int
+		ChannelsGetByNewsroomAddress func(childComplexity int, contractAddress string) int
+		ChannelsGetByHandle          func(childComplexity int, handle string) int
+		NewsroomArticles             func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
+		NrsignupNewsroom             func(childComplexity int) int
+		PostsGet                     func(childComplexity int, id string) int
+		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
+		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
+		CurrentUser                  func(childComplexity int) int
+		StorefrontEthPrice           func(childComplexity int) int
+		StorefrontCvlPrice           func(childComplexity int) int
+		StorefrontCvlQuoteUsd        func(childComplexity int, usdToSpend float64) int
+		StorefrontCvlQuoteTokens     func(childComplexity int, tokensToBuy float64) int
+		Jsonb                        func(childComplexity int, id *string) int
 	}
 
 	RosterMember struct {
@@ -434,6 +466,7 @@ type ComplexityRoot struct {
 		NrStep                func(childComplexity int) int
 		NrFurthestStep        func(childComplexity int) int
 		NrLastSeen            func(childComplexity int) int
+		Channels              func(childComplexity int) int
 	}
 
 	UserChallengeVoteData struct {
@@ -479,6 +512,9 @@ type ChallengeResolver interface {
 	RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error)
 	Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error)
 	LastUpdatedDateTs(ctx context.Context, obj *model.Challenge) (int, error)
+}
+type ChannelResolver interface {
+	Newsroom(ctx context.Context, obj *channels.Channel) (*newsroom.Newsroom, error)
 }
 type CharterResolver interface {
 	ContentID(ctx context.Context, obj *model.Charter) (int, error)
@@ -538,8 +574,9 @@ type MutationResolver interface {
 	AuthLoginEmailConfirm(ctx context.Context, loginJWT string) (*auth.LoginResponse, error)
 	AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error)
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
+	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
-	NrsignupSaveCharter(ctx context.Context, charterData nrsignup.Charter) (string, error)
+	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
 	NrsignupApproveGrant(ctx context.Context, approved bool, newsroomOwnerUID string) (string, error)
 	NrsignupSaveTxHash(ctx context.Context, txHash string) (string, error)
@@ -574,16 +611,22 @@ type PostBoostResolver interface {
 	Children(ctx context.Context, obj *posts.Boost) ([]*posts.Post, error)
 	Payments(ctx context.Context, obj *posts.Boost) ([]payments.Payment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Boost, currencyCode string) (float64, error)
+
+	Channel(ctx context.Context, obj *posts.Boost) (*channels.Channel, error)
 }
 type PostCommentResolver interface {
 	Children(ctx context.Context, obj *posts.Comment) ([]*posts.Post, error)
 	Payments(ctx context.Context, obj *posts.Comment) ([]payments.Payment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Comment, currencyCode string) (float64, error)
+
+	Channel(ctx context.Context, obj *posts.Comment) (*channels.Channel, error)
 }
 type PostExternalLinkResolver interface {
 	Children(ctx context.Context, obj *posts.ExternalLink) ([]*posts.Post, error)
 	Payments(ctx context.Context, obj *posts.ExternalLink) ([]payments.Payment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.ExternalLink, currencyCode string) (float64, error)
+
+	Channel(ctx context.Context, obj *posts.ExternalLink) (*channels.Channel, error)
 }
 type QueryResolver interface {
 	Articles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
@@ -597,6 +640,9 @@ type QueryResolver interface {
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]model.GovernanceEvent, error)
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
+	ChannelsGetByID(ctx context.Context, id string) (*channels.Channel, error)
+	ChannelsGetByNewsroomAddress(ctx context.Context, contractAddress string) (*channels.Channel, error)
+	ChannelsGetByHandle(ctx context.Context, handle string) (*channels.Channel, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
@@ -613,6 +659,7 @@ type UserResolver interface {
 	NrStep(ctx context.Context, obj *users.User) (*int, error)
 	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
 	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
+	Channels(ctx context.Context, obj *users.User) ([]*channels.ChannelMember, error)
 }
 type UserChallengeVoteDataResolver interface {
 	PollID(ctx context.Context, obj *model.UserChallengeData) (int, error)
@@ -853,9 +900,24 @@ func field_Mutation_jsonbSave_args(rawArgs map[string]interface{}) (map[string]i
 
 }
 
+func field_Mutation_channelsCreateNewsroomChannel_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["newsroomContractAddress"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["newsroomContractAddress"] = arg0
+	return args, nil
+
+}
+
 func field_Mutation_nrsignupSaveCharter_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
-	var arg0 nrsignup.Charter
+	var arg0 newsroom.Charter
 	if tmp, ok := rawArgs["charterData"]; ok {
 		var err error
 		arg0, err = UnmarshalCharterInput(tmp)
@@ -1999,6 +2061,51 @@ func field_Query_tcrListings_args(rawArgs map[string]interface{}) (map[string]in
 
 }
 
+func field_Query_channelsGetByID_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+
+}
+
+func field_Query_channelsGetByNewsroomAddress_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["contractAddress"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["contractAddress"] = arg0
+	return args, nil
+
+}
+
+func field_Query_channelsGetByHandle_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["handle"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["handle"] = arg0
+	return args, nil
+
+}
+
 func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -2519,6 +2626,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Challenge.LastUpdatedDateTs(childComplexity), true
+
+	case "Channel.id":
+		if e.complexity.Channel.Id == nil {
+			break
+		}
+
+		return e.complexity.Channel.Id(childComplexity), true
+
+	case "Channel.channelType":
+		if e.complexity.Channel.ChannelType == nil {
+			break
+		}
+
+		return e.complexity.Channel.ChannelType(childComplexity), true
+
+	case "Channel.newsroom":
+		if e.complexity.Channel.Newsroom == nil {
+			break
+		}
+
+		return e.complexity.Channel.Newsroom(childComplexity), true
+
+	case "ChannelMember.channel":
+		if e.complexity.ChannelMember.Channel == nil {
+			break
+		}
+
+		return e.complexity.ChannelMember.Channel(childComplexity), true
+
+	case "ChannelMember.role":
+		if e.complexity.ChannelMember.Role == nil {
+			break
+		}
+
+		return e.complexity.ChannelMember.Role(childComplexity), true
 
 	case "Charter.uri":
 		if e.complexity.Charter.Uri == nil {
@@ -3214,6 +3356,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.JsonbSave(childComplexity, args["input"].(JsonbInput)), true
 
+	case "Mutation.channelsCreateNewsroomChannel":
+		if e.complexity.Mutation.ChannelsCreateNewsroomChannel == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsCreateNewsroomChannel_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsCreateNewsroomChannel(childComplexity, args["newsroomContractAddress"].(string)), true
+
 	case "Mutation.nrsignupSendWelcomeEmail":
 		if e.complexity.Mutation.NrsignupSendWelcomeEmail == nil {
 			break
@@ -3231,7 +3385,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.NrsignupSaveCharter(childComplexity, args["charterData"].(nrsignup.Charter)), true
+		return e.complexity.Mutation.NrsignupSaveCharter(childComplexity, args["charterData"].(newsroom.Charter)), true
 
 	case "Mutation.nrsignupRequestGrant":
 		if e.complexity.Mutation.NrsignupRequestGrant == nil {
@@ -3492,6 +3646,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UserUpdate(childComplexity, args["uid"].(*string), args["input"].(*users.UserUpdateInput)), true
 
+	case "Newsroom.newsroomDeployTx":
+		if e.complexity.Newsroom.NewsroomDeployTx == nil {
+			break
+		}
+
+		return e.complexity.Newsroom.NewsroomDeployTx(childComplexity), true
+
+	case "Newsroom.contractAddress":
+		if e.complexity.Newsroom.ContractAddress == nil {
+			break
+		}
+
+		return e.complexity.Newsroom.ContractAddress(childComplexity), true
+
+	case "Newsroom.multisigAddress":
+		if e.complexity.Newsroom.MultisigAddress == nil {
+			break
+		}
+
+		return e.complexity.Newsroom.MultisigAddress(childComplexity), true
+
+	case "Newsroom.name":
+		if e.complexity.Newsroom.Name == nil {
+			break
+		}
+
+		return e.complexity.Newsroom.Name(childComplexity), true
+
+	case "Newsroom.charter":
+		if e.complexity.Newsroom.Charter == nil {
+			break
+		}
+
+		return e.complexity.Newsroom.Charter(childComplexity), true
+
 	case "NrsignupNewsroom.onboardedTs":
 		if e.complexity.NrsignupNewsroom.OnboardedTs == nil {
 			break
@@ -3569,6 +3758,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PageInfo.HasNextPage(childComplexity), true
 
+	case "PaymentEther.status":
+		if e.complexity.PaymentEther.Status == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.Status(childComplexity), true
+
 	case "PaymentEther.reaction":
 		if e.complexity.PaymentEther.Reaction == nil {
 			break
@@ -3632,6 +3828,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaymentEther.UsdEquivalent(childComplexity), true
 
+	case "PaymentStripe.status":
+		if e.complexity.PaymentStripe.Status == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.Status(childComplexity), true
+
 	case "PaymentStripe.reaction":
 		if e.complexity.PaymentStripe.Reaction == nil {
 			break
@@ -3687,6 +3890,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaymentStripe.UsdEquivalent(childComplexity), true
+
+	case "PaymentToken.status":
+		if e.complexity.PaymentToken.Status == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.Status(childComplexity), true
 
 	case "PaymentToken.reaction":
 		if e.complexity.PaymentToken.Reaction == nil {
@@ -3910,6 +4120,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostBoost.Items(childComplexity), true
 
+	case "PostBoost.channel":
+		if e.complexity.PostBoost.Channel == nil {
+			break
+		}
+
+		return e.complexity.PostBoost.Channel(childComplexity), true
+
 	case "PostBoostItem.item":
 		if e.complexity.PostBoostItem.Item == nil {
 			break
@@ -3999,6 +4216,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.Text(childComplexity), true
 
+	case "PostComment.channel":
+		if e.complexity.PostComment.Channel == nil {
+			break
+		}
+
+		return e.complexity.PostComment.Channel(childComplexity), true
+
 	case "PostExternalLink.id":
 		if e.complexity.PostExternalLink.Id == nil {
 			break
@@ -4073,6 +4297,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostExternalLink.Url(childComplexity), true
+
+	case "PostExternalLink.channel":
+		if e.complexity.PostExternalLink.Channel == nil {
+			break
+		}
+
+		return e.complexity.PostExternalLink.Channel(childComplexity), true
 
 	case "PostSearchResult.posts":
 		if e.complexity.PostSearchResult.Posts == nil {
@@ -4226,6 +4457,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.TcrListings(childComplexity, args["first"].(*int), args["after"].(*string), args["whitelistedOnly"].(*bool), args["rejectedOnly"].(*bool), args["activeChallenge"].(*bool), args["currentApplication"].(*bool), args["lowercaseAddr"].(*bool), args["sortBy"].(*model.SortByType), args["sortDesc"].(*bool)), true
+
+	case "Query.channelsGetByID":
+		if e.complexity.Query.ChannelsGetById == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByID_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetById(childComplexity, args["id"].(string)), true
+
+	case "Query.channelsGetByNewsroomAddress":
+		if e.complexity.Query.ChannelsGetByNewsroomAddress == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByNewsroomAddress_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetByNewsroomAddress(childComplexity, args["contractAddress"].(string)), true
+
+	case "Query.channelsGetByHandle":
+		if e.complexity.Query.ChannelsGetByHandle == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByHandle_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetByHandle(childComplexity, args["handle"].(string)), true
 
 	case "Query.newsroomArticles":
 		if e.complexity.Query.NewsroomArticles == nil {
@@ -4450,6 +4717,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.NrLastSeen(childComplexity), true
+
+	case "User.channels":
+		if e.complexity.User.Channels == nil {
+			break
+		}
+
+		return e.complexity.User.Channels(childComplexity), true
 
 	case "UserChallengeVoteData.pollID":
 		if e.complexity.UserChallengeVoteData.PollId == nil {
@@ -5771,6 +6045,213 @@ func (ec *executionContext) _Challenge_lastUpdatedDateTs(ctx context.Context, fi
 	return graphql.MarshalInt(res)
 }
 
+var channelImplementors = []string{"Channel"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, obj *channels.Channel) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, channelImplementors)
+
+	var wg sync.WaitGroup
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Channel")
+		case "id":
+			out.Values[i] = ec._Channel_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "channelType":
+			out.Values[i] = ec._Channel_channelType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
+		case "newsroom":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Channel_newsroom(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	wg.Wait()
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_id(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_channelType(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChannelType, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_newsroom(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().Newsroom(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*newsroom.Newsroom)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Newsroom(ctx, field.Selections, res)
+}
+
+var channelMemberImplementors = []string{"ChannelMember"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ChannelMember(ctx context.Context, sel ast.SelectionSet, obj *channels.ChannelMember) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, channelMemberImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChannelMember")
+		case "channel":
+			out.Values[i] = ec._ChannelMember_channel(ctx, field, obj)
+		case "role":
+			out.Values[i] = ec._ChannelMember_role(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelMember_channel(ctx context.Context, field graphql.CollectedField, obj *channels.ChannelMember) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelMember",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Channel, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelMember_role(ctx context.Context, field graphql.CollectedField, obj *channels.ChannelMember) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelMember",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Role, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
 var charterImplementors = []string{"Charter"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -6048,7 +6529,7 @@ func (ec *executionContext) _Charter_timestamp(ctx context.Context, field graphq
 var charterContentImplementors = []string{"CharterContent"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _CharterContent(ctx context.Context, sel ast.SelectionSet, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent(ctx context.Context, sel ast.SelectionSet, obj *newsroom.Charter) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, charterContentImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -6087,7 +6568,7 @@ func (ec *executionContext) _CharterContent(ctx context.Context, sel ast.Selecti
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_name(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_name(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6111,7 +6592,7 @@ func (ec *executionContext) _CharterContent_name(ctx context.Context, field grap
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_logoUrl(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_logoUrl(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6135,7 +6616,7 @@ func (ec *executionContext) _CharterContent_logoUrl(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_newsroomUrl(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_newsroomUrl(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6159,7 +6640,7 @@ func (ec *executionContext) _CharterContent_newsroomUrl(ctx context.Context, fie
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_tagline(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_tagline(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6183,7 +6664,7 @@ func (ec *executionContext) _CharterContent_tagline(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_roster(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_roster(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6200,7 +6681,7 @@ func (ec *executionContext) _CharterContent_roster(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*nrsignup.CharterRosterMember)
+	res := resTmp.([]*newsroom.CharterRosterMember)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -6244,7 +6725,7 @@ func (ec *executionContext) _CharterContent_roster(ctx context.Context, field gr
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_signatures(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_signatures(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6261,7 +6742,7 @@ func (ec *executionContext) _CharterContent_signatures(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*nrsignup.CharterConstitutionSignature)
+	res := resTmp.([]*newsroom.CharterConstitutionSignature)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -6305,7 +6786,7 @@ func (ec *executionContext) _CharterContent_signatures(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_mission(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_mission(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6322,7 +6803,7 @@ func (ec *executionContext) _CharterContent_mission(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*nrsignup.CharterMission)
+	res := resTmp.(*newsroom.CharterMission)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -6334,7 +6815,7 @@ func (ec *executionContext) _CharterContent_mission(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterContent_socialUrls(ctx context.Context, field graphql.CollectedField, obj *nrsignup.Charter) graphql.Marshaler {
+func (ec *executionContext) _CharterContent_socialUrls(ctx context.Context, field graphql.CollectedField, obj *newsroom.Charter) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6351,7 +6832,7 @@ func (ec *executionContext) _CharterContent_socialUrls(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*nrsignup.CharterSocialURLs)
+	res := resTmp.(*newsroom.CharterSocialURLs)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -6365,7 +6846,7 @@ func (ec *executionContext) _CharterContent_socialUrls(ctx context.Context, fiel
 var charterMissionImplementors = []string{"CharterMission"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _CharterMission(ctx context.Context, sel ast.SelectionSet, obj *nrsignup.CharterMission) graphql.Marshaler {
+func (ec *executionContext) _CharterMission(ctx context.Context, sel ast.SelectionSet, obj *newsroom.CharterMission) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, charterMissionImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -6398,7 +6879,7 @@ func (ec *executionContext) _CharterMission(ctx context.Context, sel ast.Selecti
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterMission_purpose(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterMission) graphql.Marshaler {
+func (ec *executionContext) _CharterMission_purpose(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterMission) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6422,7 +6903,7 @@ func (ec *executionContext) _CharterMission_purpose(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterMission_structure(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterMission) graphql.Marshaler {
+func (ec *executionContext) _CharterMission_structure(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterMission) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6446,7 +6927,7 @@ func (ec *executionContext) _CharterMission_structure(ctx context.Context, field
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterMission_revenue(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterMission) graphql.Marshaler {
+func (ec *executionContext) _CharterMission_revenue(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterMission) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6470,7 +6951,7 @@ func (ec *executionContext) _CharterMission_revenue(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterMission_encumbrances(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterMission) graphql.Marshaler {
+func (ec *executionContext) _CharterMission_encumbrances(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterMission) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6494,7 +6975,7 @@ func (ec *executionContext) _CharterMission_encumbrances(ctx context.Context, fi
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterMission_miscellaneous(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterMission) graphql.Marshaler {
+func (ec *executionContext) _CharterMission_miscellaneous(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterMission) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6520,7 +7001,7 @@ func (ec *executionContext) _CharterMission_miscellaneous(ctx context.Context, f
 var charterSocialUrlsImplementors = []string{"CharterSocialUrls"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _CharterSocialUrls(ctx context.Context, sel ast.SelectionSet, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+func (ec *executionContext) _CharterSocialUrls(ctx context.Context, sel ast.SelectionSet, obj *newsroom.CharterSocialURLs) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, charterSocialUrlsImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -6555,7 +7036,7 @@ func (ec *executionContext) _CharterSocialUrls(ctx context.Context, sel ast.Sele
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterSocialUrls_twitter(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+func (ec *executionContext) _CharterSocialUrls_twitter(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterSocialURLs) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6579,7 +7060,7 @@ func (ec *executionContext) _CharterSocialUrls_twitter(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterSocialUrls_facebook(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+func (ec *executionContext) _CharterSocialUrls_facebook(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterSocialURLs) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6603,7 +7084,7 @@ func (ec *executionContext) _CharterSocialUrls_facebook(ctx context.Context, fie
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterSocialUrls_instagram(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+func (ec *executionContext) _CharterSocialUrls_instagram(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterSocialURLs) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6627,7 +7108,7 @@ func (ec *executionContext) _CharterSocialUrls_instagram(ctx context.Context, fi
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterSocialUrls_linkedIn(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+func (ec *executionContext) _CharterSocialUrls_linkedIn(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterSocialURLs) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6651,7 +7132,7 @@ func (ec *executionContext) _CharterSocialUrls_linkedIn(ctx context.Context, fie
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterSocialUrls_youTube(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+func (ec *executionContext) _CharterSocialUrls_youTube(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterSocialURLs) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6675,7 +7156,7 @@ func (ec *executionContext) _CharterSocialUrls_youTube(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _CharterSocialUrls_email(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterSocialURLs) graphql.Marshaler {
+func (ec *executionContext) _CharterSocialUrls_email(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterSocialURLs) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6701,7 +7182,7 @@ func (ec *executionContext) _CharterSocialUrls_email(ctx context.Context, field 
 var constitutionSignatureImplementors = []string{"ConstitutionSignature"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _ConstitutionSignature(ctx context.Context, sel ast.SelectionSet, obj *nrsignup.CharterConstitutionSignature) graphql.Marshaler {
+func (ec *executionContext) _ConstitutionSignature(ctx context.Context, sel ast.SelectionSet, obj *newsroom.CharterConstitutionSignature) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, constitutionSignatureImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -6730,7 +7211,7 @@ func (ec *executionContext) _ConstitutionSignature(ctx context.Context, sel ast.
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _ConstitutionSignature_signer(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterConstitutionSignature) graphql.Marshaler {
+func (ec *executionContext) _ConstitutionSignature_signer(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterConstitutionSignature) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6754,7 +7235,7 @@ func (ec *executionContext) _ConstitutionSignature_signer(ctx context.Context, f
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _ConstitutionSignature_signature(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterConstitutionSignature) graphql.Marshaler {
+func (ec *executionContext) _ConstitutionSignature_signature(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterConstitutionSignature) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6778,7 +7259,7 @@ func (ec *executionContext) _ConstitutionSignature_signature(ctx context.Context
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _ConstitutionSignature_message(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterConstitutionSignature) graphql.Marshaler {
+func (ec *executionContext) _ConstitutionSignature_message(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterConstitutionSignature) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -9101,6 +9582,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "channelsCreateNewsroomChannel":
+			out.Values[i] = ec._Mutation_channelsCreateNewsroomChannel(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -9554,6 +10037,41 @@ func (ec *executionContext) _Mutation_jsonbSave(ctx context.Context, field graph
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsCreateNewsroomChannel(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsCreateNewsroomChannel_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsCreateNewsroomChannel(rctx, args["newsroomContractAddress"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Mutation_nrsignupSendWelcomeEmail(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -9599,7 +10117,7 @@ func (ec *executionContext) _Mutation_nrsignupSaveCharter(ctx context.Context, f
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().NrsignupSaveCharter(rctx, args["charterData"].(nrsignup.Charter))
+		return ec.resolvers.Mutation().NrsignupSaveCharter(rctx, args["charterData"].(newsroom.Charter))
 	})
 	if resTmp == nil {
 		if !ec.HasError(rctx) {
@@ -10351,6 +10869,166 @@ func (ec *executionContext) _Mutation_userUpdate(ctx context.Context, field grap
 	return ec._User(ctx, field.Selections, res)
 }
 
+var newsroomImplementors = []string{"Newsroom"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _Newsroom(ctx context.Context, sel ast.SelectionSet, obj *newsroom.Newsroom) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, newsroomImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Newsroom")
+		case "newsroomDeployTx":
+			out.Values[i] = ec._Newsroom_newsroomDeployTx(ctx, field, obj)
+		case "contractAddress":
+			out.Values[i] = ec._Newsroom_contractAddress(ctx, field, obj)
+		case "multisigAddress":
+			out.Values[i] = ec._Newsroom_multisigAddress(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._Newsroom_name(ctx, field, obj)
+		case "charter":
+			out.Values[i] = ec._Newsroom_charter(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Newsroom_newsroomDeployTx(ctx context.Context, field graphql.CollectedField, obj *newsroom.Newsroom) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Newsroom",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NewsroomDeployTx, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Newsroom_contractAddress(ctx context.Context, field graphql.CollectedField, obj *newsroom.Newsroom) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Newsroom",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContractAddress, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Newsroom_multisigAddress(ctx context.Context, field graphql.CollectedField, obj *newsroom.Newsroom) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Newsroom",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MultisigAddress, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Newsroom_name(ctx context.Context, field graphql.CollectedField, obj *newsroom.Newsroom) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Newsroom",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Newsroom_charter(ctx context.Context, field graphql.CollectedField, obj *newsroom.Newsroom) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Newsroom",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Charter, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*newsroom.Charter)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._CharterContent(ctx, field.Selections, res)
+}
+
 var nrsignupNewsroomImplementors = []string{"NrsignupNewsroom"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -10436,7 +11114,7 @@ func (ec *executionContext) _NrsignupNewsroom_charter(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*nrsignup.Charter)
+	res := resTmp.(*newsroom.Charter)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -10724,6 +11402,8 @@ func (ec *executionContext) _PaymentEther(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PaymentEther")
+		case "status":
+			out.Values[i] = ec._PaymentEther_status(ctx, field, obj)
 		case "reaction":
 			out.Values[i] = ec._PaymentEther_reaction(ctx, field, obj)
 		case "comment":
@@ -10769,6 +11449,30 @@ func (ec *executionContext) _PaymentEther(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_status(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 // nolint: vetshadow
@@ -11019,6 +11723,8 @@ func (ec *executionContext) _PaymentStripe(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PaymentStripe")
+		case "status":
+			out.Values[i] = ec._PaymentStripe_status(ctx, field, obj)
 		case "reaction":
 			out.Values[i] = ec._PaymentStripe_reaction(ctx, field, obj)
 		case "comment":
@@ -11059,6 +11765,30 @@ func (ec *executionContext) _PaymentStripe(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentStripe_status(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentStripe",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 // nolint: vetshadow
@@ -11282,6 +12012,8 @@ func (ec *executionContext) _PaymentToken(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PaymentToken")
+		case "status":
+			out.Values[i] = ec._PaymentToken_status(ctx, field, obj)
 		case "reaction":
 			out.Values[i] = ec._PaymentToken_reaction(ctx, field, obj)
 		case "comment":
@@ -11327,6 +12059,30 @@ func (ec *executionContext) _PaymentToken(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentToken_status(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentToken",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 // nolint: vetshadow
@@ -11854,6 +12610,12 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._PostBoost_about(ctx, field, obj)
 		case "items":
 			out.Values[i] = ec._PostBoost_items(ctx, field, obj)
+		case "channel":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostBoost_channel(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12410,6 +13172,35 @@ func (ec *executionContext) _PostBoost_items(ctx context.Context, field graphql.
 	return arr1
 }
 
+// nolint: vetshadow
+func (ec *executionContext) _PostBoost_channel(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostBoost",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostBoost().Channel(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
 var postBoostItemImplementors = []string{"PostBoostItem"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -12567,6 +13358,12 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "channel":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostComment_channel(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12919,6 +13716,35 @@ func (ec *executionContext) _PostComment_text(ctx context.Context, field graphql
 	return graphql.MarshalString(res)
 }
 
+// nolint: vetshadow
+func (ec *executionContext) _PostComment_channel(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostComment",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostComment().Channel(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
 var postExternalLinkImplementors = []string{"PostExternalLink", "Post"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -12984,6 +13810,12 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 			}(i, field)
 		case "url":
 			out.Values[i] = ec._PostExternalLink_url(ctx, field, obj)
+		case "channel":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._PostExternalLink_channel(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13333,6 +14165,35 @@ func (ec *executionContext) _PostExternalLink_url(ctx context.Context, field gra
 	return graphql.MarshalString(res)
 }
 
+// nolint: vetshadow
+func (ec *executionContext) _PostExternalLink_channel(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PostExternalLink",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostExternalLink().Channel(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
 var postSearchResultImplementors = []string{"PostSearchResult"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -13567,6 +14428,24 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_tcrListings(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "channelsGetByID":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByID(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "channelsGetByNewsroomAddress":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByNewsroomAddress(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "channelsGetByHandle":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByHandle(ctx, field)
 				wg.Done()
 			}(i, field)
 		case "newsroomArticles":
@@ -14200,6 +15079,111 @@ func (ec *executionContext) _Query_tcrListings(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByID(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByID_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByID(rctx, args["id"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByNewsroomAddress(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByNewsroomAddress_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByNewsroomAddress(rctx, args["contractAddress"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByHandle(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByHandle_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByHandle(rctx, args["handle"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Query_newsroomArticles(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -14684,7 +15668,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 var rosterMemberImplementors = []string{"RosterMember"}
 
 // nolint: gocyclo, errcheck, gas, goconst
-func (ec *executionContext) _RosterMember(ctx context.Context, sel ast.SelectionSet, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember(ctx context.Context, sel ast.SelectionSet, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	fields := graphql.CollectFields(ctx, sel, rosterMemberImplementors)
 
 	out := graphql.NewOrderedMap(len(fields))
@@ -14721,7 +15705,7 @@ func (ec *executionContext) _RosterMember(ctx context.Context, sel ast.Selection
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _RosterMember_name(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember_name(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -14745,7 +15729,7 @@ func (ec *executionContext) _RosterMember_name(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _RosterMember_role(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember_role(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -14769,7 +15753,7 @@ func (ec *executionContext) _RosterMember_role(ctx context.Context, field graphq
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _RosterMember_bio(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember_bio(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -14793,7 +15777,7 @@ func (ec *executionContext) _RosterMember_bio(ctx context.Context, field graphql
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _RosterMember_ethAddress(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember_ethAddress(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -14817,7 +15801,7 @@ func (ec *executionContext) _RosterMember_ethAddress(ctx context.Context, field 
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _RosterMember_socialUrls(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember_socialUrls(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -14834,7 +15818,7 @@ func (ec *executionContext) _RosterMember_socialUrls(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*nrsignup.CharterSocialURLs)
+	res := resTmp.(*newsroom.CharterSocialURLs)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
@@ -14846,7 +15830,7 @@ func (ec *executionContext) _RosterMember_socialUrls(ctx context.Context, field 
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _RosterMember_avatarUrl(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember_avatarUrl(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -14870,7 +15854,7 @@ func (ec *executionContext) _RosterMember_avatarUrl(ctx context.Context, field g
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _RosterMember_signature(ctx context.Context, field graphql.CollectedField, obj *nrsignup.CharterRosterMember) graphql.Marshaler {
+func (ec *executionContext) _RosterMember_signature(ctx context.Context, field graphql.CollectedField, obj *newsroom.CharterRosterMember) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -14936,6 +15920,12 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._User_nrLastSeen(ctx, field, obj)
+				wg.Done()
+			}(i, field)
+		case "channels":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._User_channels(ctx, field, obj)
 				wg.Done()
 			}(i, field)
 		default:
@@ -15175,6 +16165,67 @@ func (ec *executionContext) _User_nrLastSeen(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	return graphql.MarshalInt(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _User_channels(ctx context.Context, field graphql.CollectedField, obj *users.User) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "User",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().Channels(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*channels.ChannelMember)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	arr1 := make(graphql.Array, len(res))
+	var wg sync.WaitGroup
+
+	isLen1 := len(res) == 1
+	if !isLen1 {
+		wg.Add(len(res))
+	}
+
+	for idx1 := range res {
+		idx1 := idx1
+		rctx := &graphql.ResolverContext{
+			Index:  &idx1,
+			Result: res[idx1],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(idx1 int) {
+			if !isLen1 {
+				defer wg.Done()
+			}
+			arr1[idx1] = func() graphql.Marshaler {
+
+				if res[idx1] == nil {
+					return graphql.Null
+				}
+
+				return ec._ChannelMember(ctx, field.Selections, res[idx1])
+			}()
+		}
+		if isLen1 {
+			f(idx1)
+		} else {
+			go f(idx1)
+		}
+
+	}
+	wg.Wait()
+	return arr1
 }
 
 var userChallengeVoteDataImplementors = []string{"UserChallengeVoteData"}
@@ -17238,8 +18289,8 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 	}
 }
 
-func UnmarshalCharterInput(v interface{}) (nrsignup.Charter, error) {
-	var it nrsignup.Charter
+func UnmarshalCharterInput(v interface{}) (newsroom.Charter, error) {
+	var it newsroom.Charter
 	var asMap = v.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -17278,9 +18329,9 @@ func UnmarshalCharterInput(v interface{}) (nrsignup.Charter, error) {
 					rawIf1 = []interface{}{v}
 				}
 			}
-			it.Roster = make([]*nrsignup.CharterRosterMember, len(rawIf1))
+			it.Roster = make([]*newsroom.CharterRosterMember, len(rawIf1))
 			for idx1 := range rawIf1 {
-				var ptr2 nrsignup.CharterRosterMember
+				var ptr2 newsroom.CharterRosterMember
 				if rawIf1[idx1] != nil {
 					ptr2, err = UnmarshalRosterMemberInput(rawIf1[idx1])
 					it.Roster[idx1] = &ptr2
@@ -17299,9 +18350,9 @@ func UnmarshalCharterInput(v interface{}) (nrsignup.Charter, error) {
 					rawIf1 = []interface{}{v}
 				}
 			}
-			it.Signatures = make([]*nrsignup.CharterConstitutionSignature, len(rawIf1))
+			it.Signatures = make([]*newsroom.CharterConstitutionSignature, len(rawIf1))
 			for idx1 := range rawIf1 {
-				var ptr2 nrsignup.CharterConstitutionSignature
+				var ptr2 newsroom.CharterConstitutionSignature
 				if rawIf1[idx1] != nil {
 					ptr2, err = UnmarshalConstitutionSignatureInput(rawIf1[idx1])
 					it.Signatures[idx1] = &ptr2
@@ -17312,7 +18363,7 @@ func UnmarshalCharterInput(v interface{}) (nrsignup.Charter, error) {
 			}
 		case "mission":
 			var err error
-			var ptr1 nrsignup.CharterMission
+			var ptr1 newsroom.CharterMission
 			if v != nil {
 				ptr1, err = UnmarshalCharterMissionInput(v)
 				it.Mission = &ptr1
@@ -17323,7 +18374,7 @@ func UnmarshalCharterInput(v interface{}) (nrsignup.Charter, error) {
 			}
 		case "socialUrls":
 			var err error
-			var ptr1 nrsignup.CharterSocialURLs
+			var ptr1 newsroom.CharterSocialURLs
 			if v != nil {
 				ptr1, err = UnmarshalCharterSocialUrlsInput(v)
 				it.SocialURLs = &ptr1
@@ -17338,8 +18389,8 @@ func UnmarshalCharterInput(v interface{}) (nrsignup.Charter, error) {
 	return it, nil
 }
 
-func UnmarshalCharterMissionInput(v interface{}) (nrsignup.CharterMission, error) {
-	var it nrsignup.CharterMission
+func UnmarshalCharterMissionInput(v interface{}) (newsroom.CharterMission, error) {
+	var it newsroom.CharterMission
 	var asMap = v.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -17380,8 +18431,8 @@ func UnmarshalCharterMissionInput(v interface{}) (nrsignup.CharterMission, error
 	return it, nil
 }
 
-func UnmarshalCharterSocialUrlsInput(v interface{}) (nrsignup.CharterSocialURLs, error) {
-	var it nrsignup.CharterSocialURLs
+func UnmarshalCharterSocialUrlsInput(v interface{}) (newsroom.CharterSocialURLs, error) {
+	var it newsroom.CharterSocialURLs
 	var asMap = v.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -17428,8 +18479,8 @@ func UnmarshalCharterSocialUrlsInput(v interface{}) (nrsignup.CharterSocialURLs,
 	return it, nil
 }
 
-func UnmarshalConstitutionSignatureInput(v interface{}) (nrsignup.CharterConstitutionSignature, error) {
-	var it nrsignup.CharterConstitutionSignature
+func UnmarshalConstitutionSignatureInput(v interface{}) (newsroom.CharterConstitutionSignature, error) {
+	var it newsroom.CharterConstitutionSignature
 	var asMap = v.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -17886,8 +18937,8 @@ func UnmarshalPostSearchInput(v interface{}) (posts.SearchInput, error) {
 	return it, nil
 }
 
-func UnmarshalRosterMemberInput(v interface{}) (nrsignup.CharterRosterMember, error) {
-	var it nrsignup.CharterRosterMember
+func UnmarshalRosterMemberInput(v interface{}) (newsroom.CharterRosterMember, error) {
+	var it newsroom.CharterRosterMember
 	var asMap = v.(map[string]interface{})
 
 	for k, v := range asMap {
@@ -17918,7 +18969,7 @@ func UnmarshalRosterMemberInput(v interface{}) (nrsignup.CharterRosterMember, er
 			}
 		case "socialUrls":
 			var err error
-			var ptr1 nrsignup.CharterSocialURLs
+			var ptr1 newsroom.CharterSocialURLs
 			if v != nil {
 				ptr1, err = UnmarshalCharterSocialUrlsInput(v)
 				it.SocialURLs = &ptr1
@@ -18156,6 +19207,11 @@ type Query {
     sortDesc: Boolean = False
   ): ListingResultCursor
 
+  # Channel Queries
+  channelsGetByID(id: String!): Channel
+  channelsGetByNewsroomAddress(contractAddress: String!): Channel
+  channelsGetByHandle(handle: String!): Channel
+
   # Newsroom Queries
   newsroomArticles(
     addr: String
@@ -18222,6 +19278,9 @@ type Mutation {
   # JSONb Store Mutations
   jsonbSave(input: JsonbInput!): Jsonb!
 
+  # Channels Mutations
+  channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
+
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
   nrsignupSaveCharter(charterData: CharterInput!): String!
@@ -18269,10 +19328,7 @@ type Mutation {
   storefrontAirswapCancelled: String!
 
   # Listing Mutations
-  tcrListingSaveTopicID(
-    addr: String!,
-    topicID: Int!
-  ): String!
+  tcrListingSaveTopicID(addr: String!, topicID: Int!): String!
 
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
@@ -18467,8 +19523,19 @@ type ContentRevision {
   revisionDate: Int!
 }
 
-## Post object schemas
+## Channel object schemas
 
+type Channel {
+  id: String!
+  channelType: String!
+  newsroom: Newsroom
+}
+type ChannelMember {
+  channel: Channel
+  role: String
+}
+
+## Post object schemas
 # post types
 interface Post {
   id: String!
@@ -18480,6 +19547,7 @@ interface Post {
   children: [Post]
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
+  channel: Channel
 }
 
 type PostBoost implements Post {
@@ -18500,6 +19568,7 @@ type PostBoost implements Post {
   what: String
   about: String
   items: [PostBoostItem!]
+  channel: Channel
 }
 
 type PostBoostItem {
@@ -18518,6 +19587,7 @@ type PostComment implements Post {
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
   text: String!
+  channel: Channel
 }
 
 type PostExternalLink implements Post {
@@ -18531,6 +19601,7 @@ type PostExternalLink implements Post {
   payments: [Payment!]
   paymentsTotal(currencyCode: String!): Float!
   url: String
+  channel: Channel
 }
 
 type PostSearchResult {
@@ -18578,6 +19649,7 @@ input PostCreateCommentInput {
 
 # Payment types
 interface Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String
@@ -18589,6 +19661,7 @@ interface Payment {
 }
 
 type PaymentStripe implements Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String
@@ -18600,6 +19673,7 @@ type PaymentStripe implements Payment {
 }
 
 type PaymentEther implements Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String
@@ -18612,6 +19686,7 @@ type PaymentEther implements Payment {
 }
 
 type PaymentToken implements Payment {
+  status: String
   reaction: String
   comment: String
   currencyCode: String
@@ -18660,6 +19735,7 @@ type User {
   nrStep: Int
   nrFurthestStep: Int
   nrLastSeen: Int
+  channels: [ChannelMember]
 }
 
 input UserSignatureInput {
@@ -18684,6 +19760,14 @@ input NrsignupStepsInput {
   step: Int
   furthestStep: Int
   lastSeen: Int
+}
+
+type Newsroom {
+  newsroomDeployTx: String
+  contractAddress: String
+  multisigAddress: String
+  name: String
+  charter: CharterContent
 }
 
 type NrsignupNewsroom {

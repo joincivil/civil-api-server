@@ -12,6 +12,8 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
+	"github.com/joincivil/civil-api-server/pkg/discourse"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
@@ -44,67 +46,76 @@ var (
 // ResolverConfig is the config params for the Resolver
 type ResolverConfig struct {
 	fx.In
-	AuthService                *auth.Service
-	ListingPersister           pmodel.ListingPersister
-	GovEventPersister          pmodel.GovernanceEventPersister
-	RevisionPersister          pmodel.ContentRevisionPersister
-	ChallengePersister         pmodel.ChallengePersister
-	AppealPersister            pmodel.AppealPersister
-	PollPersister              pmodel.PollPersister
-	UserChallengeDataPersister pmodel.UserChallengeDataPersister
-	UserService                *users.UserService
-	JSONbService               *jsonstore.Service
-	NrsignupService            *nrsignup.Service
-	PaymentService             *payments.Service
-	PostService                *posts.Service
-	StorefrontService          *storefront.Service
-	EmailListMembers           cemail.ListMemberManager
-	LowercaseAddr              *bool `optional:"true"`
-	ErrorReporter              cerrors.ErrorReporter
+	AuthService                  *auth.Service
+	ListingPersister             pmodel.ListingPersister
+	GovEventPersister            pmodel.GovernanceEventPersister
+	RevisionPersister            pmodel.ContentRevisionPersister
+	ChallengePersister           pmodel.ChallengePersister
+	AppealPersister              pmodel.AppealPersister
+	PollPersister                pmodel.PollPersister
+	UserChallengeDataPersister   pmodel.UserChallengeDataPersister
+	DiscourseListingMapPersister discourse.ListingMapPersister
+	ChannelService               *channels.Service
+	UserService                  *users.UserService
+	JSONbService                 *jsonstore.Service
+	NrsignupService              *nrsignup.Service
+	PaymentService               *payments.Service
+	PostService                  *posts.Service
+	StorefrontService            *storefront.Service
+	DiscourseService             *discourse.Service
+	EmailListMembers             cemail.ListMemberManager
+	LowercaseAddr                *bool `optional:"true"`
+	ErrorReporter                cerrors.ErrorReporter
 }
 
 // NewResolver is a convenience function to init a Resolver struct
 func NewResolver(config ResolverConfig) *Resolver {
 	return &Resolver{
-		authService:                config.AuthService,
-		listingPersister:           config.ListingPersister,
-		revisionPersister:          config.RevisionPersister,
-		govEventPersister:          config.GovEventPersister,
-		challengePersister:         config.ChallengePersister,
-		appealPersister:            config.AppealPersister,
-		pollPersister:              config.PollPersister,
-		userChallengeDataPersister: config.UserChallengeDataPersister,
-		userService:                config.UserService,
-		jsonbService:               config.JSONbService,
-		nrsignupService:            config.NrsignupService,
-		paymentService:             config.PaymentService,
-		postService:                config.PostService,
-		storefrontService:          config.StorefrontService,
-		emailListMembers:           config.EmailListMembers,
-		lowercaseAddr:              config.LowercaseAddr,
-		errorReporter:              config.ErrorReporter,
+		authService:                  config.AuthService,
+		listingPersister:             config.ListingPersister,
+		revisionPersister:            config.RevisionPersister,
+		govEventPersister:            config.GovEventPersister,
+		challengePersister:           config.ChallengePersister,
+		appealPersister:              config.AppealPersister,
+		pollPersister:                config.PollPersister,
+		channelService:               config.ChannelService,
+		userChallengeDataPersister:   config.UserChallengeDataPersister,
+		discourseListingMapPersister: config.DiscourseListingMapPersister,
+		userService:                  config.UserService,
+		jsonbService:                 config.JSONbService,
+		nrsignupService:              config.NrsignupService,
+		paymentService:               config.PaymentService,
+		postService:                  config.PostService,
+		storefrontService:            config.StorefrontService,
+		discourseService:             config.DiscourseService,
+		emailListMembers:             config.EmailListMembers,
+		lowercaseAddr:                config.LowercaseAddr,
+		errorReporter:                config.ErrorReporter,
 	}
 }
 
 // Resolver is the main resolver for the GraphQL endpoint
 type Resolver struct {
-	authService                *auth.Service
-	listingPersister           pmodel.ListingPersister
-	revisionPersister          pmodel.ContentRevisionPersister
-	govEventPersister          pmodel.GovernanceEventPersister
-	challengePersister         pmodel.ChallengePersister
-	appealPersister            pmodel.AppealPersister
-	pollPersister              pmodel.PollPersister
-	userChallengeDataPersister pmodel.UserChallengeDataPersister
-	userService                *users.UserService
-	jsonbService               *jsonstore.Service
-	nrsignupService            *nrsignup.Service
-	paymentService             *payments.Service
-	postService                *posts.Service
-	storefrontService          *storefront.Service
-	emailListMembers           cemail.ListMemberManager
-	lowercaseAddr              *bool
-	errorReporter              cerrors.ErrorReporter
+	authService                  *auth.Service
+	listingPersister             pmodel.ListingPersister
+	revisionPersister            pmodel.ContentRevisionPersister
+	govEventPersister            pmodel.GovernanceEventPersister
+	challengePersister           pmodel.ChallengePersister
+	appealPersister              pmodel.AppealPersister
+	pollPersister                pmodel.PollPersister
+	userChallengeDataPersister   pmodel.UserChallengeDataPersister
+	discourseListingMapPersister discourse.ListingMapPersister
+	userService                  *users.UserService
+	jsonbService                 *jsonstore.Service
+	nrsignupService              *nrsignup.Service
+	channelService               *channels.Service
+	paymentService               *payments.Service
+	postService                  *posts.Service
+	storefrontService            *storefront.Service
+	discourseService             *discourse.Service
+	emailListMembers             cemail.ListMemberManager
+	lowercaseAddr                *bool
+	errorReporter                cerrors.ErrorReporter
 }
 
 // Query is the resolver for the Query type

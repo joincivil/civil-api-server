@@ -9,7 +9,8 @@ import (
 	"github.com/joincivil/go-common/pkg/eth"
 )
 
-func initETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
+// NewETHHelper builds a new eth.Helper instance
+func NewETHHelper(config *utils.GraphQLConfig) (*eth.Helper, error) {
 	if config.EthAPIURL != "" {
 		accounts := map[string]string{}
 		if config.EthereumDefaultPrivateKey != "" {

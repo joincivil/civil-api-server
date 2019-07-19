@@ -18,48 +18,60 @@ resolver:
   type: Resolver
 
 models:
-  AuthLoginResponse:
-    model: github.com/joincivil/civil-api-server/pkg/auth.LoginResponse
+  Appeal:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Appeal
+  ArticlePayloadValue:
+    model: github.com/joincivil/civil-events-processor/pkg/model.ArticlePayloadValue
   AuthApplicationEnum:
     model: github.com/joincivil/civil-api-server/pkg/auth.ApplicationEnum
+  AuthLoginResponse:
+    model: github.com/joincivil/civil-api-server/pkg/auth.LoginResponse
+  Challenge:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Challenge
+  Channel:
+    model: github.com/joincivil/civil-api-server/pkg/channels.Channel
+  ChannelMember:
+    model: github.com/joincivil/civil-api-server/pkg/channels.ChannelMember
+  Charter:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Charter
+  CharterContent:
+    model: github.com/joincivil/go-common/pkg/newsroom.Charter
+  CharterInput:
+    model: github.com/joincivil/go-common/pkg/newsroom.Charter
+  CharterMission:
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterMission
+  CharterMissionInput:
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterMission
+  CharterSocialUrls:
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterSocialURLs
+  CharterSocialUrlsInput:
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterSocialURLs
+  ConstitutionSignature:
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterConstitutionSignature
+  ConstitutionSignatureInput:
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterConstitutionSignature
+  ContentRevision:
+    model: github.com/joincivil/civil-events-processor/pkg/model.ContentRevision
+  CurrentUser:
+    model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
+  GovernanceEvent:
+    model: github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
   Listing:
     model: github.com/joincivil/civil-events-processor/pkg/model.Listing
   ListingSort:
     model: github.com/joincivil/civil-events-processor/pkg/model.SortByType
-  Charter:
-    model: github.com/joincivil/civil-events-processor/pkg/model.Charter
-  GovernanceEvent:
-    model: github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
-  ContentRevision:
-    model: github.com/joincivil/civil-events-processor/pkg/model.ContentRevision
-  ArticlePayloadValue:
-    model: github.com/joincivil/civil-events-processor/pkg/model.ArticlePayloadValue
-  Challenge:
-    model: github.com/joincivil/civil-events-processor/pkg/model.Challenge
-  Appeal:
-    model: github.com/joincivil/civil-events-processor/pkg/model.Appeal
-  Poll:
-    model: github.com/joincivil/civil-events-processor/pkg/model.Poll
-  UserChallengeVoteData:
-    model: github.com/joincivil/civil-events-processor/pkg/model.UserChallengeData
-  CurrentUser:
-    model: github.com/joincivil/civil-api-server/pkg/auth.CurrentUser
-  RawObject:
-    model: github.com/joincivil/civil-api-server/pkg/utils.JsonbPayloadScalar
-  User:
-    model: github.com/joincivil/civil-api-server/pkg/users.User
-  UserSignatureInput:
-    model: github.com/joincivil/civil-api-server/pkg/users.SignatureInput
-  UserUpdateInput:
-    model: github.com/joincivil/civil-api-server/pkg/users.UserUpdateInput
   JsonFieldValue:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONFieldValue
   JsonField:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONField
   Jsonb:
     model: github.com/joincivil/civil-api-server/pkg/jsonstore.JSONb
+  Newsroom:
+    model: github.com/joincivil/go-common/pkg/newsroom.Newsroom
   NrsignupNewsroom:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.SignupUserJSONData
+  Poll:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Poll
   Payment: 
     model: github.com/joincivil/civil-api-server/pkg/payments.Payment
   PaymentStripe: 
@@ -96,23 +108,17 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/posts.Comment
   PostCreateExternalLinkInput:
     model: github.com/joincivil/civil-api-server/pkg/posts.ExternalLink
-  CharterContent:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.Charter
-  CharterInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.Charter
+  RawObject:
+    model: github.com/joincivil/civil-api-server/pkg/utils.JsonbPayloadScalar
   RosterMember:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterRosterMember
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterRosterMember
   RosterMemberInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterRosterMember
-  CharterSocialUrls:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterSocialURLs
-  CharterSocialUrlsInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterSocialURLs
-  ConstitutionSignature:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterConstitutionSignature
-  ConstitutionSignatureInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterConstitutionSignature
-  CharterMission:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterMission
-  CharterMissionInput:
-    model: github.com/joincivil/civil-api-server/pkg/nrsignup.CharterMission
+    model: github.com/joincivil/go-common/pkg/newsroom.CharterRosterMember
+  User:
+    model: github.com/joincivil/civil-api-server/pkg/users.User
+  UserChallengeVoteData:
+    model: github.com/joincivil/civil-events-processor/pkg/model.UserChallengeData
+  UserSignatureInput:
+    model: github.com/joincivil/civil-api-server/pkg/users.SignatureInput
+  UserUpdateInput:
+    model: github.com/joincivil/civil-api-server/pkg/users.UserUpdateInput

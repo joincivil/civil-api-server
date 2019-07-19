@@ -44,16 +44,18 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 
 	tx.Commit()
 
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
 	return c, nil
 }
 
 // GetChannel retrieves a Channel with the provided ID
 func (p *DBPersister) GetChannel(id string) (*Channel, error) {
-	c := &Channel{
-		ID: id,
-	}
+	c := &Channel{}
 
-	if p.db.Preload("Members").First(c).RecordNotFound() {
+	if p.db.Where(&Channel{ID: id}).Preload("Members").First(c).RecordNotFound() {
 		return nil, ErrorNotFound
 	}
 
@@ -81,6 +83,19 @@ func (p *DBPersister) GetChannelByHandle(handle string) (*Channel, error) {
 	if p.db.Where(&Channel{
 		Handle: &handle,
 	}).First(c).RecordNotFound() {
+		return nil, ErrorNotFound
+	}
+
+	return c, nil
+}
+
+// GetUserChannels returns the channel a user belongs to
+func (p *DBPersister) GetUserChannels(userID string) ([]*ChannelMember, error) {
+	var c []*ChannelMember
+
+	if err := p.db.Where(&ChannelMember{
+		UserID: userID,
+	}).Preload("Channel").Find(&c).Error; err != nil {
 		return nil, ErrorNotFound
 	}
 

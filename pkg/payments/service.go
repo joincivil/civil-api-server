@@ -3,8 +3,10 @@ package payments
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 
+	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -18,7 +20,13 @@ type StripeCharger interface {
 
 // EthereumValidator defines the functions needed to create an Ethereum payment
 type EthereumValidator interface {
-	ValidateTransaction(transactionID string, expectedAccount string) (*ValidateTransactionResponse, error)
+	ValidateTransaction(transactionID string, expectedAccount common.Address) (*ValidateTransactionResponse, error)
+}
+
+// ChannelHelper defines the methods needed to interact with a channel
+type ChannelHelper interface {
+	GetEthereumPaymentAddress(channelID string) (common.Address, error)
+	GetStripePaymentAccount(channelID string) (string, error)
 }
 
 // Service provides methods to interact with Posts
@@ -26,64 +34,152 @@ type Service struct {
 	db       *gorm.DB
 	stripe   StripeCharger
 	ethereum EthereumValidator
+	channel  ChannelHelper
 }
 
 // NewService builds an instance of posts.Service
-func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator) *Service {
+func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator, channel ChannelHelper) *Service {
 	return &Service{
 		db,
 		stripe,
 		ethereum,
+		channel,
 	}
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
-func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, payment EtherPayment) (EtherPayment, error) {
-	// get the wallet address for this Channel
-	expectedAccount := getEthereumAccountForChannel(channelID)
+func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string) (EtherPayment, error) {
+	hash := common.HexToHash(txID)
+	if (hash == common.Hash{}) {
+		return EtherPayment{}, errors.New("invalid tx id")
+	}
 
-	// ensure the transaction is valid and goes to the correct wallet
-	res, err := s.ethereum.ValidateTransaction(payment.TransactionID, expectedAccount)
+	payment := PaymentModel{}
+	expectedAddress, err := s.channel.GetEthereumPaymentAddress(channelID)
 	if err != nil {
 		return EtherPayment{}, err
 	}
-
 	// generate a new ID
 	id, err := uuid.NewV4()
 	if err != nil {
 		return EtherPayment{}, err
 	}
 	payment.ID = id.String()
+	payment.PaymentType = "ether"
+	payment.Reference = txID
 
-	// set the `data` column to the result of ValidateTransaction
-	data, err := json.Marshal(res)
-	if err != nil {
-		return EtherPayment{}, err
-	}
-	payment.Data = postgres.Jsonb{RawMessage: data}
-
-	payment.PaymentType = payment.Type()
+	payment.Status = "pending"
 	payment.OwnerID = ownerID
 	payment.OwnerType = ownerType
 	payment.CurrencyCode = "ETH"
-	payment.ExchangeRate = res.ExchangeRate
-	payment.Amount = res.Amount
+	payment.ExchangeRate = 0
+	payment.Amount = 0
+
+	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(fmt.Sprintf("{\"PaymentAddress\":\"%v\"}", expectedAddress.String()))}
 
 	if err = s.db.Create(&payment).Error; err != nil {
 		log.Errorf("An error occured: %v\n", err)
 		return EtherPayment{}, err
 	}
-	return payment, nil
+
+	return EtherPayment{
+		PaymentModel: payment,
+	}, nil
+}
+
+// GetPendingEtherPayments gets all pending ether payments
+func (s *Service) GetPendingEtherPayments() ([]PaymentModel, error) {
+
+	var payments []PaymentModel
+	if err := s.db.Where("status = 'pending' AND payment_type = 'ether'").Find(&payments).Error; err != nil {
+		return nil, err
+	}
+
+	return payments, nil
+}
+
+// UpdateEtherPayments finds pending payments, checks the status, and updates them accordingly
+func (s *Service) UpdateEtherPayments() error {
+
+	payments, err := s.GetPendingEtherPayments()
+	if err != nil {
+		return err
+	}
+
+	for _, payment := range payments {
+		err := s.UpdateEtherPayment(&payment)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// UpdateEtherPayment handles a single payment object and updates it if needed
+func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
+	// create a payment model to hold the updated fields
+	update := &PaymentModel{}
+
+	// convert to interface to unmarshal up the Data field
+	paymentInterface, err := ModelToInterface(payment)
+	if err != nil {
+		return err
+	}
+	// and assert back to an EtherPayment
+	etherPayment := paymentInterface.(*EtherPayment)
+
+	// expectedReceiver should be the channel ETH address
+	expectedReceiver := common.HexToAddress(etherPayment.PaymentAddress)
+	res, err := s.ethereum.ValidateTransaction(payment.Reference, expectedReceiver)
+	if err == ErrorTransactionFailed {
+		update.Status = "failed"
+	} else if err == ErrorReceiptNotFound || err == ErrorTransactionNotFound {
+		return nil
+	} else if err == ErrorInvalidRecipient {
+		update.Status = "invalid"
+	} else if err != nil {
+		log.Errorf("Error updating payment: %v\n", err)
+		// payment.Status = "error"
+		return err
+	} else {
+		data, err := json.Marshal(res)
+		if err != nil {
+			log.Errorf("Error updating payment: %v\n", err)
+			return err
+		}
+
+		if res.Amount != 0 {
+			update.Status = "complete"
+			update.Data = postgres.Jsonb{RawMessage: data}
+			update.ExchangeRate = res.ExchangeRate
+			update.Amount = res.Amount
+		}
+	}
+
+	// set the `data` column to the result of ValidateTransaction
+
+	if err = s.db.Model(&payment).Update(update).Error; err != nil {
+		log.Errorf("Error updating payment: %v\n", err)
+		return err
+	}
+
+	return nil
 }
 
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
 func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerID string, payment StripePayment) (StripePayment, error) {
 
+	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
+	if err != nil {
+		return StripePayment{}, err
+	}
+
 	// generate a stripe charge
 	res, err := s.stripe.CreateCharge(&CreateChargeRequest{
 		Amount:        int64(math.Floor(payment.Amount * 100)),
 		SourceToken:   payment.PaymentToken,
-		StripeAccount: getStripeAccountForChannel(channelID),
+		StripeAccount: stripeAccount,
 		Metadata:      map[string]string{ownerType: ownerID},
 	})
 	if err != nil {
@@ -135,23 +231,29 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	return paymentsSlice, nil
 }
 
+// GetPayment returns the payment with the given ID
+func (s *Service) GetPayment(paymentID string) (Payment, error) {
+	var paymentModel PaymentModel
+	if err := s.db.Where(&PaymentModel{ID: paymentID}).First(&paymentModel).Error; err != nil {
+		log.Errorf("An error occured: %v\n", err)
+		return nil, err
+	}
+
+	payment, err := ModelToInterface(&paymentModel)
+	if err != nil {
+		return nil, err
+	}
+
+	return payment, nil
+}
+
 // TotalPayments returns the USD equivalent of all payments associated with the post
 func (s *Service) TotalPayments(postID string, currencyCode string) (float64, error) {
 	if currencyCode != "USD" {
 		return 0, errors.New("USD is the only `currencyCode` supported")
 	}
 	var totals []float64
-	s.db.Table("payments").Where(&PaymentModel{OwnerType: "posts", OwnerID: postID}).Select("sum(amount * exchange_rate) as total").Pluck("total", &totals)
+	s.db.Table("payments").Where(&PaymentModel{OwnerType: "posts", OwnerID: postID}).Select("coalesce(sum(amount * exchange_rate), 0) as total").Pluck("total", &totals)
 
 	return totals[0], nil
-}
-
-func getStripeAccountForChannel(channelID string) string {
-	// TODO(dankins): this needs to be implemented, this is just a test account
-	return "acct_1C4vupLMQdVwYica"
-}
-
-func getEthereumAccountForChannel(channelID string) string {
-	// TODO(dankins): this needs to be implemented, this is just a test account
-	return "0xddB9e9957452d0E39A5E43Fd1AB4aE818aecC6aD"
 }
