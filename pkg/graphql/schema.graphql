@@ -390,6 +390,7 @@ type Channel {
   id: String!
   channelType: String!
   newsroom: Newsroom
+  postsSearch(search: PostSearchInput!): PostSearchResult
 }
 type ChannelMember {
   channel: Channel
