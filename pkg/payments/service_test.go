@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	uuid "github.com/satori/go.uuid"
@@ -18,13 +19,23 @@ func TestService(t *testing.T) {
 	var paymentService *payments.Service
 	var transactions *testruntime.MockTransactionReader
 	var paymentHelper *testruntime.MockPaymentHelper
+	var db *gorm.DB
 	app := fxtest.New(t,
 		testruntime.TestModule,
 		fx.Populate(&paymentService),
 		fx.Populate(&transactions),
 		fx.Populate(&paymentHelper),
+		fx.Populate(&db),
 	)
 	app.RequireStart().RequireStop()
+	err := testruntime.RunMigrations(db)
+	if err != nil {
+		t.Fatalf("error running migrations: %v", err)
+	}
+	err = db.Unscoped().Delete(&payments.PaymentModel{}).Error
+	if err != nil {
+		t.Fatalf("error cleaning database: %v", err)
+	}
 
 	channelID := "test"
 	channelAddress, _ := paymentHelper.GetEthereumPaymentAddress("foo")

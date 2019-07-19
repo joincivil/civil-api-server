@@ -56,7 +56,7 @@ func initPersister(t *testing.T) posts.PostPersister {
 			t.Errorf("error: %v", err)
 		}
 		db = testDB
-		err = testruntime.CleanDatabase(db)
+		err = testruntime.RunMigrations(db)
 		if err != nil {
 			t.Fatalf("error cleaning DB: %v", err)
 		}
@@ -149,14 +149,9 @@ func TestEditPost(t *testing.T) {
 
 func TestGetPost(t *testing.T) {
 
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
+	persister := initPersister(t)
 
-	persister := posts.NewDBPostPersister(db)
-
-	_, err = persister.GetPost("70f163b2-9c1e-11e9-a2a3-2a2ae2dbcce4")
+	_, err := persister.GetPost("70f163b2-9c1e-11e9-a2a3-2a2ae2dbcce4")
 	if err != posts.ErrorNotFound {
 		t.Fatalf("expecting posts.ErrorNotFound but instead received: %v", err)
 	}
@@ -175,17 +170,12 @@ func TestGetPost(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-
-	persister := posts.NewDBPostPersister(db)
+	persister := initPersister(t)
 
 	boost := makeBoost()
 	boostPost := helperCreatePost(t, persister, boost)
 
-	err = persister.DeletePost(aliceUserUUID, boostPost.GetID())
+	err := persister.DeletePost(aliceUserUUID, boostPost.GetID())
 	if err != nil {
 		t.Fatalf("was not expecting an error: %v", err)
 	}

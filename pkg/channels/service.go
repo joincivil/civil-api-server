@@ -68,6 +68,13 @@ type CreateNewsroomChannelInput struct {
 
 // CreateNewsroomChannel creates a channel with type "user"
 func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChannelInput) (*Channel, error) {
+	// get user's ETH addresses
+	userAddresses, err := s.userEthAddressGetter.GetETHAddresses(userID)
+	if err != nil {
+		log.Errorf("error getting ETH addresses for user: %v", err)
+		return nil, ErrorUnauthorized
+	}
+
 	channelType := TypeNewsroom
 	reference := input.ContractAddress
 
@@ -90,13 +97,6 @@ func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChann
 	multisigMembers, err := s.newsroomHelper.GetMultisigMembers(newsroomAddress)
 	if err != nil {
 		return nil, err
-	}
-
-	// get user's ETH addresses
-	userAddresses, err := s.userEthAddressGetter.GetETHAddresses(userID)
-	if err != nil {
-		log.Errorf("error getting ETH addresses for user: %v", err)
-		return nil, ErrorUnauthorized
 	}
 
 	// check if userID.eth_address is on the multisig for `input.ContractAddress` newsroom contract

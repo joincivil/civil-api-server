@@ -33,5 +33,4 @@ var TestModule = fx.Options(
 		NewMockPaymentHelper,
 		NewMockTransactionReader,
 	),
-	fx.Invoke(CleanDatabase),
 )
