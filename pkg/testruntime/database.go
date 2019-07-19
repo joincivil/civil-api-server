@@ -19,14 +19,18 @@ func CleanDatabase(db *gorm.DB) error {
 		&posts.PostModel{},
 		&payments.PaymentModel{},
 	}
-	if err := db.AutoMigrate(models...).Error; err != nil {
-		log.Errorf("error in migration: %v", err)
-		return err
-	}
 
-	if err := db.Unscoped().Delete(&channels.Channel{}).Delete(&channels.ChannelMember{}).Delete(&posts.PostModel{}).Delete(&payments.PaymentModel{}).Error; err != nil {
-		log.Errorf("error deleting data: %v", err)
-		return err
+	for _, model := range models {
+		if err := db.AutoMigrate(model).Error; err != nil {
+			log.Errorf("error in migration: %v %v", model, err)
+			return err
+		}
+
+		if err := db.Unscoped().Delete(model).Error; err != nil {
+			log.Errorf("error deleting data: %v %v", model, err)
+			return err
+		}
+
 	}
 
 	return nil

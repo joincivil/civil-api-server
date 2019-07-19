@@ -3,6 +3,7 @@ package posts_test
 import (
 	"testing"
 
+	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
@@ -46,17 +47,26 @@ func makeBoost() *posts.Boost {
 	}
 }
 
-func TestCreatePost(t *testing.T) {
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-	err = testruntime.CleanDatabase(db)
-	if err != nil {
-		t.Fatalf("error cleaning DB: %v", err)
+var db *gorm.DB
+
+func initPersister(t *testing.T) posts.PostPersister {
+	if db == nil {
+		testDB, err := testutils.GetTestDBConnection()
+		if err != nil {
+			t.Errorf("error: %v", err)
+		}
+		db = testDB
+		err = testruntime.CleanDatabase(db)
+		if err != nil {
+			t.Fatalf("error cleaning DB: %v", err)
+		}
 	}
 
-	persister := posts.NewDBPostPersister(db)
+	return posts.NewDBPostPersister(db)
+}
+
+func TestCreatePost(t *testing.T) {
+	persister := initPersister(t)
 
 	boost := makeBoost()
 	link := &posts.ExternalLink{
@@ -70,7 +80,7 @@ func TestCreatePost(t *testing.T) {
 	boostPost := helperCreatePost(t, persister, boost)
 	linkPost := helperCreatePost(t, persister, link)
 
-	_, err = persister.GetPost(linkPost.GetPostModel().ID)
+	_, err := persister.GetPost(linkPost.GetPostModel().ID)
 	if err != nil {
 		t.Errorf("error: %v", err)
 	}
@@ -96,12 +106,7 @@ func TestCreatePost(t *testing.T) {
 }
 
 func TestEditPost(t *testing.T) {
-	db, err := testutils.GetTestDBConnection()
-	if err != nil {
-		t.Errorf("error: %v", err)
-	}
-
-	persister := posts.NewDBPostPersister(db)
+	persister := initPersister(t)
 
 	boost := makeBoost()
 	boostPost := helperCreatePost(t, persister, boost)
@@ -111,7 +116,7 @@ func TestEditPost(t *testing.T) {
 		Why:   "changed value",
 	}
 
-	_, err = persister.EditPost(aliceUserUUID, boostPost.GetID(), patch)
+	_, err := persister.EditPost(aliceUserUUID, boostPost.GetID(), patch)
 	if err != nil {
 		t.Fatalf("was not expecting an error: %v", err)
 	}
