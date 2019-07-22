@@ -44,7 +44,7 @@ func NewTools(deps ToolDeps) *Tools {
 // CreateAndApply creates a newsroom smart contract and applies to the TCR on their behalf
 // This sends progress updates into the provided channel and provides some more flexibility than just writing the updates to the log
 // We can create a GraphQL subscription
-func (t *Tools) CreateAndApply(updates chan (string), charter *newsroom.Charter, applicationTokens *big.Int) error {
+func (t *Tools) CreateAndApply(updates chan string, charter *newsroom.Charter, applicationTokens *big.Int) error {
 	defer close(updates)
 
 	updates <- fmt.Sprintf("Publishing Charter for %v", charter.Name)
@@ -121,7 +121,7 @@ func (t *Tools) CreateAndApply(updates chan (string), charter *newsroom.Charter,
 }
 
 // HandoffNewsroom adds a new owner to the newsroom multisig, removes the hot wallet, and optionally adds the foundation backup multisig for recovery
-func (t *Tools) HandoffNewsroom(updates chan (string), newsroomAddress common.Address, newOwners []common.Address) error {
+func (t *Tools) HandoffNewsroom(updates chan string, newsroomAddress common.Address, newOwners []common.Address) error {
 	defer close(updates)
 
 	for _, newOwner := range newOwners {

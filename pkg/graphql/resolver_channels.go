@@ -49,9 +49,7 @@ func (r *channelResolver) Newsroom(ctx context.Context, channel *channels.Channe
 		return nil, nil
 	}
 
-	return &newsroom.Newsroom{
-		ContractAddress: channel.Reference,
-	}, nil
+	return r.newsroomService.GetNewsroomByAddress(channel.Reference)
 }
 
 func (r *channelResolver) PostsSearch(ctx context.Context, channel *channels.Channel, input posts.SearchInput) (*posts.PostSearchResult, error) {

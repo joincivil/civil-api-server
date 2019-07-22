@@ -6,6 +6,7 @@ package graphql
 
 import (
 	"errors"
+	"github.com/joincivil/civil-api-server/pkg/newsrooms"
 	"strings"
 
 	pmodel "github.com/joincivil/civil-events-processor/pkg/model"
@@ -58,6 +59,7 @@ type ResolverConfig struct {
 	ChannelService               *channels.Service
 	UserService                  *users.UserService
 	JSONbService                 *jsonstore.Service
+	NewsroomService              newsrooms.Service
 	NrsignupService              *nrsignup.Service
 	PaymentService               *payments.Service
 	PostService                  *posts.Service
@@ -83,6 +85,7 @@ func NewResolver(config ResolverConfig) *Resolver {
 		discourseListingMapPersister: config.DiscourseListingMapPersister,
 		userService:                  config.UserService,
 		jsonbService:                 config.JSONbService,
+		newsroomService:              config.NewsroomService,
 		nrsignupService:              config.NrsignupService,
 		paymentService:               config.PaymentService,
 		postService:                  config.PostService,
@@ -109,6 +112,7 @@ type Resolver struct {
 	jsonbService                 *jsonstore.Service
 	nrsignupService              *nrsignup.Service
 	channelService               *channels.Service
+	newsroomService              newsrooms.Service
 	paymentService               *payments.Service
 	postService                  *posts.Service
 	storefrontService            *storefront.Service

@@ -3,6 +3,7 @@ package graphqlmain
 import (
 	"context"
 	"fmt"
+	"github.com/joincivil/civil-api-server/pkg/newsrooms"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/gqlerror"
@@ -56,6 +57,8 @@ var GraphqlModule = fx.Options(
 		initStorefrontService,
 		initErrorReporter,
 		newsroom.NewService,
+		newsrooms.NewCachingService,
+		initIPFS,
 		NewDeployerContractAddresses,
 		tokencontroller.NewService,
 		func(config *utils.GraphQLConfig) *auth.JwtTokenGenerator {

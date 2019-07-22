@@ -1,6 +1,7 @@
 package graphqlmain
 
 import (
+	shell "github.com/ipfs/go-ipfs-api"
 	"github.com/joincivil/civil-api-server/pkg/discourse"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -34,6 +35,10 @@ func initNrsignupService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 		return nil, err
 	}
 	return nrsignupService, nil
+}
+
+func initIPFS() *shell.Shell {
+	return shell.NewShell("https://ipfs.infura.io:5001")
 }
 
 func initJsonbService(config *utils.GraphQLConfig, jsonbPersister jsonstore.JsonbPersister) (
