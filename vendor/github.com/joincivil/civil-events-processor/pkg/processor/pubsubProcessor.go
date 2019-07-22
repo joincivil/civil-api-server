@@ -3,6 +3,7 @@ package processor
 import (
 	"encoding/json"
 
+	log "github.com/golang/glog"
 	crawlermodel "github.com/joincivil/civil-events-crawler/pkg/model"
 
 	"github.com/joincivil/go-common/pkg/pubsub"
@@ -13,16 +14,12 @@ func (e *EventProcessor) pubSub(event *crawlermodel.Event, topicName string) err
 		return nil
 	}
 
-	// NOTE(IS): We only want to send notifications on watched events
-	if event.RetrievalMethod() == crawlermodel.Filterer {
-		return nil
-	}
-
 	payload, err := e.pubSubBuildPayload(event, topicName)
 	if err != nil {
 		return err
 	}
 
+	log.Infof("Publishing to events pubsub: txhash: %v", event.TxHash().Hex())
 	return e.googlePubSub.Publish(payload)
 }
 
