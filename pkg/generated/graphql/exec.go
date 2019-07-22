@@ -115,6 +115,7 @@ type ComplexityRoot struct {
 		Id          func(childComplexity int) int
 		ChannelType func(childComplexity int) int
 		Newsroom    func(childComplexity int) int
+		PostsSearch func(childComplexity int, search posts.SearchInput) int
 	}
 
 	ChannelMember struct {
@@ -515,6 +516,7 @@ type ChallengeResolver interface {
 }
 type ChannelResolver interface {
 	Newsroom(ctx context.Context, obj *channels.Channel) (*newsroom.Newsroom, error)
+	PostsSearch(ctx context.Context, obj *channels.Channel, search posts.SearchInput) (*posts.PostSearchResult, error)
 }
 type CharterResolver interface {
 	ContentID(ctx context.Context, obj *model.Charter) (int, error)
@@ -674,6 +676,21 @@ type UserChallengeVoteDataResolver interface {
 	NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error)
 	VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error)
 	ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error)
+}
+
+func field_Channel_postsSearch_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 posts.SearchInput
+	if tmp, ok := rawArgs["search"]; ok {
+		var err error
+		arg0, err = UnmarshalPostSearchInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["search"] = arg0
+	return args, nil
+
 }
 
 func field_Mutation_authSignupEth_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
@@ -2647,6 +2664,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.Newsroom(childComplexity), true
+
+	case "Channel.postsSearch":
+		if e.complexity.Channel.PostsSearch == nil {
+			break
+		}
+
+		args, err := field_Channel_postsSearch_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Channel.PostsSearch(childComplexity, args["search"].(posts.SearchInput)), true
 
 	case "ChannelMember.channel":
 		if e.complexity.ChannelMember.Channel == nil {
@@ -6076,6 +6105,12 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				out.Values[i] = ec._Channel_newsroom(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "postsSearch":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Channel_postsSearch(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6168,6 +6203,41 @@ func (ec *executionContext) _Channel_newsroom(ctx context.Context, field graphql
 	}
 
 	return ec._Newsroom(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_postsSearch(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Channel_postsSearch_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().PostsSearch(rctx, obj, args["search"].(posts.SearchInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*posts.PostSearchResult)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._PostSearchResult(ctx, field.Selections, res)
 }
 
 var channelMemberImplementors = []string{"ChannelMember"}
@@ -19529,6 +19599,7 @@ type Channel {
   id: String!
   channelType: String!
   newsroom: Newsroom
+  postsSearch(search: PostSearchInput!): PostSearchResult
 }
 type ChannelMember {
   channel: Channel
