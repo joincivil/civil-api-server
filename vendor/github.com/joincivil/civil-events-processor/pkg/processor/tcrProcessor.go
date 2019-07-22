@@ -377,7 +377,11 @@ func (t *TcrEventProcessor) processTCRChallengeFailed(event *crawlermodel.Event,
 		return err
 	}
 
-	pollIsPassed := true
+	pollIsPassed, err := t.pollIsPassedFromContract(event.ContractAddress(), challengeID)
+	if err != nil {
+		return errors.Wrap(err, "error calling ispassed")
+	}
+
 	err = t.setPollIsPassedInPoll(challengeID, pollIsPassed)
 	if err != nil {
 		return errors.WithMessage(err, "Error setting poll isPassed")
@@ -389,7 +393,7 @@ func (t *TcrEventProcessor) processTCRChallengeFailed(event *crawlermodel.Event,
 	}
 	// NOTE(IS): We can create our own function to get the reward, but for now just make a contract
 	// call for unstakedDeposit.
-	unstakedDeposit, err := t.getUnstakedDepositFromContract(tcrAddress, listingAddress)
+	unstakedDeposit, err := t.unstakedDepositFromContract(tcrAddress, listingAddress)
 	if err != nil {
 		return err
 	}
@@ -416,7 +420,11 @@ func (t *TcrEventProcessor) processTCRChallengeSucceeded(event *crawlermodel.Eve
 		return err
 	}
 
-	pollIsPassed := false
+	pollIsPassed, err := t.pollIsPassedFromContract(event.ContractAddress(), challengeID)
+	if err != nil {
+		return errors.Wrap(err, "error calling ispassed")
+	}
+
 	err = t.setPollIsPassedInPoll(challengeID, pollIsPassed)
 	if err != nil {
 		return err
@@ -456,7 +464,7 @@ func (t *TcrEventProcessor) processTCRRewardClaimed(event *crawlermodel.Event) e
 		return err
 	}
 	// NOTE(IS): Have to get totaltokens through contract call, so get all data this way
-	challengeRes, err := t.getChallengeFromTCRContract(tcrAddress, challengeID)
+	challengeRes, err := t.challengeFromContract(tcrAddress, challengeID)
 	if err != nil {
 		return errors.WithMessage(err, "error getting challenge from contract")
 	}
@@ -500,7 +508,7 @@ func (t *TcrEventProcessor) processTCRRewardClaimed(event *crawlermodel.Event) e
 func (t *TcrEventProcessor) setPollIsPassedInPoll(pollID *big.Int, isPassed bool) error {
 	poll, err := t.pollPersister.PollByPollID(int(pollID.Int64()))
 	if err != nil {
-		return err
+		return errors.WithMessage(err, "error getting poll by id")
 	}
 	// NOTE(IS): Shouldn't happen if all events are processed and in order, but create new poll if DNE
 	poll.SetIsPassed(isPassed)
@@ -541,7 +549,7 @@ func (t *TcrEventProcessor) processChallengeResolution(event *crawlermodel.Event
 	}
 	if appealNotGranted {
 		// NOTE(IS): Have to get stake through contract call, so get all data this way
-		challenge, challengeErr := t.getChallengeFromTCRContract(tcrAddress, challengeID)
+		challenge, challengeErr := t.challengeFromContract(tcrAddress, challengeID)
 		if challengeErr != nil {
 			return errors.WithMessage(err, "error getting challenge from contract")
 		}
@@ -558,11 +566,11 @@ func (t *TcrEventProcessor) processChallengeResolution(event *crawlermodel.Event
 	}
 
 	// NOTE(IS): update UserChallengeData related fields
-	return t.updateUserChallengeDataForChallengeRes(challengeID, tcrAddress, pollIsPassed)
+	return t.updateUserChallengeDataForChallengeRes(challengeID, tcrAddress, pollIsPassed, false)
 }
 
 func (t *TcrEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.Int,
-	tcrAddress common.Address, pollIsPassed bool) error {
+	tcrAddress common.Address, pollIsPassed bool, challengeOverturned bool) error {
 	// NOTE(IS): We need to go through each user individually to update their reward
 
 	tcrContract, err := contract.NewCivilTCRContract(tcrAddress, t.client)
@@ -587,21 +595,29 @@ func (t *TcrEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.I
 	for _, userChallengeData := range userChallengeDataVotes {
 		voter := userChallengeData.UserAddress()
 		salt := userChallengeData.Salt()
+
 		voterReward, err := tcrContract.VoterReward(&bind.CallOpts{}, voter, pollID, salt)
 		if err != nil {
 			log.Errorf("Error getting voter reward: %v, %v, %v, err: %v", voter.Hex(), pollID, salt, err)
 		}
-		var isVoterWinner bool
+
+		// Set isVoterWinner based on original poll value and the user choice
+		isVoterWinner := false
 		if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
 			(!pollIsPassed && userChallengeData.Choice().Int64() == 0) {
 			isVoterWinner = true
-		} else {
-			isVoterWinner = false
+		}
+
+		// If the call to this method is to overturn a decision and make
+		// voter a winner/loser based on poll outcome
+		if challengeOverturned {
+			isVoterWinner = !isVoterWinner
 		}
 
 		userChallengeData.SetVoterReward(voterReward)
-		userChallengeData.SetPollIsPassed(pollIsPassed)
 		userChallengeData.SetIsVoterWinner(isVoterWinner)
+		userChallengeData.SetPollIsPassed(pollIsPassed)
+
 		updatedFields := []string{voterRewardFieldName, userChallengeIsPassedFieldName,
 			isVoterWinnerFieldName}
 		updateWithUserAddress := true
@@ -685,14 +701,19 @@ func (t *TcrEventProcessor) processTCRFailedChallengeOverturned(event *crawlermo
 		return err
 	}
 
-	pollIsPassed := true
+	pollIsPassed, err := t.pollIsPassedFromContract(event.ContractAddress(), pollID)
+	if err != nil {
+		return errors.Wrap(err, "error calling ispassed")
+	}
+
 	err = t.setPollIsPassedInPoll(pollID, pollIsPassed)
 	if err != nil {
 		return err
 	}
 
-	// update userchallengedata here
-	err = t.updateUserChallengeDataForChallengeRes(pollID, tcrAddress, pollIsPassed)
+	// update userchallengedata here.
+	// Since this is overturning the original poll value, set overturnedDecision to true
+	err = t.updateUserChallengeDataForChallengeRes(pollID, tcrAddress, pollIsPassed, true)
 	if err != nil {
 		return err
 	}
@@ -713,14 +734,19 @@ func (t *TcrEventProcessor) processTCRSuccessfulChallengeOverturned(event *crawl
 		return err
 	}
 
-	pollIsPassed := false
+	pollIsPassed, err := t.pollIsPassedFromContract(event.ContractAddress(), pollID)
+	if err != nil {
+		return errors.Wrap(err, "error calling ispassed")
+	}
+
 	err = t.setPollIsPassedInPoll(pollID, pollIsPassed)
 	if err != nil {
 		return err
 	}
 
-	// update userchallengedata here
-	err = t.updateUserChallengeDataForChallengeRes(pollID, tcrAddress, pollIsPassed)
+	// update userchallengedata here.
+	// Since this is overturning the original poll value, set overturnedDecision to true
+	err = t.updateUserChallengeDataForChallengeRes(pollID, tcrAddress, pollIsPassed, true)
 	if err != nil {
 		return err
 	}
@@ -732,7 +758,7 @@ func (t *TcrEventProcessor) processTCRSuccessfulChallengeOverturned(event *crawl
 
 	// NOTE(IS): We can create our own function to get the reward, but for now just make a contract
 	// call for unstakedDeposit.
-	unstakedDeposit, err := t.getUnstakedDepositFromContract(tcrAddress, listingAddress)
+	unstakedDeposit, err := t.unstakedDepositFromContract(tcrAddress, listingAddress)
 	if err != nil {
 		return err
 	}
@@ -770,15 +796,19 @@ func (t *TcrEventProcessor) processTCRGrantedAppealOverturned(event *crawlermode
 		return err
 	}
 
+	pollIsPassed, err := t.pollIsPassedFromContract(event.ContractAddress(), aChallengeID.(*big.Int))
+	if err != nil {
+		return errors.Wrap(err, "error calling ispassed")
+	}
+
 	// update pollispassedinpoll
-	pollIsPassed := true
 	err = t.setPollIsPassedInPoll(aChallengeID.(*big.Int), pollIsPassed)
 	if err != nil {
 		return err
 	}
 
 	// update userchallengedata here
-	err = t.updateUserChallengeDataForChallengeRes(aChallengeID.(*big.Int), tcrAddress, pollIsPassed)
+	err = t.updateUserChallengeDataForChallengeRes(aChallengeID.(*big.Int), tcrAddress, pollIsPassed, false)
 	if err != nil {
 		return err
 	}
@@ -800,15 +830,20 @@ func (t *TcrEventProcessor) processTCRGrantedAppealConfirmed(event *crawlermodel
 		return err
 	}
 
+	pollIsPassed, err := t.pollIsPassedFromContract(event.ContractAddress(), aChallengeID.(*big.Int))
+	if err != nil {
+		return errors.Wrap(err, "error calling ispassed")
+	}
+
 	// update pollispassedinpoll
-	pollIsPassed := false
 	err = t.setPollIsPassedInPoll(aChallengeID.(*big.Int), pollIsPassed)
 	if err != nil {
 		return err
 	}
 
 	// update userchallengedata here
-	err = t.updateUserChallengeDataForChallengeRes(aChallengeID.(*big.Int), tcrAddress, pollIsPassed)
+	// overturned the original challenge result
+	err = t.updateUserChallengeDataForChallengeRes(aChallengeID.(*big.Int), tcrAddress, pollIsPassed, true)
 	if err != nil {
 		return err
 	}
@@ -880,15 +915,9 @@ func (t *TcrEventProcessor) newAppealChallenge(event *crawlermodel.Event,
 	if err != nil {
 		return errors.WithMessage(err, "error retrieving challenges")
 	}
-	requestAppealExpiry, err := retryTcrContract.ChallengeRequestAppealExpiriesWithRetry(
-		&bind.CallOpts{},
-		appealChallengeID.(*big.Int),
-		maxAtts,
-		waitMs,
-	)
-	if err != nil {
-		return errors.WithMessage(err, "error retrieving requestAppealExpiries")
-	}
+
+	// Since this is an appeal challenge, no request appeal expiry
+	requestAppealExpiry := big.NewInt(0)
 	challengeType := model.AppealChallengePollType
 	newAppealChallenge := model.NewChallenge(
 		appealChallengeID.(*big.Int),
@@ -937,7 +966,7 @@ func (t *TcrEventProcessor) checkAppealNotGranted(challengeID *big.Int) (bool, e
 	return false, nil
 }
 
-func (t *TcrEventProcessor) getUnstakedDepositFromContract(tcrAddress common.Address,
+func (t *TcrEventProcessor) unstakedDepositFromContract(tcrAddress common.Address,
 	listingAddress common.Address) (*big.Int, error) {
 	// NOTE(IS): We could also calculate the reward on our side,
 	tcrContract, err := contract.NewCivilTCRContract(tcrAddress, t.client)
@@ -951,7 +980,36 @@ func (t *TcrEventProcessor) getUnstakedDepositFromContract(tcrAddress common.Add
 	return listingFromContract.UnstakedDeposit, nil
 }
 
-func (t *TcrEventProcessor) getChallengeFromTCRContract(tcrAddress common.Address, challengeID *big.Int) (*struct {
+func (t *TcrEventProcessor) pollIsPassedFromContract(tcrAddress common.Address, pollID *big.Int) (bool, error) {
+	plcr, err := t.votingContractFromTCRContract(tcrAddress)
+	if err != nil {
+		return false, err
+	}
+
+	pollIsPassed, err := plcr.IsPassed(&bind.CallOpts{}, pollID)
+	if err != nil {
+		return false, errors.Wrap(err, "error calling ispassed")
+	}
+
+	return pollIsPassed, nil
+}
+
+func (t *TcrEventProcessor) votingContractFromTCRContract(tcrAddress common.Address) (
+	*contract.CivilPLCRVotingContract, error) {
+	tcrContract, err := contract.NewCivilTCRContract(tcrAddress, t.client)
+	if err != nil {
+		return nil, errors.Wrap(err, "error creating TCR contract")
+	}
+
+	plcrAddr, err := tcrContract.Voting(&bind.CallOpts{})
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting plcr voting contract")
+	}
+
+	return contract.NewCivilPLCRVotingContract(plcrAddr, t.client)
+}
+
+func (t *TcrEventProcessor) challengeFromContract(tcrAddress common.Address, challengeID *big.Int) (*struct {
 	RewardPool  *big.Int
 	Challenger  common.Address
 	Resolved    bool
@@ -1336,6 +1394,7 @@ func (t *TcrEventProcessor) persistNewChallengeFromContract(tcrAddress common.Ad
 
 	err = t.challengePersister.CreateChallenge(challenge)
 	return challenge, err
+
 }
 
 func (t *TcrEventProcessor) persistNewAppealFromContract(tcrAddress common.Address,
@@ -1344,12 +1403,12 @@ func (t *TcrEventProcessor) persistNewAppealFromContract(tcrAddress common.Addre
 	// obtained by calling the smart contract.
 	tcrContract, err := contract.NewCivilTCRContract(tcrAddress, t.client)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error creating TCR contract")
+		return nil, errors.Wrap(err, "error creating TCR contract")
 	}
 	statement := ""
 	appealRes, err := tcrContract.Appeals(&bind.CallOpts{}, challengeID)
 	if err != nil {
-		return nil, errors.WithMessage(err, "error retrieving appeals")
+		return nil, errors.Wrap(err, "error retrieving appeals")
 	}
 	appealGrantedURI := ""
 	appeal := model.NewAppeal(

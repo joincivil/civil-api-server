@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
@@ -48,7 +49,13 @@ func (r *channelResolver) Newsroom(ctx context.Context, channel *channels.Channe
 		return nil, nil
 	}
 
-	return &newsroom.Newsroom{
-		ContractAddress: channel.Reference,
-	}, nil
+	return r.newsroomService.GetNewsroomByAddress(channel.Reference)
+}
+
+func (r *channelResolver) PostsSearch(ctx context.Context, channel *channels.Channel, input posts.SearchInput) (*posts.PostSearchResult, error) {
+
+	input.ChannelID = channel.ID
+	results, err := r.postService.SearchPosts(&input)
+
+	return results, err
 }

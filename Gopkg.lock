@@ -379,7 +379,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4cf866029dde652263ee7261220034b59362cb0b50aa79415096a07b218a6a77"
+  digest = "1:f6a39858d51139f0d61f390f482787782f244530de33ad9b99742634165de91f"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -392,11 +392,11 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "5bf462633f67815237c361102989a82f112c88af"
+  revision = "aaf2962611e255fcaf18be3cb72f73aa58e59dcf"
 
 [[projects]]
   branch = "master"
-  digest = "1:29927dddc1960f192e8b129f0a77680903ddfebab710eb61da134f800654bbf1"
+  digest = "1:24646da513da837761d6d380563a107798e4b4b654aa8a3d9fd123dd0106a229"
   name = "github.com/joincivil/go-common"
   packages = [
     "pkg/bytes",
@@ -416,7 +416,7 @@
     "pkg/time",
   ]
   pruneopts = "UT"
-  revision = "8e2d9cc84c59925bec0266f8874e002e212129ae"
+  revision = "f16f8040cc12a471a3168ca647219a5d9f3c6602"
 
 [[projects]]
   digest = "1:edbef42561faa44c19129b68d1e109fbc1647f63239250391eadc8d0e7c9f669"
@@ -1093,6 +1093,7 @@
     "github.com/go-chi/chi/middleware",
     "github.com/golang/glog",
     "github.com/iancoleman/strcase",
+    "github.com/ipfs/go-ipfs-api",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/jmoiron/sqlx",
@@ -1116,6 +1117,7 @@
     "github.com/joincivil/go-common/pkg/time",
     "github.com/kelseyhightower/envconfig",
     "github.com/lib/pq",
+    "github.com/patrickmn/go-cache",
     "github.com/pilagod/gorm-cursor-paginator",
     "github.com/pkg/errors",
     "github.com/rs/cors",

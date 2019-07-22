@@ -223,7 +223,6 @@ type NewListingParams struct {
 	AppExpiry            *big.Int
 	UnstakedDeposit      *big.Int
 	ChallengeID          *big.Int
-	DiscourseTopicID     int64
 }
 
 // NewListing is a convenience function to initialize a new Listing struct
@@ -245,7 +244,6 @@ func NewListing(params *NewListingParams) *Listing {
 		appExpiry:            params.AppExpiry,
 		unstakedDeposit:      params.UnstakedDeposit,
 		challengeID:          params.ChallengeID,
-		discourseTopicID:     params.DiscourseTopicID,
 	}
 }
 
@@ -282,8 +280,6 @@ type Listing struct {
 	unstakedDeposit *big.Int
 
 	challengeID *big.Int
-
-	discourseTopicID int64
 }
 
 // Name returns the newsroom name
@@ -478,15 +474,4 @@ func (l *Listing) SetChallengeID(id *big.Int) {
 // ChallengeID returns the most recent challengeID of the listing
 func (l *Listing) ChallengeID() *big.Int {
 	return l.challengeID
-}
-
-// DiscourseTopicID returns the related topic ID for this listing
-// for our discourse instance
-func (l *Listing) DiscourseTopicID() int64 {
-	return l.discourseTopicID
-}
-
-// SetDiscourseTopicID sets the topic ID for this listing in our discourse instance
-func (l *Listing) SetDiscourseTopicID(topicID int64) {
-	l.discourseTopicID = topicID
 }
