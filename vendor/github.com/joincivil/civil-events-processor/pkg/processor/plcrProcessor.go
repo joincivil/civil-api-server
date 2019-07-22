@@ -15,6 +15,7 @@ import (
 	crawlermodel "github.com/joincivil/civil-events-crawler/pkg/model"
 
 	"github.com/joincivil/civil-events-processor/pkg/model"
+	"github.com/joincivil/civil-events-processor/pkg/persistence"
 
 	cerrors "github.com/joincivil/go-common/pkg/errors"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
@@ -167,19 +168,19 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 
 	poll, err := p.pollPersister.PollByPollID(int(pollID.Int64()))
 	if err != nil {
-		// TOODO: We should do contract call and save to DB bc it should exist in DB
+		// TODO: We should do contract call and save to DB bc it should exist in DB
 		return err
 	}
 
 	pollType := poll.PollType()
 
-	// NOTE: get poll type from challenge and set it in poll.
+	// get poll type from challenge and set it in poll.
 	if pollType == "" {
 		challenge, cErr := p.challengePersister.ChallengeByChallengeID(int(pollID.Int64()))
 		if cErr != nil && cErr != cpersist.ErrPersisterNoResults {
 			return cErr
 		}
-		// NOTE(IS): this will return errpersisternoresults upon gov param challenges
+		// this will return errpersisternoresults upon gov param challenges
 		// Once processing gov contract, this will be fixed, for now manually add this
 		if cErr == cpersist.ErrPersisterNoResults {
 			pollType = model.GovProposalPollType
@@ -195,7 +196,7 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 	}
 	var parentChallengeID *big.Int
 	if pollType == model.AppealChallengePollType {
-		// NOTE(IS): set parentchallengeid here from appeal table, but could add an additional field
+		// set parentchallengeid here from appeal table, but could add an additional field
 		// for parentchallengeID in challenge model
 		appeal, aErr := p.appealPersister.AppealByAppealChallengeID(int(pollID.Int64()))
 		if aErr != nil {
@@ -204,22 +205,26 @@ func (p *PlcrEventProcessor) processVoteCommitted(event *crawlermodel.Event,
 		parentChallengeID = appeal.OriginalChallengeID()
 	}
 
-	// NOTE(IS): update existed committed votes to false
+	// If there are any existing votes for this user for this poll, mark it as
+	// NOT the latest vote and continue adding a new row for the latest vote.
 	existingUserChallengeData := &model.UserChallengeData{}
 	existingUserChallengeData.SetLatestVote(false)
 	existingUserChallengeData.SetPollID(pollID)
 	existingUserChallengeData.SetUserAddress(voterAddress.(common.Address))
 	updatedFields := []string{latestVoteFieldName}
-	// NOTE(IS): This is false because we want to update all existing commits.
+	// This is false because we want to update all existing committed votes
 	latestVote := false
 	updateWithUserAddress := true
 
 	err = p.userChallengeDataPersister.UpdateUserChallengeData(existingUserChallengeData,
 		updatedFields, updateWithUserAddress, latestVote)
-	if err != nil {
+	// If no rows affected, that means there is no existing vote for a user for this poll,
+	// so continue to save. If there is an error, then return.
+	if err != nil && err != persistence.ErrNoRowsAffected {
 		return err
 	}
 
+	// Create a new row with the new/updated committed vote value for this user for this poll
 	userChallengeData := model.NewUserChallengeData(
 		voterAddress.(common.Address),
 		pollID,

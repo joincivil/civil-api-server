@@ -39,8 +39,7 @@ func CreateListingTableQuery(tableName string) string {
             last_updated_timestamp INT,
             app_expiry INT,
             challenge_id INT,
-			unstaked_deposit NUMERIC,
-			discourse_topic_id INT
+			unstaked_deposit NUMERIC
         );
     `, tableName)
 	return queryString
@@ -56,12 +55,11 @@ func CreateListingTableIndicesQuery(tableName string) string {
 }
 
 // CreateListingTableMigrationQuery returns the query to do db migrations
-func CreateListingTableMigrationQuery(tableName string) string {
-	queryString := fmt.Sprintf(`
-		ALTER TABLE %s ADD COLUMN IF NOT EXISTS discourse_topic_id INT DEFAULT 0;
-	`, tableName)
-	return queryString
-}
+// func CreateListingTableMigrationQuery(tableName string) string {
+// queryString := fmt.Sprintf(`
+// `, tableName)
+// return queryString
+// }
 
 // Listing is the model definition for listing table in crawler db
 // NOTE(IS) : golang<->postgres doesn't support list of strings. for now, OwnerAddresses and ContributorAddresses
@@ -99,8 +97,6 @@ type Listing struct {
 	UnstakedDeposit float64 `db:"unstaked_deposit"`
 
 	ChallengeID int64 `db:"challenge_id"`
-
-	DiscourseTopicID int64 `db:"discourse_topic_id"`
 }
 
 // NewListing constructs a listing for DB from a model.Listing
@@ -159,7 +155,6 @@ func NewListing(listing *model.Listing) *Listing {
 		AppExpiry:            appExpiry,
 		UnstakedDeposit:      unstakedDeposit,
 		ChallengeID:          challengeID,
-		DiscourseTopicID:     listing.DiscourseTopicID(),
 	}
 }
 
@@ -186,7 +181,7 @@ func (l *Listing) DbToListingData() *model.Listing {
 		charter = nil
 	}
 
-	testListingParams := &model.NewListingParams{
+	listingParams := &model.NewListingParams{
 		Name:                 l.Name,
 		ContractAddress:      contractAddress,
 		Whitelisted:          l.Whitelisted,
@@ -203,7 +198,6 @@ func (l *Listing) DbToListingData() *model.Listing {
 		AppExpiry:            appExpiry,
 		UnstakedDeposit:      unstakedDeposit,
 		ChallengeID:          challengeID,
-		DiscourseTopicID:     l.DiscourseTopicID,
 	}
-	return model.NewListing(testListingParams)
+	return model.NewListing(listingParams)
 }
