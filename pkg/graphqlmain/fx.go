@@ -2,6 +2,9 @@ package graphqlmain
 
 import (
 	"flag"
+	shell "github.com/ipfs/go-ipfs-api"
+	"github.com/joincivil/civil-api-server/pkg/newsrooms"
+	"github.com/joincivil/go-common/pkg/newsroom"
 	"os"
 
 	log "github.com/golang/glog"
@@ -21,6 +24,12 @@ var RuntimeModule = fx.Options(
 	users.RuntimeModule,
 	payments.RuntimeModule,
 	storefront.RuntimeModule,
+	newsrooms.RuntimeModule,
+	fx.Provide(
+		func(ipfs *shell.Shell) newsroom.IPFSHelper {
+			return ipfs
+		},
+	),
 )
 
 // MainModule provides the main module for the graphql server
