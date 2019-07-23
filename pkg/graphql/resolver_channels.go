@@ -34,6 +34,15 @@ func (r *mutationResolver) ChannelsCreateNewsroomChannel(ctx context.Context, co
 	})
 }
 
+func (r *mutationResolver) ChannelsConnectStripe(ctx context.Context, input channels.ConnectStripeInput) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	return r.channelService.ConnectStripe(token.Sub, input)
+}
+
 // Channel is the resolver for the Channel type
 func (r *Resolver) Channel() graphql.ChannelResolver {
 	return &channelResolver{Resolver: r}
@@ -58,4 +67,22 @@ func (r *channelResolver) PostsSearch(ctx context.Context, channel *channels.Cha
 	results, err := r.postService.SearchPosts(&input)
 
 	return results, err
+}
+
+func (r *channelResolver) IsStripeConnected(ctx context.Context, channel *channels.Channel) (bool, error) {
+	ch, err := r.channelService.GetChannel(channel.ID)
+	if err != nil {
+		return false, err
+	}
+
+	return ch.StripeAccountID != "", err
+}
+
+func (r *channelResolver) CurrentUserIsAdmin(ctx context.Context, channel *channels.Channel) (bool, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return false, nil
+	}
+
+	return r.channelService.IsChannelAdmin(token.Sub, channel.ID)
 }

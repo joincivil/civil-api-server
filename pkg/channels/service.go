@@ -15,6 +15,7 @@ type Service struct {
 	persister            Persister
 	newsroomHelper       NewsroomHelper
 	userEthAddressGetter UserEthAddressGetter
+	stripeConnector      StripeConnector
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -28,13 +29,19 @@ type UserEthAddressGetter interface {
 	GetETHAddresses(userID string) ([]common.Address, error)
 }
 
+// StripeCharger defines the functions needed to connect an account to Stripe
+type StripeConnector interface {
+	ConnectAccount(code string) (string, error)
+}
+
 // NewService builds a new Service instance
-func NewService(persister Persister, newsroomHelper NewsroomHelper, userEthAddressGetter UserEthAddressGetter) *Service {
+func NewService(persister Persister, newsroomHelper NewsroomHelper, userEthAddressGetter UserEthAddressGetter, stripeConnector StripeConnector) *Service {
 
 	return &Service{
 		persister,
 		newsroomHelper,
 		userEthAddressGetter,
+		stripeConnector,
 	}
 }
 
@@ -155,10 +162,35 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+// ConnectStripeInput contains the fields needed to set the channel's stripe account
+type ConnectStripeInput struct {
+	ChannelID string
+	OAuthCode string
+}
+
+func (s *Service) ConnectStripe(userID string, input ConnectStripeInput) (*Channel, error) {
+	if input.OAuthCode == "" {
+		return nil, ErrorsInvalidInput
+	}
+
+	acct, err := s.stripeConnector.ConnectAccount(input.OAuthCode)
+	if err != nil {
+		log.Errorf("error connecting stripe account: %v", err)
+		return nil, ErrorStripeIssue
+	}
+
+	return s.persister.SetStripeAccountID(userID, input.ChannelID, acct)
+
+}
+
 // GetStripePaymentAccount returns the stripe account associated with the channel
 func (s *Service) GetStripePaymentAccount(channelID string) (string, error) {
-	// TODO(dankins): this needs to be implemented, this is just a test account
-	return "acct_1C4vupLMQdVwYica", nil
+	ch, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return "", err
+	}
+
+	return ch.StripeAccountID, nil
 }
 
 // GetEthereumPaymentAddress returns the Ethereum account associated with the channel
@@ -181,6 +213,10 @@ func (s *Service) GetChannel(id string) (*Channel, error) {
 	return s.persister.GetChannel(id)
 }
 
+func (s *Service) GetChannelMembers(channelID string) ([]*ChannelMember, error) {
+	return s.persister.GetChannelMembers(channelID)
+}
+
 // GetChannelByReference retrieves a channel by the reference field
 func (s *Service) GetChannelByReference(channelType string, reference string) (*Channel, error) {
 	return s.persister.GetChannelByReference(channelType, reference)
@@ -189,6 +225,11 @@ func (s *Service) GetChannelByReference(channelType string, reference string) (*
 // GetChannelByHandle retrieves a channel by the handle
 func (s *Service) GetChannelByHandle(handle string) (*Channel, error) {
 	return s.persister.GetChannelByHandle(handle)
+}
+
+// IsChannelAdmin returns if the user is an admin of the channel
+func (s *Service) IsChannelAdmin(userID string, channelID string) (bool, error) {
+	return s.persister.IsChannelAdmin(userID, channelID)
 }
 
 // NormalizeHandle takes a string handle and removes

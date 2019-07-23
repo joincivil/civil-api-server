@@ -20,7 +20,6 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
 	cemail "github.com/joincivil/go-common/pkg/email"
-	"github.com/joincivil/go-common/pkg/newsroom"
 	"go.uber.org/fx"
 
 	cerrors "github.com/joincivil/go-common/pkg/errors"
@@ -42,6 +41,7 @@ var GraphqlModule = fx.Options(
 	posts.PostModule,
 	users.UserModule,
 	storefront.StorefrontModule,
+	newsrooms.NewsroomModule,
 	fx.Provide(
 		NewRouter,
 		graphql.NewResolver,
@@ -56,8 +56,6 @@ var GraphqlModule = fx.Options(
 		auth.NewAuthServiceFromConfig,
 		initStorefrontService,
 		initErrorReporter,
-		newsroom.NewService,
-		newsrooms.NewCachingService,
 		initIPFS,
 		NewDeployerContractAddresses,
 		tokencontroller.NewService,

@@ -32,6 +32,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/channels.Channel
   ChannelMember:
     model: github.com/joincivil/civil-api-server/pkg/channels.ChannelMember
+  ChannelsConnectStripeInput:
+    model: github.com/joincivil/civil-api-server/pkg/channels.ConnectStripeInput
   Charter:
     model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   CharterContent:

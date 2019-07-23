@@ -17,6 +17,8 @@ import (
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
 
+var stripeAccountID = "testaccountid"
+
 func randomAddress() common.Address {
 	str := strconv.FormatInt(r.Int63(), 10)
 	return common.HexToAddress(str)
@@ -77,6 +79,15 @@ func (g MockUserEthAddressGetter) GetETHAddresses(userID string) ([]common.Addre
 	return nil, errors.New("not found")
 }
 
+type MockStripeConnector struct{}
+
+func (s MockStripeConnector) ConnectAccount(code string) (string, error) {
+	if code == "fail" {
+		return "", fmt.Errorf("error settting stripe account")
+	}
+	return stripeAccountID, nil
+}
+
 func TestCreateChannel(t *testing.T) {
 	db, err := testutils.GetTestDBConnection()
 	if err != nil {
@@ -88,7 +99,7 @@ func TestCreateChannel(t *testing.T) {
 	}
 
 	persister := channels.NewDBPersister(db)
-	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockUserEthAddressGetter{})
+	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockUserEthAddressGetter{}, MockStripeConnector{})
 
 	channel, err := svc.CreateUserChannel(user1ID)
 	if err != nil {
@@ -204,15 +215,92 @@ func TestCreateChannel(t *testing.T) {
 			}
 		})
 	})
-}
 
-func TestChannelMembers(t *testing.T) {
-	// admin can add members
-	// admin can add admin
-	// member cannot add
-	// admin can remove members
-	// members can't add
-	t.Skip("not implemented")
+	t.Run("ChannelMembers", func(t *testing.T) {
+		// admin can add members
+		// admin can add admin
+		// member cannot add
+		// admin can remove members
+		// members can't add
+		// newsroom multisig members can add themselves?
+		t.Skip("not implemented")
+	})
+
+	t.Run("IsChannelAdmin", func(t *testing.T) {
+		u1 := randomUUID()
+		u2 := randomUUID()
+		channel, err := svc.CreateUserChannel(u1)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		isAdmin, err := svc.IsChannelAdmin(u1, channel.ID)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+		if !isAdmin {
+			t.Fatalf("isAdmin should be true")
+		}
+
+		isAdmin, err = svc.IsChannelAdmin(u2, channel.ID)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+		if isAdmin {
+			t.Fatalf("isAdmin should be false")
+		}
+	})
+
+	t.Run("ConnectStripe", func(t *testing.T) {
+		u1 := randomUUID()
+		u2 := randomUUID()
+		channel, err := svc.CreateUserChannel(u1)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		// invalid input, no OAuthCode
+		_, err = svc.ConnectStripe(u1, channels.ConnectStripeInput{ChannelID: channel.ID})
+		if err != channels.ErrorsInvalidInput {
+			t.Fatalf("was expecting ErrorsInvalidInput: %v", err)
+		}
+
+		// stripe connect function returns an error
+		_, err = svc.ConnectStripe(u1, channels.ConnectStripeInput{ChannelID: channel.ID, OAuthCode: "fail"})
+		if err != channels.ErrorStripeIssue {
+			t.Fatalf("was expecting ErrorStripeIssue: %v", err)
+		}
+
+		// make sure stripe account is not set
+		result, err := svc.GetStripePaymentAccount(channel.ID)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+		if result != "" {
+			t.Fatalf("expected stripeAccountID to be %v but is: %v", "", result)
+		}
+
+		// this should succeed
+		_, err = svc.ConnectStripe(u1, channels.ConnectStripeInput{ChannelID: channel.ID, OAuthCode: "test"})
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		// u2 is not an admin, so this should error
+		_, err = svc.ConnectStripe(u2, channels.ConnectStripeInput{ChannelID: channel.ID, OAuthCode: "test"})
+		if err != channels.ErrorUnauthorized {
+			t.Fatalf("was expecting ErrorUnauthorized: %v", err)
+		}
+
+		result, err = svc.GetStripePaymentAccount(channel.ID)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+		if result != stripeAccountID {
+			t.Fatalf("expected stripeAccountID to be %v but is: %v", stripeAccountID, result)
+		}
+
+	})
 }
 
 var handletests = []struct {

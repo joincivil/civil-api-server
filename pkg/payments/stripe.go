@@ -2,6 +2,10 @@ package payments
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/utils"
@@ -9,6 +13,8 @@ import (
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/charge"
 )
+
+const stripeOAuthURI = "https://connect.stripe.com/oauth/token"
 
 // StripeService provides methods to interact with the Stripe payment provider
 type StripeService struct {
@@ -84,4 +90,42 @@ func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateCharge
 		StripeResponseJSON: bytes,
 	}, nil
 
+}
+
+// https://stripe.com/docs/connect/standard-accounts?origin_team=T9L4Z5JAU#token-request
+// "Finalize the account connection" https://stripe.com/docs/connect/quickstart
+type responseData struct {
+	TokenType            string `json:"token_type"`             // bearer
+	StripePublishableKey string `json:"stripe_publishable_key"` //  "{PUBLISHABLE_KEY}"
+	Scope                string `json:"scope"`                  //  "read_write"
+	Livemode             string `json:"livemode"`               // false
+	StripeUserID         string `json:"stripe_user_id"`         // "{ACCOUNT_ID}"
+	RefreshToken         string `json:"refresh_token"`          // "{REFRESH_TOKEN}"
+	AccessToken          string `json:"access_token"`           // "{ACCESS_TOKEN}"
+}
+
+// CreateCharge sends a payment to a connected account
+func (s *StripeService) ConnectAccount(code string) (string, error) {
+	stripe.Key = s.apiKey
+	resp, err := http.PostForm(stripeOAuthURI,
+		url.Values{"client_secret": {s.apiKey}, "code": {code}, "grant_type": {"authorization_code"}})
+
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("status code is not 200")
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	data := &responseData{}
+	err = json.Unmarshal(body, data)
+	if err != nil {
+		return "", err
+	}
+
+	return data.StripeUserID, nil
 }
