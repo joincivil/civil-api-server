@@ -2,7 +2,7 @@ package payments
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -113,14 +113,15 @@ func (s *StripeService) ConnectAccount(code string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("status code is not 200")
-	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
 
+	if resp.StatusCode != 200 {
+		log.Errorf("non-200 response from Stripe: %v, %v", resp.StatusCode, string(body))
+		return "", errors.Errorf("status code is not 200")
+	}
 	data := &responseData{}
 	err = json.Unmarshal(body, data)
 	if err != nil {
