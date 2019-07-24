@@ -236,21 +236,27 @@ func (p *ParameterizerEventProcessor) updateUserChallengeDataForChallengeRes(pol
 	for _, userChallengeData := range userChallengeDataVotes {
 		voter := userChallengeData.UserAddress()
 		salt := userChallengeData.Salt()
+
 		voterReward, err := paramContract.VoterReward(&bind.CallOpts{}, voter, pollID, salt)
 		if err != nil {
 			log.Errorf("Error getting voter reward %v", err)
 			p.errRep.Error(errors.Wrap(err, "error getting voter reward"), nil)
 		}
-		var isVoterWinner bool
-		if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
-			(!pollIsPassed && userChallengeData.Choice().Int64() == 0) {
-			isVoterWinner = true
-		} else {
-			isVoterWinner = false
+
+		// Set isVoterWinner based on original poll value and the user choice
+		// If user never revealed their vote, then isVoterWinner is always false.
+		isVoterWinner := false
+		if userChallengeData.UserDidReveal() {
+			if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
+				(!pollIsPassed && userChallengeData.Choice().Int64() == 0) {
+				isVoterWinner = true
+			}
 		}
+
 		userChallengeData.SetVoterReward(voterReward)
 		userChallengeData.SetIsVoterWinner(isVoterWinner)
 		userChallengeData.SetPollIsPassed(pollIsPassed)
+
 		updatedFields := []string{voterRewardFieldName, userChallengeIsPassedFieldName,
 			isVoterWinnerFieldName}
 		updateWithUserAddress := true
