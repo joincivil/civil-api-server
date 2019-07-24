@@ -98,7 +98,7 @@ type responseData struct {
 	TokenType            string `json:"token_type"`             // bearer
 	StripePublishableKey string `json:"stripe_publishable_key"` //  "{PUBLISHABLE_KEY}"
 	Scope                string `json:"scope"`                  //  "read_write"
-	Livemode             string `json:"livemode"`               // false
+	Livemode             bool   `json:"livemode"`               // false
 	StripeUserID         string `json:"stripe_user_id"`         // "{ACCOUNT_ID}"
 	RefreshToken         string `json:"refresh_token"`          // "{REFRESH_TOKEN}"
 	AccessToken          string `json:"access_token"`           // "{ACCESS_TOKEN}"
