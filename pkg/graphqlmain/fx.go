@@ -2,39 +2,20 @@ package graphqlmain
 
 import (
 	"flag"
-	shell "github.com/ipfs/go-ipfs-api"
-	"github.com/joincivil/civil-api-server/pkg/newsrooms"
-	"github.com/joincivil/go-common/pkg/newsroom"
+	"github.com/joincivil/civil-api-server/pkg/runtime"
 	"os"
 
 	log "github.com/golang/glog"
-	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/payments"
-	"github.com/joincivil/civil-api-server/pkg/storefront"
-	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 	pconfig "github.com/joincivil/go-common/pkg/config"
 	"go.uber.org/fx"
 )
 
-// RuntimeModule provides concrete implementations
-var RuntimeModule = fx.Options(
-	channels.RuntimeModule,
-	users.RuntimeModule,
-	payments.RuntimeModule,
-	storefront.RuntimeModule,
-	newsrooms.RuntimeModule,
-	fx.Provide(
-		func(ipfs *shell.Shell) newsroom.IPFSHelper {
-			return ipfs
-		},
-	),
-)
-
 // MainModule provides the main module for the graphql server
 var MainModule = fx.Options(
-	RuntimeModule,
+	runtime.Module,
 	GraphqlModule,
 	EventProcessorModule,
 	PubSubModule,
