@@ -33,13 +33,15 @@ var (
 type UserService struct {
 	userPersister     UserPersister
 	controllerUpdater TokenControllerUpdater
+	userChannelHelper UserChannelHelper
 }
 
 // NewUserService instantiates a new DefaultUserService
-func NewUserService(userPersister UserPersister, controllerUpdater TokenControllerUpdater) *UserService {
+func NewUserService(userPersister UserPersister, controllerUpdater TokenControllerUpdater, userChannelhelper UserChannelHelper) *UserService {
 	return &UserService{
 		userPersister,
 		controllerUpdater,
+		userChannelhelper,
 	}
 }
 
@@ -111,9 +113,14 @@ func (s *UserService) CreateUser(identifier UserCriteria) (*User, error) {
 		EthAddress:  identifier.EthAddress,
 		AppReferral: identifier.AppReferral,
 	}
-	newUserErr := s.userPersister.SaveUser(user)
+	newUser, newUserErr := s.userPersister.SaveUser(user)
 	if newUserErr != nil {
 		return nil, newUserErr
+	}
+
+	_, err = s.userChannelHelper.CreateUserChannel(newUser.UID)
+	if err != nil {
+		return nil, err
 	}
 
 	return user, nil

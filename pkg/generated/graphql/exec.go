@@ -265,6 +265,7 @@ type ComplexityRoot struct {
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
 		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
+		ChannelsSetHandle                 func(childComplexity int, input channels.SetHandleInput) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupSaveCharter               func(childComplexity int, charterData newsroom.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -583,6 +584,7 @@ type MutationResolver interface {
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
 	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
 	ChannelsConnectStripe(ctx context.Context, input channels.ConnectStripeInput) (*channels.Channel, error)
+	ChannelsSetHandle(ctx context.Context, input channels.SetHandleInput) (*channels.Channel, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -944,6 +946,21 @@ func field_Mutation_channelsConnectStripe_args(rawArgs map[string]interface{}) (
 	if tmp, ok := rawArgs["input"]; ok {
 		var err error
 		arg0, err = UnmarshalChannelsConnectStripeInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsSetHandle_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 channels.SetHandleInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalChannelsSetHandleInput(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3443,6 +3460,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ChannelsConnectStripe(childComplexity, args["input"].(channels.ConnectStripeInput)), true
+
+	case "Mutation.channelsSetHandle":
+		if e.complexity.Mutation.ChannelsSetHandle == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsSetHandle_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetHandle(childComplexity, args["input"].(channels.SetHandleInput)), true
 
 	case "Mutation.nrsignupSendWelcomeEmail":
 		if e.complexity.Mutation.NrsignupSendWelcomeEmail == nil {
@@ -9775,6 +9804,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsCreateNewsroomChannel(ctx, field)
 		case "channelsConnectStripe":
 			out.Values[i] = ec._Mutation_channelsConnectStripe(ctx, field)
+		case "channelsSetHandle":
+			out.Values[i] = ec._Mutation_channelsSetHandle(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10282,6 +10313,41 @@ func (ec *executionContext) _Mutation_channelsConnectStripe(ctx context.Context,
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ChannelsConnectStripe(rctx, args["input"].(channels.ConnectStripeInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsSetHandle(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsSetHandle_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetHandle(rctx, args["input"].(channels.SetHandleInput))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -18539,6 +18605,30 @@ func UnmarshalChannelsConnectStripeInput(v interface{}) (channels.ConnectStripeI
 	return it, nil
 }
 
+func UnmarshalChannelsSetHandleInput(v interface{}) (channels.SetHandleInput, error) {
+	var it channels.SetHandleInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "channelID":
+			var err error
+			it.ChannelID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "handle":
+			var err error
+			it.Handle, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalCharterInput(v interface{}) (newsroom.Charter, error) {
 	var it newsroom.Charter
 	var asMap = v.(map[string]interface{})
@@ -19531,6 +19621,7 @@ type Mutation {
   # Channels Mutations
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
+  channelsSetHandle(input: ChannelsSetHandleInput!): Channel
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -19790,8 +19881,13 @@ type ChannelMember {
 }
 
 input ChannelsConnectStripeInput {
-    channelID: String!
-    oauthCode: String!
+  channelID: String!
+  oauthCode: String!
+}
+
+input ChannelsSetHandleInput {
+  channelID: String!
+  handle: String!
 }
 
 ## Post object schemas

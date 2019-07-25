@@ -142,6 +142,7 @@ type Mutation {
   # Channels Mutations
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
+  channelsSetHandle(input: ChannelsSetHandleInput!): Channel
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -401,8 +402,13 @@ type ChannelMember {
 }
 
 input ChannelsConnectStripeInput {
-    channelID: String!
-    oauthCode: String!
+  channelID: String!
+  oauthCode: String!
+}
+
+input ChannelsSetHandleInput {
+  channelID: String!
+  handle: String!
 }
 
 ## Post object schemas

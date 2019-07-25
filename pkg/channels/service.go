@@ -162,12 +162,21 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+// SetHandle comment
+func (s *Service) SetHandle(userID string, channelID string, handle string) (*Channel, error) {
+	if !IsValidHandle(handle) {
+		return nil, ErrorInvalidHandle
+	}
+	return s.persister.SetHandle(userID, channelID, handle)
+}
+
 // ConnectStripeInput contains the fields needed to set the channel's stripe account
 type ConnectStripeInput struct {
 	ChannelID string
 	OAuthCode string
 }
 
+// ConnectStripe comment
 func (s *Service) ConnectStripe(userID string, input ConnectStripeInput) (*Channel, error) {
 	if input.OAuthCode == "" {
 		return nil, ErrorsInvalidInput

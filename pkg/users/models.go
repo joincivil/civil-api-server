@@ -6,6 +6,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 	uuid "github.com/satori/go.uuid"
 )
@@ -50,6 +51,11 @@ type User struct {
 // TokenControllerUpdater describes methods that the user service will use to manage the whitelists a user is a member of
 type TokenControllerUpdater interface {
 	AddToCivilians(addr common.Address) (common.Hash, error)
+}
+
+// UserChannelHelper - describe this later
+type UserChannelHelper interface {
+	CreateUserChannel(userID string) (*channels.Channel, error)
 }
 
 // GenerateUID generates and set the UID field for the user.  Will only

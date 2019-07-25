@@ -27,6 +27,12 @@ type CreateChannelInput struct {
 	Handle        *string
 }
 
+// SetHandleInput comment
+type SetHandleInput struct {
+	ChannelID string
+	Handle    string
+}
+
 // Channel is container for Posts
 type Channel struct {
 	ID              string `gorm:"type:uuid;primary_key"`
