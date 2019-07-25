@@ -602,16 +602,19 @@ func (t *TcrEventProcessor) updateUserChallengeDataForChallengeRes(pollID *big.I
 		}
 
 		// Set isVoterWinner based on original poll value and the user choice
+		// If user never revealed their vote, then isVoterWinner is always false.
 		isVoterWinner := false
-		if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
-			(!pollIsPassed && userChallengeData.Choice().Int64() == 0) {
-			isVoterWinner = true
-		}
+		if userChallengeData.UserDidReveal() {
+			if (pollIsPassed && userChallengeData.Choice().Int64() == 1) ||
+				(!pollIsPassed && userChallengeData.Choice().Int64() == 0) {
+				isVoterWinner = true
+			}
 
-		// If the call to this method is to overturn a decision and make
-		// voter a winner/loser based on poll outcome
-		if challengeOverturned {
-			isVoterWinner = !isVoterWinner
+			// If the call to this method is to overturn a decision and make
+			// voter a winner/loser based on poll outcome
+			if challengeOverturned {
+				isVoterWinner = !isVoterWinner
+			}
 		}
 
 		userChallengeData.SetVoterReward(voterReward)

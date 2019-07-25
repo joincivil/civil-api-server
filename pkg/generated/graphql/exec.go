@@ -112,10 +112,12 @@ type ComplexityRoot struct {
 	}
 
 	Channel struct {
-		Id          func(childComplexity int) int
-		ChannelType func(childComplexity int) int
-		Newsroom    func(childComplexity int) int
-		PostsSearch func(childComplexity int, search posts.SearchInput) int
+		Id                 func(childComplexity int) int
+		ChannelType        func(childComplexity int) int
+		Newsroom           func(childComplexity int) int
+		PostsSearch        func(childComplexity int, search posts.SearchInput) int
+		IsStripeConnected  func(childComplexity int) int
+		CurrentUserIsAdmin func(childComplexity int) int
 	}
 
 	ChannelMember struct {
@@ -262,6 +264,7 @@ type ComplexityRoot struct {
 		AuthRefresh                       func(childComplexity int, token string) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
+		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupSaveCharter               func(childComplexity int, charterData newsroom.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -517,6 +520,8 @@ type ChallengeResolver interface {
 type ChannelResolver interface {
 	Newsroom(ctx context.Context, obj *channels.Channel) (*newsroom.Newsroom, error)
 	PostsSearch(ctx context.Context, obj *channels.Channel, search posts.SearchInput) (*posts.PostSearchResult, error)
+	IsStripeConnected(ctx context.Context, obj *channels.Channel) (bool, error)
+	CurrentUserIsAdmin(ctx context.Context, obj *channels.Channel) (bool, error)
 }
 type CharterResolver interface {
 	ContentID(ctx context.Context, obj *model.Charter) (int, error)
@@ -577,6 +582,7 @@ type MutationResolver interface {
 	AuthRefresh(ctx context.Context, token string) (*auth.LoginResponse, error)
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
 	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
+	ChannelsConnectStripe(ctx context.Context, input channels.ConnectStripeInput) (*channels.Channel, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -928,6 +934,21 @@ func field_Mutation_channelsCreateNewsroomChannel_args(rawArgs map[string]interf
 		}
 	}
 	args["newsroomContractAddress"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsConnectStripe_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 channels.ConnectStripeInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalChannelsConnectStripeInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 
 }
@@ -2677,6 +2698,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Channel.PostsSearch(childComplexity, args["search"].(posts.SearchInput)), true
 
+	case "Channel.isStripeConnected":
+		if e.complexity.Channel.IsStripeConnected == nil {
+			break
+		}
+
+		return e.complexity.Channel.IsStripeConnected(childComplexity), true
+
+	case "Channel.currentUserIsAdmin":
+		if e.complexity.Channel.CurrentUserIsAdmin == nil {
+			break
+		}
+
+		return e.complexity.Channel.CurrentUserIsAdmin(childComplexity), true
+
 	case "ChannelMember.channel":
 		if e.complexity.ChannelMember.Channel == nil {
 			break
@@ -3396,6 +3431,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ChannelsCreateNewsroomChannel(childComplexity, args["newsroomContractAddress"].(string)), true
+
+	case "Mutation.channelsConnectStripe":
+		if e.complexity.Mutation.ChannelsConnectStripe == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsConnectStripe_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsConnectStripe(childComplexity, args["input"].(channels.ConnectStripeInput)), true
 
 	case "Mutation.nrsignupSendWelcomeEmail":
 		if e.complexity.Mutation.NrsignupSendWelcomeEmail == nil {
@@ -6111,6 +6158,24 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				out.Values[i] = ec._Channel_postsSearch(ctx, field, obj)
 				wg.Done()
 			}(i, field)
+		case "isStripeConnected":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Channel_isStripeConnected(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
+		case "currentUserIsAdmin":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Channel_currentUserIsAdmin(ctx, field, obj)
+				if out.Values[i] == graphql.Null {
+					invalid = true
+				}
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6238,6 +6303,60 @@ func (ec *executionContext) _Channel_postsSearch(ctx context.Context, field grap
 	}
 
 	return ec._PostSearchResult(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_isStripeConnected(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().IsStripeConnected(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_currentUserIsAdmin(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().CurrentUserIsAdmin(rctx, obj)
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalBoolean(res)
 }
 
 var channelMemberImplementors = []string{"ChannelMember"}
@@ -9654,6 +9773,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "channelsCreateNewsroomChannel":
 			out.Values[i] = ec._Mutation_channelsCreateNewsroomChannel(ctx, field)
+		case "channelsConnectStripe":
+			out.Values[i] = ec._Mutation_channelsConnectStripe(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10126,6 +10247,41 @@ func (ec *executionContext) _Mutation_channelsCreateNewsroomChannel(ctx context.
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ChannelsCreateNewsroomChannel(rctx, args["newsroomContractAddress"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsConnectStripe(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsConnectStripe_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsConnectStripe(rctx, args["input"].(channels.ConnectStripeInput))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -18359,6 +18515,30 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 	}
 }
 
+func UnmarshalChannelsConnectStripeInput(v interface{}) (channels.ConnectStripeInput, error) {
+	var it channels.ConnectStripeInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "channelID":
+			var err error
+			it.ChannelID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "oauthCode":
+			var err error
+			it.OAuthCode, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalCharterInput(v interface{}) (newsroom.Charter, error) {
 	var it newsroom.Charter
 	var asMap = v.(map[string]interface{})
@@ -19350,6 +19530,7 @@ type Mutation {
 
   # Channels Mutations
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
+  channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -19600,10 +19781,17 @@ type Channel {
   channelType: String!
   newsroom: Newsroom
   postsSearch(search: PostSearchInput!): PostSearchResult
+  isStripeConnected: Boolean!
+  currentUserIsAdmin: Boolean!
 }
 type ChannelMember {
   channel: Channel
   role: String
+}
+
+input ChannelsConnectStripeInput {
+    channelID: String!
+    oauthCode: String!
 }
 
 ## Post object schemas

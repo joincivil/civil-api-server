@@ -5,6 +5,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/graphqlmain"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
+	"github.com/joincivil/civil-api-server/pkg/runtime"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -14,7 +15,7 @@ import (
 
 func main() {
 	app := fx.New(
-		graphqlmain.RuntimeModule,
+		runtime.Module,
 		payments.PaymentModule,
 		channels.ChannelModule,
 		posts.PostModule,
