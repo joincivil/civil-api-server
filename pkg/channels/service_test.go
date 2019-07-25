@@ -149,7 +149,9 @@ func TestCreateChannel(t *testing.T) {
 
 	t.Run("group type", func(t *testing.T) {
 		userID := randomUUID()
-		handle := fmt.Sprintf("test%v", r.Int31())
+		randomInt := r.Int31()
+		handle := fmt.Sprintf("tEst%v", randomInt)
+		nonUniqueHandle := fmt.Sprintf("test%v", randomInt)
 
 		_, err = svc.CreateGroupChannel(userID, handle)
 		if err != nil {
@@ -158,6 +160,12 @@ func TestCreateChannel(t *testing.T) {
 
 		// don't allow if handle already exists
 		_, err = svc.CreateGroupChannel(userID, handle)
+		if err != channels.ErrorNotUnique {
+			t.Fatalf("was expecting ErrorNotUnique")
+		}
+
+		// don't allow if handle already exists
+		_, err = svc.CreateGroupChannel(userID, nonUniqueHandle)
 		if err != channels.ErrorNotUnique {
 			t.Fatalf("was expecting ErrorNotUnique")
 		}

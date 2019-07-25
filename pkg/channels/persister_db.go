@@ -22,9 +22,10 @@ func NewDBPersister(db *gorm.DB) *DBPersister {
 func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) {
 	tx := p.db.Begin()
 	c := &Channel{
-		ChannelType: input.ChannelType,
-		Reference:   input.Reference,
-		Handle:      input.Handle,
+		ChannelType:         input.ChannelType,
+		Reference:           input.Reference,
+		Handle:              input.Handle,
+		NonNormalizedHandle: input.NonNormalizedHandle,
 	}
 
 	if err := tx.Create(c).Error; err != nil {
@@ -116,7 +117,7 @@ func (p *DBPersister) GetUserChannels(userID string) ([]*ChannelMember, error) {
 }
 
 // SetHandle updates the handle for the channel, ensuring that it is unique
-func (p *DBPersister) SetHandle(userID string, channelID string, handle string) (*Channel, error) {
+func (p *DBPersister) SetHandle(userID string, channelID string, handle string, nonNormalizedHandle string) (*Channel, error) {
 	// get channel
 	ch, err := p.GetChannel(channelID)
 	if err != nil {
@@ -131,7 +132,7 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 		return nil, errors.Wrap(err, "error setting handle, not an admin")
 	}
 
-	err = p.db.Model(ch).Update(Channel{Handle: &handle}).Error
+	err = p.db.Model(ch).Update(Channel{Handle: &handle, NonNormalizedHandle: nonNormalizedHandle}).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "error setting handle")
 	}

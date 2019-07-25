@@ -53,7 +53,7 @@ type TokenControllerUpdater interface {
 	AddToCivilians(addr common.Address) (common.Hash, error)
 }
 
-// UserChannelHelper - describe this later
+// UserChannelHelper describes the methods that the user service will use to create channels for users
 type UserChannelHelper interface {
 	CreateUserChannel(userID string) (*channels.Channel, error)
 }
