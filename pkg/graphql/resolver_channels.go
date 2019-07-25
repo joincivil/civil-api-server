@@ -30,7 +30,12 @@ func (r *mutationResolver) ChannelsCreateNewsroomChannel(ctx context.Context, co
 		return nil, ErrAccessDenied
 	}
 
-	return r.channelService.CreateNewsroomChannel(token.Sub, channels.CreateNewsroomChannelInput{
+	userAddresses, err := r.userService.GetETHAddresses(token.Sub)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.channelService.CreateNewsroomChannel(token.Sub, userAddresses, channels.CreateNewsroomChannelInput{
 		ContractAddress: contractAddress,
 	})
 }

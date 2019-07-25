@@ -12,10 +12,9 @@ import (
 
 // Service provides methods to interact with Channels
 type Service struct {
-	persister            Persister
-	newsroomHelper       NewsroomHelper
-	userEthAddressGetter UserEthAddressGetter
-	stripeConnector      StripeConnector
+	persister       Persister
+	newsroomHelper  NewsroomHelper
+	stripeConnector StripeConnector
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -24,23 +23,17 @@ type NewsroomHelper interface {
 	GetOwner(newsroomAddress common.Address) (common.Address, error)
 }
 
-// UserEthAddressGetter describes methods needed to get the ETH addresses of a User
-type UserEthAddressGetter interface {
-	GetETHAddresses(userID string) ([]common.Address, error)
-}
-
 // StripeCharger defines the functions needed to connect an account to Stripe
 type StripeConnector interface {
 	ConnectAccount(code string) (string, error)
 }
 
 // NewService builds a new Service instance
-func NewService(persister Persister, newsroomHelper NewsroomHelper, userEthAddressGetter UserEthAddressGetter, stripeConnector StripeConnector) *Service {
+func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector) *Service {
 
 	return &Service{
 		persister,
 		newsroomHelper,
-		userEthAddressGetter,
 		stripeConnector,
 	}
 }
@@ -74,13 +67,7 @@ type CreateNewsroomChannelInput struct {
 }
 
 // CreateNewsroomChannel creates a channel with type "user"
-func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChannelInput) (*Channel, error) {
-	// get user's ETH addresses
-	userAddresses, err := s.userEthAddressGetter.GetETHAddresses(userID)
-	if err != nil {
-		log.Errorf("error getting ETH addresses for user: %v", err)
-		return nil, ErrorUnauthorized
-	}
+func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Address, input CreateNewsroomChannelInput) (*Channel, error) {
 
 	channelType := TypeNewsroom
 	reference := input.ContractAddress
