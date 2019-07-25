@@ -1976,7 +1976,6 @@ func (p *PostgresPersister) userChallengeDataByCriteriaQuery(criteria *model.Use
 
 	// NOTE(IS): default ordering by pollID
 	queryBuf.WriteString(" ORDER BY u.poll_id") // nolint: gosec
-	fmt.Printf("query = %v\n", queryBuf.String())
 	return queryBuf.String(), nil
 }
 

@@ -379,7 +379,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:59e860fcab8858c815869bcc3378259aec7eb39b456b2d489e0a2da0f74aaeac"
+  digest = "1:8dafccf6248a52fe1fc40dd094a6cbc9f1e07c3e0ec929d5a060a0d9bda593d8"
   name = "github.com/joincivil/civil-events-processor"
   packages = [
     "pkg/helpers",
@@ -392,7 +392,7 @@
     "pkg/utils",
   ]
   pruneopts = "UT"
-  revision = "f0102ef32763cd26261e29c9a03353d677fac06a"
+  revision = "25dc83b865fb279d4445426b57746b8b9d79f07e"
 
 [[projects]]
   branch = "master"
