@@ -42,7 +42,7 @@ func CreateUserChallengeDataTableQuery(tableName string) string {
             parent_challenge_id NUMERIC,
             latest_vote BOOL,
             last_updated_timestamp INT
-        );    
+        );
     `, tableName)
 	return queryString
 }
@@ -150,9 +150,12 @@ func (u *UserChallengeData) DbToUserChallengeData() *model.UserChallengeData {
 	userAddress := common.HexToAddress(u.UserAddress)
 	userDidCommit := u.UserDidCommit
 	numTokens := numbers.Float64ToBigInt(u.NumTokens)
+
 	userChallengeData := model.NewUserChallengeData(userAddress, pollID, numTokens,
 		userDidCommit, pollRevealEndDate, u.PollType, u.VoteCommittedTs, u.LastUpdatedDateTs)
+
 	userChallengeData.SetDidUserCollect(u.DidUserCollect)
+	userChallengeData.SetDidUserRescue(u.DidUserRescue)
 	userChallengeData.SetUserDidReveal(u.UserDidReveal)
 	userChallengeData.SetDidCollectAmount(numbers.Float64ToBigInt(u.DidCollectAmount))
 	userChallengeData.SetIsVoterWinner(u.IsVoterWinner)
@@ -163,5 +166,6 @@ func (u *UserChallengeData) DbToUserChallengeData() *model.UserChallengeData {
 	userChallengeData.SetParentChallengeID(new(big.Int).SetUint64(u.ParentChallengeID))
 	userChallengeData.SetPollIsPassed(u.PollIsPassed)
 	userChallengeData.SetLatestVote(u.LatestVote)
+
 	return userChallengeData
 }
