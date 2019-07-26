@@ -72,15 +72,6 @@ func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Ad
 	channelType := TypeNewsroom
 	reference := input.ContractAddress
 
-	// make sure there is not a channel for this newsroom smart contract already
-	ch, err := s.persister.GetChannelByReference(channelType, reference)
-	if err != nil && err != ErrorNotFound {
-		return nil, err
-	}
-	if ch != nil {
-		return nil, ErrorNotUnique
-	}
-
 	// convert contract address string to common.Address
 	newsroomAddress := common.HexToAddress(reference)
 	if (newsroomAddress == common.Address{}) {
@@ -119,19 +110,6 @@ Loop:
 // CreateGroupChannel creates a channel with type "group"
 func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, error) {
 	channelType := TypeGroup
-	normalizedHandle, err := NormalizeHandle(handle)
-	if err != nil {
-		return nil, err
-	}
-
-	// make sure there is not a channel with this handle already
-	ch, err := s.persister.GetChannelByHandle(normalizedHandle)
-	if err != nil && err != ErrorNotFound {
-		return nil, err
-	}
-	if ch != nil {
-		return nil, ErrorNotUnique
-	}
 
 	// groups don't reference anything, so generate a new one
 	// TODO(dankins): should this reference a DID on an identity server?
@@ -142,11 +120,10 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	reference := id.String()
 
 	return s.persister.CreateChannel(CreateChannelInput{
-		CreatorUserID:       userID,
-		ChannelType:         channelType,
-		Reference:           reference,
-		Handle:              &normalizedHandle,
-		NonNormalizedHandle: handle,
+		CreatorUserID: userID,
+		ChannelType:   channelType,
+		Reference:     reference,
+		Handle:        &handle,
 	})
 }
 
@@ -162,11 +139,7 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 	if !IsValidHandle(handle) {
 		return nil, ErrorInvalidHandle
 	}
-	normalizedHandle, err := NormalizeHandle(handle)
-	if err != nil {
-		return nil, err
-	}
-	return s.persister.SetHandle(userID, channelID, normalizedHandle, handle)
+	return s.persister.SetHandle(userID, channelID, handle)
 }
 
 // ConnectStripeInput contains the fields needed to set the channel's stripe account

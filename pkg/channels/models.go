@@ -21,32 +21,30 @@ const (
 
 // CreateChannelInput contains the fields needed to create a channel
 type CreateChannelInput struct {
-	CreatorUserID       string
-	ChannelType         string
-	Reference           string
-	Handle              *string
-	NonNormalizedHandle string
+	CreatorUserID string
+	ChannelType   string
+	Reference     string
+	Handle        *string
 }
 
 // SetHandleInput contains the fields needed to set a channel handle
 type SetHandleInput struct {
-	ChannelID           string
-	Handle              string
-	NonNormalizedHandle string
+	ChannelID string
+	Handle    string
 }
 
 // Channel is container for Posts
 type Channel struct {
-	ID                  string `gorm:"type:uuid;primary_key"`
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	DeletedAt           *time.Time
-	ChannelType         string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user, newsroom, group
-	Reference           string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user_id, newsroom smart contract address, group DID
-	Handle              *string `gorm:"unique_index:channel_idx_handle"`                  // globally unique identifier for channels
-	NonNormalizedHandle string  `gorm:"not_null"`
-	Members             []ChannelMember
-	StripeAccountID     string
+	ID              string `gorm:"type:uuid;primary_key"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	DeletedAt       *time.Time
+	ChannelType     string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user, newsroom, group
+	Reference       string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Handle          *string `gorm:"unique_index:channel_idx_handle"`                  // globally unique identifier for channels
+	RawHandle       *string
+	Members         []ChannelMember
+	StripeAccountID string
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted
