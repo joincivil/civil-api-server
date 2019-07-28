@@ -168,6 +168,16 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 	if err != nil {
 		return nil, err
 	}
+
+	// make sure there is not a channel with this handle
+	ch2, err := p.GetChannelByHandle(normalizedHandle)
+	if err != nil && err != ErrorNotFound {
+		return nil, err
+	}
+	if ch2 != nil {
+		return nil, ErrorNotUnique
+	}
+
 	err = p.db.Model(ch).Update(Channel{Handle: &normalizedHandle, RawHandle: &handle}).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "error setting handle")

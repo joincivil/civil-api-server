@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -299,6 +300,38 @@ func TestCreateChannel(t *testing.T) {
 			t.Fatalf("expected stripeAccountID to be %v but is: %v", stripeAccountID, result)
 		}
 
+	})
+
+	t.Run("SetHandle", func(t *testing.T) {
+		u1 := randomUUID()
+		u2 := randomUUID()
+		username := strings.ReplaceAll(u1, "-", "")[0:13]
+
+		channel1, err := svc.CreateUserChannel(u1)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		_, err = svc.SetHandle(u1, channel1.ID, u1)
+		if err != channels.ErrorInvalidHandle {
+			t.Fatalf("was expecting ErrorInvalidHandle: %v", err)
+		}
+
+		_, err = svc.SetHandle(u1, channel1.ID, username)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		_, err = svc.SetHandle(u1, channel1.ID, username+"2")
+		if err != channels.ErrorHandleAlreadySet {
+			t.Fatalf("was expecting ErrorHandleAlreadySet: %v", err)
+		}
+
+		channel2, err := svc.CreateUserChannel(u2)
+		_, err = svc.SetHandle(u2, channel2.ID, username)
+		if err != channels.ErrorNotUnique {
+			t.Fatalf("was expecting ErrorNotUnique: %v", err)
+		}
 	})
 }
 
