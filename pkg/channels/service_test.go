@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -305,7 +304,8 @@ func TestCreateChannel(t *testing.T) {
 	t.Run("SetHandle", func(t *testing.T) {
 		u1 := randomUUID()
 		u2 := randomUUID()
-		username := strings.ReplaceAll(u1, "-", "")[0:13]
+		randomInt := r.Int31()
+		handle := fmt.Sprintf("tEst%v", randomInt)
 
 		channel1, err := svc.CreateUserChannel(u1)
 		if err != nil {
@@ -317,20 +317,20 @@ func TestCreateChannel(t *testing.T) {
 			t.Fatalf("was expecting ErrorInvalidHandle: %v", err)
 		}
 
-		_, err = svc.SetHandle(u1, channel1.ID, username)
+		_, err = svc.SetHandle(u1, channel1.ID, handle)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
 
-		_, err = svc.SetHandle(u1, channel1.ID, username+"2")
+		_, err = svc.SetHandle(u1, channel1.ID, handle+"2")
 		if err != channels.ErrorHandleAlreadySet {
 			t.Fatalf("was expecting ErrorHandleAlreadySet: %v", err)
 		}
 
-		channel2, err := svc.CreateUserChannel(u2)
-		_, err = svc.SetHandle(u2, channel2.ID, username)
-		if err != channels.ErrorNotUnique {
-			t.Fatalf("was expecting ErrorNotUnique: %v", err)
+		channel2, err2 := svc.CreateUserChannel(u2)
+		_, err2 = svc.SetHandle(u2, channel2.ID, handle)
+		if err2 != channels.ErrorNotUnique {
+			t.Fatalf("was expecting ErrorNotUnique: %v", err2)
 		}
 	})
 }
