@@ -307,27 +307,34 @@ func TestCreateChannel(t *testing.T) {
 		randomInt := r.Int31()
 		handle := fmt.Sprintf("tEst%v", randomInt)
 
+		// create channelf for u1
 		channel1, err := svc.CreateUserChannel(u1)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
 
+		// don't allow invalid handle
 		_, err = svc.SetHandle(u1, channel1.ID, u1)
 		if err != channels.ErrorInvalidHandle {
 			t.Fatalf("was expecting ErrorInvalidHandle: %v", err)
 		}
 
+		// allow valid handle
 		_, err = svc.SetHandle(u1, channel1.ID, handle)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
 
+		// don't allow handle to be re set
 		_, err = svc.SetHandle(u1, channel1.ID, handle+"2")
 		if err != channels.ErrorHandleAlreadySet {
 			t.Fatalf("was expecting ErrorHandleAlreadySet: %v", err)
 		}
 
 		channel2, err2 := svc.CreateUserChannel(u2)
+		if err2 != nil {
+			t.Fatalf("not expecting error: %v", err2)
+		}
 		_, err2 = svc.SetHandle(u2, channel2.ID, handle)
 		if err2 != channels.ErrorNotUnique {
 			t.Fatalf("was expecting ErrorNotUnique: %v", err2)
