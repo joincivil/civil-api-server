@@ -68,15 +68,13 @@ func (g MockGetNewsroomHelper) GetOwner(newsroomAddress common.Address) (common.
 	return common.Address{}, errors.New("found found")
 }
 
-type MockUserEthAddressGetter struct{}
-
-func (g MockUserEthAddressGetter) GetETHAddresses(userID string) ([]common.Address, error) {
+func GetETHAddresses(userID string) []common.Address {
 	if userID == user1ID {
-		return []common.Address{user1Address}, nil
+		return []common.Address{user1Address}
 	} else if userID == user2ID {
-		return []common.Address{user2Address}, nil
+		return []common.Address{user2Address}
 	}
-	return nil, errors.New("not found")
+	return []common.Address{}
 }
 
 type MockStripeConnector struct{}
@@ -99,7 +97,7 @@ func TestCreateChannel(t *testing.T) {
 	}
 
 	persister := channels.NewDBPersister(db)
-	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockUserEthAddressGetter{}, MockStripeConnector{})
+	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{})
 
 	channel, err := svc.CreateUserChannel(user1ID)
 	if err != nil {
@@ -151,7 +149,9 @@ func TestCreateChannel(t *testing.T) {
 
 	t.Run("group type", func(t *testing.T) {
 		userID := randomUUID()
-		handle := fmt.Sprintf("test%v", r.Int31())
+		randomInt := r.Int31()
+		handle := fmt.Sprintf("tEst%v", randomInt)
+		nonUniqueHandle := fmt.Sprintf("test%v", randomInt)
 
 		_, err = svc.CreateGroupChannel(userID, handle)
 		if err != nil {
@@ -160,6 +160,12 @@ func TestCreateChannel(t *testing.T) {
 
 		// don't allow if handle already exists
 		_, err = svc.CreateGroupChannel(userID, handle)
+		if err != channels.ErrorNotUnique {
+			t.Fatalf("was expecting ErrorNotUnique")
+		}
+
+		// don't allow if handle already exists
+		_, err = svc.CreateGroupChannel(userID, nonUniqueHandle)
 		if err != channels.ErrorNotUnique {
 			t.Fatalf("was expecting ErrorNotUnique")
 		}
@@ -175,7 +181,8 @@ func TestCreateChannel(t *testing.T) {
 	t.Run("newsroom type", func(t *testing.T) {
 		t.Run("invalid address", func(t *testing.T) {
 			newsroomAddress := "hello"
-			_, err := svc.CreateNewsroomChannel(user1ID, channels.CreateNewsroomChannelInput{
+			ethAddresses := GetETHAddresses(user1ID)
+			_, err := svc.CreateNewsroomChannel(user1ID, ethAddresses, channels.CreateNewsroomChannelInput{
 				ContractAddress: newsroomAddress,
 			})
 			if err != channels.ErrorInvalidHandle {
@@ -183,19 +190,10 @@ func TestCreateChannel(t *testing.T) {
 			}
 		})
 
-		t.Run("user doesn't have ethereum address", func(t *testing.T) {
-			newsroomAddress := newsroom1Address.String()
-			userID := randomUUID()
-			_, err := svc.CreateNewsroomChannel(userID, channels.CreateNewsroomChannelInput{
-				ContractAddress: newsroomAddress,
-			})
-			if err != channels.ErrorUnauthorized {
-				t.Fatalf("was expecting error `channels.ErrorUnauthorized` but received: %v", err)
-			}
-		})
 		t.Run("user not member of multisig", func(t *testing.T) {
 			newsroomAddress := newsroom3Address.String()
-			_, err := svc.CreateNewsroomChannel(user2ID, channels.CreateNewsroomChannelInput{
+			ethAddresses := GetETHAddresses(user2ID)
+			_, err := svc.CreateNewsroomChannel(user2ID, ethAddresses, channels.CreateNewsroomChannelInput{
 				ContractAddress: newsroomAddress,
 			})
 			if err != channels.ErrorUnauthorized {
@@ -204,7 +202,8 @@ func TestCreateChannel(t *testing.T) {
 		})
 
 		t.Run("success", func(t *testing.T) {
-			channel, err := svc.CreateNewsroomChannel(user1ID, channels.CreateNewsroomChannelInput{
+			ethAddresses := GetETHAddresses(user1ID)
+			channel, err := svc.CreateNewsroomChannel(user1ID, ethAddresses, channels.CreateNewsroomChannelInput{
 				ContractAddress: newsroom1Address.String(),
 			})
 			if err != nil {
@@ -300,6 +299,46 @@ func TestCreateChannel(t *testing.T) {
 			t.Fatalf("expected stripeAccountID to be %v but is: %v", stripeAccountID, result)
 		}
 
+	})
+
+	t.Run("SetHandle", func(t *testing.T) {
+		u1 := randomUUID()
+		u2 := randomUUID()
+		randomInt := r.Int31()
+		handle := fmt.Sprintf("tEst%v", randomInt)
+
+		// create channelf for u1
+		channel1, err := svc.CreateUserChannel(u1)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		// don't allow invalid handle
+		_, err = svc.SetHandle(u1, channel1.ID, u1)
+		if err != channels.ErrorInvalidHandle {
+			t.Fatalf("was expecting ErrorInvalidHandle: %v", err)
+		}
+
+		// allow valid handle
+		_, err = svc.SetHandle(u1, channel1.ID, handle)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		// don't allow handle to be re set
+		_, err = svc.SetHandle(u1, channel1.ID, handle+"2")
+		if err != channels.ErrorHandleAlreadySet {
+			t.Fatalf("was expecting ErrorHandleAlreadySet: %v", err)
+		}
+
+		channel2, err2 := svc.CreateUserChannel(u2)
+		if err2 != nil {
+			t.Fatalf("not expecting error: %v", err2)
+		}
+		_, err2 = svc.SetHandle(u2, channel2.ID, handle)
+		if err2 != channels.ErrorNotUnique {
+			t.Fatalf("was expecting ErrorNotUnique: %v", err2)
+		}
 	})
 }
 

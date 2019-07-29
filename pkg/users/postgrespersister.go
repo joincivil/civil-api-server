@@ -76,7 +76,7 @@ func (p *PostgresPersister) User(criteria *UserCriteria) (*User, error) {
 }
 
 // SaveUser saves a new user
-func (p *PostgresPersister) SaveUser(user *User) error {
+func (p *PostgresPersister) SaveUser(user *User) (*User, error) {
 	return p.createUserForTable(user, defaultUserTableName)
 }
 
@@ -152,12 +152,12 @@ func (p *PostgresPersister) userQuery(criteria *UserCriteria, tableName string) 
 	return queryBuf.String()
 }
 
-func (p *PostgresPersister) createUserForTable(user *User, tableName string) error {
+func (p *PostgresPersister) createUserForTable(user *User, tableName string) (*User, error) {
 	// Ensure a UID is generated. Will fail if a UID already exists, which means
 	// the user was already created
 	err := user.GenerateUID()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// Create a default empty payload if none found
 	if user.QuizPayload == nil {
@@ -170,9 +170,9 @@ func (p *PostgresPersister) createUserForTable(user *User, tableName string) err
 	queryString := cpostgres.InsertIntoDBQueryString(tableName, User{})
 	_, err = p.db.NamedExec(queryString, user)
 	if err != nil {
-		return fmt.Errorf("Error saving user to table: err: %v", err)
+		return nil, fmt.Errorf("Error saving user to table: err: %v", err)
 	}
-	return nil
+	return user, nil
 }
 
 func (p *PostgresPersister) updateUserForTable(user *User, updatedFields []string,

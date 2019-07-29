@@ -257,7 +257,7 @@ func TestSignupEmailSendNoEmailer(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil, defaultSignupTemplateIDs,
 		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
@@ -281,7 +281,7 @@ func TestSignupEmailSendNoProtoHost(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
@@ -359,7 +359,7 @@ func TestLoginEth(t *testing.T) {
 			user1.UID: user1,
 		},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox("", useSandbox)
 	svc, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
@@ -430,7 +430,7 @@ func TestConfigTemplateIDs(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost, []string{})
@@ -455,7 +455,7 @@ func TestBadConfigTemplateIDsAppName(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost, []string{})
@@ -479,7 +479,7 @@ func TestBadConfigTemplateIDsAppNameCase(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost, []string{})
@@ -503,7 +503,7 @@ func TestBadConfigTemplateIDs(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
 		loginTemplateIDs, testSignupLoginProtoHost, []string{})
@@ -525,7 +525,7 @@ func TestConfigTemplateIDsNotAll(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil,
 		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{})
@@ -545,7 +545,7 @@ func TestSignupTemplateIDFromApplication(t *testing.T) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil,
 		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{})
@@ -590,7 +590,7 @@ func buildService(sendGridKey string) (*auth.Service, error) {
 	persister := &users.InMemoryUserPersister{
 		UsersInMemory: map[string]*users.User{},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
@@ -611,7 +611,7 @@ func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
 			user1.UID: user1,
 		},
 	}
-	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := auth.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,

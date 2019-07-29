@@ -68,13 +68,13 @@ func (r *InMemoryUserPersister) User(criteria *UserCriteria) (*User, error) {
 }
 
 // SaveUser saves user instances
-func (r *InMemoryUserPersister) SaveUser(user *User) error {
+func (r *InMemoryUserPersister) SaveUser(user *User) (*User, error) {
 	if user.UID == "" {
 		user.GenerateUID() // nolint: errcheck
 	}
 	r.UsersInMemory[user.UID] = user
 
-	return nil
+	return user, nil
 }
 
 // UpdateUser updates user instances

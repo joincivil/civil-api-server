@@ -45,7 +45,7 @@ func TestCvlTokenTransferEventHandler(t *testing.T) {
 	}
 	userPersister := &users.InMemoryUserPersister{UsersInMemory: initUsers}
 	controller := &testutils.ControllerUpdaterSpy{}
-	userService := users.NewUserService(userPersister, controller)
+	userService := users.NewUserService(userPersister, controller, &testutils.MockChannelHelper{})
 
 	pubsubMsg := &processor.PubSubMessage{
 		TxHash: "0x4fa779b4dbf20f8df5b4e523c49920858234172492dc4fb477aee4f7abd67899",

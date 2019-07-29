@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+
 	"github.com/joincivil/civil-api-server/pkg/posts"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
@@ -29,7 +30,12 @@ func (r *mutationResolver) ChannelsCreateNewsroomChannel(ctx context.Context, co
 		return nil, ErrAccessDenied
 	}
 
-	return r.channelService.CreateNewsroomChannel(token.Sub, channels.CreateNewsroomChannelInput{
+	userAddresses, err := r.userService.GetETHAddresses(token.Sub)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.channelService.CreateNewsroomChannel(token.Sub, userAddresses, channels.CreateNewsroomChannelInput{
 		ContractAddress: contractAddress,
 	})
 }
@@ -41,6 +47,15 @@ func (r *mutationResolver) ChannelsConnectStripe(ctx context.Context, input chan
 	}
 
 	return r.channelService.ConnectStripe(token.Sub, input)
+}
+
+func (r *mutationResolver) ChannelsSetHandle(ctx context.Context, input channels.SetHandleInput) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	return r.channelService.SetHandle(token.Sub, input.ChannelID, input.Handle)
 }
 
 // Channel is the resolver for the Channel type

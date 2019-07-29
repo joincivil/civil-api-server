@@ -137,7 +137,7 @@ func TestGetUser(t *testing.T) {
 		},
 	}
 
-	err = persister.createUserForTable(testUserToCreate, defaultUserTestTableName)
+	_, err = persister.createUserForTable(testUserToCreate, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should not have received an error saving user: err: %v", err)
 	}
@@ -218,7 +218,7 @@ func TestUpdateUser(t *testing.T) {
 		EthAddress: "testEthAddress1",
 	}
 
-	err = persister.createUserForTable(testUserToCreate, defaultUserTestTableName)
+	_, err = persister.createUserForTable(testUserToCreate, defaultUserTestTableName)
 	if err != nil {
 		t.Fatalf("Should not have received an error saving user: err: %v", err)
 	}

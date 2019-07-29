@@ -20,19 +20,52 @@ func NewDBPersister(db *gorm.DB) *DBPersister {
 
 // CreateChannel saves a new Channel to the database
 func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) {
+	var normalizedHandle *string
+	var err error
+	if input.Handle != nil {
+		normalized, err := NormalizeHandle(*(input.Handle))
+		if err != nil {
+			return nil, err
+		}
+		normalizedHandle = &normalized
+
+		// make sure there is not a channel with this handle
+		ch, err := p.GetChannelByHandle(normalized)
+		if err != nil && err != ErrorNotFound {
+			return nil, err
+		}
+		if ch != nil {
+			return nil, ErrorNotUnique
+		}
+
+	}
+
+	// make sure there is not a channel with this reference
+	ch, err := p.GetChannelByReference(input.ChannelType, input.Reference)
+	if err != nil && err != ErrorNotFound {
+		return nil, err
+	}
+	if ch != nil {
+		return nil, ErrorNotUnique
+	}
+
 	tx := p.db.Begin()
+
 	c := &Channel{
 		ChannelType: input.ChannelType,
 		Reference:   input.Reference,
-		Handle:      input.Handle,
+		Handle:      normalizedHandle,
+		RawHandle:   input.Handle,
 	}
 
 	if err := tx.Create(c).Error; err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
 	id, err := uuid.NewV4()
 	if err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 	member := &ChannelMember{
@@ -131,7 +164,21 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 		return nil, errors.Wrap(err, "error setting handle, not an admin")
 	}
 
-	err = p.db.Model(ch).Update(Channel{Handle: &handle}).Error
+	normalizedHandle, err := NormalizeHandle(handle)
+	if err != nil {
+		return nil, err
+	}
+
+	// make sure there is not a channel with this handle
+	ch2, err := p.GetChannelByHandle(normalizedHandle)
+	if err != nil && err != ErrorNotFound {
+		return nil, err
+	}
+	if ch2 != nil {
+		return nil, ErrorNotUnique
+	}
+
+	err = p.db.Model(ch).Update(Channel{Handle: &normalizedHandle, RawHandle: &handle}).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "error setting handle")
 	}

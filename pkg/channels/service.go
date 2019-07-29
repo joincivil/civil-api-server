@@ -12,10 +12,9 @@ import (
 
 // Service provides methods to interact with Channels
 type Service struct {
-	persister            Persister
-	newsroomHelper       NewsroomHelper
-	userEthAddressGetter UserEthAddressGetter
-	stripeConnector      StripeConnector
+	persister       Persister
+	newsroomHelper  NewsroomHelper
+	stripeConnector StripeConnector
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -24,23 +23,17 @@ type NewsroomHelper interface {
 	GetOwner(newsroomAddress common.Address) (common.Address, error)
 }
 
-// UserEthAddressGetter describes methods needed to get the ETH addresses of a User
-type UserEthAddressGetter interface {
-	GetETHAddresses(userID string) ([]common.Address, error)
-}
-
 // StripeCharger defines the functions needed to connect an account to Stripe
 type StripeConnector interface {
 	ConnectAccount(code string) (string, error)
 }
 
 // NewService builds a new Service instance
-func NewService(persister Persister, newsroomHelper NewsroomHelper, userEthAddressGetter UserEthAddressGetter, stripeConnector StripeConnector) *Service {
+func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector) *Service {
 
 	return &Service{
 		persister,
 		newsroomHelper,
-		userEthAddressGetter,
 		stripeConnector,
 	}
 }
@@ -74,25 +67,10 @@ type CreateNewsroomChannelInput struct {
 }
 
 // CreateNewsroomChannel creates a channel with type "user"
-func (s *Service) CreateNewsroomChannel(userID string, input CreateNewsroomChannelInput) (*Channel, error) {
-	// get user's ETH addresses
-	userAddresses, err := s.userEthAddressGetter.GetETHAddresses(userID)
-	if err != nil {
-		log.Errorf("error getting ETH addresses for user: %v", err)
-		return nil, ErrorUnauthorized
-	}
+func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Address, input CreateNewsroomChannelInput) (*Channel, error) {
 
 	channelType := TypeNewsroom
 	reference := input.ContractAddress
-
-	// make sure there is not a channel for this newsroom smart contract already
-	ch, err := s.persister.GetChannelByReference(channelType, reference)
-	if err != nil && err != ErrorNotFound {
-		return nil, err
-	}
-	if ch != nil {
-		return nil, ErrorNotUnique
-	}
 
 	// convert contract address string to common.Address
 	newsroomAddress := common.HexToAddress(reference)
@@ -132,19 +110,6 @@ Loop:
 // CreateGroupChannel creates a channel with type "group"
 func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, error) {
 	channelType := TypeGroup
-	normalizedHandle, err := NormalizeHandle(handle)
-	if err != nil {
-		return nil, err
-	}
-
-	// make sure there is not a channel with this handle already
-	ch, err := s.persister.GetChannelByHandle(normalizedHandle)
-	if err != nil && err != ErrorNotFound {
-		return nil, err
-	}
-	if ch != nil {
-		return nil, ErrorNotUnique
-	}
 
 	// groups don't reference anything, so generate a new one
 	// TODO(dankins): should this reference a DID on an identity server?
@@ -162,12 +127,28 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+// SetHandle sets the handle on a channel of any type
+func (s *Service) SetHandle(userID string, channelID string, handle string) (*Channel, error) {
+	channel, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return nil, err
+	}
+	if channel.Handle != nil {
+		return nil, ErrorHandleAlreadySet
+	}
+	if !IsValidHandle(handle) {
+		return nil, ErrorInvalidHandle
+	}
+	return s.persister.SetHandle(userID, channelID, handle)
+}
+
 // ConnectStripeInput contains the fields needed to set the channel's stripe account
 type ConnectStripeInput struct {
 	ChannelID string
 	OAuthCode string
 }
 
+// ConnectStripe connects the Stripe Account and sets the Stripe Account ID on a channel
 func (s *Service) ConnectStripe(userID string, input ConnectStripeInput) (*Channel, error) {
 	if input.OAuthCode == "" {
 		return nil, ErrorsInvalidInput

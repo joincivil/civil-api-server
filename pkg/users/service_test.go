@@ -16,7 +16,7 @@ func buildService() *users.UserService {
 	}
 	persister := &users.InMemoryUserPersister{UsersInMemory: initUsers}
 
-	return users.NewUserService(persister, &testutils.ControllerUpdaterSpy{})
+	return users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 }
 
 func TestGetUser(t *testing.T) {
@@ -124,7 +124,7 @@ func TestQuizComplete(t *testing.T) {
 	}
 	persister := &users.InMemoryUserPersister{UsersInMemory: initUsers}
 	updater := &testutils.ControllerUpdaterSpy{}
-	svc := users.NewUserService(persister, updater)
+	svc := users.NewUserService(persister, updater, &testutils.MockChannelHelper{})
 
 	// non-complete quizs should not call the controller updater
 	_, err := svc.UpdateUser("1", &users.UserUpdateInput{
