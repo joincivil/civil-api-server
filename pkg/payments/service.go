@@ -26,6 +26,7 @@ const (
 	defaultFromEmailName    = civilEmailName
 	defaultFromEmailAddress = supportEmailAddress
 
+	// TODO: get correct group ID for payments
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
