@@ -7,9 +7,11 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum/common"
+
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/joincivil/go-common/pkg/email"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -35,20 +37,22 @@ type Service struct {
 	stripe   StripeCharger
 	ethereum EthereumValidator
 	channel  ChannelHelper
+	emailer  *email.Emailer
 }
 
 // NewService builds an instance of posts.Service
-func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator, channel ChannelHelper) *Service {
+func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator, channel ChannelHelper, emailer *email.Emailer) *Service {
 	return &Service{
 		db,
 		stripe,
 		ethereum,
 		channel,
+		emailer,
 	}
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
-func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string) (EtherPayment, error) {
+func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string, emailAddress string) (EtherPayment, error) {
 	hash := common.HexToHash(txID)
 	if (hash == common.Hash{}) {
 		return EtherPayment{}, errors.New("invalid tx id")
@@ -74,12 +78,33 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 	payment.CurrencyCode = "ETH"
 	payment.ExchangeRate = 0
 	payment.Amount = 0
+	payment.EmailAddress = emailAddress
 
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(fmt.Sprintf("{\"PaymentAddress\":\"%v\"}", expectedAddress.String()))}
 
 	if err = s.db.Create(&payment).Error; err != nil {
 		log.Errorf("An error occured: %v\n", err)
 		return EtherPayment{}, err
+	}
+
+	// if no email address given, that's fine
+	if emailAddress != "" {
+		req := &email.SendEmailRequest{
+			ToName:    emailAddress,
+			ToEmail:   emailAddress,
+			FromName:  "The Civil Media Company",
+			FromEmail: "support@civil.co",
+			Subject:   "Your Boost Payment is In Progress",
+			Text:      "YEAH BUDDY",
+			HTML:      "lets go boost",
+		}
+		err = s.emailer.SendEmail(req)
+		if err != nil {
+			// return correct payment AND error if only email failed
+			return EtherPayment{
+				PaymentModel: payment,
+			}, err
+		}
 	}
 
 	return EtherPayment{
@@ -154,6 +179,23 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			update.Data = postgres.Jsonb{RawMessage: data}
 			update.ExchangeRate = res.ExchangeRate
 			update.Amount = res.Amount
+
+			// if no email address given, that's fine
+			if etherPayment.EmailAddress != "" {
+				req := &email.SendEmailRequest{
+					ToName:    etherPayment.EmailAddress,
+					ToEmail:   etherPayment.EmailAddress,
+					FromName:  "The Civil Media Company",
+					FromEmail: "support@civil.co",
+					Subject:   "Your Boost Payment is COMPLETE",
+					Text:      "YEAH BUDDY - transaction confirmed",
+					HTML:      "lets go boost - tx confirmed",
+				}
+				err = s.emailer.SendEmail(req)
+				if err != nil {
+					log.Errorf("Error sending email on payment confirmation: %v\n", err)
+				}
+			}
 		}
 	}
 
@@ -207,6 +249,24 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 		log.Errorf("An error occured: %v\n", err)
 		return StripePayment{}, err
 	}
+	// if no email address given, that's fine
+	if payment.EmailAddress != "" {
+		req := &email.SendEmailRequest{
+			ToName:    payment.EmailAddress,
+			ToEmail:   payment.EmailAddress,
+			FromName:  "The Civil Media Company",
+			FromEmail: "support@civil.co",
+			Subject:   "Your Boost Payment Receipt",
+			Text:      "YEAH BUDDY - CREDIT CARDZ",
+			HTML:      "lets go boost credit cardz",
+		}
+		err = s.emailer.SendEmail(req)
+		if err != nil {
+			// return correct payment AND error if only email failed
+			return payment, err
+		}
+	}
+
 	return payment, nil
 }
 

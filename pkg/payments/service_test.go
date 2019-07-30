@@ -2,6 +2,7 @@ package payments_test
 
 import (
 	"math/big"
+	"os"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -9,16 +10,31 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/testruntime"
+	"github.com/joincivil/go-common/pkg/email"
 	uuid "github.com/satori/go.uuid"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxtest"
 )
 
-func TestService(t *testing.T) {
+const (
+	sendGridKeyEnvVar = "SENDGRID_TEST_KEY"
+	useSandbox        = true
+)
 
+func getSendGridKeyFromEnvVar() string {
+	return os.Getenv(sendGridKeyEnvVar)
+}
+
+func TestService(t *testing.T) {
+	sendGridKey := getSendGridKeyFromEnvVar()
+	if sendGridKey == "" {
+		t.Log("No SENDGRID_TEST_KEY set, skipping signup email test")
+		return
+	}
 	var paymentService *payments.Service
 	var transactions *testruntime.MockTransactionReader
 	var paymentHelper *testruntime.MockPaymentHelper
+	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	var db *gorm.DB
 	app := fxtest.New(t,
 		testruntime.TestModule,
@@ -26,6 +42,7 @@ func TestService(t *testing.T) {
 		fx.Populate(&transactions),
 		fx.Populate(&paymentHelper),
 		fx.Populate(&db),
+		fx.Populate(&emailer),
 	)
 	app.RequireStart().RequireStop()
 	err := testruntime.RunMigrations(db)
@@ -70,7 +87,7 @@ func TestService(t *testing.T) {
 		tx := makeTx("complete", channelAddress)
 
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String())
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -89,7 +106,7 @@ func TestService(t *testing.T) {
 
 		tx := makeTx("failed", channelAddress)
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String())
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -114,7 +131,7 @@ func TestService(t *testing.T) {
 
 		tx := makeTx("pending", channelAddress)
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String())
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -138,7 +155,7 @@ func TestService(t *testing.T) {
 
 		tx := makeTx("complete", common.HexToAddress("deadbeef"))
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String())
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
