@@ -102,6 +102,44 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("UpdateEtherPayment complete with email", func(t *testing.T) {
+		tx := makeTx("complete", channelAddress)
+
+		// create the payment
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "nick@joincivil.com")
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		if p.Status != "pending" {
+			t.Fatalf("expecting payment status to be pending but is: %v", p.Status)
+		}
+
+		err = paymentService.UpdateEtherPayment(&p.PaymentModel)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+	})
+
+	t.Run("UpdateEtherPayment complete with bad email", func(t *testing.T) {
+		tx := makeTx("complete", channelAddress)
+
+		// create the payment
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "234-2")
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		if p.Status != "pending" {
+			t.Fatalf("expecting payment status to be pending but is: %v", p.Status)
+		}
+
+		err = paymentService.UpdateEtherPayment(&p.PaymentModel)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+	})
+
 	t.Run("UpdateEtherPayment failed", func(t *testing.T) {
 
 		tx := makeTx("failed", channelAddress)

@@ -15,6 +15,20 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const (
+	ethPaymentStartedEmailTemplateID  = "d-a4595d0eb8c941ab897b9414ac846aff"
+	ethPaymentFinishedEmailTemplateID = "d-a4595d0eb8c941ab897b9414ac846aff"
+	ccPaymentReceiptEmailTemplateID   = "d-a4595d0eb8c941ab897b9414ac846aff"
+
+	civilEmailName      = "Civil"
+	supportEmailAddress = "support@civil.co"
+
+	defaultFromEmailName    = civilEmailName
+	defaultFromEmailAddress = supportEmailAddress
+
+	defaultAsmGroupID = 8328 // Civil Registry Alerts
+)
+
 // StripeCharger defines the functions needed to create a charge with Stripe
 type StripeCharger interface {
 	CreateCharge(request *CreateChargeRequest) (CreateChargeResponse, error)
@@ -49,6 +63,36 @@ func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator, c
 		channel,
 		emailer,
 	}
+}
+
+func (s *Service) getTemplateRequest(templateID string, emailAddress string) (req *email.SendTemplateEmailRequest) {
+	tmplData := email.TemplateData{
+		"newsroom_name": "test1",
+	}
+	return &email.SendTemplateEmailRequest{
+		ToName:       emailAddress,
+		ToEmail:      emailAddress,
+		FromName:     defaultFromEmailName,
+		FromEmail:    defaultFromEmailAddress,
+		TemplateID:   templateID,
+		TemplateData: tmplData,
+		AsmGroupID:   defaultAsmGroupID,
+	}
+}
+
+func (s *Service) sendEthPaymentStartedEmail(emailAddress string) {
+	req := s.getTemplateRequest(ethPaymentStartedEmailTemplateID, emailAddress)
+	s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendEthPaymentFinishedEmail(emailAddress string) {
+	req := s.getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress)
+	s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendCCPaymentReceiptEmail(emailAddress string) {
+	req := s.getTemplateRequest(ccPaymentReceiptEmailTemplateID, emailAddress)
+	s.emailer.SendTemplateEmail(req)
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
@@ -89,22 +133,7 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 
 	// if no email address given, that's fine
 	if emailAddress != "" {
-		req := &email.SendEmailRequest{
-			ToName:    emailAddress,
-			ToEmail:   emailAddress,
-			FromName:  "The Civil Media Company",
-			FromEmail: "support@civil.co",
-			Subject:   "Your Boost Payment is In Progress",
-			Text:      "YEAH BUDDY",
-			HTML:      "lets go boost",
-		}
-		err = s.emailer.SendEmail(req)
-		if err != nil {
-			// return correct payment AND error if only email failed
-			return EtherPayment{
-				PaymentModel: payment,
-			}, err
-		}
+		s.sendEthPaymentStartedEmail(emailAddress)
 	}
 
 	return EtherPayment{
@@ -182,19 +211,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 
 			// if no email address given, that's fine
 			if etherPayment.EmailAddress != "" {
-				req := &email.SendEmailRequest{
-					ToName:    etherPayment.EmailAddress,
-					ToEmail:   etherPayment.EmailAddress,
-					FromName:  "The Civil Media Company",
-					FromEmail: "support@civil.co",
-					Subject:   "Your Boost Payment is COMPLETE",
-					Text:      "YEAH BUDDY - transaction confirmed",
-					HTML:      "lets go boost - tx confirmed",
-				}
-				err = s.emailer.SendEmail(req)
-				if err != nil {
-					log.Errorf("Error sending email on payment confirmation: %v\n", err)
-				}
+				s.sendEthPaymentFinishedEmail(etherPayment.EmailAddress)
 			}
 		}
 	}
@@ -251,20 +268,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	}
 	// if no email address given, that's fine
 	if payment.EmailAddress != "" {
-		req := &email.SendEmailRequest{
-			ToName:    payment.EmailAddress,
-			ToEmail:   payment.EmailAddress,
-			FromName:  "The Civil Media Company",
-			FromEmail: "support@civil.co",
-			Subject:   "Your Boost Payment Receipt",
-			Text:      "YEAH BUDDY - CREDIT CARDZ",
-			HTML:      "lets go boost credit cardz",
-		}
-		err = s.emailer.SendEmail(req)
-		if err != nil {
-			// return correct payment AND error if only email failed
-			return payment, err
-		}
+		s.sendCCPaymentReceiptEmail(payment.EmailAddress)
 	}
 
 	return payment, nil
