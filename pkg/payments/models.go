@@ -83,6 +83,9 @@ type EtherPayment struct {
 	PaymentModel   `json:"-"`
 	TransactionID  string `gorm:"-"`
 	PaymentAddress string `gorm:"-"`
+	FromAddress    string `gorm:"-"`
+	EthAmount      string `gorm:"-"`
+	UsdAmount      string `gorm:"-"`
 	EmailAddress   string
 }
 
