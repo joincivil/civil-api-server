@@ -81,8 +81,20 @@ func (s *Service) getTemplateRequest(templateID string, emailAddress string) (re
 	}
 }
 
-func (s *Service) sendEthPaymentStartedEmail(emailAddress string) {
-	req := s.getTemplateRequest(ethPaymentStartedEmailTemplateID, emailAddress)
+func (s *Service) getTemplateRequest2(templateID string, emailAddress string, tmplData email.TemplateData) (req *email.SendTemplateEmailRequest) {
+	return &email.SendTemplateEmailRequest{
+		ToName:       emailAddress,
+		ToEmail:      emailAddress,
+		FromName:     defaultFromEmailName,
+		FromEmail:    defaultFromEmailAddress,
+		TemplateID:   templateID,
+		TemplateData: tmplData,
+		AsmGroupID:   defaultAsmGroupID,
+	}
+}
+
+func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) {
+	req := s.getTemplateRequest2(ethPaymentStartedEmailTemplateID, emailAddress, tmplData)
 	s.emailer.SendTemplateEmail(req)
 }
 
@@ -97,7 +109,7 @@ func (s *Service) sendCCPaymentReceiptEmail(emailAddress string) {
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
-func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string, emailAddress string) (EtherPayment, error) {
+func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string, emailAddress string, tmplData email.TemplateData) (EtherPayment, error) {
 	hash := common.HexToHash(txID)
 	if (hash == common.Hash{}) {
 		return EtherPayment{}, errors.New("invalid tx id")
@@ -134,7 +146,7 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 
 	// if no email address given, that's fine
 	if emailAddress != "" {
-		s.sendEthPaymentStartedEmail(emailAddress)
+		s.sendEthPaymentStartedEmail(emailAddress, tmplData)
 	}
 
 	return EtherPayment{

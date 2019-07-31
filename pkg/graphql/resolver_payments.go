@@ -21,9 +21,10 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 
 	channelID := post.GetChannelID()
 	tmplData, err2 := r.GetEthPaymentEmailTemplateData(post, payment)
-	fmt.Println("tmplData: ", tmplData)
-	fmt.Println("err2: ", err2)
-	return r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment.TransactionID, payment.EmailAddress)
+	if err2 != nil {
+		return payments.EtherPayment{}, errors.New("error creating email template data")
+	}
+	return r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment.TransactionID, payment.EmailAddress, tmplData)
 }
 
 func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, postID string, payment payments.StripePayment) (payments.StripePayment, error) {
@@ -52,9 +53,16 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 		boost := post.(*posts.Boost)
 		fmt.Println("payment: ", payment)
 		fmt.Println("payment.Data: ", payment.Data)
-		//data :=
+		channel, err := r.channelService.GetChannel(post.GetChannelID())
+		if err != nil {
+			return nil, errors.New("bleawf")
+		}
+		newsroom, err := r.newsroomService.GetNewsroomByAddress(channel.Reference)
+		if err != nil {
+			return nil, errors.New("asdfsdfsdf")
+		}
 		return (email.TemplateData{
-			"newsroom_name":        "temp-name",
+			"newsroom_name":        newsroom.Name,
 			"boost_short_desc":     boost.Title,
 			"payment_amount_eth":   "iunno",
 			"payment_amount_usd":   payment.USDEquivalent(),
@@ -67,7 +75,10 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 }
 
 func (r *mutationResolver) TestLogs(ctx context.Context, postID string, payment payments.EtherPayment) (payments.EtherPayment, error) {
-
+	post, err := r.postService.GetPost(postID)
+	if err != nil {
+		return payments.EtherPayment{}, errors.New("could not find post")
+	}
 	tmplData, err2 := r.GetEthPaymentEmailTemplateData(post, payment)
 	fmt.Println("tmplData: ", tmplData)
 	fmt.Println("err2: ", err2)

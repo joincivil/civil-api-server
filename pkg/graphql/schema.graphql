@@ -169,6 +169,10 @@ type Mutation {
     postID: String!
     input: PaymentsCreateTokenPaymentInput!
   ): PaymentToken!
+  testLogs(
+    postID: String!
+    input: PaymentsCreateEtherPaymentInput!
+  ): PaymentEther!
 
   # Post Mutations
   postsCreateBoost(input: PostCreateBoostInput!): PostBoost
@@ -588,6 +592,7 @@ input PaymentsCreateEtherPaymentInput {
   reaction: String
   comment: String
   transactionID: String!
+  emailAddress: String
 }
 
 # Payment inputs
