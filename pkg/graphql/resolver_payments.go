@@ -65,9 +65,10 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 			"newsroom_name":        newsroom.Name,
 			"boost_short_desc":     boost.Title,
 			"payment_amount_eth":   payment.Amount,
-			"payment_amount_usd":   payment.USDEquivalent(),
+			"payment_amount_usd":   payment.UsdAmount,
 			"payment_from_address": payment.FromAddress,
 			"payment_to_address":   payment.PaymentAddress,
+			"boost_id": boost.ID,
 		}), nil
 	} else {
 		return nil, ErrNotImplemented
