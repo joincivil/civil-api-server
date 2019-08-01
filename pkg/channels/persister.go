@@ -10,5 +10,6 @@ type Persister interface {
 	IsChannelAdmin(userID string, channelID string) (bool, error)
 	GetChannelMembers(channelID string) ([]*ChannelMember, error)
 	SetHandle(userID string, channelID string, handle string) (*Channel, error)
+	SetEmailAddress(userID string, channelID string, emailAddress string) (*Channel, error)
 	SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error)
 }

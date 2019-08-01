@@ -12,6 +12,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -97,7 +98,8 @@ func TestCreateChannel(t *testing.T) {
 	}
 
 	persister := channels.NewDBPersister(db)
-	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{})
+	generator := utils.NewJwtTokenGenerator([]byte("secret"))
+	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{}, generator, nil, "")
 
 	channel, err := svc.CreateUserChannel(user1ID)
 	if err != nil {

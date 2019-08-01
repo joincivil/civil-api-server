@@ -187,6 +187,30 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 	return ch, nil
 }
 
+// SetHandle updates the handle for the channel, ensuring that it is unique
+func (p *DBPersister) SetEmailAddress(userID string, channelID string, emailAddress string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting email, could not get channel")
+	}
+
+	// make sure the user requesting is an admin
+	err = p.requireAdmin(userID, channelID)
+	if err == ErrorUnauthorized {
+		return nil, ErrorUnauthorized
+	} else if err != nil {
+		return nil, errors.Wrap(err, "error setting email, not an admin")
+	}
+
+	err = p.db.Model(ch).Update(Channel{Email: emailAddress}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting email")
+	}
+
+	return ch, nil
+}
+
 // SetStripeAccountID updates the stripe account id for the channel
 func (p *DBPersister) SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error) {
 	// get channel

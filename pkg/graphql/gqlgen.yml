@@ -36,6 +36,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/channels.ConnectStripeInput
   ChannelsSetHandleInput:
     model: github.com/joincivil/civil-api-server/pkg/channels.SetHandleInput
+  ChannelsSetEmailInput:
+    model: github.com/joincivil/civil-api-server/pkg/channels.SetEmailInput
   Charter:
     model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   CharterContent:

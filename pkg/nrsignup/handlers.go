@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 // NewsroomSignupApproveGrantHandler
 type NewsroomSignupApproveGrantConfig struct {
 	NrsignupService *Service
-	TokenGenerator  *auth.JwtTokenGenerator
+	TokenGenerator  *utils.JwtTokenGenerator
 }
 
 // NewsroomSignupApproveGrantHandler is a REST endpoint handler for approving grants
@@ -71,7 +71,7 @@ const (
 
 // HandleGrantApproval handles the business logic for setting the approval status of
 // a grant.
-func HandleGrantApproval(token string, tokenGenerator *auth.JwtTokenGenerator,
+func HandleGrantApproval(token string, tokenGenerator *utils.JwtTokenGenerator,
 	nrsignupService *Service) (GrantApprovalStatus, bool) {
 	// Validate the token
 	claims, err := tokenGenerator.ValidateToken(token)

@@ -8,8 +8,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	log "github.com/golang/glog"
-	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
@@ -36,7 +36,7 @@ type ServerDeps struct {
 	Config                *utils.GraphQLConfig
 	Resolver              *graphql.Resolver
 	ErrorReporter         cerrors.ErrorReporter
-	JwtGenerator          *auth.JwtTokenGenerator
+	JwtGenerator          *utils.JwtTokenGenerator
 	NewsroomSignupService *nrsignup.Service
 	StorefrontService     *storefront.Service
 	Router                chi.Router

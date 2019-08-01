@@ -100,3 +100,19 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *u
 	}
 	return user, nil
 }
+
+// func (r *mutationResolver) SetUserHandleAndEmail(ctx context.Context, input *users.UserUpdateInput) (*users.User, error) {
+// 	token := auth.ForContext(ctx)
+// 	if token == nil {
+// 		return nil, ErrAccessDenied
+// 	}
+
+// 	uid := &token.Sub
+	
+// 	user, err := r.userService.UpdateUser(*uid, input)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return user, nil
+// }
+// SetEmailConfirm

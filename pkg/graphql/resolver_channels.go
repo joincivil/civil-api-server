@@ -58,6 +58,15 @@ func (r *mutationResolver) ChannelsSetHandle(ctx context.Context, input channels
 	return r.channelService.SetHandle(token.Sub, input.ChannelID, input.Handle)
 }
 
+func (r *mutationResolver) ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (string, string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", "", ErrAccessDenied
+	}
+
+	return r.channelService.SendEmailConfirmation(token.Sub, input.ChannelID, input.EmailAddress, channels.SetEmailEnumDefault)	
+}
+
 // Channel is the resolver for the Channel type
 func (r *Resolver) Channel() graphql.ChannelResolver {
 	return &channelResolver{Resolver: r}

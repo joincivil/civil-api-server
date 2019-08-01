@@ -1,13 +1,31 @@
 package channels
 
 import (
+	"fmt"
 	"errors"
 	"regexp"
 	"strings"
-
+	"github.com/joincivil/go-common/pkg/email"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
+	"github.com/joincivil/civil-api-server/pkg/utils"
+)
+
+const (
+	// number of seconds that a JWT token sent for set email confirmation is valid
+	defaultJWTEmailExpiration = 60 * 60 * 6 // 6 hours
+
+	// OkResponse is sent when an action is completed successfully
+	OkResponse = "ok"
+
+	subDelimiter = "||"
+	defaultSetEmailVerifyURI   = "auth/login/verify-email"
+	confirmEmailTemplate = "d-88f731b52a524e6cafc308d0359b84a6"
+	civilMediaName  = "Civil Media Company"
+	civilMediaEmail = "support@civil.co"
+
+	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
 // Service provides methods to interact with Channels
@@ -15,6 +33,9 @@ type Service struct {
 	persister       Persister
 	newsroomHelper  NewsroomHelper
 	stripeConnector StripeConnector
+	tokenGenerator         *utils.JwtTokenGenerator
+	emailer                *email.Emailer
+	signupLoginProtoHost   string
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -29,12 +50,16 @@ type StripeConnector interface {
 }
 
 // NewService builds a new Service instance
-func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector) *Service {
+func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
+	emailer *email.Emailer, signupLoginProtoHost string) *Service {
 
 	return &Service{
 		persister,
 		newsroomHelper,
 		stripeConnector,
+		tokenGenerator,
+		emailer,
+		signupLoginProtoHost,
 	}
 }
 
@@ -142,6 +167,120 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 	return s.persister.SetHandle(userID, channelID, handle)
 }
 
+// don't export since should only be called through email confirm flow
+func (s *Service) setEmail(userID string, channelID string, emailAddress string) (string, error) {
+	_, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return "", err
+	}
+
+	// check again that email is valid? ehh
+
+	_, err = s.persister.SetEmailAddress(userID, channelID, emailAddress)
+	if err != nil {
+		return "", err
+	}
+	return "ok", nil
+}
+
+func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAddress string, channelType SetEmailEnum) (string, string, error) {
+	_, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return "", "", err
+	}
+	// if isValidEmail...
+
+	referral := string(channelType)
+	token, err := s.sendEmailToken(emailAddress, userID, channelID, confirmEmailTemplate, defaultSetEmailVerifyURI, referral)
+	if err != nil {
+		return "", "", errors.New("test")
+	}
+	return OkResponse, token, nil
+}
+
+
+func (s *Service) sendEmailToken(emailAddress string, userID string, channelID string, templateID string, verifyURI string,
+	referral string) (string, error) {
+	if s.emailer == nil {
+		return "", fmt.Errorf("emailer is nil, disabling email of magic link")
+	}
+	if s.signupLoginProtoHost == "" {
+		return "", fmt.Errorf("no signup/login host for confirmation email")
+	}
+
+	sub, err := s.buildSub(emailAddress, referral, userID, channelID)
+	if err != nil {
+		return "", err
+	}
+	emailToken, err := s.tokenGenerator.GenerateToken(
+		sub,
+		defaultJWTEmailExpiration,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	verifyLink := s.buildSetEmailConfirmLink(emailToken, verifyURI)
+	verifyMarkup := s.buildSetEmailConfirmMarkup(verifyLink)
+
+	templateData := email.TemplateData{}
+	templateData["host_proto"] = s.signupLoginProtoHost
+	templateData["email_token"] = emailToken
+	templateData["verify_link"] = verifyLink
+	templateData["verify_markup"] = verifyMarkup
+
+	emailReq := &email.SendTemplateEmailRequest{
+		ToEmail:      emailAddress,
+		FromName:     civilMediaName,
+		FromEmail:    civilMediaEmail,
+		TemplateID:   templateID,
+		TemplateData: templateData,
+		AsmGroupID:   defaultAsmGroupID,
+	}
+	return emailToken, s.emailer.SendTemplateEmail(emailReq)
+}
+
+func (s *Service) buildSetEmailConfirmLink(emailToken string, verifyURI string) string {
+	link := fmt.Sprintf("%v/%v?jwt=%v", s.signupLoginProtoHost, verifyURI, emailToken)
+	return link
+}
+
+func (s *Service) buildSetEmailConfirmMarkup(confirmLink string) string {
+	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your email address</a>", confirmLink)
+}
+
+func (s *Service) buildSub(email string, ref string, userID string, channelID string) (string, error) {
+	if ref == "" || email == "" || userID == "" || channelID == "" {
+		return "", errors.New("i dunno what to say here")
+	}
+
+	parts := []string{email, ref, userID, channelID}
+	return strings.Join(parts, subDelimiter), nil
+}
+
+
+// SetEmailConfirm validates the JWT token emailed to the user and creates the User account
+func (s *Service) SetEmailConfirm(signupJWT string) (string, error) {
+	claims, err := s.tokenGenerator.ValidateToken(signupJWT)
+	if err != nil {
+		return "", err
+	}
+
+	sub := claims["sub"].(string)
+	email, _, userId, channelId := s.subData2(sub)
+	if email == "" {
+		return "", fmt.Errorf("no email found in token")
+	}
+
+	// Don't allow refresh token use here
+	_, ok := claims["aud"].(string)
+	if ok {
+		return "", fmt.Errorf("invalid token")
+	}
+
+	return s.setEmail(userId, channelId, email)
+}
+
 // ConnectStripeInput contains the fields needed to set the channel's stripe account
 type ConnectStripeInput struct {
 	ChannelID string
@@ -230,4 +369,21 @@ func IsValidHandle(handle string) bool {
 	}
 
 	return matched
+}
+
+
+func (s *Service) subData2(sub string) (email string, ref string, userId string, channelId string) {
+	splitsub := strings.Split(sub, subDelimiter)
+	if len(splitsub) == 1 {
+		return splitsub[0], "", "", ""
+
+	} else if len(splitsub) == 2 {
+		return splitsub[0], splitsub[1], "", ""
+	} else if len(splitsub) == 3 {
+		return splitsub[0], splitsub[1], splitsub[2], ""
+	} else if len(splitsub) == 4 {
+		return splitsub[0], splitsub[1], splitsub[2], splitsub[3]
+	}
+
+	return "", "", "", ""
 }
