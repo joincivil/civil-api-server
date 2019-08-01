@@ -20,8 +20,8 @@ const (
 	OkResponse = "ok"
 
 	subDelimiter = "||"
-	defaultSetEmailVerifyURI   = "auth/login/verify-email"
-	confirmEmailTemplate = "d-88f731b52a524e6cafc308d0359b84a6"
+	defaultSetEmailVerifyURI   = "auth/confirm-email"
+	confirmEmailTemplate = "d-6fb32255ddc5461c86db126042e3ed78"
 	civilMediaName  = "Civil Media Company"
 	civilMediaEmail = "support@civil.co"
 
@@ -59,7 +59,7 @@ func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnec
 		stripeConnector,
 		tokenGenerator,
 		emailer,
-		signupLoginProtoHost,
+		"http://localhost:8080",
 	}
 }
 
@@ -168,34 +168,34 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 }
 
 // don't export since should only be called through email confirm flow
-func (s *Service) setEmail(userID string, channelID string, emailAddress string) (string, error) {
+func (s *Service) setEmail(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
 	_, err := s.persister.GetChannel(channelID)
 	if err != nil {
-		return "", err
+		return &SetEmailResponse{}, err
 	}
 
 	// check again that email is valid? ehh
 
 	_, err = s.persister.SetEmailAddress(userID, channelID, emailAddress)
 	if err != nil {
-		return "", err
+		return &SetEmailResponse{}, err
 	}
-	return "ok", nil
+	return &SetEmailResponse{}, nil
 }
 
-func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAddress string, channelType SetEmailEnum) (string, string, error) {
-	_, err := s.persister.GetChannel(channelID)
+func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAddress string, channelType SetEmailEnum) (*Channel, error) {
+	channel, err := s.persister.GetChannel(channelID)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
 	// if isValidEmail...
 
 	referral := string(channelType)
-	token, err := s.sendEmailToken(emailAddress, userID, channelID, confirmEmailTemplate, defaultSetEmailVerifyURI, referral)
+	_, err = s.sendEmailToken(emailAddress, userID, channelID, confirmEmailTemplate, defaultSetEmailVerifyURI, referral)
 	if err != nil {
-		return "", "", errors.New("test")
+		return nil, err
 	}
-	return OkResponse, token, nil
+	return channel, nil
 }
 
 
@@ -246,7 +246,7 @@ func (s *Service) buildSetEmailConfirmLink(emailToken string, verifyURI string) 
 }
 
 func (s *Service) buildSetEmailConfirmMarkup(confirmLink string) string {
-	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your email address</a>", confirmLink)
+	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your 1 email address</a>", confirmLink)
 }
 
 func (s *Service) buildSub(email string, ref string, userID string, channelID string) (string, error) {
@@ -260,22 +260,22 @@ func (s *Service) buildSub(email string, ref string, userID string, channelID st
 
 
 // SetEmailConfirm validates the JWT token emailed to the user and creates the User account
-func (s *Service) SetEmailConfirm(signupJWT string) (string, error) {
+func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
 	claims, err := s.tokenGenerator.ValidateToken(signupJWT)
 	if err != nil {
-		return "", err
+		return &SetEmailResponse{}, err
 	}
 
 	sub := claims["sub"].(string)
 	email, _, userId, channelId := s.subData2(sub)
 	if email == "" {
-		return "", fmt.Errorf("no email found in token")
+		return &SetEmailResponse{}, fmt.Errorf("no email found in token")
 	}
 
 	// Don't allow refresh token use here
 	_, ok := claims["aud"].(string)
 	if ok {
-		return "", fmt.Errorf("invalid token")
+		return &SetEmailResponse{}, fmt.Errorf("invalid token")
 	}
 
 	return s.setEmail(userId, channelId, email)

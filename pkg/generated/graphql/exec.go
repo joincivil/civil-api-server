@@ -118,11 +118,19 @@ type ComplexityRoot struct {
 		PostsSearch        func(childComplexity int, search posts.SearchInput) int
 		IsStripeConnected  func(childComplexity int) int
 		CurrentUserIsAdmin func(childComplexity int) int
+		Handle             func(childComplexity int) int
+		Email              func(childComplexity int) int
 	}
 
 	ChannelMember struct {
 		Channel func(childComplexity int) int
 		Role    func(childComplexity int) int
+	}
+
+	ChannelSetEmailResponse struct {
+		Token        func(childComplexity int) int
+		RefreshToken func(childComplexity int) int
+		Uid          func(childComplexity int) int
 	}
 
 	Charter struct {
@@ -266,6 +274,8 @@ type ComplexityRoot struct {
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
 		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
 		ChannelsSetHandle                 func(childComplexity int, input channels.SetHandleInput) int
+		ChannelsSetEmail                  func(childComplexity int, input channels.SetEmailInput) int
+		ChannelsSetEmailConfirm           func(childComplexity int, jwt string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupSaveCharter               func(childComplexity int, charterData newsroom.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -439,6 +449,7 @@ type ComplexityRoot struct {
 		ChannelsGetById              func(childComplexity int, id string) int
 		ChannelsGetByNewsroomAddress func(childComplexity int, contractAddress string) int
 		ChannelsGetByHandle          func(childComplexity int, handle string) int
+		ChannelsGetByUserId          func(childComplexity int, userID string) int
 		NewsroomArticles             func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		NrsignupNewsroom             func(childComplexity int) int
 		PostsGet                     func(childComplexity int, id string) int
@@ -586,6 +597,8 @@ type MutationResolver interface {
 	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
 	ChannelsConnectStripe(ctx context.Context, input channels.ConnectStripeInput) (*channels.Channel, error)
 	ChannelsSetHandle(ctx context.Context, input channels.SetHandleInput) (*channels.Channel, error)
+	ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
+	ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -654,6 +667,7 @@ type QueryResolver interface {
 	ChannelsGetByID(ctx context.Context, id string) (*channels.Channel, error)
 	ChannelsGetByNewsroomAddress(ctx context.Context, contractAddress string) (*channels.Channel, error)
 	ChannelsGetByHandle(ctx context.Context, handle string) (*channels.Channel, error)
+	ChannelsGetByUserID(ctx context.Context, userID string) (*channels.Channel, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
@@ -967,6 +981,36 @@ func field_Mutation_channelsSetHandle_args(rawArgs map[string]interface{}) (map[
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsSetEmail_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 channels.SetEmailInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalChannelsSetEmailInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsSetEmailConfirm_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
 	return args, nil
 
 }
@@ -2162,6 +2206,21 @@ func field_Query_channelsGetByHandle_args(rawArgs map[string]interface{}) (map[s
 
 }
 
+func field_Query_channelsGetByUserID_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	return args, nil
+
+}
+
 func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -2730,6 +2789,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Channel.CurrentUserIsAdmin(childComplexity), true
 
+	case "Channel.handle":
+		if e.complexity.Channel.Handle == nil {
+			break
+		}
+
+		return e.complexity.Channel.Handle(childComplexity), true
+
+	case "Channel.email":
+		if e.complexity.Channel.Email == nil {
+			break
+		}
+
+		return e.complexity.Channel.Email(childComplexity), true
+
 	case "ChannelMember.channel":
 		if e.complexity.ChannelMember.Channel == nil {
 			break
@@ -2743,6 +2816,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ChannelMember.Role(childComplexity), true
+
+	case "ChannelSetEmailResponse.token":
+		if e.complexity.ChannelSetEmailResponse.Token == nil {
+			break
+		}
+
+		return e.complexity.ChannelSetEmailResponse.Token(childComplexity), true
+
+	case "ChannelSetEmailResponse.refreshToken":
+		if e.complexity.ChannelSetEmailResponse.RefreshToken == nil {
+			break
+		}
+
+		return e.complexity.ChannelSetEmailResponse.RefreshToken(childComplexity), true
+
+	case "ChannelSetEmailResponse.uid":
+		if e.complexity.ChannelSetEmailResponse.Uid == nil {
+			break
+		}
+
+		return e.complexity.ChannelSetEmailResponse.Uid(childComplexity), true
 
 	case "Charter.uri":
 		if e.complexity.Charter.Uri == nil {
@@ -3473,6 +3567,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ChannelsSetHandle(childComplexity, args["input"].(channels.SetHandleInput)), true
+
+	case "Mutation.channelsSetEmail":
+		if e.complexity.Mutation.ChannelsSetEmail == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsSetEmail_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetEmail(childComplexity, args["input"].(channels.SetEmailInput)), true
+
+	case "Mutation.channelsSetEmailConfirm":
+		if e.complexity.Mutation.ChannelsSetEmailConfirm == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsSetEmailConfirm_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetEmailConfirm(childComplexity, args["jwt"].(string)), true
 
 	case "Mutation.nrsignupSendWelcomeEmail":
 		if e.complexity.Mutation.NrsignupSendWelcomeEmail == nil {
@@ -4606,6 +4724,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ChannelsGetByHandle(childComplexity, args["handle"].(string)), true
+
+	case "Query.channelsGetByUserID":
+		if e.complexity.Query.ChannelsGetByUserId == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByUserID_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetByUserId(childComplexity, args["userID"].(string)), true
 
 	case "Query.newsroomArticles":
 		if e.complexity.Query.NewsroomArticles == nil {
@@ -6213,6 +6343,10 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				}
 				wg.Done()
 			}(i, field)
+		case "handle":
+			out.Values[i] = ec._Channel_handle(ctx, field, obj)
+		case "email":
+			out.Values[i] = ec._Channel_email(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6396,6 +6530,58 @@ func (ec *executionContext) _Channel_currentUserIsAdmin(ctx context.Context, fie
 	return graphql.MarshalBoolean(res)
 }
 
+// nolint: vetshadow
+func (ec *executionContext) _Channel_handle(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Handle, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_email(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
 var channelMemberImplementors = []string{"ChannelMember"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -6468,6 +6654,109 @@ func (ec *executionContext) _ChannelMember_role(ctx context.Context, field graph
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Role, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+var channelSetEmailResponseImplementors = []string{"ChannelSetEmailResponse"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ChannelSetEmailResponse(ctx context.Context, sel ast.SelectionSet, obj *channels.SetEmailResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, channelSetEmailResponseImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChannelSetEmailResponse")
+		case "token":
+			out.Values[i] = ec._ChannelSetEmailResponse_token(ctx, field, obj)
+		case "refreshToken":
+			out.Values[i] = ec._ChannelSetEmailResponse_refreshToken(ctx, field, obj)
+		case "uid":
+			out.Values[i] = ec._ChannelSetEmailResponse_uid(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelSetEmailResponse_token(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelSetEmailResponse",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelSetEmailResponse_refreshToken(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelSetEmailResponse",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RefreshToken, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelSetEmailResponse_uid(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelSetEmailResponse",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -9814,6 +10103,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsConnectStripe(ctx, field)
 		case "channelsSetHandle":
 			out.Values[i] = ec._Mutation_channelsSetHandle(ctx, field)
+		case "channelsSetEmail":
+			out.Values[i] = ec._Mutation_channelsSetEmail(ctx, field)
+		case "channelsSetEmailConfirm":
+			out.Values[i] = ec._Mutation_channelsSetEmailConfirm(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10369,6 +10662,76 @@ func (ec *executionContext) _Mutation_channelsSetHandle(ctx context.Context, fie
 	}
 
 	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsSetEmail(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsSetEmail_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetEmail(rctx, args["input"].(channels.SetEmailInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsSetEmailConfirm(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsSetEmailConfirm_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetEmailConfirm(rctx, args["jwt"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.SetEmailResponse)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._ChannelSetEmailResponse(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -14780,6 +15143,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				out.Values[i] = ec._Query_channelsGetByHandle(ctx, field)
 				wg.Done()
 			}(i, field)
+		case "channelsGetByUserID":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByUserID(ctx, field)
+				wg.Done()
+			}(i, field)
 		case "newsroomArticles":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -15500,6 +15869,41 @@ func (ec *executionContext) _Query_channelsGetByHandle(ctx context.Context, fiel
 	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().ChannelsGetByHandle(rctx, args["handle"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByUserID(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByUserID_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByUserID(rctx, args["userID"].(string))
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -18645,6 +19049,30 @@ func UnmarshalChannelsConnectStripeInput(v interface{}) (channels.ConnectStripeI
 	return it, nil
 }
 
+func UnmarshalChannelsSetEmailInput(v interface{}) (channels.SetEmailInput, error) {
+	var it channels.SetEmailInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "channelID":
+			var err error
+			it.ChannelID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalChannelsSetHandleInput(v interface{}) (channels.SetHandleInput, error) {
 	var it channels.SetHandleInput
 	var asMap = v.(map[string]interface{})
@@ -19633,6 +20061,7 @@ type Query {
   channelsGetByID(id: String!): Channel
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
   channelsGetByHandle(handle: String!): Channel
+  channelsGetByUserID(userID: String!): Channel
 
   # Newsroom Queries
   newsroomArticles(
@@ -19704,6 +20133,8 @@ type Mutation {
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
   channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  channelsSetEmail(input: ChannelsSetEmailInput!): Channel
+  channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -19768,6 +20199,12 @@ enum AuthApplicationEnum {
 
 ## Auth object schemas
 type AuthLoginResponse {
+  token: String
+  refreshToken: String
+  uid: String
+}
+
+type ChannelSetEmailResponse {
   token: String
   refreshToken: String
   uid: String
@@ -19956,7 +20393,10 @@ type Channel {
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   currentUserIsAdmin: Boolean!
+  handle: String
+  email: String
 }
+
 type ChannelMember {
   channel: Channel
   role: String
@@ -19970,6 +20410,11 @@ input ChannelsConnectStripeInput {
 input ChannelsSetHandleInput {
   channelID: String!
   handle: String!
+}
+
+input ChannelsSetEmailInput {
+  channelID: String!
+  emailAddress: String!
 }
 
 ## Post object schemas

@@ -32,6 +32,13 @@ const (
 	SetEmailEnumUser SetEmailEnum = "STOREFRONT"
 )
 
+// LoginResponse is sent when a User successfully logs in
+type SetEmailResponse struct {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refreshToken"`
+	UID          string `json:"uid"`
+}
+
 // CreateChannelInput contains the fields needed to create a channel
 type CreateChannelInput struct {
 	CreatorUserID string
