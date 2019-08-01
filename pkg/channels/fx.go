@@ -8,6 +8,6 @@ import (
 var ChannelModule = fx.Options(
 	fx.Provide(
 		NewDBPersister,
-		NewService,
+		NewServiceFromConfig,
 	),
 )

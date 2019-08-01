@@ -128,9 +128,8 @@ type ComplexityRoot struct {
 	}
 
 	ChannelSetEmailResponse struct {
-		Token        func(childComplexity int) int
-		RefreshToken func(childComplexity int) int
-		Uid          func(childComplexity int) int
+		ChannelId func(childComplexity int) int
+		UserId    func(childComplexity int) int
 	}
 
 	Charter struct {
@@ -2817,26 +2816,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ChannelMember.Role(childComplexity), true
 
-	case "ChannelSetEmailResponse.token":
-		if e.complexity.ChannelSetEmailResponse.Token == nil {
+	case "ChannelSetEmailResponse.ChannelID":
+		if e.complexity.ChannelSetEmailResponse.ChannelId == nil {
 			break
 		}
 
-		return e.complexity.ChannelSetEmailResponse.Token(childComplexity), true
+		return e.complexity.ChannelSetEmailResponse.ChannelId(childComplexity), true
 
-	case "ChannelSetEmailResponse.refreshToken":
-		if e.complexity.ChannelSetEmailResponse.RefreshToken == nil {
+	case "ChannelSetEmailResponse.UserID":
+		if e.complexity.ChannelSetEmailResponse.UserId == nil {
 			break
 		}
 
-		return e.complexity.ChannelSetEmailResponse.RefreshToken(childComplexity), true
-
-	case "ChannelSetEmailResponse.uid":
-		if e.complexity.ChannelSetEmailResponse.Uid == nil {
-			break
-		}
-
-		return e.complexity.ChannelSetEmailResponse.Uid(childComplexity), true
+		return e.complexity.ChannelSetEmailResponse.UserId(childComplexity), true
 
 	case "Charter.uri":
 		if e.complexity.Charter.Uri == nil {
@@ -6678,12 +6670,10 @@ func (ec *executionContext) _ChannelSetEmailResponse(ctx context.Context, sel as
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ChannelSetEmailResponse")
-		case "token":
-			out.Values[i] = ec._ChannelSetEmailResponse_token(ctx, field, obj)
-		case "refreshToken":
-			out.Values[i] = ec._ChannelSetEmailResponse_refreshToken(ctx, field, obj)
-		case "uid":
-			out.Values[i] = ec._ChannelSetEmailResponse_uid(ctx, field, obj)
+		case "ChannelID":
+			out.Values[i] = ec._ChannelSetEmailResponse_ChannelID(ctx, field, obj)
+		case "UserID":
+			out.Values[i] = ec._ChannelSetEmailResponse_UserID(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6696,7 +6686,7 @@ func (ec *executionContext) _ChannelSetEmailResponse(ctx context.Context, sel as
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _ChannelSetEmailResponse_token(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
+func (ec *executionContext) _ChannelSetEmailResponse_ChannelID(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6708,7 +6698,7 @@ func (ec *executionContext) _ChannelSetEmailResponse_token(ctx context.Context, 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Token, nil
+		return obj.ChannelID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -6720,7 +6710,7 @@ func (ec *executionContext) _ChannelSetEmailResponse_token(ctx context.Context, 
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _ChannelSetEmailResponse_refreshToken(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
+func (ec *executionContext) _ChannelSetEmailResponse_UserID(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6732,31 +6722,7 @@ func (ec *executionContext) _ChannelSetEmailResponse_refreshToken(ctx context.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RefreshToken, nil
-	})
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _ChannelSetEmailResponse_uid(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rctx := &graphql.ResolverContext{
-		Object: "ChannelSetEmailResponse",
-		Args:   nil,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.UID, nil
+		return obj.UserID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -20205,9 +20171,8 @@ type AuthLoginResponse {
 }
 
 type ChannelSetEmailResponse {
-  token: String
-  refreshToken: String
-  uid: String
+  ChannelID: String
+  UserID: String
 }
 
 ## TCR object schemas

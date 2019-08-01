@@ -216,9 +216,8 @@ type AuthLoginResponse {
 }
 
 type ChannelSetEmailResponse {
-  token: String
-  refreshToken: String
-  uid: String
+  ChannelID: String
+  UserID: String
 }
 
 ## TCR object schemas

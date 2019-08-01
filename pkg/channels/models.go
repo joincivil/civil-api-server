@@ -26,17 +26,18 @@ type SetEmailEnum string
 const (
 	// SetEmailEnumDefault is the default channel value
 	SetEmailEnumDefault SetEmailEnum = "DEFAULT"
-	// ApplicationEnumNewsroom is the newsroom channel value
+	// SetEmailEnumDefault is the user channel value
+	SetEmailEnumUser SetEmailEnum = "USER"
+	// SetEmailEnumNewsroom is the newsroom channel value
 	SetEmailEnumNewsroom SetEmailEnum = "NEWSROOM"
-	// SetEmailEnumUser is the user channel value
-	SetEmailEnumUser SetEmailEnum = "STOREFRONT"
+	// SetEmailEnumNewsroom is the group channel value
+	SetEmailEnumGroup SetEmailEnum = "GROUP"
 )
 
-// LoginResponse is sent when a User successfully logs in
+// SetEmailResponse is sent when a channel successfully confirms their email address
 type SetEmailResponse struct {
-	Token        string `json:"token"`
-	RefreshToken string `json:"refreshToken"`
-	UID          string `json:"uid"`
+	ChannelID string
+	UserID    string `json:"uid"`
 }
 
 // CreateChannelInput contains the fields needed to create a channel

@@ -49,6 +49,14 @@ type StripeConnector interface {
 	ConnectAccount(code string) (string, error)
 }
 
+
+// NewServiceFromConfig creates a new channels.Service using the main graphql config
+func NewServiceFromConfig(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
+	emailer *email.Emailer, config *utils.GraphQLConfig) *Service {
+		signupLoginProtoHost := config.SignupLoginProtoHost
+		return NewService(persister, newsroomHelper, stripeConnector, tokenGenerator, emailer, signupLoginProtoHost)
+	}
+
 // NewService builds a new Service instance
 func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
 	emailer *email.Emailer, signupLoginProtoHost string) *Service {
@@ -59,7 +67,7 @@ func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnec
 		stripeConnector,
 		tokenGenerator,
 		emailer,
-		"http://localhost:8080",
+		signupLoginProtoHost,
 	}
 }
 
@@ -180,7 +188,7 @@ func (s *Service) setEmail(userID string, channelID string, emailAddress string)
 	if err != nil {
 		return &SetEmailResponse{}, err
 	}
-	return &SetEmailResponse{}, nil
+	return &SetEmailResponse{UserID: userID, ChannelID: channelID}, nil
 }
 
 func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAddress string, channelType SetEmailEnum) (*Channel, error) {
@@ -251,7 +259,7 @@ func (s *Service) buildSetEmailConfirmMarkup(confirmLink string) string {
 
 func (s *Service) buildSub(email string, ref string, userID string, channelID string) (string, error) {
 	if ref == "" || email == "" || userID == "" || channelID == "" {
-		return "", errors.New("i dunno what to say here")
+		return "", errors.New("unable to build Sub")
 	}
 
 	parts := []string{email, ref, userID, channelID}
