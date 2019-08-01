@@ -279,7 +279,6 @@ type ComplexityRoot struct {
 		PaymentsCreateStripePayment       func(childComplexity int, postID string, input payments.StripePayment) int
 		PaymentsCreateEtherPayment        func(childComplexity int, postID string, input payments.EtherPayment) int
 		PaymentsCreateTokenPayment        func(childComplexity int, postID string, input payments.TokenPayment) int
-		TestLogs                          func(childComplexity int, postID string, input payments.EtherPayment) int
 		PostsCreateBoost                  func(childComplexity int, input posts.Boost) int
 		PostsUpdateBoost                  func(childComplexity int, postID string, input posts.Boost) int
 		PostsCreateExternalLink           func(childComplexity int, input posts.ExternalLink) int
@@ -329,6 +328,7 @@ type ComplexityRoot struct {
 		UpdatedAt     func(childComplexity int) int
 		TransactionId func(childComplexity int) int
 		UsdEquivalent func(childComplexity int) int
+		FromAddress   func(childComplexity int) int
 	}
 
 	PaymentStripe struct {
@@ -599,7 +599,6 @@ type MutationResolver interface {
 	PaymentsCreateStripePayment(ctx context.Context, postID string, input payments.StripePayment) (payments.StripePayment, error)
 	PaymentsCreateEtherPayment(ctx context.Context, postID string, input payments.EtherPayment) (payments.EtherPayment, error)
 	PaymentsCreateTokenPayment(ctx context.Context, postID string, input payments.TokenPayment) (payments.TokenPayment, error)
-	TestLogs(ctx context.Context, postID string, input payments.EtherPayment) (payments.EtherPayment, error)
 	PostsCreateBoost(ctx context.Context, input posts.Boost) (*posts.Boost, error)
 	PostsUpdateBoost(ctx context.Context, postID string, input posts.Boost) (*posts.Boost, error)
 	PostsCreateExternalLink(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error)
@@ -1179,30 +1178,6 @@ func field_Mutation_paymentsCreateTokenPayment_args(rawArgs map[string]interface
 	if tmp, ok := rawArgs["input"]; ok {
 		var err error
 		arg1, err = UnmarshalPaymentsCreateTokenPaymentInput(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg1
-	return args, nil
-
-}
-
-func field_Mutation_testLogs_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["postID"]; ok {
-		var err error
-		arg0, err = graphql.UnmarshalString(tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["postID"] = arg0
-	var arg1 payments.EtherPayment
-	if tmp, ok := rawArgs["input"]; ok {
-		var err error
-		arg1, err = UnmarshalPaymentsCreateEtherPaymentInput(tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3650,18 +3625,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PaymentsCreateTokenPayment(childComplexity, args["postID"].(string), args["input"].(payments.TokenPayment)), true
 
-	case "Mutation.testLogs":
-		if e.complexity.Mutation.TestLogs == nil {
-			break
-		}
-
-		args, err := field_Mutation_testLogs_args(rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.TestLogs(childComplexity, args["postID"].(string), args["input"].(payments.EtherPayment)), true
-
 	case "Mutation.postsCreateBoost":
 		if e.complexity.Mutation.PostsCreateBoost == nil {
 			break
@@ -3970,6 +3933,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaymentEther.UsdEquivalent(childComplexity), true
+
+	case "PaymentEther.fromAddress":
+		if e.complexity.PaymentEther.FromAddress == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.FromAddress(childComplexity), true
 
 	case "PaymentStripe.status":
 		if e.complexity.PaymentStripe.Status == nil {
@@ -9909,11 +9879,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
-		case "testLogs":
-			out.Values[i] = ec._Mutation_testLogs(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalid = true
-			}
 		case "postsCreateBoost":
 			out.Values[i] = ec._Mutation_postsCreateBoost(ctx, field)
 		case "postsUpdateBoost":
@@ -10830,40 +10795,6 @@ func (ec *executionContext) _Mutation_paymentsCreateTokenPayment(ctx context.Con
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 
 	return ec._PaymentToken(ctx, field.Selections, &res)
-}
-
-// nolint: vetshadow
-func (ec *executionContext) _Mutation_testLogs(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := field_Mutation_testLogs_args(rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx := &graphql.ResolverContext{
-		Object: "Mutation",
-		Args:   args,
-		Field:  field,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().TestLogs(rctx, args["postID"].(string), args["input"].(payments.EtherPayment))
-	})
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(payments.EtherPayment)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-
-	return ec._PaymentEther(ctx, field.Selections, &res)
 }
 
 // nolint: vetshadow
@@ -11809,6 +11740,11 @@ func (ec *executionContext) _PaymentEther(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "fromAddress":
+			out.Values[i] = ec._PaymentEther_fromAddress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12076,6 +12012,33 @@ func (ec *executionContext) _PaymentEther_usdEquivalent(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_fromAddress(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FromAddress, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var paymentStripeImplementors = []string{"PaymentStripe", "Payment"}
@@ -19059,6 +19022,30 @@ func UnmarshalPaymentsCreateEtherPaymentInput(v interface{}) (payments.EtherPaym
 			if err != nil {
 				return it, err
 			}
+		case "paymentAddress":
+			var err error
+			it.PaymentAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "fromAddress":
+			var err error
+			it.FromAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "amount":
+			var err error
+			it.Amount, err = graphql.UnmarshalFloat(v)
+			if err != nil {
+				return it, err
+			}
+		case "usdAmount":
+			var err error
+			it.UsdAmount, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -19101,6 +19088,12 @@ func UnmarshalPaymentsCreateStripePaymentInput(v interface{}) (payments.StripePa
 			if err != nil {
 				return it, err
 			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -19134,6 +19127,12 @@ func UnmarshalPaymentsCreateTokenPaymentInput(v interface{}) (payments.TokenPaym
 		case "tokenAddress":
 			var err error
 			it.TokenAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -19731,10 +19730,6 @@ type Mutation {
     postID: String!
     input: PaymentsCreateTokenPaymentInput!
   ): PaymentToken!
-  testLogs(
-    postID: String!
-    input: PaymentsCreateEtherPaymentInput!
-  ): PaymentEther!
 
   # Post Mutations
   postsCreateBoost(input: PostCreateBoostInput!): PostBoost
@@ -20125,6 +20120,7 @@ type PaymentEther implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  fromAddress: String!
 }
 
 type PaymentToken implements Payment {
@@ -20147,6 +20143,7 @@ input PaymentsCreateStripePaymentInput {
   currencyCode: String!
   amount: Float!
   paymentToken: String!
+  emailAddress: String
 }
 
 # Payment inputs
@@ -20155,6 +20152,10 @@ input PaymentsCreateEtherPaymentInput {
   comment: String
   transactionID: String!
   emailAddress: String
+  paymentAddress: String!
+  fromAddress: String!
+  amount: Float!
+  usdAmount: String!
 }
 
 # Payment inputs
@@ -20163,6 +20164,7 @@ input PaymentsCreateTokenPaymentInput {
   comment: String
   transactionID: String!
   tokenAddress: String!
+  emailAddress: String
 }
 
 ## User object schemas

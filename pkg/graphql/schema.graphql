@@ -169,10 +169,6 @@ type Mutation {
     postID: String!
     input: PaymentsCreateTokenPaymentInput!
   ): PaymentToken!
-  testLogs(
-    postID: String!
-    input: PaymentsCreateEtherPaymentInput!
-  ): PaymentEther!
 
   # Post Mutations
   postsCreateBoost(input: PostCreateBoostInput!): PostBoost
@@ -563,6 +559,7 @@ type PaymentEther implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  fromAddress: String!
 }
 
 type PaymentToken implements Payment {
@@ -585,6 +582,7 @@ input PaymentsCreateStripePaymentInput {
   currencyCode: String!
   amount: Float!
   paymentToken: String!
+  emailAddress: String
 }
 
 # Payment inputs
@@ -593,6 +591,10 @@ input PaymentsCreateEtherPaymentInput {
   comment: String
   transactionID: String!
   emailAddress: String
+  paymentAddress: String!
+  fromAddress: String!
+  amount: Float!
+  usdAmount: String!
 }
 
 # Payment inputs
@@ -601,6 +603,7 @@ input PaymentsCreateTokenPaymentInput {
   comment: String
   transactionID: String!
   tokenAddress: String!
+  emailAddress: String
 }
 
 ## User object schemas

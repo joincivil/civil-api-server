@@ -64,23 +64,12 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 		return (email.TemplateData{
 			"newsroom_name":        newsroom.Name,
 			"boost_short_desc":     boost.Title,
-			"payment_amount_eth":   "iunno",
+			"payment_amount_eth":   payment.Amount,
 			"payment_amount_usd":   payment.USDEquivalent(),
-			"payment_from_address": "temp-address-1",
-			"payment_to_address":   "temp-address-2",
+			"payment_from_address": payment.FromAddress,
+			"payment_to_address":   payment.PaymentAddress,
 		}), nil
 	} else {
 		return nil, ErrNotImplemented
 	}
-}
-
-func (r *mutationResolver) TestLogs(ctx context.Context, postID string, payment payments.EtherPayment) (payments.EtherPayment, error) {
-	post, err := r.postService.GetPost(postID)
-	if err != nil {
-		return payments.EtherPayment{}, errors.New("could not find post")
-	}
-	tmplData, err2 := r.GetEthPaymentEmailTemplateData(post, payment)
-	fmt.Println("tmplData: ", tmplData)
-	fmt.Println("err2: ", err2)
-	return payments.EtherPayment{}, ErrNotImplemented
 }
