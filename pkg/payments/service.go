@@ -17,8 +17,8 @@ import (
 
 const (
 	ethPaymentStartedEmailTemplateID  = "d-a4595d0eb8c941ab897b9414ac846aff"
-	ethPaymentFinishedEmailTemplateID = "d-a4595d0eb8c941ab897b9414ac846aff"
-	ccPaymentReceiptEmailTemplateID   = "d-a4595d0eb8c941ab897b9414ac846aff"
+	ethPaymentFinishedEmailTemplateID = "d-1e8763f27ef843cd8850ca297a426f3d"
+	stripePaymentReceiptEmailTemplateID   = "d-b5d79746c540439fac8791b192135aa6"
 
 	civilEmailName      = "Civil"
 	supportEmailAddress = "support@civil.co"
@@ -66,22 +66,7 @@ func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator, c
 	}
 }
 
-func (s *Service) getTemplateRequest(templateID string, emailAddress string) (req *email.SendTemplateEmailRequest) {
-	tmplData := email.TemplateData{
-		"newsroom_name": "test1",
-	}
-	return &email.SendTemplateEmailRequest{
-		ToName:       emailAddress,
-		ToEmail:      emailAddress,
-		FromName:     defaultFromEmailName,
-		FromEmail:    defaultFromEmailAddress,
-		TemplateID:   templateID,
-		TemplateData: tmplData,
-		AsmGroupID:   defaultAsmGroupID,
-	}
-}
-
-func (s *Service) getTemplateRequest2(templateID string, emailAddress string, tmplData email.TemplateData) (req *email.SendTemplateEmailRequest) {
+func getTemplateRequest(templateID string, emailAddress string, tmplData email.TemplateData) (req *email.SendTemplateEmailRequest) {
 	return &email.SendTemplateEmailRequest{
 		ToName:       emailAddress,
 		ToEmail:      emailAddress,
@@ -94,17 +79,17 @@ func (s *Service) getTemplateRequest2(templateID string, emailAddress string, tm
 }
 
 func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) {
-	req := s.getTemplateRequest2(ethPaymentStartedEmailTemplateID, emailAddress, tmplData)
+	req := getTemplateRequest(ethPaymentStartedEmailTemplateID, emailAddress, tmplData)
 	s.emailer.SendTemplateEmail(req)
 }
 
 func (s *Service) sendEthPaymentFinishedEmail(emailAddress string) {
-	req := s.getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress)
+	req := getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress, nil)
 	s.emailer.SendTemplateEmail(req)
 }
 
-func (s *Service) sendCCPaymentReceiptEmail(emailAddress string) {
-	req := s.getTemplateRequest(ccPaymentReceiptEmailTemplateID, emailAddress)
+func (s *Service) sendStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) {
+	req := getTemplateRequest(stripePaymentReceiptEmailTemplateID, emailAddress, tmplData)
 	s.emailer.SendTemplateEmail(req)
 }
 
@@ -240,7 +225,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 }
 
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
-func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerID string, payment StripePayment) (StripePayment, error) {
+func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerID string, payment StripePayment, tmplData email.TemplateData) (StripePayment, error) {
 
 	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
 	if err != nil {
@@ -281,7 +266,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	}
 	// if no email address given, that's fine
 	if payment.EmailAddress != "" {
-		s.sendCCPaymentReceiptEmail(payment.EmailAddress)
+		s.sendStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
 	}
 
 	return payment, nil
