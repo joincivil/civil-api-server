@@ -87,7 +87,7 @@ func TestService(t *testing.T) {
 		tx := makeTx("complete", channelAddress)
 
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "", nil)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -106,7 +106,7 @@ func TestService(t *testing.T) {
 		tx := makeTx("complete", channelAddress)
 
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "nick@joincivil.com")
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "nick@joincivil.com", nil)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -125,7 +125,7 @@ func TestService(t *testing.T) {
 		tx := makeTx("complete", channelAddress)
 
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "234-2")
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "234-2", nil)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -144,7 +144,7 @@ func TestService(t *testing.T) {
 
 		tx := makeTx("failed", channelAddress)
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "", nil)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -169,7 +169,7 @@ func TestService(t *testing.T) {
 
 		tx := makeTx("pending", channelAddress)
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "", nil)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
@@ -193,7 +193,7 @@ func TestService(t *testing.T) {
 
 		tx := makeTx("complete", common.HexToAddress("deadbeef"))
 		// create the payment
-		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "")
+		p, err := paymentService.CreateEtherPayment(channelID, ownerType, ownerID.String(), tx.Hash().String(), "", nil)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}

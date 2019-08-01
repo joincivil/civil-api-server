@@ -3,7 +3,6 @@ package graphql
 import (
 	context "context"
 	"errors"
-	"fmt"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/payments"

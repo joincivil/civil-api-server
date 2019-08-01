@@ -71,6 +71,7 @@ type StripePayment struct {
 	PaymentModel `json:"-"`
 	PaymentToken string `gorm:"-"`
 	EmailAddress string
+	UsdAmount string `gorm:"-"`
 }
 
 // Type is the type of payment for StripePayment
