@@ -125,7 +125,7 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(fmt.Sprintf("{\"PaymentAddress\":\"%v\"}", expectedAddress.String()))}
 
 	if err = s.db.Create(&payment).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return EtherPayment{}, err
 	}
 
@@ -270,7 +270,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	payment.ExchangeRate = 1
 
 	if err = s.db.Create(&payment).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return StripePayment{}, err
 	}
 	// only send payment receipt if email is given
@@ -288,7 +288,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	var pays []PaymentModel
 	if err := s.db.Where(&PaymentModel{OwnerType: "posts", OwnerID: postID}).Find(&pays).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 
@@ -296,7 +296,7 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	for _, result := range pays {
 		payment, err := ModelToInterface(&result)
 		if err != nil {
-			log.Errorf("An error occured: %v\n", err)
+			log.Errorf("An error occurred: %v\n", err)
 			return nil, err
 		}
 		paymentsSlice = append(paymentsSlice, payment)
@@ -309,7 +309,7 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 func (s *Service) GetPayment(paymentID string) (Payment, error) {
 	var paymentModel PaymentModel
 	if err := s.db.Where(&PaymentModel{ID: paymentID}).First(&paymentModel).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 

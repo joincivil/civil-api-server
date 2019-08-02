@@ -39,7 +39,7 @@ func (p *DBPostPersister) CreatePost(authorID string, post Post) (Post, error) {
 	}
 	base.AuthorID = authorID
 	if err = p.db.Create(base).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 	return BaseToPostInterface(base)
@@ -132,7 +132,7 @@ func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, e
 
 	results := pager.Paginate(stmt, &dbResults)
 	if results.Error != nil {
-		log.Errorf("An error occured: %v\n", results.Error)
+		log.Errorf("An error occurred: %v\n", results.Error)
 		return nil, results.Error
 	}
 
@@ -140,7 +140,7 @@ func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, e
 	for _, result := range dbResults {
 		post, err := BaseToPostInterface(&result)
 		if err != nil {
-			log.Errorf("An error occured: %v\n", err)
+			log.Errorf("An error occurred: %v\n", err)
 			return nil, err
 		}
 		posts = append(posts, post)
