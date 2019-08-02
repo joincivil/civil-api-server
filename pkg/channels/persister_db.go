@@ -203,7 +203,7 @@ func (p *DBPersister) SetEmailAddress(userID string, channelID string, emailAddr
 		return nil, errors.Wrap(err, "error setting email, not an admin")
 	}
 
-	err = p.db.Model(ch).Update(Channel{Email: emailAddress}).Error
+	err = p.db.Model(ch).Update(Channel{EmailAddress: emailAddress}).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "error setting email")
 	}

@@ -176,7 +176,7 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 }
 
 // don't export since should only be called through email confirm flow
-func (s *Service) setEmail(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
+func (s *Service) setEmailAddress(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
 	_, err := s.persister.GetChannel(channelID)
 	if err != nil {
 		return &SetEmailResponse{}, err
@@ -257,12 +257,12 @@ func (s *Service) buildSetEmailConfirmMarkup(confirmLink string) string {
 	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your 1 email address</a>", confirmLink)
 }
 
-func (s *Service) buildSub(email string, ref string, userID string, channelID string) (string, error) {
-	if ref == "" || email == "" || userID == "" || channelID == "" {
+func (s *Service) buildSub(emailAddress string, ref string, userID string, channelID string) (string, error) {
+	if ref == "" || emailAddress == "" || userID == "" || channelID == "" {
 		return "", errors.New("unable to build Sub")
 	}
 
-	parts := []string{email, ref, userID, channelID}
+	parts := []string{emailAddress, ref, userID, channelID}
 	return strings.Join(parts, subDelimiter), nil
 }
 
@@ -286,7 +286,7 @@ func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
 		return &SetEmailResponse{}, fmt.Errorf("invalid token")
 	}
 
-	return s.setEmail(userId, channelId, email)
+	return s.setEmailAddress(userId, channelId, email)
 }
 
 // ConnectStripeInput contains the fields needed to set the channel's stripe account
@@ -359,6 +359,15 @@ func (s *Service) GetChannelByHandle(handle string) (*Channel, error) {
 // IsChannelAdmin returns if the user is an admin of the channel
 func (s *Service) IsChannelAdmin(userID string, channelID string) (bool, error) {
 	return s.persister.IsChannelAdmin(userID, channelID)
+}
+
+// ChannelHandle returns the email address of the channel
+func (s *Service) ChannelEmailAddress(channelID string) (string, error) {
+	channel, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return "", err
+	}
+	return channel.EmailAddress, nil
 }
 
 // NormalizeHandle takes a string handle and removes

@@ -119,7 +119,7 @@ type ComplexityRoot struct {
 		IsStripeConnected  func(childComplexity int) int
 		CurrentUserIsAdmin func(childComplexity int) int
 		Handle             func(childComplexity int) int
-		Email              func(childComplexity int) int
+		EmailAddress       func(childComplexity int) int
 	}
 
 	ChannelMember struct {
@@ -2795,12 +2795,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Channel.Handle(childComplexity), true
 
-	case "Channel.email":
-		if e.complexity.Channel.Email == nil {
+	case "Channel.emailAddress":
+		if e.complexity.Channel.EmailAddress == nil {
 			break
 		}
 
-		return e.complexity.Channel.Email(childComplexity), true
+		return e.complexity.Channel.EmailAddress(childComplexity), true
 
 	case "ChannelMember.channel":
 		if e.complexity.ChannelMember.Channel == nil {
@@ -6337,8 +6337,8 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 			}(i, field)
 		case "handle":
 			out.Values[i] = ec._Channel_handle(ctx, field, obj)
-		case "email":
-			out.Values[i] = ec._Channel_email(ctx, field, obj)
+		case "emailAddress":
+			out.Values[i] = ec._Channel_emailAddress(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6551,7 +6551,7 @@ func (ec *executionContext) _Channel_handle(ctx context.Context, field graphql.C
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Channel_email(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+func (ec *executionContext) _Channel_emailAddress(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6563,7 +6563,7 @@ func (ec *executionContext) _Channel_email(ctx context.Context, field graphql.Co
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Email, nil
+		return obj.EmailAddress, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -20359,7 +20359,7 @@ type Channel {
   isStripeConnected: Boolean!
   currentUserIsAdmin: Boolean!
   handle: String
-  email: String
+  emailAddress: String
 }
 
 type ChannelMember {

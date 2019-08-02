@@ -117,3 +117,21 @@ func (r *channelResolver) CurrentUserIsAdmin(ctx context.Context, channel *chann
 
 	return r.channelService.IsChannelAdmin(token.Sub, channel.ID)
 }
+
+func (r *channelResolver) IsHandleAvailable(ctx context.Context, handle string) (bool) {
+	channel, err := r.channelService.GetChannelByHandle(handle)
+	if err == nil || channel != nil {
+		return false
+	}
+
+	return true
+}
+
+func (r *channelResolver) EmailAddress(ctx context.Context, channel *channels.Channel) (string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	return "poopy", nil //r.channelService.ChannelEmailAddress(channel.ID)
+}
