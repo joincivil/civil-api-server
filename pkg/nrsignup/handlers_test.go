@@ -12,7 +12,6 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 
