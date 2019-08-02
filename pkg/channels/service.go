@@ -275,7 +275,7 @@ func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
 	}
 
 	sub := claims["sub"].(string)
-	email, _, userId, channelId := s.subData2(sub)
+	email, _, userID, channelID := s.subData2(sub)
 	if email == "" {
 		return &SetEmailResponse{}, fmt.Errorf("no email found in token")
 	}
@@ -286,7 +286,7 @@ func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
 		return &SetEmailResponse{}, fmt.Errorf("invalid token")
 	}
 
-	return s.setEmailAddress(userId, channelId, email)
+	return s.setEmailAddress(userID, channelID, email)
 }
 
 // ConnectStripeInput contains the fields needed to set the channel's stripe account
@@ -389,7 +389,7 @@ func IsValidHandle(handle string) bool {
 }
 
 
-func (s *Service) subData2(sub string) (email string, ref string, userId string, channelId string) {
+func (s *Service) subData2(sub string) (email string, ref string, userID string, channelID string) {
 	splitsub := strings.Split(sub, subDelimiter)
 	if len(splitsub) == 1 {
 		return splitsub[0], "", "", ""

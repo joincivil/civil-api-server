@@ -19,7 +19,6 @@ const (
 	TypeGroup    = "group"
 )
 
-
 // SetEmailEnum represents the different Civil channels for confirming an email
 type SetEmailEnum string
 
