@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	ethPaymentStartedEmailTemplateID  = "d-a4595d0eb8c941ab897b9414ac846aff"
-	ethPaymentFinishedEmailTemplateID = "d-1e8763f27ef843cd8850ca297a426f3d"
-	stripePaymentReceiptEmailTemplateID   = "d-b5d79746c540439fac8791b192135aa6"
+	ethPaymentStartedEmailTemplateID    = "d-a4595d0eb8c941ab897b9414ac846aff"
+	ethPaymentFinishedEmailTemplateID   = "d-1e8763f27ef843cd8850ca297a426f3d"
+	stripePaymentReceiptEmailTemplateID = "d-b5d79746c540439fac8791b192135aa6"
 
 	civilEmailName      = "Civil"
 	supportEmailAddress = "support@civil.co"
@@ -78,19 +78,19 @@ func getTemplateRequest(templateID string, emailAddress string, tmplData email.T
 	}
 }
 
-func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) {
+func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) error {
 	req := getTemplateRequest(ethPaymentStartedEmailTemplateID, emailAddress, tmplData)
-	s.emailer.SendTemplateEmail(req)
+	return s.emailer.SendTemplateEmail(req)
 }
 
-func (s *Service) sendEthPaymentFinishedEmail(emailAddress string) {
+func (s *Service) sendEthPaymentFinishedEmail(emailAddress string) error {
 	req := getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress, nil)
-	s.emailer.SendTemplateEmail(req)
+	return s.emailer.SendTemplateEmail(req)
 }
 
-func (s *Service) sendStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) {
+func (s *Service) sendStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) error {
 	req := getTemplateRequest(stripePaymentReceiptEmailTemplateID, emailAddress, tmplData)
-	s.emailer.SendTemplateEmail(req)
+	return s.emailer.SendTemplateEmail(req)
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
@@ -131,7 +131,12 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 
 	// if no email address given, that's fine
 	if emailAddress != "" {
-		s.sendEthPaymentStartedEmail(emailAddress, tmplData)
+		err = s.sendEthPaymentStartedEmail(emailAddress, tmplData)
+		if err != nil {
+			return EtherPayment{
+				PaymentModel: payment,
+			}, err
+		}
 	}
 
 	return EtherPayment{
@@ -184,6 +189,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 	// expectedReceiver should be the channel ETH address
 	expectedReceiver := common.HexToAddress(etherPayment.PaymentAddress)
 	res, err := s.ethereum.ValidateTransaction(payment.Reference, expectedReceiver)
+	var err2 error
 	if err == ErrorTransactionFailed {
 		update.Status = "failed"
 	} else if err == ErrorReceiptNotFound || err == ErrorTransactionNotFound {
@@ -209,7 +215,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 
 			// if no email address given, that's fine
 			if etherPayment.EmailAddress != "" {
-				s.sendEthPaymentFinishedEmail(etherPayment.EmailAddress)
+				err2 = s.sendEthPaymentFinishedEmail(etherPayment.EmailAddress)
 			}
 		}
 	}
@@ -221,6 +227,9 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 		return err
 	}
 
+	if err2 != nil {
+		return err2
+	}
 	return nil
 }
 
@@ -266,7 +275,10 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	}
 	// if no email address given, that's fine
 	if payment.EmailAddress != "" {
-		s.sendStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+		err = s.sendStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+		if err != nil {
+			return payment, err
+		}
 	}
 
 	return payment, nil

@@ -68,11 +68,10 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 			"payment_amount_usd":   payment.UsdAmount,
 			"payment_from_address": payment.FromAddress,
 			"payment_to_address":   payment.PaymentAddress,
-			"boost_id": boost.ID,
+			"boost_id":             boost.ID,
 		}), nil
-	} else {
-		return nil, ErrNotImplemented
 	}
+	return nil, ErrNotImplemented
 }
 
 func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, payment payments.StripePayment) (email.TemplateData, error) {
@@ -87,12 +86,11 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 			return nil, errors.New("asdfsdfsdf")
 		}
 		return (email.TemplateData{
-			"newsroom_name":        newsroom.Name,
-			"boost_short_desc":     boost.Title,
-			"payment_amount_usd":   payment.UsdAmount,
-			"boost_id": boost.ID,
+			"newsroom_name":      newsroom.Name,
+			"boost_short_desc":   boost.Title,
+			"payment_amount_usd": payment.UsdAmount,
+			"boost_id":           boost.ID,
 		}), nil
-	} else {
-		return nil, ErrNotImplemented
 	}
+	return nil, ErrNotImplemented
 }
