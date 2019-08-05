@@ -55,11 +55,11 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 		boost := post.(*posts.Boost)
 		channel, err := r.channelService.GetChannel(post.GetChannelID())
 		if err != nil {
-			return nil, errors.New("bleawf")
+			return nil, errors.New("could not find channel")
 		}
 		newsroom, err := r.newsroomService.GetNewsroomByAddress(channel.Reference)
 		if err != nil {
-			return nil, errors.New("asdfsdfsdf")
+			return nil, errors.New("could not find newsroom")
 		}
 		return (email.TemplateData{
 			"newsroom_name":        newsroom.Name,
@@ -79,11 +79,11 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 		boost := post.(*posts.Boost)
 		channel, err := r.channelService.GetChannel(post.GetChannelID())
 		if err != nil {
-			return nil, errors.New("bleawf")
+			return nil, errors.New("could not find channel")
 		}
 		newsroom, err := r.newsroomService.GetNewsroomByAddress(channel.Reference)
 		if err != nil {
-			return nil, errors.New("asdfsdfsdf")
+			return nil, errors.New("could not find newsroom")
 		}
 		return (email.TemplateData{
 			"newsroom_name":      newsroom.Name,
