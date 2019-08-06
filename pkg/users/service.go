@@ -70,7 +70,7 @@ func (s *UserService) GetUser(identifier UserCriteria) (*User, error) {
 
 // GetETHAddresses returns the ETH addresses associated with a user
 func (s *UserService) GetETHAddresses(userID string) ([]common.Address, error) {
-	user, err := s.GetUser(UserCriteria{})
+	user, err := s.GetUser(UserCriteria{UID: userID})
 	if err != nil {
 		return nil, err
 	}
