@@ -559,6 +559,7 @@ type PaymentEther implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  fromAddress: String!
 }
 
 type PaymentToken implements Payment {
@@ -581,6 +582,7 @@ input PaymentsCreateStripePaymentInput {
   currencyCode: String!
   amount: Float!
   paymentToken: String!
+  emailAddress: String
 }
 
 # Payment inputs
@@ -588,6 +590,11 @@ input PaymentsCreateEtherPaymentInput {
   reaction: String
   comment: String
   transactionID: String!
+  emailAddress: String
+  paymentAddress: String!
+  fromAddress: String!
+  amount: Float!
+  usdAmount: String!
 }
 
 # Payment inputs
@@ -596,6 +603,7 @@ input PaymentsCreateTokenPaymentInput {
   comment: String
   transactionID: String!
   tokenAddress: String!
+  emailAddress: String
 }
 
 ## User object schemas

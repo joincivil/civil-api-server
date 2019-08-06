@@ -29,6 +29,7 @@ type PaymentModel struct {
 	Data         postgres.Jsonb
 	OwnerID      string `gorm:"not null"`
 	OwnerType    string `gorm:"not null"`
+	EmailAddress string
 }
 
 // TableName returns the gorm table name for Base
@@ -69,6 +70,8 @@ func ModelToInterface(model *PaymentModel) (Payment, error) {
 type StripePayment struct {
 	PaymentModel `json:"-"`
 	PaymentToken string `gorm:"-"`
+	EmailAddress string
+	UsdAmount    string `gorm:"-"`
 }
 
 // Type is the type of payment for StripePayment
@@ -78,9 +81,17 @@ func (p StripePayment) Type() string {
 
 // EtherPayment is a payment in Ether
 type EtherPayment struct {
-	PaymentModel   `json:"-"`
-	TransactionID  string `gorm:"-"`
+	PaymentModel  `json:"-"`
+	TransactionID string `gorm:"-"`
+
+	// the following fields are all what the user is *claiming* to be part of the transaction
+	// it is possible that these are spoofed, but are only used for a user's email receipts
+	// so we don't mind if they want to maliciously give themselves bad receipt data
 	PaymentAddress string `gorm:"-"`
+	FromAddress    string `gorm:"-"`
+	EthAmount      string `gorm:"-"`
+	UsdAmount      string `gorm:"-"`
+	EmailAddress   string
 }
 
 // Type is the type of payment for EtherPayment
@@ -93,6 +104,7 @@ type TokenPayment struct {
 	PaymentModel  `json:"-"`
 	TransactionID string
 	TokenAddress  string
+	EmailAddress  string
 }
 
 // Type is the type of payment for TokenPayment

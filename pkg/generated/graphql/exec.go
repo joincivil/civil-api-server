@@ -328,6 +328,7 @@ type ComplexityRoot struct {
 		UpdatedAt     func(childComplexity int) int
 		TransactionId func(childComplexity int) int
 		UsdEquivalent func(childComplexity int) int
+		FromAddress   func(childComplexity int) int
 	}
 
 	PaymentStripe struct {
@@ -3932,6 +3933,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaymentEther.UsdEquivalent(childComplexity), true
+
+	case "PaymentEther.fromAddress":
+		if e.complexity.PaymentEther.FromAddress == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.FromAddress(childComplexity), true
 
 	case "PaymentStripe.status":
 		if e.complexity.PaymentStripe.Status == nil {
@@ -11732,6 +11740,11 @@ func (ec *executionContext) _PaymentEther(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "fromAddress":
+			out.Values[i] = ec._PaymentEther_fromAddress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11999,6 +12012,33 @@ func (ec *executionContext) _PaymentEther_usdEquivalent(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_fromAddress(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FromAddress, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var paymentStripeImplementors = []string{"PaymentStripe", "Payment"}
@@ -18976,6 +19016,36 @@ func UnmarshalPaymentsCreateEtherPaymentInput(v interface{}) (payments.EtherPaym
 			if err != nil {
 				return it, err
 			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "paymentAddress":
+			var err error
+			it.PaymentAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "fromAddress":
+			var err error
+			it.FromAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "amount":
+			var err error
+			it.Amount, err = graphql.UnmarshalFloat(v)
+			if err != nil {
+				return it, err
+			}
+		case "usdAmount":
+			var err error
+			it.UsdAmount, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -19018,6 +19088,12 @@ func UnmarshalPaymentsCreateStripePaymentInput(v interface{}) (payments.StripePa
 			if err != nil {
 				return it, err
 			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -19051,6 +19127,12 @@ func UnmarshalPaymentsCreateTokenPaymentInput(v interface{}) (payments.TokenPaym
 		case "tokenAddress":
 			var err error
 			it.TokenAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -20038,6 +20120,7 @@ type PaymentEther implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  fromAddress: String!
 }
 
 type PaymentToken implements Payment {
@@ -20060,6 +20143,7 @@ input PaymentsCreateStripePaymentInput {
   currencyCode: String!
   amount: Float!
   paymentToken: String!
+  emailAddress: String
 }
 
 # Payment inputs
@@ -20067,6 +20151,11 @@ input PaymentsCreateEtherPaymentInput {
   reaction: String
   comment: String
   transactionID: String!
+  emailAddress: String
+  paymentAddress: String!
+  fromAddress: String!
+  amount: Float!
+  usdAmount: String!
 }
 
 # Payment inputs
@@ -20075,6 +20164,7 @@ input PaymentsCreateTokenPaymentInput {
   comment: String
   transactionID: String!
   tokenAddress: String!
+  emailAddress: String
 }
 
 ## User object schemas
