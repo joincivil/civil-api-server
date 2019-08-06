@@ -129,7 +129,7 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 		return EtherPayment{}, err
 	}
 
-	// if no email address given, that's fine
+	// only send payment receipt if email is given
 	if emailAddress != "" {
 		err = s.sendEthPaymentStartedEmail(emailAddress, tmplData)
 		if err != nil {
@@ -212,10 +212,10 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			update.Data = postgres.Jsonb{RawMessage: data}
 			update.ExchangeRate = res.ExchangeRate
 			update.Amount = res.Amount
-
-			// if no email address given, that's fine
-			if etherPayment.EmailAddress != "" {
-				err2 = s.sendEthPaymentFinishedEmail(etherPayment.EmailAddress)
+			log.Infof("email address: " + payment.EmailAddress)
+			// only send payment receipt if email is given
+			if payment.EmailAddress != "" {
+				err2 = s.sendEthPaymentFinishedEmail(payment.EmailAddress)
 			}
 		}
 	}
@@ -273,7 +273,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 		log.Errorf("An error occured: %v\n", err)
 		return StripePayment{}, err
 	}
-	// if no email address given, that's fine
+	// only send payment receipt if email is given
 	if payment.EmailAddress != "" {
 		err = s.sendStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
 		if err != nil {
