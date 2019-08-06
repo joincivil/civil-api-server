@@ -23,7 +23,7 @@ When adding and removing imports, make sure to run `dep ensure`.  Any adding or 
 
 ## Lint
 
-Check all the packages for linting errors using a variety of linters via `gometalinter`.  Check the `Makefile` for the up to date list of linters.
+Check all the packages for linting errors using a variety of linters via `golangci-lint`.  Check the `Makefile` for the up to date list of linters.
 
 ```
 make lint
