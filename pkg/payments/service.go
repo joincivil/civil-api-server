@@ -79,10 +79,10 @@ func getTemplateRequest(templateID string, emailAddress string, tmplData email.T
 }
 
 // GetChannelTotalProceeds gets total proceeds for the channel, broken out by payment type
-func (s *Service) GetChannelTotalProceeds(channelID string) (*ProceedsQueryResult, error) {
+func (s *Service) GetChannelTotalProceeds(channelID string) *ProceedsQueryResult {
 	var result ProceedsQueryResult
 	s.db.Raw(fmt.Sprintf("SELECT posts.post_type, sum(amount * exchange_rate) as total_amount, sum(amount * exchange_rate ) FILTER (WHERE p.currency_code = 'USD')  as usd, sum(amount * exchange_rate) as eth_usd_amount, sum(amount) FILTER (WHERE p.currency_code = 'ETH')  as ether from payments p inner join posts on p.owner_id::uuid = posts.id and p.owner_type = 'posts' where posts.channel_id = ? group by post_type order by post_type;"), channelID).Scan(&result)
-	return &result, nil
+	return &result
 }
 
 func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) error {
