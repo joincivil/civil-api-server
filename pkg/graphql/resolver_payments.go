@@ -94,3 +94,11 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 	}
 	return nil, ErrNotImplemented
 }
+
+func (r *queryResolver) GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error) {
+	result, err := r.paymentService.GetChannelTotalProceeds(channelID)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}

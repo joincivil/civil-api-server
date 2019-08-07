@@ -433,6 +433,14 @@ type ComplexityRoot struct {
 		AfterCursor  func(childComplexity int) int
 	}
 
+	ProceedsQueryResult struct {
+		PostType     func(childComplexity int) int
+		TotalAmount  func(childComplexity int) int
+		Usd          func(childComplexity int) int
+		EthUsdAmount func(childComplexity int) int
+		Ether        func(childComplexity int) int
+	}
+
 	Query struct {
 		Articles                     func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                    func(childComplexity int, id int, lowercaseAddr *bool) int
@@ -453,6 +461,7 @@ type ComplexityRoot struct {
 		NrsignupNewsroom             func(childComplexity int) int
 		PostsGet                     func(childComplexity int, id string) int
 		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
+		GetChannelTotalProceeds      func(childComplexity int, channelID string) int
 		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
 		CurrentUser                  func(childComplexity int) int
 		StorefrontEthPrice           func(childComplexity int) int
@@ -673,6 +682,7 @@ type QueryResolver interface {
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
+	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
@@ -2338,6 +2348,21 @@ func field_Query_postsSearch_args(rawArgs map[string]interface{}) (map[string]in
 		}
 	}
 	args["search"] = arg0
+	return args, nil
+
+}
+
+func field_Query_getChannelTotalProceeds_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg0
 	return args, nil
 
 }
@@ -4551,6 +4576,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostSearchResult.AfterCursor(childComplexity), true
 
+	case "ProceedsQueryResult.postType":
+		if e.complexity.ProceedsQueryResult.PostType == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.PostType(childComplexity), true
+
+	case "ProceedsQueryResult.totalAmount":
+		if e.complexity.ProceedsQueryResult.TotalAmount == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.TotalAmount(childComplexity), true
+
+	case "ProceedsQueryResult.usd":
+		if e.complexity.ProceedsQueryResult.Usd == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.Usd(childComplexity), true
+
+	case "ProceedsQueryResult.ethUsdAmount":
+		if e.complexity.ProceedsQueryResult.EthUsdAmount == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.EthUsdAmount(childComplexity), true
+
+	case "ProceedsQueryResult.ether":
+		if e.complexity.ProceedsQueryResult.Ether == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.Ether(childComplexity), true
+
 	case "Query.articles":
 		if e.complexity.Query.Articles == nil {
 			break
@@ -4773,6 +4833,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.PostsSearch(childComplexity, args["search"].(posts.SearchInput)), true
+
+	case "Query.getChannelTotalProceeds":
+		if e.complexity.Query.GetChannelTotalProceeds == nil {
+			break
+		}
+
+		args, err := field_Query_getChannelTotalProceeds_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetChannelTotalProceeds(childComplexity, args["channelID"].(string)), true
 
 	case "Query.userChallengeData":
 		if e.complexity.Query.UserChallengeData == nil {
@@ -15001,6 +15073,161 @@ func (ec *executionContext) _PostSearchResult_afterCursor(ctx context.Context, f
 	return graphql.MarshalString(res)
 }
 
+var proceedsQueryResultImplementors = []string{"ProceedsQueryResult"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ProceedsQueryResult(ctx context.Context, sel ast.SelectionSet, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, proceedsQueryResultImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProceedsQueryResult")
+		case "postType":
+			out.Values[i] = ec._ProceedsQueryResult_postType(ctx, field, obj)
+		case "totalAmount":
+			out.Values[i] = ec._ProceedsQueryResult_totalAmount(ctx, field, obj)
+		case "usd":
+			out.Values[i] = ec._ProceedsQueryResult_usd(ctx, field, obj)
+		case "ethUsdAmount":
+			out.Values[i] = ec._ProceedsQueryResult_ethUsdAmount(ctx, field, obj)
+		case "ether":
+			out.Values[i] = ec._ProceedsQueryResult_ether(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_postType(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PostType, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_totalAmount(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalAmount, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_usd(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Usd, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_ethUsdAmount(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EthUsdAmount, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_ether(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ether, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
 var queryImplementors = []string{"Query"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -15153,6 +15380,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_postsSearch(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "getChannelTotalProceeds":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_getChannelTotalProceeds(ctx, field)
 				wg.Done()
 			}(i, field)
 		case "userChallengeData":
@@ -16057,6 +16290,41 @@ func (ec *executionContext) _Query_postsSearch(ctx context.Context, field graphq
 	}
 
 	return ec._PostSearchResult(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_getChannelTotalProceeds(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_getChannelTotalProceeds_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetChannelTotalProceeds(rctx, args["channelID"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*payments.ProceedsQueryResult)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._ProceedsQueryResult(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -20054,6 +20322,9 @@ type Query {
   postsGet(id: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
 
+  # Payment Queries
+  getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
+
   # UserChallengeData Queries
   userChallengeData(
     userAddr: String
@@ -20465,6 +20736,14 @@ type PostSearchResult {
   posts: [Post!]
   beforeCursor: String
   afterCursor: String
+}
+
+type ProceedsQueryResult {
+  postType: String
+  totalAmount: String
+  usd: String
+  ethUsdAmount: String
+  ether: String
 }
 
 # input objects

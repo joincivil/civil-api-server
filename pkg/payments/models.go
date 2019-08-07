@@ -122,3 +122,12 @@ type TokenPayment struct {
 func (p TokenPayment) Type() string {
 	return PaymentTypeToken
 }
+
+// ProceedsQueryResult is
+type ProceedsQueryResult struct {
+	PostType     string
+	TotalAmount  string
+	Usd          string
+	EthUsdAmount string
+	Ether        string
+}
