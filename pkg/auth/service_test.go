@@ -9,9 +9,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/joincivil/civil-api-server/pkg/auth"
-	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 	"github.com/joincivil/civil-api-server/pkg/users"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/joincivil/go-common/pkg/eth"
 	ctime "github.com/joincivil/go-common/pkg/time"
