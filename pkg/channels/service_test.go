@@ -387,6 +387,9 @@ func TestCreateChannel(t *testing.T) {
 		parts = []string{validEmail, string(channels.SetEmailEnumUser), u1, channel2.ID}
 		sub = strings.Join(parts, "||")
 		token, err = generator.GenerateToken(sub, 360)
+		if err != nil {
+			t.Fatalf("was not expecting error. err: %v", err)
+		}
 		// don't set email for wrong channel
 		_, err = svc.SetEmailConfirm(token)
 		if err != channels.ErrorUnauthorized {
@@ -396,6 +399,9 @@ func TestCreateChannel(t *testing.T) {
 		parts = []string{invalidEmail, string(channels.SetEmailEnumUser), u1, channel1.ID}
 		sub = strings.Join(parts, "||")
 		token, err = generator.GenerateToken(sub, 360)
+		if err != nil {
+			t.Fatalf("was not expecting error. err: %v", err)
+		}
 		// don't set invalid email
 		_, err = svc.SetEmailConfirm(token)
 		if err != channels.ErrorInvalidEmail {

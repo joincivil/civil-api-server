@@ -108,7 +108,7 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *u
 // 	}
 
 // 	uid := &token.Sub
-	
+
 // 	user, err := r.userService.UpdateUser(*uid, input)
 // 	if err != nil {
 // 		return nil, err

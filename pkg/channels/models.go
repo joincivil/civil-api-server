@@ -54,7 +54,7 @@ type SetHandleInput struct {
 }
 
 type SetEmailInput struct {
-	ChannelID string
+	ChannelID    string
 	EmailAddress string
 }
 
@@ -70,7 +70,7 @@ type Channel struct {
 	RawHandle       *string
 	Members         []ChannelMember
 	StripeAccountID string
-	EmailAddress			string
+	EmailAddress    string
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted
