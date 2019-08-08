@@ -181,7 +181,13 @@ func (s *Service) setEmailAddress(userID string, channelID string, emailAddress 
 		return &SetEmailResponse{}, err
 	}
 
-	// check again that email is valid? ehh
+	isAdmin, err := s.IsChannelAdmin(userID, channelID)
+	if err != nil {
+		return &SetEmailResponse{}, err
+	}
+	if !isAdmin {
+		return &SetEmailResponse{}, ErrorUnauthorized
+	}
 
 	_, err = s.persister.SetEmailAddress(userID, channelID, emailAddress)
 	if err != nil {
@@ -276,8 +282,8 @@ func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
 
 	sub := claims["sub"].(string)
 	email, _, userID, channelID := s.subData2(sub)
-	if email == "" {
-		return &SetEmailResponse{}, fmt.Errorf("no email found in token")
+	if !IsValidEmail(email) {
+		return &SetEmailResponse{}, ErrorInvalidEmail
 	}
 
 	// Don't allow refresh token use here
@@ -390,7 +396,7 @@ func IsValidHandle(handle string) bool {
 
 // IsValidEmail returns whether the provided email is valid
 func IsValidEmail(handle string) bool {
-	matched, err := regexp.Match(`\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b`, []byte(handle))
+	matched, err := regexp.Match(`\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b`, []byte(handle))
 	if err != nil {
 		return false
 	}
