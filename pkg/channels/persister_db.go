@@ -123,6 +123,7 @@ func (p *DBPersister) GetChannelByHandle(handle string) (*Channel, error) {
 	return c, nil
 }
 
+// GetChannelMembers retrieves all the members of a channel given an id
 func (p *DBPersister) GetChannelMembers(channelID string) ([]*ChannelMember, error) {
 	var c []*ChannelMember
 

@@ -23,7 +23,7 @@ type NewsroomHelper interface {
 	GetOwner(newsroomAddress common.Address) (common.Address, error)
 }
 
-// StripeCharger defines the functions needed to connect an account to Stripe
+// StripeConnector defines the functions needed to connect an account to Stripe
 type StripeConnector interface {
 	ConnectAccount(code string) (string, error)
 }
@@ -194,6 +194,7 @@ func (s *Service) GetChannel(id string) (*Channel, error) {
 	return s.persister.GetChannel(id)
 }
 
+// GetChannelMembers returns a list of channel members given a channel id
 func (s *Service) GetChannelMembers(channelID string) ([]*ChannelMember, error) {
 	return s.persister.GetChannelMembers(channelID)
 }

@@ -7,6 +7,17 @@ import (
 	"github.com/jinzhu/gorm/dialects/postgres"
 )
 
+const (
+	// PaymentTypeStripe is the payment type id for Stripe
+	PaymentTypeStripe = "stripe"
+
+	// PaymentTypeEther is the payment type id for ether
+	PaymentTypeEther = "ether"
+
+	// PaymentTypeToken is the payment type id for token
+	PaymentTypeToken = "token"
+)
+
 // Payment is a transfer of value from one party to the other
 type Payment interface {
 	Type() string
@@ -46,15 +57,15 @@ func (p PaymentModel) USDEquivalent() float64 {
 func ModelToInterface(model *PaymentModel) (Payment, error) {
 	var payment Payment
 	switch model.PaymentType {
-	case "stripe":
+	case PaymentTypeStripe:
 		payment = &StripePayment{
 			PaymentModel: *model,
 		}
-	case "ether":
+	case PaymentTypeEther:
 		payment = &EtherPayment{
 			PaymentModel: *model,
 		}
-	case "token":
+	case PaymentTypeToken:
 		payment = &TokenPayment{
 			PaymentModel: *model,
 		}
@@ -76,7 +87,7 @@ type StripePayment struct {
 
 // Type is the type of payment for StripePayment
 func (p StripePayment) Type() string {
-	return "stripe"
+	return PaymentTypeStripe
 }
 
 // EtherPayment is a payment in Ether
@@ -96,7 +107,7 @@ type EtherPayment struct {
 
 // Type is the type of payment for EtherPayment
 func (p EtherPayment) Type() string {
-	return "ether"
+	return PaymentTypeEther
 }
 
 // TokenPayment is a payment using an ERC20 token
@@ -109,5 +120,5 @@ type TokenPayment struct {
 
 // Type is the type of payment for TokenPayment
 func (p TokenPayment) Type() string {
-	return "token"
+	return PaymentTypeToken
 }
