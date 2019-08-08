@@ -404,7 +404,7 @@ type Channel {
   isStripeConnected: Boolean!
   currentUserIsAdmin: Boolean!
   handle: String
-  emailAddress: String
+  EmailAddressRestricted: String
 }
 
 type ChannelMember {

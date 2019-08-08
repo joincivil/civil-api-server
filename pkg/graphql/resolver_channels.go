@@ -67,7 +67,7 @@ func (r *mutationResolver) ChannelsSetEmail(ctx context.Context, input channels.
 		return nil, ErrAccessDenied
 	}
 
-	return r.channelService.SendEmailConfirmation(token.Sub, input.ChannelID, input.EmailAddress, channels.SetEmailEnumDefault)	
+	return r.channelService.SendEmailConfirmation(token.Sub, input.ChannelID, input.EmailAddress, channels.SetEmailEnumDefault)
 }
 
 func (r *mutationResolver) ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error) {
@@ -118,7 +118,7 @@ func (r *channelResolver) CurrentUserIsAdmin(ctx context.Context, channel *chann
 	return r.channelService.IsChannelAdmin(token.Sub, channel.ID)
 }
 
-func (r *channelResolver) IsHandleAvailable(ctx context.Context, handle string) (bool) {
+func (r *channelResolver) IsHandleAvailable(ctx context.Context, handle string) bool {
 	channel, err := r.channelService.GetChannelByHandle(handle)
 	if err == nil || channel != nil {
 		return false
@@ -127,11 +127,18 @@ func (r *channelResolver) IsHandleAvailable(ctx context.Context, handle string) 
 	return true
 }
 
-func (r *channelResolver) EmailAddress(ctx context.Context, channel *channels.Channel) (string, error) {
+func (r *channelResolver) EmailAddressRestricted(ctx context.Context, channel *channels.Channel) (*string, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return "", ErrAccessDenied
+		return nil, ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channel.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrAccessDenied
 	}
 
-	return "poopy", nil //r.channelService.ChannelEmailAddress(channel.ID)
+	return &channel.EmailAddress, nil
 }

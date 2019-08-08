@@ -112,14 +112,14 @@ type ComplexityRoot struct {
 	}
 
 	Channel struct {
-		Id                 func(childComplexity int) int
-		ChannelType        func(childComplexity int) int
-		Newsroom           func(childComplexity int) int
-		PostsSearch        func(childComplexity int, search posts.SearchInput) int
-		IsStripeConnected  func(childComplexity int) int
-		CurrentUserIsAdmin func(childComplexity int) int
-		Handle             func(childComplexity int) int
-		EmailAddress       func(childComplexity int) int
+		Id                     func(childComplexity int) int
+		ChannelType            func(childComplexity int) int
+		Newsroom               func(childComplexity int) int
+		PostsSearch            func(childComplexity int, search posts.SearchInput) int
+		IsStripeConnected      func(childComplexity int) int
+		CurrentUserIsAdmin     func(childComplexity int) int
+		Handle                 func(childComplexity int) int
+		EmailAddressRestricted func(childComplexity int) int
 	}
 
 	ChannelMember struct {
@@ -534,6 +534,8 @@ type ChannelResolver interface {
 	PostsSearch(ctx context.Context, obj *channels.Channel, search posts.SearchInput) (*posts.PostSearchResult, error)
 	IsStripeConnected(ctx context.Context, obj *channels.Channel) (bool, error)
 	CurrentUserIsAdmin(ctx context.Context, obj *channels.Channel) (bool, error)
+
+	EmailAddressRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
 }
 type CharterResolver interface {
 	ContentID(ctx context.Context, obj *model.Charter) (int, error)
@@ -2795,12 +2797,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Channel.Handle(childComplexity), true
 
-	case "Channel.emailAddress":
-		if e.complexity.Channel.EmailAddress == nil {
+	case "Channel.EmailAddressRestricted":
+		if e.complexity.Channel.EmailAddressRestricted == nil {
 			break
 		}
 
-		return e.complexity.Channel.EmailAddress(childComplexity), true
+		return e.complexity.Channel.EmailAddressRestricted(childComplexity), true
 
 	case "ChannelMember.channel":
 		if e.complexity.ChannelMember.Channel == nil {
@@ -6337,8 +6339,12 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 			}(i, field)
 		case "handle":
 			out.Values[i] = ec._Channel_handle(ctx, field, obj)
-		case "emailAddress":
-			out.Values[i] = ec._Channel_emailAddress(ctx, field, obj)
+		case "EmailAddressRestricted":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Channel_EmailAddressRestricted(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6551,7 +6557,7 @@ func (ec *executionContext) _Channel_handle(ctx context.Context, field graphql.C
 }
 
 // nolint: vetshadow
-func (ec *executionContext) _Channel_emailAddress(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+func (ec *executionContext) _Channel_EmailAddressRestricted(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
 	rctx := &graphql.ResolverContext{
@@ -6563,15 +6569,19 @@ func (ec *executionContext) _Channel_emailAddress(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EmailAddress, nil
+		return ec.resolvers.Channel().EmailAddressRestricted(rctx, obj)
 	})
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return graphql.MarshalString(res)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
 }
 
 var channelMemberImplementors = []string{"ChannelMember"}
@@ -20359,7 +20369,7 @@ type Channel {
   isStripeConnected: Boolean!
   currentUserIsAdmin: Boolean!
   handle: String
-  emailAddress: String
+  EmailAddressRestricted: String
 }
 
 type ChannelMember {

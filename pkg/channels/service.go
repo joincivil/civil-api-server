@@ -1,15 +1,15 @@
 package channels
 
 import (
-	"fmt"
 	"errors"
-	"regexp"
-	"strings"
-	"github.com/joincivil/go-common/pkg/email"
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
-	uuid "github.com/satori/go.uuid"
 	"github.com/joincivil/civil-api-server/pkg/utils"
+	"github.com/joincivil/go-common/pkg/email"
+	uuid "github.com/satori/go.uuid"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -19,23 +19,23 @@ const (
 	// OkResponse is sent when an action is completed successfully
 	OkResponse = "ok"
 
-	subDelimiter = "||"
-	defaultSetEmailVerifyURI   = "auth/confirm-email"
-	confirmEmailTemplate = "d-6fb32255ddc5461c86db126042e3ed78"
-	civilMediaName  = "Civil Media Company"
-	civilMediaEmail = "support@civil.co"
+	subDelimiter             = "||"
+	defaultSetEmailVerifyURI = "auth/confirm-email"
+	confirmEmailTemplate     = "d-6fb32255ddc5461c86db126042e3ed78"
+	civilMediaName           = "Civil Media Company"
+	civilMediaEmail          = "support@civil.co"
 
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
 // Service provides methods to interact with Channels
 type Service struct {
-	persister       Persister
-	newsroomHelper  NewsroomHelper
-	stripeConnector StripeConnector
-	tokenGenerator         *utils.JwtTokenGenerator
-	emailer                *email.Emailer
-	signupLoginProtoHost   string
+	persister            Persister
+	newsroomHelper       NewsroomHelper
+	stripeConnector      StripeConnector
+	tokenGenerator       *utils.JwtTokenGenerator
+	emailer              *email.Emailer
+	signupLoginProtoHost string
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -49,13 +49,12 @@ type StripeConnector interface {
 	ConnectAccount(code string) (string, error)
 }
 
-
 // NewServiceFromConfig creates a new channels.Service using the main graphql config
 func NewServiceFromConfig(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
 	emailer *email.Emailer, config *utils.GraphQLConfig) *Service {
-		signupLoginProtoHost := config.SignupLoginProtoHost
-		return NewService(persister, newsroomHelper, stripeConnector, tokenGenerator, emailer, signupLoginProtoHost)
-	}
+	signupLoginProtoHost := config.SignupLoginProtoHost
+	return NewService(persister, newsroomHelper, stripeConnector, tokenGenerator, emailer, signupLoginProtoHost)
+}
 
 // NewService builds a new Service instance
 func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
@@ -191,12 +190,15 @@ func (s *Service) setEmailAddress(userID string, channelID string, emailAddress 
 	return &SetEmailResponse{UserID: userID, ChannelID: channelID}, nil
 }
 
+// SendEmailConfirmation sends an email to the user with link containing jwt that can be used to confirm ownership of email address
 func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAddress string, channelType SetEmailEnum) (*Channel, error) {
 	channel, err := s.persister.GetChannel(channelID)
 	if err != nil {
 		return nil, err
 	}
-	// if isValidEmail...
+	if !IsValidEmail(emailAddress) {
+		return nil, ErrorInvalidEmail
+	}
 
 	referral := string(channelType)
 	_, err = s.sendEmailToken(emailAddress, userID, channelID, confirmEmailTemplate, defaultSetEmailVerifyURI, referral)
@@ -205,7 +207,6 @@ func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAd
 	}
 	return channel, nil
 }
-
 
 func (s *Service) sendEmailToken(emailAddress string, userID string, channelID string, templateID string, verifyURI string,
 	referral string) (string, error) {
@@ -265,7 +266,6 @@ func (s *Service) buildSub(emailAddress string, ref string, userID string, chann
 	parts := []string{emailAddress, ref, userID, channelID}
 	return strings.Join(parts, subDelimiter), nil
 }
-
 
 // SetEmailConfirm validates the JWT token emailed to the user and creates the User account
 func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
@@ -388,6 +388,15 @@ func IsValidHandle(handle string) bool {
 	return matched
 }
 
+// IsValidEmail returns whether the provided email is valid
+func IsValidEmail(handle string) bool {
+	matched, err := regexp.Match(`\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b`, []byte(handle))
+	if err != nil {
+		return false
+	}
+
+	return matched
+}
 
 func (s *Service) subData2(sub string) (email string, ref string, userID string, channelID string) {
 	splitsub := strings.Split(sub, subDelimiter)
