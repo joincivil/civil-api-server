@@ -81,7 +81,7 @@ type MockStripeConnector struct{}
 
 func (s MockStripeConnector) ConnectAccount(code string) (string, error) {
 	if code == "fail" {
-		return "", fmt.Errorf("error settting stripe account")
+		return "", fmt.Errorf("error setting stripe account")
 	}
 	return stripeAccountID, nil
 }
