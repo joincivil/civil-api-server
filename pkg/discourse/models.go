@@ -20,6 +20,7 @@ type ListingMap struct {
 	DeletedAt      *time.Time
 }
 
+// TableName returns the table name to use for the Discourse listing map
 func (l *ListingMap) TableName() string {
 	return defaultTableName
 }
