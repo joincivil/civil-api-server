@@ -18,6 +18,9 @@ func (r *queryResolver) ChannelsGetByID(ctx context.Context, id string) (*channe
 func (r *queryResolver) ChannelsGetByNewsroomAddress(ctx context.Context, contractAddress string) (*channels.Channel, error) {
 	return r.channelService.GetChannelByReference("newsroom", contractAddress)
 }
+func (r *queryResolver) ChannelsGetByUserID(ctx context.Context, userID string) (*channels.Channel, error) {
+	return r.channelService.GetChannelByReference("user", userID)
+}
 
 func (r *queryResolver) ChannelsGetByHandle(ctx context.Context, handle string) (*channels.Channel, error) {
 	return r.channelService.GetChannelByHandle(handle)
@@ -56,6 +59,19 @@ func (r *mutationResolver) ChannelsSetHandle(ctx context.Context, input channels
 	}
 
 	return r.channelService.SetHandle(token.Sub, input.ChannelID, input.Handle)
+}
+
+func (r *mutationResolver) ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	return r.channelService.SendEmailConfirmation(token.Sub, input.ChannelID, input.EmailAddress, channels.SetEmailEnumDefault)
+}
+
+func (r *mutationResolver) ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error) {
+	return r.channelService.SetEmailConfirm(jwt)
 }
 
 // Channel is the resolver for the Channel type
@@ -100,4 +116,29 @@ func (r *channelResolver) CurrentUserIsAdmin(ctx context.Context, channel *chann
 	}
 
 	return r.channelService.IsChannelAdmin(token.Sub, channel.ID)
+}
+
+func (r *channelResolver) IsHandleAvailable(ctx context.Context, handle string) bool {
+	channel, err := r.channelService.GetChannelByHandle(handle)
+	if err == nil || channel != nil {
+		return false
+	}
+
+	return true
+}
+
+func (r *channelResolver) EmailAddressRestricted(ctx context.Context, channel *channels.Channel) (*string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channel.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrAccessDenied
+	}
+
+	return &channel.EmailAddress, nil
 }

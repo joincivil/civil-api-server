@@ -1,13 +1,13 @@
-package auth_test
+package utils_test
 
 import (
 	"testing"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 func TestGenerateToken(t *testing.T) {
-	generator := auth.NewJwtTokenGenerator([]byte("TestSecret"))
+	generator := utils.NewJwtTokenGenerator([]byte("TestSecret"))
 	token, err := generator.GenerateToken("my id", 1000)
 
 	if err != nil {
@@ -24,7 +24,7 @@ func TestGenerateToken(t *testing.T) {
 }
 
 func TestRefreshToken(t *testing.T) {
-	generator := auth.NewJwtTokenGenerator([]byte("TestSecret"))
+	generator := utils.NewJwtTokenGenerator([]byte("TestSecret"))
 	token, err := generator.GenerateRefreshToken("my id")
 
 	if err != nil {

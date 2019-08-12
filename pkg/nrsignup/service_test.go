@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
@@ -144,7 +144,7 @@ func newTestNewsroomSignupService(t *testing.T, sendGridKey string) (
 		email.NewEmailerWithSandbox(sendGridKey, useSandbox),
 		buildUserService(),
 		jsonbService,
-		auth.NewJwtTokenGenerator([]byte(testSecret)),
+		utils.NewJwtTokenGenerator([]byte(testSecret)),
 		"http://localhost:8080",
 		"",
 		"",

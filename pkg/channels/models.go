@@ -19,6 +19,26 @@ const (
 	TypeGroup    = "group"
 )
 
+// SetEmailEnum represents the different Civil channels for confirming an email
+type SetEmailEnum string
+
+const (
+	// SetEmailEnumDefault is the default channel value
+	SetEmailEnumDefault SetEmailEnum = "DEFAULT"
+	// SetEmailEnumUser is the user channel value
+	SetEmailEnumUser SetEmailEnum = "USER"
+	// SetEmailEnumNewsroom is the newsroom channel value
+	SetEmailEnumNewsroom SetEmailEnum = "NEWSROOM"
+	// SetEmailEnumGroup is the group channel value
+	SetEmailEnumGroup SetEmailEnum = "GROUP"
+)
+
+// SetEmailResponse is sent when a channel successfully confirms their email address
+type SetEmailResponse struct {
+	ChannelID string
+	UserID    string `json:"uid"`
+}
+
 // CreateChannelInput contains the fields needed to create a channel
 type CreateChannelInput struct {
 	CreatorUserID string
@@ -33,6 +53,12 @@ type SetHandleInput struct {
 	Handle    string
 }
 
+// SetEmailInput contains the fields needed to set a channel's email address
+type SetEmailInput struct {
+	ChannelID    string
+	EmailAddress string
+}
+
 // Channel is container for Posts
 type Channel struct {
 	ID              string `gorm:"type:uuid;primary_key"`
@@ -45,6 +71,7 @@ type Channel struct {
 	RawHandle       *string
 	Members         []ChannelMember
 	StripeAccountID string
+	EmailAddress    string
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted

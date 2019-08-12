@@ -8,6 +8,7 @@ import (
 	log "github.com/golang/glog"
 
 	jwtgo "github.com/dgrijalva/jwt-go"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -31,7 +32,7 @@ type contextKey struct {
 // Middleware decodes the `authorization` header jwt token and puts into context
 // The authorization header must be of format
 // "Authorization: Bearer <JWT token>"
-func Middleware(jwt *JwtTokenGenerator) func(http.Handler) http.Handler {
+func Middleware(jwt *utils.JwtTokenGenerator) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -85,7 +86,7 @@ func parseValidationErrorToCodeMsg(err error) (string, string) {
 	return code, msg
 }
 
-func validateDecodeToken(jwt *JwtTokenGenerator, authHeader string) (*Token, error) {
+func validateDecodeToken(jwt *utils.JwtTokenGenerator, authHeader string) (*Token, error) {
 
 	tokenRune := []rune(authHeader)
 

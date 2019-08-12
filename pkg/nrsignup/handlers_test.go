@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-chi/chi"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 
 	cemail "github.com/joincivil/go-common/pkg/email"
@@ -28,7 +28,7 @@ func TestHandleGrantApprovalNotRequested(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -69,7 +69,7 @@ func TestHandleGrantApprovalApproved(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -115,7 +115,7 @@ func TestHandleGrantApprovalRejected(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -161,7 +161,7 @@ func TestHandleGrantApprovalInvalidToken(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -201,7 +201,7 @@ func TestHandleGrantApprovalNoApprovedValue(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -248,7 +248,7 @@ func TestHandleGrantApprovalBadApprovedValue(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -295,7 +295,7 @@ func TestApproveGrantHandler(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -364,7 +364,7 @@ func TestApproveGrantHandlerInvalidToken(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 
@@ -433,7 +433,7 @@ func TestApproveGrantHandlerError(t *testing.T) {
 	}
 
 	emailer := cemail.NewEmailerWithSandbox(sendGridKey, true)
-	tokenGen := auth.NewJwtTokenGenerator([]byte(testSecret))
+	tokenGen := utils.NewJwtTokenGenerator([]byte(testSecret))
 	userService := buildUserService()
 	jsonbService := buildJsonbService(t)
 

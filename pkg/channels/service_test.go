@@ -3,16 +3,25 @@ package channels_test
 import (
 	"errors"
 	"fmt"
-	"math/rand"
-	"strconv"
-	"testing"
-	"time"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
+	"github.com/joincivil/civil-api-server/pkg/utils"
+	"github.com/joincivil/go-common/pkg/email"
 	uuid "github.com/satori/go.uuid"
+	"math/rand"
+	"os"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
+
+const (
+	testSignupLoginProtoHost = "http://localhost:8080"
+	sendGridKeyEnvVar        = "SENDGRID_TEST_KEY"
+	useSandbox               = true
 )
 
 var r = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -86,6 +95,10 @@ func (s MockStripeConnector) ConnectAccount(code string) (string, error) {
 	return stripeAccountID, nil
 }
 
+func getSendGridKeyFromEnvVar() string {
+	return os.Getenv(sendGridKeyEnvVar)
+}
+
 func TestCreateChannel(t *testing.T) {
 	db, err := testutils.GetTestDBConnection()
 	if err != nil {
@@ -97,7 +110,11 @@ func TestCreateChannel(t *testing.T) {
 	}
 
 	persister := channels.NewDBPersister(db)
-	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{})
+	generator := utils.NewJwtTokenGenerator([]byte("secret"))
+
+	sendGridKey := getSendGridKeyFromEnvVar()
+	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
+	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{}, generator, emailer, testSignupLoginProtoHost)
 
 	channel, err := svc.CreateUserChannel(user1ID)
 	if err != nil {
@@ -301,11 +318,11 @@ func TestCreateChannel(t *testing.T) {
 
 	})
 
-	t.Run("SetHandle", func(t *testing.T) {
+	t.Run("SendEmailConfirmation", func(t *testing.T) {
 		u1 := randomUUID()
-		u2 := randomUUID()
 		randomInt := r.Int31()
-		handle := fmt.Sprintf("tEst%v", randomInt)
+		invalidEmail := fmt.Sprintf("tEst%v", randomInt)
+		validEmail := "tEst@civil.co"
 
 		// create channelf for u1
 		channel1, err := svc.CreateUserChannel(u1)
@@ -313,31 +330,82 @@ func TestCreateChannel(t *testing.T) {
 			t.Fatalf("not expecting error: %v", err)
 		}
 
-		// don't allow invalid handle
-		_, err = svc.SetHandle(u1, channel1.ID, u1)
-		if err != channels.ErrorInvalidHandle {
-			t.Fatalf("was expecting ErrorInvalidHandle: %v", err)
+		// don't allow invalid email
+		_, err = svc.SendEmailConfirmation(u1, channel1.ID, invalidEmail, channels.SetEmailEnumUser)
+		if err != channels.ErrorInvalidEmail {
+			t.Fatalf("was expecting ErrorInvalidEmail: %v", err)
 		}
 
 		// allow valid handle
-		_, err = svc.SetHandle(u1, channel1.ID, handle)
+		_, err = svc.SendEmailConfirmation(u1, channel1.ID, validEmail, channels.SetEmailEnumUser)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+	})
+
+	t.Run("SetEmailConfirm", func(t *testing.T) {
+		u1 := randomUUID()
+		u2 := randomUUID()
+		randomInt := r.Int31()
+		invalidEmail := fmt.Sprintf("tEst%v", randomInt)
+		validEmail := "tEst@civil.co"
+
+		// create channelf for u1
+		channel1, err := svc.CreateUserChannel(u1)
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
 
-		// don't allow handle to be re set
-		_, err = svc.SetHandle(u1, channel1.ID, handle+"2")
-		if err != channels.ErrorHandleAlreadySet {
-			t.Fatalf("was expecting ErrorHandleAlreadySet: %v", err)
+		// create channelf for u2
+		channel2, err := svc.CreateUserChannel(u2)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
 		}
 
-		channel2, err2 := svc.CreateUserChannel(u2)
-		if err2 != nil {
-			t.Fatalf("not expecting error: %v", err2)
+		parts := []string{validEmail, string(channels.SetEmailEnumUser), u1, channel1.ID}
+		sub := strings.Join(parts, "||")
+		token, err := generator.GenerateToken(sub, 360)
+
+		if err != nil {
+			t.Fatalf("not expecting error generating token: %v", err)
 		}
-		_, err2 = svc.SetHandle(u2, channel2.ID, handle)
-		if err2 != channels.ErrorNotUnique {
-			t.Fatalf("was expecting ErrorNotUnique: %v", err2)
+		// set email for user channel correctly
+		_, err = svc.SetEmailConfirm(token)
+		if err != nil {
+			t.Fatalf("not expecting error: %v", err)
+		}
+
+		updatedChannel1, err := svc.GetChannel(channel1.ID)
+		if err != nil {
+			t.Fatalf("error getting updated channel: %v", err)
+		}
+		channelEmail := updatedChannel1.EmailAddress
+		if channelEmail != validEmail {
+			t.Fatalf("channel email not set to correct email. channelEmail: %v", channelEmail)
+		}
+
+		parts = []string{validEmail, string(channels.SetEmailEnumUser), u1, channel2.ID}
+		sub = strings.Join(parts, "||")
+		token, err = generator.GenerateToken(sub, 360)
+		if err != nil {
+			t.Fatalf("was not expecting error. err: %v", err)
+		}
+		// don't set email for wrong channel
+		_, err = svc.SetEmailConfirm(token)
+		if err != channels.ErrorUnauthorized {
+			t.Fatalf("was expecting ErrorUnauthorized. Error: %v", err)
+		}
+
+		parts = []string{invalidEmail, string(channels.SetEmailEnumUser), u1, channel1.ID}
+		sub = strings.Join(parts, "||")
+		token, err = generator.GenerateToken(sub, 360)
+		if err != nil {
+			t.Fatalf("was not expecting error. err: %v", err)
+		}
+		// don't set invalid email
+		_, err = svc.SetEmailConfirm(token)
+		if err != channels.ErrorInvalidEmail {
+			t.Fatalf("was expecting ErrorInvalidEmail. Error: %v", err)
 		}
 	})
 }
@@ -360,6 +428,37 @@ func TestHandles(t *testing.T) {
 	for _, tt := range handletests {
 		t.Run(tt.in, func(t *testing.T) {
 			s := channels.IsValidHandle(tt.in)
+			if s != tt.out {
+				t.Errorf("got %v, want %v", s, tt.out)
+			}
+		})
+	}
+}
+
+var emailtests = []struct {
+	in  string
+	out bool
+}{
+	{"foo", false},
+	{"bar@bar.com", true},
+	{"foo_bar@bar.asdfew", true},
+	{"foo-bar@bar.asdfew", true},
+	{"foo_bar+1@bar.asdfew", true},
+	{"foo%bar", false},
+	{"foo%bar@bar.asdf", true},
+	{"foo.bar@bar.asdf", true},
+	{"foo?bar@bar.asdf", true},
+	{"F00@a.ae", true},
+	{"F-11", false},
+	{"F-11@a", false},
+	{"F/AA", false},
+	{"hello world", false},
+}
+
+func TestEmails(t *testing.T) {
+	for _, tt := range emailtests {
+		t.Run(tt.in, func(t *testing.T) {
+			s := channels.IsValidEmail(tt.in)
 			if s != tt.out {
 				t.Errorf("got %v, want %v", s, tt.out)
 			}

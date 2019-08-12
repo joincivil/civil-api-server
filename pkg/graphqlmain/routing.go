@@ -7,7 +7,6 @@ import (
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth_chi"
 	"github.com/go-chi/chi"
-	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
@@ -20,7 +19,7 @@ func healthCheckRouting(router chi.Router) error {
 }
 
 func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
-	nrsignupService *nrsignup.Service, tokenGenerator *auth.JwtTokenGenerator) error {
+	nrsignupService *nrsignup.Service, tokenGenerator *utils.JwtTokenGenerator) error {
 
 	grantApproveConfig := &nrsignup.NewsroomSignupApproveGrantConfig{
 		NrsignupService: nrsignupService,

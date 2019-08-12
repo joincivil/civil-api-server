@@ -26,6 +26,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/auth.ApplicationEnum
   AuthLoginResponse:
     model: github.com/joincivil/civil-api-server/pkg/auth.LoginResponse
+  ChannelSetEmailResponse:
+    model: github.com/joincivil/civil-api-server/pkg/channels.SetEmailResponse
   Challenge:
     model: github.com/joincivil/civil-events-processor/pkg/model.Challenge
   Channel:
@@ -36,6 +38,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/channels.ConnectStripeInput
   ChannelsSetHandleInput:
     model: github.com/joincivil/civil-api-server/pkg/channels.SetHandleInput
+  ChannelsSetEmailInput:
+    model: github.com/joincivil/civil-api-server/pkg/channels.SetEmailInput
   Charter:
     model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   CharterContent:

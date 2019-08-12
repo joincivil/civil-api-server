@@ -72,6 +72,7 @@ type Query {
   channelsGetByID(id: String!): Channel
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
   channelsGetByHandle(handle: String!): Channel
+  channelsGetByUserID(userID: String!): Channel
 
   # Newsroom Queries
   newsroomArticles(
@@ -143,6 +144,8 @@ type Mutation {
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
   channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  channelsSetEmail(input: ChannelsSetEmailInput!): Channel
+  channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -210,6 +213,11 @@ type AuthLoginResponse {
   token: String
   refreshToken: String
   uid: String
+}
+
+type ChannelSetEmailResponse {
+  ChannelID: String
+  UserID: String
 }
 
 ## TCR object schemas
@@ -395,7 +403,10 @@ type Channel {
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   currentUserIsAdmin: Boolean!
+  handle: String
+  EmailAddressRestricted: String
 }
+
 type ChannelMember {
   channel: Channel
   role: String
@@ -409,6 +420,11 @@ input ChannelsConnectStripeInput {
 input ChannelsSetHandleInput {
   channelID: String!
   handle: String!
+}
+
+input ChannelsSetEmailInput {
+  channelID: String!
+  emailAddress: String!
 }
 
 ## Post object schemas

@@ -36,7 +36,7 @@ type ServerDeps struct {
 	Config                *utils.GraphQLConfig
 	Resolver              *graphql.Resolver
 	ErrorReporter         cerrors.ErrorReporter
-	JwtGenerator          *auth.JwtTokenGenerator
+	JwtGenerator          *utils.JwtTokenGenerator
 	NewsroomSignupService *nrsignup.Service
 	StorefrontService     *storefront.Service
 	Router                chi.Router

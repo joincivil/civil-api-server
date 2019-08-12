@@ -2,19 +2,40 @@ package channels
 
 import (
 	"errors"
-	"regexp"
-	"strings"
-
+	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
+	"github.com/joincivil/civil-api-server/pkg/utils"
+	"github.com/joincivil/go-common/pkg/email"
 	uuid "github.com/satori/go.uuid"
+	"regexp"
+	"strings"
+)
+
+const (
+	// number of seconds that a JWT token sent for set email confirmation is valid
+	defaultJWTEmailExpiration = 60 * 60 * 6 // 6 hours
+
+	// OkResponse is sent when an action is completed successfully
+	OkResponse = "ok"
+
+	subDelimiter             = "||"
+	defaultSetEmailVerifyURI = "auth/confirm-email"
+	confirmEmailTemplate     = "d-6fb32255ddc5461c86db126042e3ed78"
+	civilMediaName           = "Civil Media Company"
+	civilMediaEmail          = "support@civil.co"
+
+	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
 // Service provides methods to interact with Channels
 type Service struct {
-	persister       Persister
-	newsroomHelper  NewsroomHelper
-	stripeConnector StripeConnector
+	persister            Persister
+	newsroomHelper       NewsroomHelper
+	stripeConnector      StripeConnector
+	tokenGenerator       *utils.JwtTokenGenerator
+	emailer              *email.Emailer
+	signupLoginProtoHost string
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -28,13 +49,24 @@ type StripeConnector interface {
 	ConnectAccount(code string) (string, error)
 }
 
+// NewServiceFromConfig creates a new channels.Service using the main graphql config
+func NewServiceFromConfig(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
+	emailer *email.Emailer, config *utils.GraphQLConfig) *Service {
+	signupLoginProtoHost := config.SignupLoginProtoHost
+	return NewService(persister, newsroomHelper, stripeConnector, tokenGenerator, emailer, signupLoginProtoHost)
+}
+
 // NewService builds a new Service instance
-func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector) *Service {
+func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
+	emailer *email.Emailer, signupLoginProtoHost string) *Service {
 
 	return &Service{
 		persister,
 		newsroomHelper,
 		stripeConnector,
+		tokenGenerator,
+		emailer,
+		signupLoginProtoHost,
 	}
 }
 
@@ -142,6 +174,127 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 	return s.persister.SetHandle(userID, channelID, handle)
 }
 
+// don't export since should only be called through email confirm flow
+func (s *Service) setEmailAddress(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
+	_, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return &SetEmailResponse{}, err
+	}
+
+	isAdmin, err := s.IsChannelAdmin(userID, channelID)
+	if err != nil {
+		return &SetEmailResponse{}, err
+	}
+	if !isAdmin {
+		return &SetEmailResponse{}, ErrorUnauthorized
+	}
+
+	_, err = s.persister.SetEmailAddress(userID, channelID, emailAddress)
+	if err != nil {
+		return &SetEmailResponse{}, err
+	}
+	return &SetEmailResponse{UserID: userID, ChannelID: channelID}, nil
+}
+
+// SendEmailConfirmation sends an email to the user with link containing jwt that can be used to confirm ownership of email address
+func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAddress string, channelType SetEmailEnum) (*Channel, error) {
+	channel, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return nil, err
+	}
+	if !IsValidEmail(emailAddress) {
+		return nil, ErrorInvalidEmail
+	}
+
+	referral := string(channelType)
+	_, err = s.sendEmailToken(emailAddress, userID, channelID, confirmEmailTemplate, defaultSetEmailVerifyURI, referral)
+	if err != nil {
+		return nil, err
+	}
+	return channel, nil
+}
+
+func (s *Service) sendEmailToken(emailAddress string, userID string, channelID string, templateID string, verifyURI string,
+	referral string) (string, error) {
+	if s.emailer == nil {
+		return "", fmt.Errorf("emailer is nil, disabling email of magic link")
+	}
+	if s.signupLoginProtoHost == "" {
+		return "", fmt.Errorf("no signup/login host for confirmation email")
+	}
+
+	sub, err := s.buildSub(emailAddress, referral, userID, channelID)
+	if err != nil {
+		return "", err
+	}
+	emailToken, err := s.tokenGenerator.GenerateToken(
+		sub,
+		defaultJWTEmailExpiration,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	verifyLink := s.buildSetEmailConfirmLink(emailToken, verifyURI)
+	verifyMarkup := s.buildSetEmailConfirmMarkup(verifyLink)
+
+	templateData := email.TemplateData{}
+	templateData["host_proto"] = s.signupLoginProtoHost
+	templateData["email_token"] = emailToken
+	templateData["verify_link"] = verifyLink
+	templateData["verify_markup"] = verifyMarkup
+
+	emailReq := &email.SendTemplateEmailRequest{
+		ToEmail:      emailAddress,
+		FromName:     civilMediaName,
+		FromEmail:    civilMediaEmail,
+		TemplateID:   templateID,
+		TemplateData: templateData,
+		AsmGroupID:   defaultAsmGroupID,
+	}
+	return emailToken, s.emailer.SendTemplateEmail(emailReq)
+}
+
+func (s *Service) buildSetEmailConfirmLink(emailToken string, verifyURI string) string {
+	link := fmt.Sprintf("%v/%v?jwt=%v", s.signupLoginProtoHost, verifyURI, emailToken)
+	return link
+}
+
+func (s *Service) buildSetEmailConfirmMarkup(confirmLink string) string {
+	return fmt.Sprintf("<a clicktracking=off href=\"%v\">Confirm your 1 email address</a>", confirmLink)
+}
+
+func (s *Service) buildSub(emailAddress string, ref string, userID string, channelID string) (string, error) {
+	if ref == "" || emailAddress == "" || userID == "" || channelID == "" {
+		return "", errors.New("unable to build Sub")
+	}
+
+	parts := []string{emailAddress, ref, userID, channelID}
+	return strings.Join(parts, subDelimiter), nil
+}
+
+// SetEmailConfirm validates the JWT token emailed to the user and creates the User account
+func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
+	claims, err := s.tokenGenerator.ValidateToken(signupJWT)
+	if err != nil {
+		return &SetEmailResponse{}, err
+	}
+
+	sub := claims["sub"].(string)
+	email, _, userID, channelID := s.subData2(sub)
+	if !IsValidEmail(email) {
+		return &SetEmailResponse{}, ErrorInvalidEmail
+	}
+
+	// Don't allow refresh token use here
+	_, ok := claims["aud"].(string)
+	if ok {
+		return &SetEmailResponse{}, fmt.Errorf("invalid token")
+	}
+
+	return s.setEmailAddress(userID, channelID, email)
+}
+
 // ConnectStripeInput contains the fields needed to set the channel's stripe account
 type ConnectStripeInput struct {
 	ChannelID string
@@ -214,6 +367,15 @@ func (s *Service) IsChannelAdmin(userID string, channelID string) (bool, error) 
 	return s.persister.IsChannelAdmin(userID, channelID)
 }
 
+// ChannelEmailAddress returns the email address of the channel
+func (s *Service) ChannelEmailAddress(channelID string) (string, error) {
+	channel, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return "", err
+	}
+	return channel.EmailAddress, nil
+}
+
 // NormalizeHandle takes a string handle and removes
 func NormalizeHandle(handle string) (string, error) {
 	if !IsValidHandle(handle) {
@@ -230,4 +392,30 @@ func IsValidHandle(handle string) bool {
 	}
 
 	return matched
+}
+
+// IsValidEmail returns whether the provided email is valid
+func IsValidEmail(handle string) bool {
+	matched, err := regexp.Match(`\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b`, []byte(handle))
+	if err != nil {
+		return false
+	}
+
+	return matched
+}
+
+func (s *Service) subData2(sub string) (email string, ref string, userID string, channelID string) {
+	splitsub := strings.Split(sub, subDelimiter)
+	if len(splitsub) == 1 {
+		return splitsub[0], "", "", ""
+
+	} else if len(splitsub) == 2 {
+		return splitsub[0], splitsub[1], "", ""
+	} else if len(splitsub) == 3 {
+		return splitsub[0], splitsub[1], splitsub[2], ""
+	} else if len(splitsub) == 4 {
+		return splitsub[0], splitsub[1], splitsub[2], splitsub[3]
+	}
+
+	return "", "", "", ""
 }
