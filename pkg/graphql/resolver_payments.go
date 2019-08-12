@@ -94,3 +94,20 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 	}
 	return nil, ErrNotImplemented
 }
+
+func (r *queryResolver) GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrAccessDenied
+	}
+
+	result := r.paymentService.GetChannelTotalProceeds(channelID)
+	return result, nil
+}

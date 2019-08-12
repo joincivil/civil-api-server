@@ -89,6 +89,9 @@ type Query {
   postsGet(id: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
 
+  # Payment Queries
+  getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
+
   # UserChallengeData Queries
   userChallengeData(
     userAddr: String
@@ -500,6 +503,14 @@ type PostSearchResult {
   posts: [Post!]
   beforeCursor: String
   afterCursor: String
+}
+
+type ProceedsQueryResult {
+  postType: String
+  totalAmount: String
+  usd: String
+  ethUsdAmount: String
+  ether: String
 }
 
 # input objects

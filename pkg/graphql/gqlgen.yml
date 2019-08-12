@@ -94,6 +94,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
   PaymentsCreateTokenPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  ProceedsQueryResult:
+    model: github.com/joincivil/civil-api-server/pkg/payments.ProceedsQueryResult
   Post:
     model: github.com/joincivil/civil-api-server/pkg/posts.Post
   PostBoost:
