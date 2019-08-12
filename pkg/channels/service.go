@@ -367,7 +367,7 @@ func (s *Service) IsChannelAdmin(userID string, channelID string) (bool, error) 
 	return s.persister.IsChannelAdmin(userID, channelID)
 }
 
-// ChannelHandle returns the email address of the channel
+// ChannelEmailAddress returns the email address of the channel
 func (s *Service) ChannelEmailAddress(channelID string) (string, error) {
 	channel, err := s.persister.GetChannel(channelID)
 	if err != nil {

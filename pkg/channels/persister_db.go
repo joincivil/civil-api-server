@@ -187,7 +187,7 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 	return ch, nil
 }
 
-// SetHandle updates the handle for the channel, ensuring that it is unique
+// SetEmailAddress updates the email address for the channel
 func (p *DBPersister) SetEmailAddress(userID string, channelID string, emailAddress string) (*Channel, error) {
 	// get channel
 	ch, err := p.GetChannel(channelID)

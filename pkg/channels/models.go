@@ -25,11 +25,11 @@ type SetEmailEnum string
 const (
 	// SetEmailEnumDefault is the default channel value
 	SetEmailEnumDefault SetEmailEnum = "DEFAULT"
-	// SetEmailEnumDefault is the user channel value
+	// SetEmailEnumUser is the user channel value
 	SetEmailEnumUser SetEmailEnum = "USER"
 	// SetEmailEnumNewsroom is the newsroom channel value
 	SetEmailEnumNewsroom SetEmailEnum = "NEWSROOM"
-	// SetEmailEnumNewsroom is the group channel value
+	// SetEmailEnumGroup is the group channel value
 	SetEmailEnumGroup SetEmailEnum = "GROUP"
 )
 
@@ -53,6 +53,7 @@ type SetHandleInput struct {
 	Handle    string
 }
 
+// SetEmailInput contains the fields needed to set a channel's email address
 type SetEmailInput struct {
 	ChannelID    string
 	EmailAddress string
