@@ -81,7 +81,6 @@ func ModelToInterface(model *PaymentModel) (Payment, error) {
 type StripePayment struct {
 	PaymentModel `json:"-"`
 	PaymentToken string `gorm:"-"`
-	EmailAddress string
 	UsdAmount    string `gorm:"-"`
 }
 
@@ -102,7 +101,6 @@ type EtherPayment struct {
 	FromAddress    string `gorm:"-"`
 	EthAmount      string `gorm:"-"`
 	UsdAmount      string `gorm:"-"`
-	EmailAddress   string
 }
 
 // Type is the type of payment for EtherPayment
