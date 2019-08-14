@@ -215,15 +215,15 @@ func PostInterfaceToBase(post Post) (*PostModel, error) {
 func BaseToPostInterface(base *PostModel) (Post, error) {
 	var post Post
 	switch base.PostType {
-	case "boost":
+	case boost:
 		post = &Boost{
 			PostModel: *base,
 		}
-	case "externallink":
+	case externallink:
 		post = &ExternalLink{
 			PostModel: *base,
 		}
-	case "comment":
+	case comment:
 		post = &Comment{
 			PostModel: *base,
 		}
