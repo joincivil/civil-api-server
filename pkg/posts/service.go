@@ -29,9 +29,9 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 		return nil, err
 	}
 	postType := base.PostType
-	if postType == "boost" {
+	if postType == boost {
 		return s.PostPersister.CreatePost(authorID, post)
-	} else if postType == "externallink" {
+	} else if postType == externallink {
 
 		channel, err := s.channelService.GetChannel(base.ChannelID)
 		if err != nil {
