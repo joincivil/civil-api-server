@@ -1,7 +1,6 @@
 package posts
 
 import (
-	log "github.com/golang/glog"
 	"github.com/goware/urlx"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
