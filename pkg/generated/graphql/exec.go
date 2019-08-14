@@ -19945,6 +19945,12 @@ func UnmarshalPostCreateExternalLinkInput(v interface{}) (posts.ExternalLink, er
 			if err != nil {
 				return it, err
 			}
+		case "channelID":
+			var err error
+			it.ChannelID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -20777,6 +20783,7 @@ input PostCreateBoostItemInput {
 
 input PostCreateExternalLinkInput {
   url: String!
+  channelID: String!
 }
 
 input PostCreateCommentInput {
