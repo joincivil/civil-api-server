@@ -32,6 +32,7 @@ type CreateChargeRequest struct {
 
 // CreateChargeResponse contains the result of a stripe charge
 type CreateChargeResponse struct {
+	ID                 string
 	StripeResponseJSON []byte
 }
 
@@ -89,6 +90,7 @@ func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateCharge
 
 	return CreateChargeResponse{
 		StripeResponseJSON: bytes,
+		ID:                 ch.ID,
 	}, nil
 
 }
