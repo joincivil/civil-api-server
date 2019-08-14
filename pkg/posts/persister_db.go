@@ -17,6 +17,10 @@ var (
 	ErrorNotFound = errors.New("could not find post")
 	// ErrorNotAuthorized is thrown when trying to edit a post that you do not have access to
 	ErrorNotAuthorized = errors.New("not authorized to perform this action")
+	// ErrorNotImplemented is thrown when something isn't implemented
+	ErrorNotImplemented = errors.New("not implemented")
+	// ErrorBadURLSubmitted is thrown when bad URL is submitted (such as external link that doesn't match newsroom URL)
+	ErrorBadURLSubmitted = errors.New("bad URL Submitted")
 )
 
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
