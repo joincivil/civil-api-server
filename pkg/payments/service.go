@@ -284,6 +284,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(res.StripeResponseJSON)}
 	payment.OwnerID = ownerID
 	payment.OwnerType = ownerType
+	payment.Reference = res.ID
 
 	// TODO(dankins): this should be set when we support currencies other than USD
 	payment.ExchangeRate = 1
