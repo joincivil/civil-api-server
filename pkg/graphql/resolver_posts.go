@@ -54,7 +54,7 @@ func (r *mutationResolver) postCreate(ctx context.Context, post posts.Post) (pos
 		return nil, ErrAccessDenied
 	}
 
-	result, err := r.postService.CreatePost("aa57d956-faca-4661-b68e-da6c0f1c64f4", post)
+	result, err := r.postService.CreatePost(token.Sub, post)
 	if err != nil {
 		return nil, err
 	}
