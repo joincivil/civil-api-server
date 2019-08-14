@@ -46,6 +46,14 @@ func (r *mutationResolver) postCreate(ctx context.Context, post posts.Post) (pos
 		return nil, ErrAccessDenied
 	}
 
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, post.GetChannelID())
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrAccessDenied
+	}
+
 	result, err := r.postService.CreatePost(token.Sub, post)
 	if err != nil {
 		return nil, err
