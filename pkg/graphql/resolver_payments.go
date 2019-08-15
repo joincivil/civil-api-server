@@ -88,7 +88,7 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 		return (email.TemplateData{
 			"newsroom_name":      newsroom.Name,
 			"boost_short_desc":   boost.Title,
-			"payment_amount_usd": payment.UsdAmount,
+			"payment_amount_usd": payment.Amount,
 			"boost_id":           boost.ID,
 		}), nil
 	}
