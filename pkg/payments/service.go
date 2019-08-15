@@ -233,13 +233,13 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			update.Amount = res.Amount
 			// only send payment receipt if email is given
 			if payment.EmailAddress != "" {
-				tmplData := (email.TemplateData{
+				tmplData := email.TemplateData{
 					"payment_amount_eth":   etherPayment.Amount,
 					"payment_amount_usd":   etherPayment.UsdAmount,
 					"payment_from_address": etherPayment.FromAddress,
 					"payment_to_address":   etherPayment.PaymentAddress,
 					"boost_id":             etherPayment.OwnerID,
-				})
+				}
 				err2 = s.sendEthPaymentFinishedEmail(payment.EmailAddress, tmplData)
 			}
 		}
