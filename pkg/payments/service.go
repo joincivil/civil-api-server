@@ -102,8 +102,8 @@ func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email
 	return s.emailer.SendTemplateEmail(req)
 }
 
-func (s *Service) sendEthPaymentFinishedEmail(emailAddress string) error {
-	req := getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress, nil)
+func (s *Service) sendEthPaymentFinishedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress, tmplData)
 	return s.emailer.SendTemplateEmail(req)
 }
 
@@ -231,10 +231,16 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			update.Data = postgres.Jsonb{RawMessage: data}
 			update.ExchangeRate = res.ExchangeRate
 			update.Amount = res.Amount
-			log.Infof("email address: " + payment.EmailAddress)
 			// only send payment receipt if email is given
 			if payment.EmailAddress != "" {
-				err2 = s.sendEthPaymentFinishedEmail(payment.EmailAddress)
+				tmplData := email.TemplateData{
+					"payment_amount_eth":   etherPayment.Amount,
+					"payment_amount_usd":   etherPayment.UsdAmount,
+					"payment_from_address": etherPayment.FromAddress,
+					"payment_to_address":   etherPayment.PaymentAddress,
+					"boost_id":             etherPayment.OwnerID,
+				}
+				err2 = s.sendEthPaymentFinishedEmail(payment.EmailAddress, tmplData)
 			}
 		}
 	}
