@@ -6,7 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
@@ -20,7 +19,7 @@ import (
 
 func initNrsignupService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 	emailer *cemail.Emailer, userService *users.UserService, jsonbService *jsonstore.Service,
-	jwtGenerator *auth.JwtTokenGenerator) (*nrsignup.Service, error) {
+	jwtGenerator *utils.JwtTokenGenerator) (*nrsignup.Service, error) {
 	nrsignupService, err := nrsignup.NewNewsroomSignupService(
 		ethHelper,
 		emailer,

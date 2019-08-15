@@ -17,6 +17,10 @@ var (
 	ErrorNotFound = errors.New("could not find post")
 	// ErrorNotAuthorized is thrown when trying to edit a post that you do not have access to
 	ErrorNotAuthorized = errors.New("not authorized to perform this action")
+	// ErrorNotImplemented is thrown when something isn't implemented
+	ErrorNotImplemented = errors.New("not implemented")
+	// ErrorBadURLSubmitted is thrown when bad URL is submitted (such as external link that doesn't match newsroom URL)
+	ErrorBadURLSubmitted = errors.New("bad URL Submitted")
 )
 
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
@@ -39,7 +43,7 @@ func (p *DBPostPersister) CreatePost(authorID string, post Post) (Post, error) {
 	}
 	base.AuthorID = authorID
 	if err = p.db.Create(base).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 	return BaseToPostInterface(base)
@@ -132,7 +136,7 @@ func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, e
 
 	results := pager.Paginate(stmt, &dbResults)
 	if results.Error != nil {
-		log.Errorf("An error occured: %v\n", results.Error)
+		log.Errorf("An error occurred: %v\n", results.Error)
 		return nil, results.Error
 	}
 
@@ -140,7 +144,7 @@ func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, e
 	for _, result := range dbResults {
 		post, err := BaseToPostInterface(&result)
 		if err != nil {
-			log.Errorf("An error occured: %v\n", err)
+			log.Errorf("An error occurred: %v\n", err)
 			return nil, err
 		}
 		posts = append(posts, post)
@@ -211,15 +215,15 @@ func PostInterfaceToBase(post Post) (*PostModel, error) {
 func BaseToPostInterface(base *PostModel) (Post, error) {
 	var post Post
 	switch base.PostType {
-	case "boost":
+	case boost:
 		post = &Boost{
 			PostModel: *base,
 		}
-	case "externallink":
+	case externallink:
 		post = &ExternalLink{
 			PostModel: *base,
 		}
-	case "comment":
+	case comment:
 		post = &Comment{
 			PostModel: *base,
 		}

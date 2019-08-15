@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   docker:
     # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
-    - image: circleci/golang:1.11.1
+    - image: circleci/golang:1.12.7
     # CircleCI PostgreSQL images available at: https://hub.docker.com/r/circleci/postgres/
     - image: circleci/postgres:9.6.2-alpine
       environment:
@@ -15,7 +15,7 @@ defaults: &defaults
 jobs:
   build:
     <<: *defaults
-    working_directory: /go/src/github.com/joincivil/civil-api-server
+    working_directory: ~/repos/civil-api-server
     ? environment
     steps:
       - run:
@@ -44,23 +44,31 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Postgres && exit 1
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
       - run:
           name: Building code
           command: make build
+      - save_cache:
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
       - persist_to_workspace:
           root: ./
           paths:
             - build
             - pkg
             - Makefile
-            - vendor
             - cmd
             - scripts
+            - go.mod
+            - go.sum
             - .golangci.yml
 
   lint:
     <<: *defaults
-    working_directory: /go/src/github.com/joincivil/civil-api-server
+    working_directory: ~/repos/civil-api-server
     ? environment
     steps:
       - attach_workspace:
@@ -68,13 +76,20 @@ jobs:
       - run:
           name: Setting up tools
           command: make install-linter
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
       - run:
           name: Run linter
           command: make lint
+      - save_cache:
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
 
   test:
     <<: *defaults
-    working_directory: /go/src/github.com/joincivil/civil-api-server
+    working_directory: ~/repos/civil-api-server
     ? environment
     steps:
       - attach_workspace:
@@ -89,15 +104,22 @@ jobs:
               sleep 1
             done
             echo Failed waiting for Postgres && exit 1
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
       - run:
           name: Run unit tests
           command: |
             make test-integration
+      - save_cache:
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
 
   setup-gcp:
     docker:
       - image: civilmedia/gcloud-node:latest
-    working_directory: /go/src/github.com/joincivil/civil-api-server
+    working_directory: ~/repos/civil-api-server
     steps:
       - run:
           name: Dump Google Cloud Credentials to file
@@ -121,7 +143,7 @@ jobs:
   push-container:
     docker:
       - image: civilmedia/gcloud-node:latest
-    working_directory: /go/src/github.com/joincivil/civil-api-server
+    working_directory: ~/repos/civil-api-server
     steps:
       - attach_workspace:
           at: /root

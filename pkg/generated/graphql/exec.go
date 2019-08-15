@@ -112,17 +112,24 @@ type ComplexityRoot struct {
 	}
 
 	Channel struct {
-		Id                 func(childComplexity int) int
-		ChannelType        func(childComplexity int) int
-		Newsroom           func(childComplexity int) int
-		PostsSearch        func(childComplexity int, search posts.SearchInput) int
-		IsStripeConnected  func(childComplexity int) int
-		CurrentUserIsAdmin func(childComplexity int) int
+		Id                     func(childComplexity int) int
+		ChannelType            func(childComplexity int) int
+		Newsroom               func(childComplexity int) int
+		PostsSearch            func(childComplexity int, search posts.SearchInput) int
+		IsStripeConnected      func(childComplexity int) int
+		CurrentUserIsAdmin     func(childComplexity int) int
+		Handle                 func(childComplexity int) int
+		EmailAddressRestricted func(childComplexity int) int
 	}
 
 	ChannelMember struct {
 		Channel func(childComplexity int) int
 		Role    func(childComplexity int) int
+	}
+
+	ChannelSetEmailResponse struct {
+		ChannelId func(childComplexity int) int
+		UserId    func(childComplexity int) int
 	}
 
 	Charter struct {
@@ -265,6 +272,9 @@ type ComplexityRoot struct {
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
 		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
+		ChannelsSetHandle                 func(childComplexity int, input channels.SetHandleInput) int
+		ChannelsSetEmail                  func(childComplexity int, input channels.SetEmailInput) int
+		ChannelsSetEmailConfirm           func(childComplexity int, jwt string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupSaveCharter               func(childComplexity int, charterData newsroom.Charter) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -327,6 +337,7 @@ type ComplexityRoot struct {
 		UpdatedAt     func(childComplexity int) int
 		TransactionId func(childComplexity int) int
 		UsdEquivalent func(childComplexity int) int
+		FromAddress   func(childComplexity int) int
 	}
 
 	PaymentStripe struct {
@@ -422,6 +433,14 @@ type ComplexityRoot struct {
 		AfterCursor  func(childComplexity int) int
 	}
 
+	ProceedsQueryResult struct {
+		PostType     func(childComplexity int) int
+		TotalAmount  func(childComplexity int) int
+		Usd          func(childComplexity int) int
+		EthUsdAmount func(childComplexity int) int
+		Ether        func(childComplexity int) int
+	}
+
 	Query struct {
 		Articles                     func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                    func(childComplexity int, id int, lowercaseAddr *bool) int
@@ -437,10 +456,12 @@ type ComplexityRoot struct {
 		ChannelsGetById              func(childComplexity int, id string) int
 		ChannelsGetByNewsroomAddress func(childComplexity int, contractAddress string) int
 		ChannelsGetByHandle          func(childComplexity int, handle string) int
+		ChannelsGetByUserId          func(childComplexity int, userID string) int
 		NewsroomArticles             func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		NrsignupNewsroom             func(childComplexity int) int
 		PostsGet                     func(childComplexity int, id string) int
 		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
+		GetChannelTotalProceeds      func(childComplexity int, channelID string) int
 		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
 		CurrentUser                  func(childComplexity int) int
 		StorefrontEthPrice           func(childComplexity int) int
@@ -522,6 +543,8 @@ type ChannelResolver interface {
 	PostsSearch(ctx context.Context, obj *channels.Channel, search posts.SearchInput) (*posts.PostSearchResult, error)
 	IsStripeConnected(ctx context.Context, obj *channels.Channel) (bool, error)
 	CurrentUserIsAdmin(ctx context.Context, obj *channels.Channel) (bool, error)
+
+	EmailAddressRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
 }
 type CharterResolver interface {
 	ContentID(ctx context.Context, obj *model.Charter) (int, error)
@@ -583,6 +606,9 @@ type MutationResolver interface {
 	JsonbSave(ctx context.Context, input JsonbInput) (jsonstore.JSONb, error)
 	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
 	ChannelsConnectStripe(ctx context.Context, input channels.ConnectStripeInput) (*channels.Channel, error)
+	ChannelsSetHandle(ctx context.Context, input channels.SetHandleInput) (*channels.Channel, error)
+	ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
+	ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -651,10 +677,12 @@ type QueryResolver interface {
 	ChannelsGetByID(ctx context.Context, id string) (*channels.Channel, error)
 	ChannelsGetByNewsroomAddress(ctx context.Context, contractAddress string) (*channels.Channel, error)
 	ChannelsGetByHandle(ctx context.Context, handle string) (*channels.Channel, error)
+	ChannelsGetByUserID(ctx context.Context, userID string) (*channels.Channel, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
+	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
@@ -949,6 +977,51 @@ func field_Mutation_channelsConnectStripe_args(rawArgs map[string]interface{}) (
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsSetHandle_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 channels.SetHandleInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalChannelsSetHandleInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsSetEmail_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 channels.SetEmailInput
+	if tmp, ok := rawArgs["input"]; ok {
+		var err error
+		arg0, err = UnmarshalChannelsSetEmailInput(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+
+}
+
+func field_Mutation_channelsSetEmailConfirm_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
 	return args, nil
 
 }
@@ -2144,6 +2217,21 @@ func field_Query_channelsGetByHandle_args(rawArgs map[string]interface{}) (map[s
 
 }
 
+func field_Query_channelsGetByUserID_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["userID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userID"] = arg0
+	return args, nil
+
+}
+
 func field_Query_newsroomArticles_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	args := map[string]interface{}{}
 	var arg0 *string
@@ -2260,6 +2348,21 @@ func field_Query_postsSearch_args(rawArgs map[string]interface{}) (map[string]in
 		}
 	}
 	args["search"] = arg0
+	return args, nil
+
+}
+
+func field_Query_getChannelTotalProceeds_args(rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		var err error
+		arg0, err = graphql.UnmarshalString(tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg0
 	return args, nil
 
 }
@@ -2712,6 +2815,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Channel.CurrentUserIsAdmin(childComplexity), true
 
+	case "Channel.handle":
+		if e.complexity.Channel.Handle == nil {
+			break
+		}
+
+		return e.complexity.Channel.Handle(childComplexity), true
+
+	case "Channel.EmailAddressRestricted":
+		if e.complexity.Channel.EmailAddressRestricted == nil {
+			break
+		}
+
+		return e.complexity.Channel.EmailAddressRestricted(childComplexity), true
+
 	case "ChannelMember.channel":
 		if e.complexity.ChannelMember.Channel == nil {
 			break
@@ -2725,6 +2842,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ChannelMember.Role(childComplexity), true
+
+	case "ChannelSetEmailResponse.ChannelID":
+		if e.complexity.ChannelSetEmailResponse.ChannelId == nil {
+			break
+		}
+
+		return e.complexity.ChannelSetEmailResponse.ChannelId(childComplexity), true
+
+	case "ChannelSetEmailResponse.UserID":
+		if e.complexity.ChannelSetEmailResponse.UserId == nil {
+			break
+		}
+
+		return e.complexity.ChannelSetEmailResponse.UserId(childComplexity), true
 
 	case "Charter.uri":
 		if e.complexity.Charter.Uri == nil {
@@ -3444,6 +3575,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ChannelsConnectStripe(childComplexity, args["input"].(channels.ConnectStripeInput)), true
 
+	case "Mutation.channelsSetHandle":
+		if e.complexity.Mutation.ChannelsSetHandle == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsSetHandle_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetHandle(childComplexity, args["input"].(channels.SetHandleInput)), true
+
+	case "Mutation.channelsSetEmail":
+		if e.complexity.Mutation.ChannelsSetEmail == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsSetEmail_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetEmail(childComplexity, args["input"].(channels.SetEmailInput)), true
+
+	case "Mutation.channelsSetEmailConfirm":
+		if e.complexity.Mutation.ChannelsSetEmailConfirm == nil {
+			break
+		}
+
+		args, err := field_Mutation_channelsSetEmailConfirm_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetEmailConfirm(childComplexity, args["jwt"].(string)), true
+
 	case "Mutation.nrsignupSendWelcomeEmail":
 		if e.complexity.Mutation.NrsignupSendWelcomeEmail == nil {
 			break
@@ -3903,6 +4070,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaymentEther.UsdEquivalent(childComplexity), true
+
+	case "PaymentEther.fromAddress":
+		if e.complexity.PaymentEther.FromAddress == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.FromAddress(childComplexity), true
 
 	case "PaymentStripe.status":
 		if e.complexity.PaymentStripe.Status == nil {
@@ -4402,6 +4576,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostSearchResult.AfterCursor(childComplexity), true
 
+	case "ProceedsQueryResult.postType":
+		if e.complexity.ProceedsQueryResult.PostType == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.PostType(childComplexity), true
+
+	case "ProceedsQueryResult.totalAmount":
+		if e.complexity.ProceedsQueryResult.TotalAmount == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.TotalAmount(childComplexity), true
+
+	case "ProceedsQueryResult.usd":
+		if e.complexity.ProceedsQueryResult.Usd == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.Usd(childComplexity), true
+
+	case "ProceedsQueryResult.ethUsdAmount":
+		if e.complexity.ProceedsQueryResult.EthUsdAmount == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.EthUsdAmount(childComplexity), true
+
+	case "ProceedsQueryResult.ether":
+		if e.complexity.ProceedsQueryResult.Ether == nil {
+			break
+		}
+
+		return e.complexity.ProceedsQueryResult.Ether(childComplexity), true
+
 	case "Query.articles":
 		if e.complexity.Query.Articles == nil {
 			break
@@ -4570,6 +4779,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ChannelsGetByHandle(childComplexity, args["handle"].(string)), true
 
+	case "Query.channelsGetByUserID":
+		if e.complexity.Query.ChannelsGetByUserId == nil {
+			break
+		}
+
+		args, err := field_Query_channelsGetByUserID_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsGetByUserId(childComplexity, args["userID"].(string)), true
+
 	case "Query.newsroomArticles":
 		if e.complexity.Query.NewsroomArticles == nil {
 			break
@@ -4612,6 +4833,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.PostsSearch(childComplexity, args["search"].(posts.SearchInput)), true
+
+	case "Query.getChannelTotalProceeds":
+		if e.complexity.Query.GetChannelTotalProceeds == nil {
+			break
+		}
+
+		args, err := field_Query_getChannelTotalProceeds_args(rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetChannelTotalProceeds(childComplexity, args["channelID"].(string)), true
 
 	case "Query.userChallengeData":
 		if e.complexity.Query.UserChallengeData == nil {
@@ -6176,6 +6409,14 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				}
 				wg.Done()
 			}(i, field)
+		case "handle":
+			out.Values[i] = ec._Channel_handle(ctx, field, obj)
+		case "EmailAddressRestricted":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Channel_EmailAddressRestricted(ctx, field, obj)
+				wg.Done()
+			}(i, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6359,6 +6600,62 @@ func (ec *executionContext) _Channel_currentUserIsAdmin(ctx context.Context, fie
 	return graphql.MarshalBoolean(res)
 }
 
+// nolint: vetshadow
+func (ec *executionContext) _Channel_handle(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Handle, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Channel_EmailAddressRestricted(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "Channel",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().EmailAddressRestricted(rctx, obj)
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalString(*res)
+}
+
 var channelMemberImplementors = []string{"ChannelMember"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -6431,6 +6728,83 @@ func (ec *executionContext) _ChannelMember_role(ctx context.Context, field graph
 	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Role, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+var channelSetEmailResponseImplementors = []string{"ChannelSetEmailResponse"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ChannelSetEmailResponse(ctx context.Context, sel ast.SelectionSet, obj *channels.SetEmailResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, channelSetEmailResponseImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChannelSetEmailResponse")
+		case "ChannelID":
+			out.Values[i] = ec._ChannelSetEmailResponse_ChannelID(ctx, field, obj)
+		case "UserID":
+			out.Values[i] = ec._ChannelSetEmailResponse_UserID(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelSetEmailResponse_ChannelID(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelSetEmailResponse",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChannelID, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ChannelSetEmailResponse_UserID(ctx context.Context, field graphql.CollectedField, obj *channels.SetEmailResponse) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ChannelSetEmailResponse",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserID, nil
 	})
 	if resTmp == nil {
 		return graphql.Null
@@ -9775,6 +10149,12 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsCreateNewsroomChannel(ctx, field)
 		case "channelsConnectStripe":
 			out.Values[i] = ec._Mutation_channelsConnectStripe(ctx, field)
+		case "channelsSetHandle":
+			out.Values[i] = ec._Mutation_channelsSetHandle(ctx, field)
+		case "channelsSetEmail":
+			out.Values[i] = ec._Mutation_channelsSetEmail(ctx, field)
+		case "channelsSetEmailConfirm":
+			out.Values[i] = ec._Mutation_channelsSetEmailConfirm(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -10295,6 +10675,111 @@ func (ec *executionContext) _Mutation_channelsConnectStripe(ctx context.Context,
 	}
 
 	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsSetHandle(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsSetHandle_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetHandle(rctx, args["input"].(channels.SetHandleInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsSetEmail(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsSetEmail_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetEmail(rctx, args["input"].(channels.SetEmailInput))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Mutation_channelsSetEmailConfirm(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Mutation_channelsSetEmailConfirm_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Mutation",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetEmailConfirm(rctx, args["jwt"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.SetEmailResponse)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._ChannelSetEmailResponse(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -11666,6 +12151,11 @@ func (ec *executionContext) _PaymentEther(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				invalid = true
 			}
+		case "fromAddress":
+			out.Values[i] = ec._PaymentEther_fromAddress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalid = true
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11933,6 +12423,33 @@ func (ec *executionContext) _PaymentEther_usdEquivalent(ctx context.Context, fie
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return graphql.MarshalFloat(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _PaymentEther_fromAddress(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "PaymentEther",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FromAddress, nil
+	})
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
 }
 
 var paymentStripeImplementors = []string{"PaymentStripe", "Payment"}
@@ -14556,6 +15073,161 @@ func (ec *executionContext) _PostSearchResult_afterCursor(ctx context.Context, f
 	return graphql.MarshalString(res)
 }
 
+var proceedsQueryResultImplementors = []string{"ProceedsQueryResult"}
+
+// nolint: gocyclo, errcheck, gas, goconst
+func (ec *executionContext) _ProceedsQueryResult(ctx context.Context, sel ast.SelectionSet, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ctx, sel, proceedsQueryResultImplementors)
+
+	out := graphql.NewOrderedMap(len(fields))
+	invalid := false
+	for i, field := range fields {
+		out.Keys[i] = field.Alias
+
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProceedsQueryResult")
+		case "postType":
+			out.Values[i] = ec._ProceedsQueryResult_postType(ctx, field, obj)
+		case "totalAmount":
+			out.Values[i] = ec._ProceedsQueryResult_totalAmount(ctx, field, obj)
+		case "usd":
+			out.Values[i] = ec._ProceedsQueryResult_usd(ctx, field, obj)
+		case "ethUsdAmount":
+			out.Values[i] = ec._ProceedsQueryResult_ethUsdAmount(ctx, field, obj)
+		case "ether":
+			out.Values[i] = ec._ProceedsQueryResult_ether(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+
+	if invalid {
+		return graphql.Null
+	}
+	return out
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_postType(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PostType, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_totalAmount(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalAmount, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_usd(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Usd, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_ethUsdAmount(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EthUsdAmount, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _ProceedsQueryResult_ether(ctx context.Context, field graphql.CollectedField, obj *payments.ProceedsQueryResult) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rctx := &graphql.ResolverContext{
+		Object: "ProceedsQueryResult",
+		Args:   nil,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, obj, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ether, nil
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return graphql.MarshalString(res)
+}
+
 var queryImplementors = []string{"Query"}
 
 // nolint: gocyclo, errcheck, gas, goconst
@@ -14674,6 +15346,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				out.Values[i] = ec._Query_channelsGetByHandle(ctx, field)
 				wg.Done()
 			}(i, field)
+		case "channelsGetByUserID":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_channelsGetByUserID(ctx, field)
+				wg.Done()
+			}(i, field)
 		case "newsroomArticles":
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
@@ -14702,6 +15380,12 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			wg.Add(1)
 			go func(i int, field graphql.CollectedField) {
 				out.Values[i] = ec._Query_postsSearch(ctx, field)
+				wg.Done()
+			}(i, field)
+		case "getChannelTotalProceeds":
+			wg.Add(1)
+			go func(i int, field graphql.CollectedField) {
+				out.Values[i] = ec._Query_getChannelTotalProceeds(ctx, field)
 				wg.Done()
 			}(i, field)
 		case "userChallengeData":
@@ -15410,6 +16094,41 @@ func (ec *executionContext) _Query_channelsGetByHandle(ctx context.Context, fiel
 }
 
 // nolint: vetshadow
+func (ec *executionContext) _Query_channelsGetByUserID(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_channelsGetByUserID_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsGetByUserID(rctx, args["userID"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._Channel(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
 func (ec *executionContext) _Query_newsroomArticles(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
@@ -15571,6 +16290,41 @@ func (ec *executionContext) _Query_postsSearch(ctx context.Context, field graphq
 	}
 
 	return ec._PostSearchResult(ctx, field.Selections, res)
+}
+
+// nolint: vetshadow
+func (ec *executionContext) _Query_getChannelTotalProceeds(ctx context.Context, field graphql.CollectedField) graphql.Marshaler {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() { ec.Tracer.EndFieldExecution(ctx) }()
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := field_Query_getChannelTotalProceeds_args(rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx := &graphql.ResolverContext{
+		Object: "Query",
+		Args:   args,
+		Field:  field,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp := ec.FieldMiddleware(ctx, nil, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetChannelTotalProceeds(rctx, args["channelID"].(string))
+	})
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*payments.ProceedsQueryResult)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+
+	if res == nil {
+		return graphql.Null
+	}
+
+	return ec._ProceedsQueryResult(ctx, field.Selections, res)
 }
 
 // nolint: vetshadow
@@ -18539,6 +19293,54 @@ func UnmarshalChannelsConnectStripeInput(v interface{}) (channels.ConnectStripeI
 	return it, nil
 }
 
+func UnmarshalChannelsSetEmailInput(v interface{}) (channels.SetEmailInput, error) {
+	var it channels.SetEmailInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "channelID":
+			var err error
+			it.ChannelID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func UnmarshalChannelsSetHandleInput(v interface{}) (channels.SetHandleInput, error) {
+	var it channels.SetHandleInput
+	var asMap = v.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "channelID":
+			var err error
+			it.ChannelID, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "handle":
+			var err error
+			it.Handle, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func UnmarshalCharterInput(v interface{}) (newsroom.Charter, error) {
 	var it newsroom.Charter
 	var asMap = v.(map[string]interface{})
@@ -18886,6 +19688,36 @@ func UnmarshalPaymentsCreateEtherPaymentInput(v interface{}) (payments.EtherPaym
 			if err != nil {
 				return it, err
 			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "paymentAddress":
+			var err error
+			it.PaymentAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "fromAddress":
+			var err error
+			it.FromAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "amount":
+			var err error
+			it.Amount, err = graphql.UnmarshalFloat(v)
+			if err != nil {
+				return it, err
+			}
+		case "usdAmount":
+			var err error
+			it.UsdAmount, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -18928,6 +19760,12 @@ func UnmarshalPaymentsCreateStripePaymentInput(v interface{}) (payments.StripePa
 			if err != nil {
 				return it, err
 			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -18961,6 +19799,12 @@ func UnmarshalPaymentsCreateTokenPaymentInput(v interface{}) (payments.TokenPaym
 		case "tokenAddress":
 			var err error
 			it.TokenAddress, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -19098,6 +19942,12 @@ func UnmarshalPostCreateExternalLinkInput(v interface{}) (posts.ExternalLink, er
 		case "url":
 			var err error
 			it.URL, err = graphql.UnmarshalString(v)
+			if err != nil {
+				return it, err
+			}
+		case "channelID":
+			var err error
+			it.ChannelID, err = graphql.UnmarshalString(v)
 			if err != nil {
 				return it, err
 			}
@@ -19461,6 +20311,7 @@ type Query {
   channelsGetByID(id: String!): Channel
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
   channelsGetByHandle(handle: String!): Channel
+  channelsGetByUserID(userID: String!): Channel
 
   # Newsroom Queries
   newsroomArticles(
@@ -19476,6 +20327,9 @@ type Query {
   # Post Queries
   postsGet(id: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
+
+  # Payment Queries
+  getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
 
   # UserChallengeData Queries
   userChallengeData(
@@ -19531,6 +20385,9 @@ type Mutation {
   # Channels Mutations
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
+  channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  channelsSetEmail(input: ChannelsSetEmailInput!): Channel
+  channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -19598,6 +20455,11 @@ type AuthLoginResponse {
   token: String
   refreshToken: String
   uid: String
+}
+
+type ChannelSetEmailResponse {
+  ChannelID: String
+  UserID: String
 }
 
 ## TCR object schemas
@@ -19783,15 +20645,28 @@ type Channel {
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   currentUserIsAdmin: Boolean!
+  handle: String
+  EmailAddressRestricted: String
 }
+
 type ChannelMember {
   channel: Channel
   role: String
 }
 
 input ChannelsConnectStripeInput {
-    channelID: String!
-    oauthCode: String!
+  channelID: String!
+  oauthCode: String!
+}
+
+input ChannelsSetHandleInput {
+  channelID: String!
+  handle: String!
+}
+
+input ChannelsSetEmailInput {
+  channelID: String!
+  emailAddress: String!
 }
 
 ## Post object schemas
@@ -19869,6 +20744,14 @@ type PostSearchResult {
   afterCursor: String
 }
 
+type ProceedsQueryResult {
+  postType: String
+  totalAmount: String
+  usd: String
+  ethUsdAmount: String
+  ether: String
+}
+
 # input objects
 input PostSearchInput {
   postType: String
@@ -19900,6 +20783,7 @@ input PostCreateBoostItemInput {
 
 input PostCreateExternalLinkInput {
   url: String!
+  channelID: String!
 }
 
 input PostCreateCommentInput {
@@ -19942,6 +20826,7 @@ type PaymentEther implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  fromAddress: String!
 }
 
 type PaymentToken implements Payment {
@@ -19964,6 +20849,7 @@ input PaymentsCreateStripePaymentInput {
   currencyCode: String!
   amount: Float!
   paymentToken: String!
+  emailAddress: String
 }
 
 # Payment inputs
@@ -19971,6 +20857,11 @@ input PaymentsCreateEtherPaymentInput {
   reaction: String
   comment: String
   transactionID: String!
+  emailAddress: String
+  paymentAddress: String!
+  fromAddress: String!
+  amount: Float!
+  usdAmount: String!
 }
 
 # Payment inputs
@@ -19979,6 +20870,7 @@ input PaymentsCreateTokenPaymentInput {
   comment: String
   transactionID: String!
   tokenAddress: String!
+  emailAddress: String
 }
 
 ## User object schemas

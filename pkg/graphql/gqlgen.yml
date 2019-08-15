@@ -26,6 +26,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/auth.ApplicationEnum
   AuthLoginResponse:
     model: github.com/joincivil/civil-api-server/pkg/auth.LoginResponse
+  ChannelSetEmailResponse:
+    model: github.com/joincivil/civil-api-server/pkg/channels.SetEmailResponse
   Challenge:
     model: github.com/joincivil/civil-events-processor/pkg/model.Challenge
   Channel:
@@ -34,6 +36,10 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/channels.ChannelMember
   ChannelsConnectStripeInput:
     model: github.com/joincivil/civil-api-server/pkg/channels.ConnectStripeInput
+  ChannelsSetHandleInput:
+    model: github.com/joincivil/civil-api-server/pkg/channels.SetHandleInput
+  ChannelsSetEmailInput:
+    model: github.com/joincivil/civil-api-server/pkg/channels.SetEmailInput
   Charter:
     model: github.com/joincivil/civil-events-processor/pkg/model.Charter
   CharterContent:
@@ -74,20 +80,22 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/nrsignup.SignupUserJSONData
   Poll:
     model: github.com/joincivil/civil-events-processor/pkg/model.Poll
-  Payment: 
+  Payment:
     model: github.com/joincivil/civil-api-server/pkg/payments.Payment
-  PaymentStripe: 
+  PaymentStripe:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
-  PaymentEther: 
+  PaymentEther:
     model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
-  PaymentToken: 
+  PaymentToken:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
-  PaymentsCreateStripePaymentInput: 
+  PaymentsCreateStripePaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
-  PaymentsCreateEtherPaymentInput: 
+  PaymentsCreateEtherPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
-  PaymentsCreateTokenPaymentInput: 
+  PaymentsCreateTokenPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  ProceedsQueryResult:
+    model: github.com/joincivil/civil-api-server/pkg/payments.ProceedsQueryResult
   Post:
     model: github.com/joincivil/civil-api-server/pkg/posts.Post
   PostBoost:

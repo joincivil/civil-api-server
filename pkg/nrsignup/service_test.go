@@ -6,16 +6,17 @@ import (
 	"os"
 	"testing"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/testutils"
 	"github.com/joincivil/civil-api-server/pkg/users"
 
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/joincivil/go-common/pkg/eth"
 	"github.com/joincivil/go-common/pkg/newsroom"
 )
- 
+
 const (
 	sendGridKeyEnvVar = "SENDGRID_TEST_KEY"
 	testEmailAddress  = "foo@bar.com"
@@ -94,7 +95,7 @@ func buildUserService() *users.UserService {
 	}
 	persister := &users.InMemoryUserPersister{UsersInMemory: initUsers}
 
-	return users.NewUserService(persister, nil)
+	return users.NewUserService(persister, nil, &testutils.MockChannelHelper{})
 }
 
 func buildJsonbService(t *testing.T) *jsonstore.Service {
@@ -143,7 +144,7 @@ func newTestNewsroomSignupService(t *testing.T, sendGridKey string) (
 		email.NewEmailerWithSandbox(sendGridKey, useSandbox),
 		buildUserService(),
 		jsonbService,
-		auth.NewJwtTokenGenerator([]byte(testSecret)),
+		utils.NewJwtTokenGenerator([]byte(testSecret)),
 		"http://localhost:8080",
 		"",
 		"",

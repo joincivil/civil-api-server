@@ -121,14 +121,14 @@ func runCLI(tools *newsrooms.Tools, cfg *config) {
 }
 
 func loadCharter(filename string) *newsroom.Charter {
-	jsonFile, err := os.Open(filename)
+	jsonFile, err := os.Open(filename) // nolint: gosec
 	if err != nil {
 		fmt.Printf("eror opening file: %v", err)
 		os.Exit(0)
 	}
 	fmt.Printf("Successfully Opened %v\n", filename)
 	// defer the closing of our jsonFile so that we can parse it later on
-	defer jsonFile.Close()
+	defer jsonFile.Close() // nolint: errcheck
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
 	input := &newsroom.Charter{}

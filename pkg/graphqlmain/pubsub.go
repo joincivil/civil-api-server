@@ -29,6 +29,7 @@ var PubSubModule = fx.Options(
 	fx.Invoke(RunTokenEventsWorkers),
 )
 
+// QuitChannel is a channel type that is used to quit goroutines and processes
 type QuitChannel chan bool
 
 // PubSubConfig defines the fields needed to start PubSub

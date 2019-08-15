@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 
 func main() {
 	secret := []byte(os.Args[1])
-	jwt := auth.NewJwtTokenGenerator(secret)
+	jwt := utils.NewJwtTokenGenerator(secret)
 	// Generate a new code for a user
 	token, err := jwt.GenerateToken(os.Args[2], expireInSecs)
 	if err != nil {

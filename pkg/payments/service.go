@@ -7,10 +7,27 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum/common"
+
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/joincivil/go-common/pkg/email"
 	uuid "github.com/satori/go.uuid"
+)
+
+const (
+	ethPaymentStartedEmailTemplateID    = "d-a4595d0eb8c941ab897b9414ac846aff"
+	ethPaymentFinishedEmailTemplateID   = "d-1e8763f27ef843cd8850ca297a426f3d"
+	stripePaymentReceiptEmailTemplateID = "d-b5d79746c540439fac8791b192135aa6"
+
+	civilEmailName      = "Civil"
+	supportEmailAddress = "support@civil.co"
+
+	defaultFromEmailName    = civilEmailName
+	defaultFromEmailAddress = supportEmailAddress
+
+	// TODO: get correct group ID for payments
+	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
 // StripeCharger defines the functions needed to create a charge with Stripe
@@ -35,20 +52,68 @@ type Service struct {
 	stripe   StripeCharger
 	ethereum EthereumValidator
 	channel  ChannelHelper
+	emailer  *email.Emailer
 }
 
 // NewService builds an instance of posts.Service
-func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator, channel ChannelHelper) *Service {
+func NewService(db *gorm.DB, stripe StripeCharger, ethereum EthereumValidator, channel ChannelHelper, emailer *email.Emailer) *Service {
 	return &Service{
 		db,
 		stripe,
 		ethereum,
 		channel,
+		emailer,
 	}
 }
 
+func getTemplateRequest(templateID string, emailAddress string, tmplData email.TemplateData) (req *email.SendTemplateEmailRequest) {
+	return &email.SendTemplateEmailRequest{
+		ToName:       emailAddress,
+		ToEmail:      emailAddress,
+		FromName:     defaultFromEmailName,
+		FromEmail:    defaultFromEmailAddress,
+		TemplateID:   templateID,
+		TemplateData: tmplData,
+		AsmGroupID:   defaultAsmGroupID,
+	}
+}
+
+// GetChannelTotalProceeds gets total proceeds for the channel, broken out by payment type
+func (s *Service) GetChannelTotalProceeds(channelID string) *ProceedsQueryResult {
+	var result ProceedsQueryResult
+	s.db.Raw(fmt.Sprintf(`
+	SELECT 
+	posts.post_type, 
+	sum(amount * exchange_rate) as total_amount, 
+	sum(amount * exchange_rate ) FILTER (WHERE p.currency_code = 'USD')  as usd, 
+	sum(amount * exchange_rate) FILTER (WHERE p.currency_code = 'ETH') as eth_usd_amount, 
+	sum(amount) FILTER (WHERE p.currency_code = 'ETH')  as ether 
+	from payments p 
+	inner join posts 
+	on p.owner_id::uuid = posts.id and p.owner_type = 'posts' 
+	where posts.channel_id = ? 
+	group by post_type 
+	order by post_type;`), channelID).Scan(&result)
+	return &result
+}
+
+func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(ethPaymentStartedEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendEthPaymentFinishedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(stripePaymentReceiptEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
-func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string) (EtherPayment, error) {
+func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string, emailAddress string, tmplData email.TemplateData) (EtherPayment, error) {
 	hash := common.HexToHash(txID)
 	if (hash == common.Hash{}) {
 		return EtherPayment{}, errors.New("invalid tx id")
@@ -74,12 +139,23 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 	payment.CurrencyCode = "ETH"
 	payment.ExchangeRate = 0
 	payment.Amount = 0
+	payment.EmailAddress = emailAddress
 
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(fmt.Sprintf("{\"PaymentAddress\":\"%v\"}", expectedAddress.String()))}
 
 	if err = s.db.Create(&payment).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return EtherPayment{}, err
+	}
+
+	// only send payment receipt if email is given
+	if emailAddress != "" {
+		err = s.sendEthPaymentStartedEmail(emailAddress, tmplData)
+		if err != nil {
+			return EtherPayment{
+				PaymentModel: payment,
+			}, err
+		}
 	}
 
 	return EtherPayment{
@@ -132,6 +208,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 	// expectedReceiver should be the channel ETH address
 	expectedReceiver := common.HexToAddress(etherPayment.PaymentAddress)
 	res, err := s.ethereum.ValidateTransaction(payment.Reference, expectedReceiver)
+	var err2 error
 	if err == ErrorTransactionFailed {
 		update.Status = "failed"
 	} else if err == ErrorReceiptNotFound || err == ErrorTransactionNotFound {
@@ -154,6 +231,16 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			update.Data = postgres.Jsonb{RawMessage: data}
 			update.ExchangeRate = res.ExchangeRate
 			update.Amount = res.Amount
+			// only send payment receipt if email is given
+			if payment.EmailAddress != "" {
+				tmplData := email.TemplateData{
+					"payment_amount_eth": res.Amount,
+					"payment_amount_usd": res.Amount * res.ExchangeRate,
+					"payment_to_address": etherPayment.PaymentAddress,
+					"boost_id":           etherPayment.OwnerID,
+				}
+				err2 = s.sendEthPaymentFinishedEmail(payment.EmailAddress, tmplData)
+			}
 		}
 	}
 
@@ -164,11 +251,14 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 		return err
 	}
 
+	if err2 != nil {
+		return err2
+	}
 	return nil
 }
 
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
-func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerID string, payment StripePayment) (StripePayment, error) {
+func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerID string, payment StripePayment, tmplData email.TemplateData) (StripePayment, error) {
 
 	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
 	if err != nil {
@@ -199,14 +289,23 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(res.StripeResponseJSON)}
 	payment.OwnerID = ownerID
 	payment.OwnerType = ownerType
+	payment.Reference = res.ID
 
 	// TODO(dankins): this should be set when we support currencies other than USD
 	payment.ExchangeRate = 1
 
 	if err = s.db.Create(&payment).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return StripePayment{}, err
 	}
+	// only send payment receipt if email is given
+	if payment.EmailAddress != "" {
+		err = s.sendStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+		if err != nil {
+			return payment, err
+		}
+	}
+
 	return payment, nil
 }
 
@@ -214,7 +313,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	var pays []PaymentModel
 	if err := s.db.Where(&PaymentModel{OwnerType: "posts", OwnerID: postID}).Find(&pays).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 
@@ -222,7 +321,7 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	for _, result := range pays {
 		payment, err := ModelToInterface(&result)
 		if err != nil {
-			log.Errorf("An error occured: %v\n", err)
+			log.Errorf("An error occurred: %v\n", err)
 			return nil, err
 		}
 		paymentsSlice = append(paymentsSlice, payment)
@@ -235,7 +334,7 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 func (s *Service) GetPayment(paymentID string) (Payment, error) {
 	var paymentModel PaymentModel
 	if err := s.db.Where(&PaymentModel{ID: paymentID}).First(&paymentModel).Error; err != nil {
-		log.Errorf("An error occured: %v\n", err)
+		log.Errorf("An error occurred: %v\n", err)
 		return nil, err
 	}
 

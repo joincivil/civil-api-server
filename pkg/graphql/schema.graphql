@@ -72,6 +72,7 @@ type Query {
   channelsGetByID(id: String!): Channel
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
   channelsGetByHandle(handle: String!): Channel
+  channelsGetByUserID(userID: String!): Channel
 
   # Newsroom Queries
   newsroomArticles(
@@ -87,6 +88,9 @@ type Query {
   # Post Queries
   postsGet(id: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
+
+  # Payment Queries
+  getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
 
   # UserChallengeData Queries
   userChallengeData(
@@ -142,6 +146,9 @@ type Mutation {
   # Channels Mutations
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
+  channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  channelsSetEmail(input: ChannelsSetEmailInput!): Channel
+  channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -209,6 +216,11 @@ type AuthLoginResponse {
   token: String
   refreshToken: String
   uid: String
+}
+
+type ChannelSetEmailResponse {
+  ChannelID: String
+  UserID: String
 }
 
 ## TCR object schemas
@@ -394,15 +406,28 @@ type Channel {
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   currentUserIsAdmin: Boolean!
+  handle: String
+  EmailAddressRestricted: String
 }
+
 type ChannelMember {
   channel: Channel
   role: String
 }
 
 input ChannelsConnectStripeInput {
-    channelID: String!
-    oauthCode: String!
+  channelID: String!
+  oauthCode: String!
+}
+
+input ChannelsSetHandleInput {
+  channelID: String!
+  handle: String!
+}
+
+input ChannelsSetEmailInput {
+  channelID: String!
+  emailAddress: String!
 }
 
 ## Post object schemas
@@ -480,6 +505,14 @@ type PostSearchResult {
   afterCursor: String
 }
 
+type ProceedsQueryResult {
+  postType: String
+  totalAmount: String
+  usd: String
+  ethUsdAmount: String
+  ether: String
+}
+
 # input objects
 input PostSearchInput {
   postType: String
@@ -511,6 +544,7 @@ input PostCreateBoostItemInput {
 
 input PostCreateExternalLinkInput {
   url: String!
+  channelID: String!
 }
 
 input PostCreateCommentInput {
@@ -553,6 +587,7 @@ type PaymentEther implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  fromAddress: String!
 }
 
 type PaymentToken implements Payment {
@@ -575,6 +610,7 @@ input PaymentsCreateStripePaymentInput {
   currencyCode: String!
   amount: Float!
   paymentToken: String!
+  emailAddress: String
 }
 
 # Payment inputs
@@ -582,6 +618,11 @@ input PaymentsCreateEtherPaymentInput {
   reaction: String
   comment: String
   transactionID: String!
+  emailAddress: String
+  paymentAddress: String!
+  fromAddress: String!
+  amount: Float!
+  usdAmount: String!
 }
 
 # Payment inputs
@@ -590,6 +631,7 @@ input PaymentsCreateTokenPaymentInput {
   comment: String
   transactionID: String!
   tokenAddress: String!
+  emailAddress: String
 }
 
 ## User object schemas

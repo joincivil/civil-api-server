@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"go.uber.org/fx"
@@ -13,6 +14,9 @@ var UsersRuntime = fx.Options(
 			return dbPersister
 		},
 		func(updater *tokencontroller.Service) users.TokenControllerUpdater {
+			return updater
+		},
+		func(updater *channels.Service) users.UserChannelHelper {
 			return updater
 		},
 	),

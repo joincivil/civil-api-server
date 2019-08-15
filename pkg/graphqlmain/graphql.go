@@ -59,8 +59,8 @@ var GraphqlModule = fx.Options(
 		initIPFS,
 		NewDeployerContractAddresses,
 		tokencontroller.NewService,
-		func(config *utils.GraphQLConfig) *auth.JwtTokenGenerator {
-			return auth.NewJwtTokenGenerator([]byte(config.JwtSecret))
+		func(config *utils.GraphQLConfig) *utils.JwtTokenGenerator {
+			return utils.NewJwtTokenGenerator([]byte(config.JwtSecret))
 		},
 		func(config *utils.GraphQLConfig) *email.Emailer {
 			return cemail.NewEmailer(config.SendgridKey)

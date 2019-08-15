@@ -7,6 +7,8 @@ POSTGRES_PSWD=docker
 
 PUBSUB_SIM_DOCKER_IMAGE=kinok/google-pubsub-emulator:latest
 
+GOVERSION=go1.12.7
+
 GOCMD=go
 GOGEN=$(GOCMD) generate
 GORUN=$(GOCMD) run
@@ -19,9 +21,7 @@ GOCOVER=$(GOCMD) tool cover
 GO:=$(shell command -v go 2> /dev/null)
 DOCKER:=$(shell command -v docker 2> /dev/null)
 APT:=$(shell command -v apt-get 2> /dev/null)
-
-# GOMETALINTER_INSTALLER=scripts/gometalinter_install.sh
-# GOMETALINTER_VERSION_TAG=v2.0.11
+GOVERCURRENT=$(shell go version |awk {'print $$3'})
 
 # curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin vX.Y.Z
 GOLANGCILINT_URL=https://install.goreleaser.com/github.com/golangci/golangci-lint.sh
@@ -36,6 +36,9 @@ endif
 ifndef GOPATH
 	$(error GOPATH is not set)
 endif
+ifneq ($(GOVERCURRENT), $(GOVERSION))
+	$(error Incorrect go version, needs $(GOVERSION))
+endif
 
 ## NOTE: If installing on a Mac, use Docker for Mac, not Docker toolkit
 ## https://www.docker.com/docker-mac
@@ -45,14 +48,8 @@ ifndef DOCKER
 	$(error docker command is not installed or in PATH)
 endif
 
-.PHONY: install-dep
-install-dep: check-go-env ## Installs dep
-	@mkdir -p $(GOPATH)/bin
-	@curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-
 .PHONY: install-linter
 install-linter: check-go-env ## Installs linter
-	# sh $(GOMETALINTER_INSTALLER) -b $(GOPATH)/bin $(GOMETALINTER_VERSION_TAG)
 	@curl -sfL $(GOLANGCILINT_URL) | sh -s -- -b $(shell go env GOPATH)/bin $(GOLANGCILINT_VERSION_TAG)
 ifdef APT
 	@sudo apt-get install golang-race-detector-runtime || true
@@ -71,7 +68,7 @@ install-gorunpkg: ## Installs the gorunpkg command
 	@$(GOGET) -u github.com/vektah/gorunpkg
 
 .PHONY: setup
-setup: check-go-env install-dep install-linter install-cover install-gorunpkg ## Sets up the tooling.
+setup: check-go-env install-linter install-cover install-gorunpkg ## Sets up the tooling.
 
 .PHONY: postgres-setup-launch
 postgres-setup-launch:
@@ -118,19 +115,19 @@ pubsub-stop: check-docker-env ## Stops the pubsub simulator
 
 ## golangci-lint config in .golangci.yml
 .PHONY: lint
-lint: ## Runs linting.
+lint: check-go-env ## Runs linting.
 	@golangci-lint run ./...
 
 .PHONY: build
-build: ## Builds the graphql server
+build: check-go-env ## Builds the graphql server
 	$(GOBUILD) -o ./build/graphqlserver cmd/graphqlserver/main.go
 
 .PHONY: test
-test: ## Runs unit tests and tests code coverage
+test: check-go-env ## Runs unit tests and tests code coverage
 	@echo 'mode: atomic' > coverage.txt && $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -timeout=30s ./...
 
 .PHONY: test-integration
-test-integration: ## Runs tagged integration tests
+test-integration: check-go-env ## Runs tagged integration tests
 	@echo 'mode: atomic' > coverage.txt && PUBSUB_EMULATOR_HOST=localhost:8042 $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -timeout=30s -tags=integration ./...
 
 .PHONY: cover

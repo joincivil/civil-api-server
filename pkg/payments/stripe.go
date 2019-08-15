@@ -2,10 +2,11 @@ package payments
 
 import (
 	"encoding/json"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/pkg/errors"
 
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/utils"
@@ -31,6 +32,7 @@ type CreateChargeRequest struct {
 
 // CreateChargeResponse contains the result of a stripe charge
 type CreateChargeResponse struct {
+	ID                 string
 	StripeResponseJSON []byte
 }
 
@@ -88,6 +90,7 @@ func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateCharge
 
 	return CreateChargeResponse{
 		StripeResponseJSON: bytes,
+		ID:                 ch.ID,
 	}, nil
 
 }
@@ -104,7 +107,7 @@ type responseData struct {
 	AccessToken          string `json:"access_token"`           // "{ACCESS_TOKEN}"
 }
 
-// CreateCharge sends a payment to a connected account
+// ConnectAccount calls Stripe to finalize a connection to an account given a Stripe auth code
 func (s *StripeService) ConnectAccount(code string) (string, error) {
 	stripe.Key = s.apiKey
 	resp, err := http.PostForm(stripeOAuthURI,

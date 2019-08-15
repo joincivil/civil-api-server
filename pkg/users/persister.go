@@ -4,7 +4,7 @@ package users
 type UserPersister interface {
 	Users(criteria *UserCriteria) ([]*User, error)
 	User(criteria *UserCriteria) (*User, error)
-	SaveUser(user *User) error
+	SaveUser(user *User) (*User, error)
 	UpdateUser(user *User, updatedFields []string) error
 }
 

@@ -10,6 +10,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
+// DBCreds is a struct to contain credentials for DB access
 type DBCreds struct {
 	Port     int
 	Dbname   string

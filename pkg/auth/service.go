@@ -80,7 +80,7 @@ func (a ApplicationEmailTemplateMap) FromStringMap(smap map[string]string) error
 // Service is used to create and login in Users
 type Service struct {
 	userService            *users.UserService
-	tokenGenerator         *JwtTokenGenerator
+	tokenGenerator         *utils.JwtTokenGenerator
 	emailer                *email.Emailer
 	signupEmailTemplateIDs ApplicationEmailTemplateMap
 	loginEmailTemplateIDs  ApplicationEmailTemplateMap
@@ -89,7 +89,7 @@ type Service struct {
 }
 
 // NewAuthServiceFromConfig creates a new auth.Service using the main graphql config
-func NewAuthServiceFromConfig(userService *users.UserService, tokenGenerator *JwtTokenGenerator,
+func NewAuthServiceFromConfig(userService *users.UserService, tokenGenerator *utils.JwtTokenGenerator,
 	emailer *email.Emailer, config *utils.GraphQLConfig) (*Service, error) {
 	signupTemplateIDs := config.AuthEmailSignupTemplates
 	loginTemplateIDs := config.AuthEmailLoginTemplates
@@ -99,7 +99,7 @@ func NewAuthServiceFromConfig(userService *users.UserService, tokenGenerator *Jw
 }
 
 // NewAuthService creates a new AuthService instance
-func NewAuthService(userService *users.UserService, tokenGenerator *JwtTokenGenerator,
+func NewAuthService(userService *users.UserService, tokenGenerator *utils.JwtTokenGenerator,
 	emailer *email.Emailer, signupTemplateIDs map[string]string,
 	loginTemplateIDs map[string]string, signupLoginProtoHost string,
 	refreshBlacklist []string) (*Service, error) {
