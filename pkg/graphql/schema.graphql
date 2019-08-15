@@ -544,6 +544,7 @@ input PostCreateBoostItemInput {
 
 input PostCreateExternalLinkInput {
   url: String!
+  channelID: String!
 }
 
 input PostCreateCommentInput {
