@@ -134,7 +134,7 @@ func TestCreateBadBoost(t *testing.T) {
 	boost := makeBadEndDateBoost()
 	_, err := persister.CreatePost(aliceUserUUID, boost)
 	if err == nil {
-		t.Fatalf("expected BadBadEndDateError")
+		t.Fatalf("expected ErrorBadBoostEndDate")
 	}
 }
 
