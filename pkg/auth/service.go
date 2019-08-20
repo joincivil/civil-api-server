@@ -145,7 +145,7 @@ func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error)
 		return nil, err
 	}
 
-	identifier := users.UserCriteria{EthAddress: input.Signer}
+	identifier := users.UserCriteria{EthAddress: strings.ToLower(input.Signer)}
 	user, err := s.userService.CreateUser(identifier)
 	if err != nil {
 		return nil, err
@@ -239,7 +239,7 @@ func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) 
 		return nil, err
 	}
 
-	identifier := users.UserCriteria{EthAddress: input.Signer}
+	identifier := users.UserCriteria{EthAddress: strings.ToLower(input.Signer)}
 	user, err := s.userService.GetUser(identifier)
 	if err != nil && err == cpersist.ErrPersisterNoResults {
 		return nil, fmt.Errorf("user does not exist")
