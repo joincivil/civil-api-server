@@ -3,6 +3,8 @@ package graphql
 import (
 	context "context"
 
+	"github.com/joincivil/go-common/pkg/eth"
+
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -60,7 +62,7 @@ func (r *mutationResolver) UserSetEthAddress(ctx context.Context, input users.Si
 		return nil, ErrAccessDenied
 	}
 
-	err := auth.VerifyEthChallengeAndSignature(auth.ChallengeRequest{
+	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
 		ExpectedPrefix: "I control this address",
 		GracePeriod:    5 * 60, // 5 minutes
 		InputAddress:   input.Signer,
