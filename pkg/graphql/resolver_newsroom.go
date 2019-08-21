@@ -24,10 +24,10 @@ type contentRevisionResolver struct{ *Resolver }
 func (r *contentRevisionResolver) ListingAddress(ctx context.Context, obj *model.ContentRevision) (string, error) {
 	return r.Resolver.DetermineAddrCase(obj.ListingAddress().Hex()), nil
 }
-func (r *contentRevisionResolver) Payload(ctx context.Context, obj *model.ContentRevision) ([]graphql.ArticlePayload, error) {
-	data := []graphql.ArticlePayload{}
+func (r *contentRevisionResolver) Payload(ctx context.Context, obj *model.ContentRevision) ([]*graphql.ArticlePayload, error) {
+	data := []*graphql.ArticlePayload{}
 	for key, val := range obj.Payload() {
-		meta := graphql.ArticlePayload{
+		meta := &graphql.ArticlePayload{
 			// Make the key lower camel case for consistency with GraphQL field names
 			Key:   strcase.ToLowerCamel(key),
 			Value: model.ArticlePayloadValue{Value: val},
@@ -54,13 +54,14 @@ func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.C
 // QUERIES
 
 func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
-	after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error) {
+	after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
+
 	return r.NewsroomArticles(ctx, addr, first, after, contentID, revisionID, lowercaseAddr)
 }
 
 func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, first *int,
-	after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]model.ContentRevision, error) {
+	after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	criteria := &model.ContentRevisionCriteria{
 		LatestOnly: true,
@@ -88,14 +89,5 @@ func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, firs
 		}
 	}
 
-	revisions, err := r.revisionPersister.ContentRevisionsByCriteria(criteria)
-	if err != nil {
-		return nil, err
-	}
-
-	modelRevisions := make([]model.ContentRevision, len(revisions))
-	for index, revision := range revisions {
-		modelRevisions[index] = *revision
-	}
-	return modelRevisions, nil
+	return r.revisionPersister.ContentRevisionsByCriteria(criteria)
 }
