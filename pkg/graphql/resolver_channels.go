@@ -61,6 +61,20 @@ func (r *mutationResolver) ChannelsSetHandle(ctx context.Context, input channels
 	return r.channelService.SetHandle(token.Sub, input.ChannelID, input.Handle)
 }
 
+func (r *mutationResolver) UserChannelSetHandle(ctx context.Context, input channels.UserSetHandleInput) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	channel, err := r.channelService.GetChannelByReference("user", token.Sub)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.channelService.SetHandle(token.Sub, channel.ID, input.Handle)
+}
+
 func (r *mutationResolver) ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
