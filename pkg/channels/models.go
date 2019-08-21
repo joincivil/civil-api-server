@@ -53,6 +53,12 @@ type SetHandleInput struct {
 	Handle    string
 }
 
+// UserSetHandleInput contains the fields needed to set a user's channel handle
+type UserSetHandleInput struct {
+	UserID string
+	Handle string
+}
+
 // SetEmailInput contains the fields needed to set a channel's email address
 type SetEmailInput struct {
 	ChannelID    string
