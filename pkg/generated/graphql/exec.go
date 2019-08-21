@@ -496,6 +496,7 @@ type ComplexityRoot struct {
 		QuizPayload           func(childComplexity int) int
 		QuizStatus            func(childComplexity int) int
 		UID                   func(childComplexity int) int
+		UserChannel           func(childComplexity int) int
 	}
 
 	UserChallengeVoteData struct {
@@ -700,6 +701,7 @@ type UserResolver interface {
 	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
 	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
 	Channels(ctx context.Context, obj *users.User) ([]*channels.ChannelMember, error)
+	UserChannel(ctx context.Context, obj *users.User) (*channels.Channel, error)
 }
 type UserChallengeVoteDataResolver interface {
 	PollID(ctx context.Context, obj *model.UserChallengeData) (int, error)
@@ -3226,6 +3228,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UID(childComplexity), true
 
+	case "User.userChannel":
+		if e.complexity.User.UserChannel == nil {
+			break
+		}
+
+		return e.complexity.User.UserChannel(childComplexity), true
+
 	case "UserChallengeVoteData.choice":
 		if e.complexity.UserChallengeVoteData.Choice == nil {
 			break
@@ -4056,6 +4065,7 @@ type User {
   nrFurthestStep: Int
   nrLastSeen: Int
   channels: [ChannelMember]
+  userChannel: Channel
 }
 
 input UserSignatureInput {
@@ -17203,6 +17213,40 @@ func (ec *executionContext) _User_channels(ctx context.Context, field graphql.Co
 	return ec.marshalOChannelMember2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannelMember(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _User_userChannel(ctx context.Context, field graphql.CollectedField, obj *users.User) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().UserChannel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _UserChallengeVoteData_pollID(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -22717,6 +22761,17 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				res = ec._User_channels(ctx, field, obj)
 				return res
 			})
+		case "userChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_userChannel(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24663,7 +24718,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
