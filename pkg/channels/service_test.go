@@ -414,11 +414,13 @@ var handletests = []struct {
 	in  string
 	out bool
 }{
-	{"foo", true},
-	{"bar", true},
+	{"foo", false},
+	{"food", true},
+	{"foofoo", true},
+	{"barfoo", true},
 	{"foo_bar", true},
 	{"foo%bar", false},
-	{"F00", true},
+	{"F00-f", true},
 	{"F-11", false},
 	{"F/AA", false},
 	{"hello world", false},
