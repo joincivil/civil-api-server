@@ -420,8 +420,9 @@ var handletests = []struct {
 	{"barfoo", true},
 	{"foo_bar", true},
 	{"foo%bar", false},
-	{"F00-f", true},
-	{"F-11", false},
+	{"F00_f", true},
+	{"F00-f", false},
+	{"F_1", false},
 	{"F/AA", false},
 	{"hello world", false},
 }
