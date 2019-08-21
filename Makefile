@@ -59,16 +59,20 @@ endif
 install-cover: check-go-env ## Installs code coverage tool
 	@$(GOGET) -u golang.org/x/tools/cmd/cover
 
-.PHONY: install-gqlgen
-install-gqlgen: ## Installs gqlgen graphql library (Not installed with setup)
-	@$(GOGET) -u github.com/99designs/gqlgen
+.PHONY: install-gobin
+install-gobin: check-go-env ## Installs gobin tool
+	@GO111MODULE=off go get -u github.com/myitcv/gobin
+
+.PHONY: install-dataloaden
+install-dataloaden: check-go-env ## Installs gobin tool
+	@gobin github.com/vektah/dataloaden
 
 .PHONY: install-gorunpkg
 install-gorunpkg: ## Installs the gorunpkg command
 	@$(GOGET) -u github.com/vektah/gorunpkg
 
 .PHONY: setup
-setup: check-go-env install-linter install-cover install-gorunpkg ## Sets up the tooling.
+setup: check-go-env install-linter install-gobin install-dataloaden install-cover install-gorunpkg ## Sets up the tooling.
 
 .PHONY: postgres-setup-launch
 postgres-setup-launch:

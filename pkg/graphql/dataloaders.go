@@ -36,21 +36,29 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 		ldrs.listingLoader = &ListingLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []string) ([]*model.Listing, []error) {
+			fetch: func(keys []string) ([]model.Listing, []error) {
 				addresses := cstrings.ListStringToListCommonAddress(keys)
 				listings, err := g.listingPersister.ListingsByAddresses(addresses)
 				errors := []error{err}
-				return listings, errors
+				retlistings := make([]model.Listing, len(listings))
+				for ind, listing := range listings {
+					retlistings[ind] = *listing
+				}
+				return retlistings, errors
 			},
 		}
 
 		ldrs.challengeLoader = &ChallengeLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []int) ([]*model.Challenge, []error) {
+			fetch: func(keys []int) ([]model.Challenge, []error) {
 				challengeEvents, err := g.challengePersister.ChallengesByChallengeIDs(keys)
 				errors := []error{err}
-				return challengeEvents, errors
+				challenges := make([]model.Challenge, len(challengeEvents))
+				for ind, challenge := range challengeEvents {
+					challenges[ind] = *challenge
+				}
+				return challenges, errors
 			},
 		}
 
@@ -73,20 +81,28 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 		ldrs.appealLoader = &AppealLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []int) ([]*model.Appeal, []error) {
+			fetch: func(keys []int) ([]model.Appeal, []error) {
 				appeals, err := g.appealPersister.AppealsByChallengeIDs(keys)
 				errors := []error{err}
-				return appeals, errors
+				retAppeals := make([]model.Appeal, len(appeals))
+				for ind, appeal := range appeals {
+					retAppeals[ind] = *appeal
+				}
+				return retAppeals, errors
 			},
 		}
 
 		ldrs.discourseListingMapLoader = &ListingMapLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []string) ([]*discourse.ListingMap, []error) {
+			fetch: func(keys []string) ([]discourse.ListingMap, []error) {
 				ldms, err := g.discourseListingMapPersister.RetrieveListingMaps(keys)
 				errors := []error{err}
-				return ldms, errors
+				retldms := make([]discourse.ListingMap, len(ldms))
+				for ind, ldm := range ldms {
+					retldms[ind] = *ldm
+				}
+				return retldms, errors
 			},
 		}
 

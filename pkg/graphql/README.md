@@ -123,9 +123,12 @@ Reference: https://gqlgen.com/reference/dataloaders/ and https://github.com/vekt
 
 To generate a dataloader file (i.e. for a `model.Listing` that creates `listingloader_gen.go`):
 ```
-go get -u github.com/vektah/dataloaden
+make install-dataloaden
 cd pkg/graphql
-dataloaden -keys string github.com/joincivil/civil-events-processor/pkg/model.Listing
-dataloaden -keys int github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
+dataloaden AppealLoader int github.com/joincivil/civil-events-processor/pkg/model.Appeal
+dataloaden ChallengeLoader int github.com/joincivil/civil-events-processor/pkg/model.Challenge
+dataloaden GovernanceEventLoader int github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
+dataloaden ListingLoader string github.com/joincivil/civil-events-processor/pkg/model.Listing
+dataloaden ListingMapLoader string github.com/joincivil/civil-api-server/pkg/discourse.ListingMap
 ```
 Then implement code in `dataloaders.go` and modify `resolvers.go`
