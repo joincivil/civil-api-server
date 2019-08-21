@@ -147,6 +147,7 @@ type Mutation {
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
   channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
   channelsSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
 
@@ -425,6 +426,11 @@ input ChannelsSetHandleInput {
   handle: String!
 }
 
+input UserChannelSetHandleInput {
+  userID: String!
+  handle: String!
+}
+
 input ChannelsSetEmailInput {
   channelID: String!
   emailAddress: String!
@@ -648,6 +654,7 @@ type User {
   nrFurthestStep: Int
   nrLastSeen: Int
   channels: [ChannelMember]
+  userChannel: Channel
 }
 
 input UserSignatureInput {

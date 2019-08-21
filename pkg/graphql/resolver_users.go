@@ -5,6 +5,7 @@ import (
 
 	"github.com/joincivil/go-common/pkg/eth"
 
+	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -43,6 +44,11 @@ func (r *userResolver) Channels(ctx context.Context, obj *users.User) ([]*channe
 	return r.channelService.GetUserChannels(obj.UID)
 }
 
+// UserChannel returns the user channel for the user
+func (r *userResolver) UserChannel(ctx context.Context, obj *users.User) (*channels.Channel, error) {
+	return r.channelService.GetChannelByReference("user", obj.UID)
+}
+
 // QUERIES
 
 func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
@@ -51,7 +57,12 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*users.User, error) {
 		return nil, ErrAccessDenied
 	}
 
-	return r.userService.GetUser(users.UserCriteria{UID: token.Sub})
+	user, err := r.userService.GetUser(users.UserCriteria{UID: token.Sub})
+	if err != nil {
+		return nil, err
+	}
+	log.Infof("User: %v", user)
+	return user, nil
 }
 
 // MUTATIONS
