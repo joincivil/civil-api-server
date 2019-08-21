@@ -197,8 +197,8 @@ func (r *governanceEventResolver) ListingAddress(ctx context.Context, obj *model
 	return r.Resolver.DetermineAddrCase(obj.ListingAddress().Hex()), nil
 }
 
-func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.GovernanceEvent) ([]graphql.Metadata, error) {
-	data := make([]graphql.Metadata, len(obj.Metadata()))
+func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.GovernanceEvent) ([]*graphql.Metadata, error) {
+	data := make([]*graphql.Metadata, len(obj.Metadata()))
 	index := 0
 	for key, val := range obj.Metadata() {
 		meta := graphql.Metadata{}
@@ -219,14 +219,14 @@ func (r *governanceEventResolver) Metadata(ctx context.Context, obj *model.Gover
 			meta.Value = v.(string)
 		}
 		meta.Value = r.determineMetadataValueCase(meta)
-		data[index] = meta
+		data[index] = &meta
 		index++
 	}
 	return data, nil
 }
-func (r *governanceEventResolver) BlockData(ctx context.Context, obj *model.GovernanceEvent) (graphql.BlockData, error) {
+func (r *governanceEventResolver) BlockData(ctx context.Context, obj *model.GovernanceEvent) (*graphql.BlockData, error) {
 	modelBlockData := obj.BlockData()
-	blockData := graphql.BlockData{}
+	blockData := &graphql.BlockData{}
 	blockData.BlockNumber = int(modelBlockData.BlockNumber())
 	blockData.TxHash = modelBlockData.TxHash()
 	blockData.TxIndex = int(modelBlockData.TxIndex())
@@ -240,17 +240,17 @@ func (r *governanceEventResolver) CreationDate(ctx context.Context, obj *model.G
 func (r *governanceEventResolver) LastUpdatedDate(ctx context.Context, obj *model.GovernanceEvent) (int, error) {
 	return int(obj.LastUpdatedDateTs()), nil
 }
-func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.GovernanceEvent) (model.Listing, error) {
+func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.GovernanceEvent) (*model.Listing, error) {
 	loaders := ctxLoaders(ctx)
 	listingAddress := obj.ListingAddress().Hex()
 	listing, err := loaders.listingLoader.Load(listingAddress)
 	if err != nil {
-		return model.Listing{}, err
+		return &model.Listing{}, err
 	}
 	if listing == nil {
-		return model.Listing{}, nil
+		return &model.Listing{}, nil
 	}
-	return *listing, nil
+	return listing, nil
 }
 
 type listingResolver struct{ *Resolver }
@@ -447,14 +447,14 @@ func (r *queryResolver) TcrChallenge(ctx context.Context, id int, lowercaseAddr 
 }
 
 func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, after *string,
-	creationDate *graphql.DateRange, first *int, lowercaseAddr *bool) ([]model.GovernanceEvent, error) {
+	creationDate *graphql.DateRange, first *int, lowercaseAddr *bool) ([]*model.GovernanceEvent, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	resultCursor, err := r.TcrGovernanceEvents(ctx, addr, after, creationDate, first, lowercaseAddr)
 	if err != nil {
-		return []model.GovernanceEvent{}, nil
+		return []*model.GovernanceEvent{}, nil
 	}
 
-	results := make([]model.GovernanceEvent, len(resultCursor.Edges))
+	results := make([]*model.GovernanceEvent, len(resultCursor.Edges))
 	for index, edge := range resultCursor.Edges {
 		results[index] = edge.Node
 	}
@@ -510,7 +510,7 @@ func (r *queryResolver) TcrGovernanceEvents(ctx context.Context, addr *string, a
 
 	return &graphql.GovernanceEventResultCursor{
 		Edges: edges,
-		PageInfo: graphql.PageInfo{
+		PageInfo: &graphql.PageInfo{
 			EndCursor:   endCursor,
 			HasNextPage: hasNextPage,
 		},
@@ -554,7 +554,7 @@ func (r *queryResolver) govEventsBuildEdges(events []*model.GovernanceEvent,
 		}
 		edges[index] = &graphql.GovernanceEventEdge{
 			Cursor: newCursor.Encode(),
-			Node:   *event,
+			Node:   event,
 		}
 	}
 	return edges
@@ -569,38 +569,32 @@ func (r *queryResolver) govEventsEndCursor(edges []*graphql.GovernanceEventEdge)
 }
 
 func (r *queryResolver) GovernanceEventsTxHash(ctx context.Context,
-	txString string, lowercaseAddr *bool) ([]model.GovernanceEvent, error) {
+	txString string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
+
 	return r.TcrGovernanceEventsTxHash(ctx, txString, lowercaseAddr)
 }
 
 func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
-	txString string, lowercaseAddr *bool) ([]model.GovernanceEvent, error) {
+	txString string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	txHash := common.HexToHash(txString)
-	events, err := r.govEventPersister.GovernanceEventsByTxHash(txHash)
-	if err != nil {
-		return nil, err
-	}
-	modelEvents := make([]model.GovernanceEvent, len(events))
-	for index, event := range events {
-		modelEvents[index] = *event
-	}
-	return modelEvents, err
+
+	return r.govEventPersister.GovernanceEventsByTxHash(txHash)
 }
 
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
 	currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType,
-	sortDesc *bool) ([]model.Listing, error) {
+	sortDesc *bool) ([]*model.Listing, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	resultCursor, err := r.TcrListings(ctx, first, after, whitelistedOnly, rejectedOnly,
 		activeChallenge, currentApplication, lowercaseAddr, sortBy, sortDesc)
 	if err != nil {
-		return []model.Listing{}, err
+		return []*model.Listing{}, err
 	}
 
-	results := make([]model.Listing, len(resultCursor.Edges))
+	results := make([]*model.Listing, len(resultCursor.Edges))
 	for index, edge := range resultCursor.Edges {
 		results[index] = edge.Node
 	}
@@ -666,7 +660,7 @@ func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *stri
 
 	return &graphql.ListingResultCursor{
 		Edges: modelEdges,
-		PageInfo: graphql.PageInfo{
+		PageInfo: &graphql.PageInfo{
 			EndCursor:   endCursor,
 			HasNextPage: hasNextPage,
 		},
@@ -710,7 +704,7 @@ func (r *queryResolver) listingsBuildEdges(listings []*model.Listing,
 		}
 		modelEdges[index] = &graphql.ListingEdge{
 			Cursor: newCursor.Encode(),
-			Node:   *listing,
+			Node:   listing,
 		}
 	}
 	return modelEdges
@@ -743,7 +737,7 @@ func (r *queryResolver) TcrListing(ctx context.Context, addr string, lowercaseAd
 }
 
 func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pollID *int,
-	canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]model.UserChallengeData, error) {
+	canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error) {
 
 	criteria := &model.UserChallengeDataCriteria{}
 
@@ -769,12 +763,7 @@ func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pol
 		return nil, err
 	}
 
-	modelEvents := make([]model.UserChallengeData, len(allUserChallengeData))
-	for index, event := range allUserChallengeData {
-		modelEvents[index] = *event
-	}
-
-	return modelEvents, nil
+	return allUserChallengeData, nil
 }
 
 func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,

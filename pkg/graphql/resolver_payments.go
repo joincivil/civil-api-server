@@ -11,43 +11,46 @@ import (
 )
 
 // MUTATIONS
-func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postID string, payment payments.EtherPayment) (payments.EtherPayment, error) {
+func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postID string, payment payments.EtherPayment) (*payments.EtherPayment, error) {
 
 	post, err := r.postService.GetPost(postID)
 	if err != nil {
-		return payments.EtherPayment{}, errors.New("could not find post")
+		return &payments.EtherPayment{}, errors.New("could not find post")
 	}
 
 	channelID := post.GetChannelID()
 	tmplData, err2 := r.GetEthPaymentEmailTemplateData(post, payment)
 	if err2 != nil {
-		return payments.EtherPayment{}, errors.New("error creating email template data")
+		return &payments.EtherPayment{}, errors.New("error creating email template data")
 	}
-	return r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment.TransactionID, payment.EmailAddress, tmplData)
+
+	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment.TransactionID, payment.EmailAddress, tmplData)
+	return &p, err
 }
 
-func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, postID string, payment payments.StripePayment) (payments.StripePayment, error) {
+func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePayment, error) {
 
 	post, err := r.postService.GetPost(postID)
 	if err != nil {
-		return payments.StripePayment{}, errors.New("could not find post")
+		return &payments.StripePayment{}, errors.New("could not find post")
 	}
 
 	channelID := post.GetChannelID()
 	tmplData, err2 := r.GetStripePaymentEmailTemplateData(post, payment)
 	if err2 != nil {
-		return payments.StripePayment{}, errors.New("error creating email template data")
+		return &payments.StripePayment{}, errors.New("error creating email template data")
 	}
-	return r.paymentService.CreateStripePayment(channelID, "posts", postID, payment, tmplData)
+	p, err := r.paymentService.CreateStripePayment(channelID, "posts", postID, payment, tmplData)
+	return &p, err
 }
 
-func (r *mutationResolver) PaymentsCreateTokenPayment(ctx context.Context, postID string, payment payments.TokenPayment) (payments.TokenPayment, error) {
+func (r *mutationResolver) PaymentsCreateTokenPayment(ctx context.Context, postID string, payment payments.TokenPayment) (*payments.TokenPayment, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return payments.TokenPayment{}, ErrAccessDenied
+		return &payments.TokenPayment{}, ErrAccessDenied
 	}
 
-	return payments.TokenPayment{}, ErrNotImplemented
+	return &payments.TokenPayment{}, ErrNotImplemented
 }
 
 func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payment payments.EtherPayment) (email.TemplateData, error) {

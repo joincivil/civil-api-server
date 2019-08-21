@@ -104,7 +104,7 @@ Read these before proceeding to update or add endpoints.
 ## To Generate Code
 ```
 cd pkg/graphql
-go run ../../scripts/gqlgen.go -v
+go run github.com/99designs/gqlgen -v
 ```
 
 ## `resolver*.go`
