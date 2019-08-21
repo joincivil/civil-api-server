@@ -386,7 +386,7 @@ func NormalizeHandle(handle string) (string, error) {
 
 // IsValidHandle returns whether the provided handle is valid
 func IsValidHandle(handle string) bool {
-	matched, err := regexp.Match(`^(\w){1,15}$`, []byte(handle))
+	matched, err := regexp.Match(`^(\w){4,15}$`, []byte(handle))
 	if err != nil {
 		return false
 	}
