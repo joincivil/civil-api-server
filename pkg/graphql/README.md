@@ -125,10 +125,11 @@ To generate a dataloader file (i.e. for a `model.Listing` that creates `listingl
 ```
 make install-dataloaden
 cd pkg/graphql
-dataloaden AppealLoader int github.com/joincivil/civil-events-processor/pkg/model.Appeal
-dataloaden ChallengeLoader int github.com/joincivil/civil-events-processor/pkg/model.Challenge
-dataloaden GovernanceEventLoader int github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
-dataloaden ListingLoader string github.com/joincivil/civil-events-processor/pkg/model.Listing
-dataloaden ListingMapLoader string github.com/joincivil/civil-api-server/pkg/discourse.ListingMap
+dataloaden AppealLoader int "*github.com/joincivil/civil-events-processor/pkg/model.Appeal"
+dataloaden ChallengeLoader int "*github.com/joincivil/civil-events-processor/pkg/model.Challenge"
+dataloaden ChallengeSliceByAddressLoader string "[]*github.com/joincivil/civil-events-processor/pkg/model.Challenge"
+dataloaden GovernanceEventLoader int "*github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent"
+dataloaden ListingLoader string "*github.com/joincivil/civil-events-processor/pkg/model.Listing"
+dataloaden ListingMapLoader string "*github.com/joincivil/civil-api-server/pkg/discourse.ListingMap"
 ```
 Then implement code in `dataloaders.go` and modify `resolvers.go`
