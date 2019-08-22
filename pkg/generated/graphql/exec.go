@@ -300,6 +300,7 @@ type ComplexityRoot struct {
 		StorefrontAirswapCancelled        func(childComplexity int) int
 		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
 		TcrListingSaveTopicID             func(childComplexity int, addr string, topicID int) int
+		UserChannelSetHandle              func(childComplexity int, input channels.UserSetHandleInput) int
 		UserSetEthAddress                 func(childComplexity int, input users.SignatureInput) int
 		UserUpdate                        func(childComplexity int, uid *string, input *users.UserUpdateInput) int
 	}
@@ -495,6 +496,7 @@ type ComplexityRoot struct {
 		QuizPayload           func(childComplexity int) int
 		QuizStatus            func(childComplexity int) int
 		UID                   func(childComplexity int) int
+		UserChannel           func(childComplexity int) int
 	}
 
 	UserChallengeVoteData struct {
@@ -609,6 +611,7 @@ type MutationResolver interface {
 	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
 	ChannelsConnectStripe(ctx context.Context, input channels.ConnectStripeInput) (*channels.Channel, error)
 	ChannelsSetHandle(ctx context.Context, input channels.SetHandleInput) (*channels.Channel, error)
+	UserChannelSetHandle(ctx context.Context, input channels.UserSetHandleInput) (*channels.Channel, error)
 	ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
 	ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
@@ -698,6 +701,7 @@ type UserResolver interface {
 	NrFurthestStep(ctx context.Context, obj *users.User) (*int, error)
 	NrLastSeen(ctx context.Context, obj *users.User) (*int, error)
 	Channels(ctx context.Context, obj *users.User) ([]*channels.ChannelMember, error)
+	UserChannel(ctx context.Context, obj *users.User) (*channels.Channel, error)
 }
 type UserChallengeVoteDataResolver interface {
 	PollID(ctx context.Context, obj *model.UserChallengeData) (int, error)
@@ -2043,6 +2047,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.TcrListingSaveTopicID(childComplexity, args["addr"].(string), args["topicID"].(int)), true
 
+	case "Mutation.userChannelSetHandle":
+		if e.complexity.Mutation.UserChannelSetHandle == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_userChannelSetHandle_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UserChannelSetHandle(childComplexity, args["input"].(channels.UserSetHandleInput)), true
+
 	case "Mutation.userSetEthAddress":
 		if e.complexity.Mutation.UserSetEthAddress == nil {
 			break
@@ -3212,6 +3228,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UID(childComplexity), true
 
+	case "User.userChannel":
+		if e.complexity.User.UserChannel == nil {
+			break
+		}
+
+		return e.complexity.User.UserChannel(childComplexity), true
+
 	case "UserChallengeVoteData.choice":
 		if e.complexity.UserChallengeVoteData.Choice == nil {
 			break
@@ -3535,6 +3558,7 @@ type Mutation {
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
   channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
   channelsSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
 
@@ -3813,6 +3837,11 @@ input ChannelsSetHandleInput {
   handle: String!
 }
 
+input UserChannelSetHandleInput {
+  userID: String!
+  handle: String!
+}
+
 input ChannelsSetEmailInput {
   channelID: String!
   emailAddress: String!
@@ -4036,6 +4065,7 @@ type User {
   nrFurthestStep: Int
   nrLastSeen: Int
   channels: [ChannelMember]
+  userChannel: Channel
 }
 
 input UserSignatureInput {
@@ -4829,6 +4859,20 @@ func (ec *executionContext) field_Mutation_tcrListingSaveTopicID_args(ctx contex
 		}
 	}
 	args["topicID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_userChannelSetHandle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 channels.UserSetHandleInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNUserChannelSetHandleInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐUserSetHandleInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -10662,6 +10706,47 @@ func (ec *executionContext) _Mutation_channelsSetHandle(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ChannelsSetHandle(rctx, args["input"].(channels.SetHandleInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_userChannelSetHandle(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_userChannelSetHandle_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UserChannelSetHandle(rctx, args["input"].(channels.UserSetHandleInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -17128,6 +17213,40 @@ func (ec *executionContext) _User_channels(ctx context.Context, field graphql.Co
 	return ec.marshalOChannelMember2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannelMember(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _User_userChannel(ctx context.Context, field graphql.CollectedField, obj *users.User) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().UserChannel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _UserChallengeVoteData_pollID(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -19597,6 +19716,30 @@ func (ec *executionContext) unmarshalInputRosterMemberInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserChannelSetHandleInput(ctx context.Context, obj interface{}) (channels.UserSetHandleInput, error) {
+	var it channels.UserSetHandleInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "userID":
+			var err error
+			it.UserID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "handle":
+			var err error
+			it.Handle, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserSignatureInput(ctx context.Context, obj interface{}) (users.SignatureInput, error) {
 	var it users.SignatureInput
 	var asMap = obj.(map[string]interface{})
@@ -21269,6 +21412,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsConnectStripe(ctx, field)
 		case "channelsSetHandle":
 			out.Values[i] = ec._Mutation_channelsSetHandle(ctx, field)
+		case "userChannelSetHandle":
+			out.Values[i] = ec._Mutation_userChannelSetHandle(ctx, field)
 		case "channelsSetEmail":
 			out.Values[i] = ec._Mutation_channelsSetEmail(ctx, field)
 		case "channelsSetEmailConfirm":
@@ -22616,6 +22761,17 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				res = ec._User_channels(ctx, field, obj)
 				return res
 			})
+		case "userChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_userChannel(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23796,6 +23952,10 @@ func (ec *executionContext) marshalNUserChallengeVoteData2ᚖgithubᚗcomᚋjoin
 	return ec._UserChallengeVoteData(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNUserChannelSetHandleInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐUserSetHandleInput(ctx context.Context, v interface{}) (channels.UserSetHandleInput, error) {
+	return ec.unmarshalInputUserChannelSetHandleInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNUserSignatureInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋusersᚐSignatureInput(ctx context.Context, v interface{}) (users.SignatureInput, error) {
 	return ec.unmarshalInputUserSignatureInput(ctx, v)
 }
@@ -24558,7 +24718,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
