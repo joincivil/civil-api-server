@@ -18,7 +18,6 @@ import (
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
-	"github.com/joincivil/civil-api-server/pkg/discourse"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )
 
@@ -159,7 +158,7 @@ func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*
 	if err != nil {
 		return nil, err
 	}
-	return &appeal, nil
+	return appeal, nil
 }
 
 type charterResolver struct{ *Resolver }
@@ -248,7 +247,7 @@ func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.Govern
 	if err != nil {
 		return &model.Listing{}, err
 	}
-	return &listing, nil
+	return listing, nil
 }
 
 type listingResolver struct{ *Resolver }
@@ -319,7 +318,7 @@ func (r *listingResolver) DiscourseTopicID(ctx context.Context, obj *model.Listi
 	if err != nil {
 		return nil, err
 	}
-	if ldm == (discourse.ListingMap{}) {
+	if ldm == nil {
 		return nil, nil
 	}
 
@@ -340,12 +339,12 @@ func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*m
 	if err != nil {
 		return nil, err
 	}
-	return &challenge, nil
+	return challenge, nil
 }
 func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
 	loaders := ctxLoaders(ctx)
 	listingAddress := obj.ContractAddress().Hex()
-	challenges, err := loaders.challengeAddressesLoader.Load(listingAddress)
+	challenges, err := loaders.challengeAddressLoader.Load(listingAddress)
 
 	// No 0 challenges found, return nil
 	if err == cpersist.ErrPersisterNoResults || challenges == nil {
@@ -441,7 +440,7 @@ func (r *queryResolver) TcrChallenge(ctx context.Context, id int, lowercaseAddr 
 	if err != nil {
 		return nil, err
 	}
-	return &challenge, nil
+	return challenge, nil
 }
 
 func (r *queryResolver) GovernanceEvents(ctx context.Context, addr *string, after *string,

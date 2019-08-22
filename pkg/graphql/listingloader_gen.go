@@ -12,7 +12,7 @@ import (
 // ListingLoaderConfig captures the config to create a new ListingLoader
 type ListingLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []string) ([]model.Listing, []error)
+	Fetch func(keys []string) ([]*model.Listing, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewListingLoader(config ListingLoaderConfig) *ListingLoader {
 // ListingLoader batches and caches requests
 type ListingLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []string) ([]model.Listing, []error)
+	fetch func(keys []string) ([]*model.Listing, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type ListingLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[string]model.Listing
+	cache map[string]*model.Listing
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type ListingLoader struct {
 
 type listingLoaderBatch struct {
 	keys    []string
-	data    []model.Listing
+	data    []*model.Listing
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a Listing by key, batching and caching will be applied automatically
-func (l *ListingLoader) Load(key string) (model.Listing, error) {
+func (l *ListingLoader) Load(key string) (*model.Listing, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a Listing.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *ListingLoader) LoadThunk(key string) func() (model.Listing, error) {
+func (l *ListingLoader) LoadThunk(key string) func() (*model.Listing, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (model.Listing, error) {
+		return func() (*model.Listing, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *ListingLoader) LoadThunk(key string) func() (model.Listing, error) {
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (model.Listing, error) {
+	return func() (*model.Listing, error) {
 		<-batch.done
 
-		var data model.Listing
+		var data *model.Listing
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *ListingLoader) LoadThunk(key string) func() (model.Listing, error) {
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *ListingLoader) LoadAll(keys []string) ([]model.Listing, []error) {
-	results := make([]func() (model.Listing, error), len(keys))
+func (l *ListingLoader) LoadAll(keys []string) ([]*model.Listing, []error) {
+	results := make([]func() (*model.Listing, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	listings := make([]model.Listing, len(keys))
+	listings := make([]*model.Listing, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		listings[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *ListingLoader) LoadAll(keys []string) ([]model.Listing, []error) {
 // LoadAllThunk returns a function that when called will block waiting for a Listings.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *ListingLoader) LoadAllThunk(keys []string) func() ([]model.Listing, []error) {
-	results := make([]func() (model.Listing, error), len(keys))
+func (l *ListingLoader) LoadAllThunk(keys []string) func() ([]*model.Listing, []error) {
+	results := make([]func() (*model.Listing, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]model.Listing, []error) {
-		listings := make([]model.Listing, len(keys))
+	return func() ([]*model.Listing, []error) {
+		listings := make([]*model.Listing, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			listings[i], errors[i] = thunk()
@@ -149,11 +149,14 @@ func (l *ListingLoader) LoadAllThunk(keys []string) func() ([]model.Listing, []e
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *ListingLoader) Prime(key string, value model.Listing) bool {
+func (l *ListingLoader) Prime(key string, value *model.Listing) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
-		l.unsafeSet(key, value)
+		// make a copy when writing to the cache, its easy to pass a pointer in from a loop var
+		// and end up with the whole cache pointing to the same value.
+		cpy := *value
+		l.unsafeSet(key, &cpy)
 	}
 	l.mu.Unlock()
 	return !found
@@ -166,9 +169,9 @@ func (l *ListingLoader) Clear(key string) {
 	l.mu.Unlock()
 }
 
-func (l *ListingLoader) unsafeSet(key string, value model.Listing) {
+func (l *ListingLoader) unsafeSet(key string, value *model.Listing) {
 	if l.cache == nil {
-		l.cache = map[string]model.Listing{}
+		l.cache = map[string]*model.Listing{}
 	}
 	l.cache[key] = value
 }

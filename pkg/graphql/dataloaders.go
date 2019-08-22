@@ -23,7 +23,7 @@ var ctxKey = ctxKeyType{"userCtx"}
 type loaders struct {
 	listingLoader             *ListingLoader
 	challengeLoader           *ChallengeLoader
-	challengeAddressesLoader  *ChallengeSliceByAddressesLoader
+	challengeAddressLoader    *ChallengeSliceByAddressLoader
 	appealLoader              *AppealLoader
 	discourseListingMapLoader *ListingMapLoader
 }
@@ -36,33 +36,25 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 		ldrs.listingLoader = &ListingLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []string) ([]model.Listing, []error) {
+			fetch: func(keys []string) ([]*model.Listing, []error) {
 				addresses := cstrings.ListStringToListCommonAddress(keys)
 				listings, err := g.listingPersister.ListingsByAddresses(addresses)
 				errors := []error{err}
-				retlistings := make([]model.Listing, len(listings))
-				for ind, listing := range listings {
-					retlistings[ind] = *listing
-				}
-				return retlistings, errors
+				return listings, errors
 			},
 		}
 
 		ldrs.challengeLoader = &ChallengeLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []int) ([]model.Challenge, []error) {
+			fetch: func(keys []int) ([]*model.Challenge, []error) {
 				challengeEvents, err := g.challengePersister.ChallengesByChallengeIDs(keys)
 				errors := []error{err}
-				challenges := make([]model.Challenge, len(challengeEvents))
-				for ind, challenge := range challengeEvents {
-					challenges[ind] = *challenge
-				}
-				return challenges, errors
+				return challengeEvents, errors
 			},
 		}
 
-		ldrs.challengeAddressesLoader = &ChallengeSliceByAddressesLoader{
+		ldrs.challengeAddressLoader = &ChallengeSliceByAddressLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
 			fetch: func(keys []string) ([][]*model.Challenge, []error) {
@@ -81,28 +73,20 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 		ldrs.appealLoader = &AppealLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []int) ([]model.Appeal, []error) {
+			fetch: func(keys []int) ([]*model.Appeal, []error) {
 				appeals, err := g.appealPersister.AppealsByChallengeIDs(keys)
 				errors := []error{err}
-				retAppeals := make([]model.Appeal, len(appeals))
-				for ind, appeal := range appeals {
-					retAppeals[ind] = *appeal
-				}
-				return retAppeals, errors
+				return appeals, errors
 			},
 		}
 
 		ldrs.discourseListingMapLoader = &ListingMapLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
-			fetch: func(keys []string) ([]discourse.ListingMap, []error) {
+			fetch: func(keys []string) ([]*discourse.ListingMap, []error) {
 				ldms, err := g.discourseListingMapPersister.RetrieveListingMaps(keys)
 				errors := []error{err}
-				retldms := make([]discourse.ListingMap, len(ldms))
-				for ind, ldm := range ldms {
-					retldms[ind] = *ldm
-				}
-				return retldms, errors
+				return ldms, errors
 			},
 		}
 

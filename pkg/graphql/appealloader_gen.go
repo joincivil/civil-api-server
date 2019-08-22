@@ -12,7 +12,7 @@ import (
 // AppealLoaderConfig captures the config to create a new AppealLoader
 type AppealLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []int) ([]model.Appeal, []error)
+	Fetch func(keys []int) ([]*model.Appeal, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewAppealLoader(config AppealLoaderConfig) *AppealLoader {
 // AppealLoader batches and caches requests
 type AppealLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []int) ([]model.Appeal, []error)
+	fetch func(keys []int) ([]*model.Appeal, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type AppealLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[int]model.Appeal
+	cache map[int]*model.Appeal
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type AppealLoader struct {
 
 type appealLoaderBatch struct {
 	keys    []int
-	data    []model.Appeal
+	data    []*model.Appeal
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a Appeal by key, batching and caching will be applied automatically
-func (l *AppealLoader) Load(key int) (model.Appeal, error) {
+func (l *AppealLoader) Load(key int) (*model.Appeal, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a Appeal.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *AppealLoader) LoadThunk(key int) func() (model.Appeal, error) {
+func (l *AppealLoader) LoadThunk(key int) func() (*model.Appeal, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (model.Appeal, error) {
+		return func() (*model.Appeal, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *AppealLoader) LoadThunk(key int) func() (model.Appeal, error) {
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (model.Appeal, error) {
+	return func() (*model.Appeal, error) {
 		<-batch.done
 
-		var data model.Appeal
+		var data *model.Appeal
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *AppealLoader) LoadThunk(key int) func() (model.Appeal, error) {
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *AppealLoader) LoadAll(keys []int) ([]model.Appeal, []error) {
-	results := make([]func() (model.Appeal, error), len(keys))
+func (l *AppealLoader) LoadAll(keys []int) ([]*model.Appeal, []error) {
+	results := make([]func() (*model.Appeal, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	appeals := make([]model.Appeal, len(keys))
+	appeals := make([]*model.Appeal, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		appeals[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *AppealLoader) LoadAll(keys []int) ([]model.Appeal, []error) {
 // LoadAllThunk returns a function that when called will block waiting for a Appeals.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *AppealLoader) LoadAllThunk(keys []int) func() ([]model.Appeal, []error) {
-	results := make([]func() (model.Appeal, error), len(keys))
+func (l *AppealLoader) LoadAllThunk(keys []int) func() ([]*model.Appeal, []error) {
+	results := make([]func() (*model.Appeal, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]model.Appeal, []error) {
-		appeals := make([]model.Appeal, len(keys))
+	return func() ([]*model.Appeal, []error) {
+		appeals := make([]*model.Appeal, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			appeals[i], errors[i] = thunk()
@@ -149,11 +149,14 @@ func (l *AppealLoader) LoadAllThunk(keys []int) func() ([]model.Appeal, []error)
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *AppealLoader) Prime(key int, value model.Appeal) bool {
+func (l *AppealLoader) Prime(key int, value *model.Appeal) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
-		l.unsafeSet(key, value)
+		// make a copy when writing to the cache, its easy to pass a pointer in from a loop var
+		// and end up with the whole cache pointing to the same value.
+		cpy := *value
+		l.unsafeSet(key, &cpy)
 	}
 	l.mu.Unlock()
 	return !found
@@ -166,9 +169,9 @@ func (l *AppealLoader) Clear(key int) {
 	l.mu.Unlock()
 }
 
-func (l *AppealLoader) unsafeSet(key int, value model.Appeal) {
+func (l *AppealLoader) unsafeSet(key int, value *model.Appeal) {
 	if l.cache == nil {
-		l.cache = map[int]model.Appeal{}
+		l.cache = map[int]*model.Appeal{}
 	}
 	l.cache[key] = value
 }
