@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/joincivil/go-common/pkg/email"
+	"github.com/joincivil/go-common/pkg/eth"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
 	"github.com/joincivil/civil-api-server/pkg/users"
@@ -134,7 +135,7 @@ func NewAuthService(userService *users.UserService, tokenGenerator *utils.JwtTok
 // SignupEth validates the Signature input then creates a User for that address
 func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error) {
 
-	err := VerifyEthChallengeAndSignature(ChallengeRequest{
+	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
 		ExpectedPrefix: "Sign up with Civil",
 		GracePeriod:    defaultGracePeriod,
 		InputAddress:   input.Signer,
@@ -145,7 +146,7 @@ func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error)
 		return nil, err
 	}
 
-	identifier := users.UserCriteria{EthAddress: input.Signer}
+	identifier := users.UserCriteria{EthAddress: strings.ToLower(input.Signer)}
 	user, err := s.userService.CreateUser(identifier)
 	if err != nil {
 		return nil, err
@@ -228,7 +229,7 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 
 // LoginEth creates a new user for the address in the Ethereum signature
 func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) {
-	err := VerifyEthChallengeAndSignature(ChallengeRequest{
+	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
 		ExpectedPrefix: "Log in to Civil",
 		GracePeriod:    defaultGracePeriod,
 		InputAddress:   input.Signer,
@@ -239,7 +240,7 @@ func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) 
 		return nil, err
 	}
 
-	identifier := users.UserCriteria{EthAddress: input.Signer}
+	identifier := users.UserCriteria{EthAddress: strings.ToLower(input.Signer)}
 	user, err := s.userService.GetUser(identifier)
 	if err != nil && err == cpersist.ErrPersisterNoResults {
 		return nil, fmt.Errorf("user does not exist")

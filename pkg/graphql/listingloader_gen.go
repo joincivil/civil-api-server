@@ -9,6 +9,27 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/model"
 )
 
+// ListingLoaderConfig captures the config to create a new ListingLoader
+type ListingLoaderConfig struct {
+	// Fetch is a method that provides the data for the loader
+	Fetch func(keys []string) ([]*model.Listing, []error)
+
+	// Wait is how long wait before sending a batch
+	Wait time.Duration
+
+	// MaxBatch will limit the maximum number of keys to send in one batch, 0 = not limit
+	MaxBatch int
+}
+
+// NewListingLoader creates a new ListingLoader given a fetch, wait, and maxBatch
+func NewListingLoader(config ListingLoaderConfig) *ListingLoader {
+	return &ListingLoader{
+		fetch:    config.Fetch,
+		wait:     config.Wait,
+		maxBatch: config.MaxBatch,
+	}
+}
+
 // ListingLoader batches and caches requests
 type ListingLoader struct {
 	// this method provides the data for the loader
@@ -27,13 +48,13 @@ type ListingLoader struct {
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *listingBatch
+	batch *listingLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type listingBatch struct {
+type listingLoaderBatch struct {
 	keys    []string
 	data    []*model.Listing
 	error   []error
@@ -41,12 +62,12 @@ type listingBatch struct {
 	done    chan struct{}
 }
 
-// Load a listing by key, batching and caching will be applied automatically
+// Load a Listing by key, batching and caching will be applied automatically
 func (l *ListingLoader) Load(key string) (*model.Listing, error) {
 	return l.LoadThunk(key)()
 }
 
-// LoadThunk returns a function that when called will block waiting for a listing.
+// LoadThunk returns a function that when called will block waiting for a Listing.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
 func (l *ListingLoader) LoadThunk(key string) func() (*model.Listing, error) {
@@ -58,7 +79,7 @@ func (l *ListingLoader) LoadThunk(key string) func() (*model.Listing, error) {
 		}
 	}
 	if l.batch == nil {
-		l.batch = &listingBatch{done: make(chan struct{})}
+		l.batch = &listingLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -107,6 +128,24 @@ func (l *ListingLoader) LoadAll(keys []string) ([]*model.Listing, []error) {
 	return listings, errors
 }
 
+// LoadAllThunk returns a function that when called will block waiting for a Listings.
+// This method should be used if you want one goroutine to make requests to many
+// different data loaders without blocking until the thunk is called.
+func (l *ListingLoader) LoadAllThunk(keys []string) func() ([]*model.Listing, []error) {
+	results := make([]func() (*model.Listing, error), len(keys))
+	for i, key := range keys {
+		results[i] = l.LoadThunk(key)
+	}
+	return func() ([]*model.Listing, []error) {
+		listings := make([]*model.Listing, len(keys))
+		errors := make([]error, len(keys))
+		for i, thunk := range results {
+			listings[i], errors[i] = thunk()
+		}
+		return listings, errors
+	}
+}
+
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
@@ -139,7 +178,7 @@ func (l *ListingLoader) unsafeSet(key string, value *model.Listing) {
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *listingBatch) keyIndex(l *ListingLoader, key string) int {
+func (b *listingLoaderBatch) keyIndex(l *ListingLoader, key string) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -163,7 +202,7 @@ func (b *listingBatch) keyIndex(l *ListingLoader, key string) int {
 	return pos
 }
 
-func (b *listingBatch) startTimer(l *ListingLoader) {
+func (b *listingLoaderBatch) startTimer(l *ListingLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -179,7 +218,7 @@ func (b *listingBatch) startTimer(l *ListingLoader) {
 	b.end(l)
 }
 
-func (b *listingBatch) end(l *ListingLoader) {
+func (b *listingLoaderBatch) end(l *ListingLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

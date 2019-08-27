@@ -37,11 +37,11 @@ func (r *queryResolver) Jsonb(ctx context.Context, id *string) (*jsonstore.JSONb
 }
 
 func (r *mutationResolver) JsonbSave(ctx context.Context, input graphql.JsonbInput) (
-	jsonstore.JSONb, error) {
+	*jsonstore.JSONb, error) {
 	// Needs to have a valid auth token
 	token := auth.ForContext(ctx)
 	if token == nil {
-		return jsonstore.JSONb{}, ErrAccessDenied
+		return &jsonstore.JSONb{}, ErrAccessDenied
 	}
 
 	updatedJSONb, err := r.jsonbService.SaveRawJSONb(
@@ -51,5 +51,5 @@ func (r *mutationResolver) JsonbSave(ctx context.Context, input graphql.JsonbInp
 		input.JSONStr,
 		&token.Sub,
 	)
-	return *updatedJSONb, err
+	return updatedJSONb, err
 }

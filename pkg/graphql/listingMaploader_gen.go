@@ -48,13 +48,13 @@ type ListingMapLoader struct {
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *listingMapBatch
+	batch *listingMapLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type listingMapBatch struct {
+type listingMapLoaderBatch struct {
 	keys    []string
 	data    []*discourse.ListingMap
 	error   []error
@@ -62,12 +62,12 @@ type listingMapBatch struct {
 	done    chan struct{}
 }
 
-// Load a listingMap by key, batching and caching will be applied automatically
+// Load a ListingMap by key, batching and caching will be applied automatically
 func (l *ListingMapLoader) Load(key string) (*discourse.ListingMap, error) {
 	return l.LoadThunk(key)()
 }
 
-// LoadThunk returns a function that when called will block waiting for a listingMap.
+// LoadThunk returns a function that when called will block waiting for a ListingMap.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
 func (l *ListingMapLoader) LoadThunk(key string) func() (*discourse.ListingMap, error) {
@@ -79,7 +79,7 @@ func (l *ListingMapLoader) LoadThunk(key string) func() (*discourse.ListingMap, 
 		}
 	}
 	if l.batch == nil {
-		l.batch = &listingMapBatch{done: make(chan struct{})}
+		l.batch = &listingMapLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -128,6 +128,24 @@ func (l *ListingMapLoader) LoadAll(keys []string) ([]*discourse.ListingMap, []er
 	return listingMaps, errors
 }
 
+// LoadAllThunk returns a function that when called will block waiting for a ListingMaps.
+// This method should be used if you want one goroutine to make requests to many
+// different data loaders without blocking until the thunk is called.
+func (l *ListingMapLoader) LoadAllThunk(keys []string) func() ([]*discourse.ListingMap, []error) {
+	results := make([]func() (*discourse.ListingMap, error), len(keys))
+	for i, key := range keys {
+		results[i] = l.LoadThunk(key)
+	}
+	return func() ([]*discourse.ListingMap, []error) {
+		listingMaps := make([]*discourse.ListingMap, len(keys))
+		errors := make([]error, len(keys))
+		for i, thunk := range results {
+			listingMaps[i], errors[i] = thunk()
+		}
+		return listingMaps, errors
+	}
+}
+
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
@@ -160,7 +178,7 @@ func (l *ListingMapLoader) unsafeSet(key string, value *discourse.ListingMap) {
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *listingMapBatch) keyIndex(l *ListingMapLoader, key string) int {
+func (b *listingMapLoaderBatch) keyIndex(l *ListingMapLoader, key string) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -184,7 +202,7 @@ func (b *listingMapBatch) keyIndex(l *ListingMapLoader, key string) int {
 	return pos
 }
 
-func (b *listingMapBatch) startTimer(l *ListingMapLoader) {
+func (b *listingMapLoaderBatch) startTimer(l *ListingMapLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -200,7 +218,7 @@ func (b *listingMapBatch) startTimer(l *ListingMapLoader) {
 	b.end(l)
 }
 
-func (b *listingMapBatch) end(l *ListingMapLoader) {
+func (b *listingMapLoaderBatch) end(l *ListingMapLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

@@ -25,13 +25,13 @@ type DateRange struct {
 }
 
 type GovernanceEventEdge struct {
-	Cursor string                `json:"cursor"`
-	Node   model.GovernanceEvent `json:"node"`
+	Cursor string                 `json:"cursor"`
+	Node   *model.GovernanceEvent `json:"node"`
 }
 
 type GovernanceEventResultCursor struct {
 	Edges    []*GovernanceEventEdge `json:"edges"`
-	PageInfo PageInfo               `json:"pageInfo"`
+	PageInfo *PageInfo              `json:"pageInfo"`
 }
 
 type JsonbInput struct {
@@ -40,13 +40,13 @@ type JsonbInput struct {
 }
 
 type ListingEdge struct {
-	Cursor string        `json:"cursor"`
-	Node   model.Listing `json:"node"`
+	Cursor string         `json:"cursor"`
+	Node   *model.Listing `json:"node"`
 }
 
 type ListingResultCursor struct {
 	Edges    []*ListingEdge `json:"edges"`
-	PageInfo PageInfo       `json:"pageInfo"`
+	PageInfo *PageInfo      `json:"pageInfo"`
 }
 
 type Metadata struct {
