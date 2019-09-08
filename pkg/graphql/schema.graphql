@@ -148,6 +148,7 @@ type Mutation {
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
   channelsSetHandle(input: ChannelsSetHandleInput!): Channel
   userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
+  userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
 
@@ -203,6 +204,8 @@ type Mutation {
   # User Mutations
   userSetEthAddress(input: UserSignatureInput!): String
   userUpdate(uid: String, input: UserUpdateInput): User
+
+  skipUserChannelEmailPrompt(hasSeen: Boolean): User
 }
 
 # Enum of valid values for application types for auth
@@ -434,6 +437,7 @@ input UserChannelSetHandleInput {
 input ChannelsSetEmailInput {
   channelID: String!
   emailAddress: String!
+  addToMailing: Boolean!
 }
 
 ## Post object schemas
@@ -655,6 +659,7 @@ type User {
   nrLastSeen: Int
   channels: [ChannelMember]
   userChannel: Channel
+  userChannelEmailPromptSeen: Boolean
 }
 
 input UserSignatureInput {

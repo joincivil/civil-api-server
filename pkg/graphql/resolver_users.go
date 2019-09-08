@@ -113,3 +113,13 @@ func (r *mutationResolver) UserUpdate(ctx context.Context, uid *string, input *u
 	}
 	return user, nil
 }
+
+func (r *mutationResolver) SkipUserChannelEmailPrompt(ctx context.Context, hasSeen *bool) (*users.User, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	user, err := r.userService.SetHasSeenUCEmailPrompt(token.Sub)
+	return user, err
+}
