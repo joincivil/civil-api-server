@@ -253,7 +253,8 @@ func CreateUserTableQuery(tableName string) string {
 			nr_step INT DEFAULT 0,
 			nr_far_step INT DEFAULT 0,
 			nr_last_seen INT DEFAULT 0,
-			assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[]
+			assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[],
+			uc_email_prompt_seen BOOL DEFAULT FALSE
         );
     `, tableName)
 	return queryString
