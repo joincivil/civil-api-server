@@ -223,3 +223,20 @@ func (s *UserService) SetEthAddress(identifier UserCriteria, address string) (*U
 	}
 	return user, nil
 }
+
+// SetHasSeenUCEmailPrompt sets that a user has seen the prompt to set their User Channel Email Address
+func (s *UserService) SetHasSeenUCEmailPrompt(uid string) (*User, error) {
+
+	user, err := s.GetUser(UserCriteria{UID: uid})
+	if err != nil {
+		return nil, err
+	}
+
+	user.UserChannelEmailPromptSeen = true
+
+	err = s.userPersister.UpdateUser(user, []string{"UserChannelEmailPromptSeen"})
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
