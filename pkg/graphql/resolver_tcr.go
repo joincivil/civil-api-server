@@ -247,9 +247,6 @@ func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.Govern
 	if err != nil {
 		return &model.Listing{}, err
 	}
-	if listing == nil {
-		return &model.Listing{}, nil
-	}
 	return listing, nil
 }
 
@@ -347,7 +344,7 @@ func (r *listingResolver) Challenge(ctx context.Context, obj *model.Listing) (*m
 func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error) {
 	loaders := ctxLoaders(ctx)
 	listingAddress := obj.ContractAddress().Hex()
-	challenges, err := loaders.challengeAddressesLoader.Load(listingAddress)
+	challenges, err := loaders.challengeAddressLoader.Load(listingAddress)
 
 	// No 0 challenges found, return nil
 	if err == cpersist.ErrPersisterNoResults || challenges == nil {

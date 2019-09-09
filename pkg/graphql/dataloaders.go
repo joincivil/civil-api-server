@@ -23,7 +23,7 @@ var ctxKey = ctxKeyType{"userCtx"}
 type loaders struct {
 	listingLoader             *ListingLoader
 	challengeLoader           *ChallengeLoader
-	challengeAddressesLoader  *ChallengeSliceByAddressesLoader
+	challengeAddressLoader    *ChallengeSliceByAddressLoader
 	appealLoader              *AppealLoader
 	discourseListingMapLoader *ListingMapLoader
 }
@@ -54,7 +54,7 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 			},
 		}
 
-		ldrs.challengeAddressesLoader = &ChallengeSliceByAddressesLoader{
+		ldrs.challengeAddressLoader = &ChallengeSliceByAddressLoader{
 			maxBatch: 100,
 			wait:     100 * time.Millisecond,
 			fetch: func(keys []string) ([][]*model.Challenge, []error) {

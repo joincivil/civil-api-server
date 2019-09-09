@@ -48,13 +48,13 @@ type ChallengeLoader struct {
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
-	batch *challengeBatch
+	batch *challengeLoaderBatch
 
 	// mutex to prevent races
 	mu sync.Mutex
 }
 
-type challengeBatch struct {
+type challengeLoaderBatch struct {
 	keys    []int
 	data    []*model.Challenge
 	error   []error
@@ -62,12 +62,12 @@ type challengeBatch struct {
 	done    chan struct{}
 }
 
-// Load a challenge by key, batching and caching will be applied automatically
+// Load a Challenge by key, batching and caching will be applied automatically
 func (l *ChallengeLoader) Load(key int) (*model.Challenge, error) {
 	return l.LoadThunk(key)()
 }
 
-// LoadThunk returns a function that when called will block waiting for a challenge.
+// LoadThunk returns a function that when called will block waiting for a Challenge.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
 func (l *ChallengeLoader) LoadThunk(key int) func() (*model.Challenge, error) {
@@ -79,7 +79,7 @@ func (l *ChallengeLoader) LoadThunk(key int) func() (*model.Challenge, error) {
 		}
 	}
 	if l.batch == nil {
-		l.batch = &challengeBatch{done: make(chan struct{})}
+		l.batch = &challengeLoaderBatch{done: make(chan struct{})}
 	}
 	batch := l.batch
 	pos := batch.keyIndex(l, key)
@@ -128,6 +128,24 @@ func (l *ChallengeLoader) LoadAll(keys []int) ([]*model.Challenge, []error) {
 	return challenges, errors
 }
 
+// LoadAllThunk returns a function that when called will block waiting for a Challenges.
+// This method should be used if you want one goroutine to make requests to many
+// different data loaders without blocking until the thunk is called.
+func (l *ChallengeLoader) LoadAllThunk(keys []int) func() ([]*model.Challenge, []error) {
+	results := make([]func() (*model.Challenge, error), len(keys))
+	for i, key := range keys {
+		results[i] = l.LoadThunk(key)
+	}
+	return func() ([]*model.Challenge, []error) {
+		challenges := make([]*model.Challenge, len(keys))
+		errors := make([]error, len(keys))
+		for i, thunk := range results {
+			challenges[i], errors[i] = thunk()
+		}
+		return challenges, errors
+	}
+}
+
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
@@ -160,7 +178,7 @@ func (l *ChallengeLoader) unsafeSet(key int, value *model.Challenge) {
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *challengeBatch) keyIndex(l *ChallengeLoader, key int) int {
+func (b *challengeLoaderBatch) keyIndex(l *ChallengeLoader, key int) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i
@@ -184,7 +202,7 @@ func (b *challengeBatch) keyIndex(l *ChallengeLoader, key int) int {
 	return pos
 }
 
-func (b *challengeBatch) startTimer(l *ChallengeLoader) {
+func (b *challengeLoaderBatch) startTimer(l *ChallengeLoader) {
 	time.Sleep(l.wait)
 	l.mu.Lock()
 
@@ -200,7 +218,7 @@ func (b *challengeBatch) startTimer(l *ChallengeLoader) {
 	b.end(l)
 }
 
-func (b *challengeBatch) end(l *ChallengeLoader) {
+func (b *challengeLoaderBatch) end(l *ChallengeLoader) {
 	b.data, b.error = l.fetch(b.keys)
 	close(b.done)
 }

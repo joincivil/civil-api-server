@@ -21,6 +21,8 @@ var (
 	ErrorNotImplemented = errors.New("not implemented")
 	// ErrorBadURLSubmitted is thrown when bad URL is submitted (such as external link that doesn't match newsroom URL)
 	ErrorBadURLSubmitted = errors.New("bad URL Submitted")
+	// ErrorBadBoostEndDate is thrown when bad URL is submitted (such as external link that doesn't match newsroom URL)
+	ErrorBadBoostEndDate = errors.New("bad End Date submitting for Boost")
 )
 
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
@@ -40,6 +42,12 @@ func (p *DBPostPersister) CreatePost(authorID string, post Post) (Post, error) {
 	base, err := PostInterfaceToBase(post)
 	if err != nil {
 		return nil, err
+	}
+	if post.GetType() == "boost" {
+		boost := post.(*Boost)
+		if boost.DateEnd.Before(time.Now()) {
+			return nil, ErrorBadBoostEndDate
+		}
 	}
 	base.AuthorID = authorID
 	if err = p.db.Create(base).Error; err != nil {
