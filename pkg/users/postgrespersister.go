@@ -253,7 +253,8 @@ func CreateUserTableQuery(tableName string) string {
 			nr_step INT DEFAULT 0,
 			nr_far_step INT DEFAULT 0,
 			nr_last_seen INT DEFAULT 0,
-			assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[]
+			assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[],
+			uc_email_prompt_seen BOOL DEFAULT FALSE
         );
     `, tableName)
 	return queryString
@@ -272,11 +273,12 @@ func CreateUserTableMigrationQuery(tableName string) string {
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_far_step INT DEFAULT 0;
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_last_seen INT DEFAULT 0;
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[];
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS uc_email_prompt_seen BOOL DEFAULT FALSE;
 		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_applicant_id;
 		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_check_id;
 		ALTER TABLE %s DROP COLUMN IF EXISTS kyc_status;
 	`, tableName, tableName, tableName, tableName, tableName, tableName,
-		tableName, tableName)
+		tableName, tableName, tableName)
 	return queryString
 }
 

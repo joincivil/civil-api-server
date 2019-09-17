@@ -63,6 +63,7 @@ type UserSetHandleInput struct {
 type SetEmailInput struct {
 	ChannelID    string
 	EmailAddress string
+	AddToMailing bool
 }
 
 // Channel is container for Posts

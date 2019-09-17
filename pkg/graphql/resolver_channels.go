@@ -84,6 +84,26 @@ func (r *mutationResolver) ChannelsSetEmail(ctx context.Context, input channels.
 	return r.channelService.SendEmailConfirmation(token.Sub, input.ChannelID, input.EmailAddress, channels.SetEmailEnumDefault)
 }
 
+func (r *mutationResolver) UserChannelSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	_, err := r.userService.SetHasSeenUCEmailPrompt(token.Sub)
+	if err != nil {
+		return nil, err
+	}
+	if input.AddToMailing {
+		err = r.addToNewsletterList(input.EmailAddress, auth.ApplicationEnumDefault)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return r.channelService.SendEmailConfirmation(token.Sub, input.ChannelID, input.EmailAddress, channels.SetEmailEnumDefault)
+
+}
+
 func (r *mutationResolver) ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error) {
 	return r.channelService.SetEmailConfirm(jwt)
 }

@@ -1,12 +1,12 @@
 package posts_test
 
 import (
-	"testing"
-
 	"github.com/jinzhu/gorm"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/testruntime"
 	"github.com/joincivil/civil-api-server/pkg/testutils"
+	"testing"
+	"time"
 )
 
 var (
@@ -25,7 +25,7 @@ func helperCreatePost(t *testing.T, persister posts.PostPersister, post posts.Po
 	return createdPost
 }
 
-func makeBoost() *posts.Boost {
+func makeValidBoost() *posts.Boost {
 	return &posts.Boost{
 		PostModel: posts.PostModel{
 			ChannelID: aliceNewsroomUUID,
@@ -44,6 +44,30 @@ func makeBoost() *posts.Boost {
 				Cost: 100.1,
 			},
 		},
+		DateEnd: time.Now().AddDate(0, 1, 0),
+	}
+}
+
+func makeBadEndDateBoost() *posts.Boost {
+	return &posts.Boost{
+		PostModel: posts.PostModel{
+			ChannelID: aliceNewsroomUUID,
+		},
+		CurrencyCode: "USD",
+		GoalAmount:   100.10,
+		Title:        "some title",
+		About:        "_abouttest_",
+		Items: []posts.BoostItem{
+			{
+				Item: "foo",
+				Cost: 100.1,
+			},
+			{
+				Item: "bar",
+				Cost: 100.1,
+			},
+		},
+		DateEnd: time.Now().AddDate(0, -1, 0),
 	}
 }
 
@@ -68,7 +92,7 @@ func initPersister(t *testing.T) posts.PostPersister {
 func TestCreatePost(t *testing.T) {
 	persister := initPersister(t)
 
-	boost := makeBoost()
+	boost := makeValidBoost()
 	link := &posts.ExternalLink{
 		PostModel: posts.PostModel{
 			ChannelID: bobNewsroomUUID,
@@ -105,10 +129,19 @@ func TestCreatePost(t *testing.T) {
 	}
 }
 
+func TestCreateBadBoost(t *testing.T) {
+	persister := initPersister(t)
+	boost := makeBadEndDateBoost()
+	_, err := persister.CreatePost(aliceUserUUID, boost)
+	if err == nil {
+		t.Fatalf("expected ErrorBadBoostEndDate")
+	}
+}
+
 func TestEditPost(t *testing.T) {
 	persister := initPersister(t)
 
-	boost := makeBoost()
+	boost := makeValidBoost()
 	boostPost := helperCreatePost(t, persister, boost)
 
 	patch := &posts.Boost{
@@ -156,7 +189,7 @@ func TestGetPost(t *testing.T) {
 		t.Fatalf("expecting posts.ErrorNotFound but instead received: %v", err)
 	}
 
-	boost := makeBoost()
+	boost := makeValidBoost()
 	boostPost := helperCreatePost(t, persister, boost)
 
 	retrievedPost, err := persister.GetPost(boostPost.GetID())
@@ -172,7 +205,7 @@ func TestGetPost(t *testing.T) {
 func TestDelete(t *testing.T) {
 	persister := initPersister(t)
 
-	boost := makeBoost()
+	boost := makeValidBoost()
 	boostPost := helperCreatePost(t, persister, boost)
 
 	err := persister.DeletePost(aliceUserUUID, boostPost.GetID())
