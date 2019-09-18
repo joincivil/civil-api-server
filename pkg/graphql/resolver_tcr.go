@@ -57,7 +57,7 @@ func (r *Resolver) Parameter() graphql.ParameterResolver {
 	return &parameterResolver{r}
 }
 
-// Parameter is the resolver for the Parameter type
+// ParamProposal is the resolver for the ParamProposal type
 func (r *Resolver) ParamProposal() graphql.ParamProposalResolver {
 	return &paramProposalResolver{r}
 }
