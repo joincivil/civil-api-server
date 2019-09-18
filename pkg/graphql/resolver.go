@@ -50,6 +50,7 @@ type ResolverConfig struct {
 	AuthService                  *auth.Service
 	ListingPersister             pmodel.ListingPersister
 	ParameterPersister           pmodel.ParameterPersister
+	ParamProposalPersister       pmodel.ParamProposalPersister
 	GovEventPersister            pmodel.GovernanceEventPersister
 	RevisionPersister            pmodel.ContentRevisionPersister
 	ChallengePersister           pmodel.ChallengePersister
@@ -77,6 +78,7 @@ func NewResolver(config ResolverConfig) *Resolver {
 		authService:                  config.AuthService,
 		listingPersister:             config.ListingPersister,
 		parameterPersister:           config.ParameterPersister,
+		paramProposalPersister:       config.ParamProposalPersister,
 		revisionPersister:            config.RevisionPersister,
 		govEventPersister:            config.GovEventPersister,
 		challengePersister:           config.ChallengePersister,
@@ -104,6 +106,7 @@ type Resolver struct {
 	authService                  *auth.Service
 	listingPersister             pmodel.ListingPersister
 	parameterPersister           pmodel.ParameterPersister
+	paramProposalPersister       pmodel.ParamProposalPersister
 	revisionPersister            pmodel.ContentRevisionPersister
 	govEventPersister            pmodel.GovernanceEventPersister
 	challengePersister           pmodel.ChallengePersister

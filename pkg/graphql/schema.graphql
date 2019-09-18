@@ -70,6 +70,7 @@ type Query {
 
   # Parameterizer Queries
   parameters(paramNames: [String!]): [Parameter]
+  paramProposals(paramName: String!): [ParamProposal]
 
   # Channel Queries
   channelsGetByID(id: String!): Channel
@@ -309,6 +310,19 @@ type GovernanceEventResultCursor {
 type Parameter {
   paramName: String!
   value: String!
+}
+
+type ParamProposal {
+  id: String!
+  propID: String!
+  name: String!
+  value: String!
+  deposit: String!
+  appExpiry: String!
+  challengeID: String!
+  proposer: String!
+  accepted: Boolean
+  expired: Boolean
 }
 
 # A type that reflects values in model.Listing

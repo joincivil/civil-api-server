@@ -3,7 +3,6 @@ package graphql
 import (
 	context "context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -15,6 +14,7 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
 	"github.com/joincivil/go-common/pkg/bytes"
+	cbytes "github.com/joincivil/go-common/pkg/bytes"
 	"github.com/joincivil/go-common/pkg/eth"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
@@ -55,6 +55,11 @@ func (r *Resolver) Listing() graphql.ListingResolver {
 // Parameter is the resolver for the Parameter type
 func (r *Resolver) Parameter() graphql.ParameterResolver {
 	return &parameterResolver{r}
+}
+
+// Parameter is the resolver for the Parameter type
+func (r *Resolver) ParamProposal() graphql.ParamProposalResolver {
+	return &paramProposalResolver{r}
 }
 
 // Poll is the resolver for the Poll type
@@ -269,6 +274,32 @@ func (r *parameterResolver) Value(ctx context.Context, obj *model.Parameter) (st
 	}
 	value := parameter.Value().String()
 	return value, nil
+}
+
+type paramProposalResolver struct{ *Resolver }
+
+func (r *paramProposalResolver) PropID(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return cbytes.Byte32ToHexString(obj.PropID()), nil
+}
+
+func (r *paramProposalResolver) Value(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.Value().String(), nil
+}
+
+func (r *paramProposalResolver) AppExpiry(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.AppExpiry().String(), nil
+}
+
+func (r *paramProposalResolver) ChallengeID(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.ChallengeID().String(), nil
+}
+
+func (r *paramProposalResolver) Deposit(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.Deposit().String(), nil
+}
+
+func (r *paramProposalResolver) Proposer(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.Proposer().String(), nil
 }
 
 func (r *listingResolver) ContractAddress(ctx context.Context, obj *model.Listing) (string, error) {
@@ -611,6 +642,14 @@ func (r *queryResolver) Parameters(ctx context.Context, paramNames []string) ([]
 	}
 
 	return parameters, nil
+}
+
+func (r *queryResolver) ParamProposals(ctx context.Context, paramName string) ([]*model.ParameterProposal, error) {
+	proposals, err := r.paramProposalPersister.ParamProposalByName(paramName, true)
+	if err != nil {
+		return nil, err
+	}
+	return proposals, nil
 }
 
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,

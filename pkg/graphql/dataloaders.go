@@ -23,6 +23,7 @@ var ctxKey = ctxKeyType{"userCtx"}
 type loaders struct {
 	listingLoader             *ListingLoader
 	parameterLoader           *ParameterLoader
+	parameterProposalLoader   *ParameterProposalLoader
 	challengeLoader           *ChallengeLoader
 	challengeAddressLoader    *ChallengeSliceByAddressLoader
 	appealLoader              *AppealLoader
