@@ -68,6 +68,8 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.GovernanceEvent
   Listing:
     model: github.com/joincivil/civil-events-processor/pkg/model.Listing
+  Parameter:
+    model: github.com/joincivil/civil-events-processor/pkg/model.Parameter
   ListingSort:
     model: github.com/joincivil/civil-events-processor/pkg/model.SortByType
   JsonFieldValue:

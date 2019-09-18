@@ -33,6 +33,7 @@ var EventProcessorModule = fx.Options(
 		helpers.GovernanceEventPersister,
 		helpers.ChallengePersister,
 		helpers.ListingPersister,
+		helpers.ParameterPersister,
 		helpers.AppealPersister,
 		helpers.UserChallengeDataPersister,
 		helpers.PollPersister,

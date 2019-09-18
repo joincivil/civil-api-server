@@ -68,6 +68,9 @@ type Query {
     sortDesc: Boolean = False
   ): ListingResultCursor
 
+  # Parameterizer Queries
+  parameters(paramNames: [String!]): [Parameter]
+
   # Channel Queries
   channelsGetByID(id: String!): Channel
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
@@ -300,6 +303,12 @@ type GovernanceEventEdge {
 type GovernanceEventResultCursor {
   edges: [GovernanceEventEdge]!
   pageInfo: PageInfo!
+}
+
+# A type that reflects values in model.Parameter
+type Parameter {
+  paramName: String!
+  value: String!
 }
 
 # A type that reflects values in model.Listing

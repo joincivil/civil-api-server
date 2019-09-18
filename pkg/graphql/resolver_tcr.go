@@ -3,6 +3,7 @@ package graphql
 import (
 	context "context"
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -49,6 +50,11 @@ func (r *Resolver) GovernanceEvent() graphql.GovernanceEventResolver {
 // Listing is the resolver for the Listing type
 func (r *Resolver) Listing() graphql.ListingResolver {
 	return &listingResolver{r}
+}
+
+// Parameter is the resolver for the Parameter type
+func (r *Resolver) Parameter() graphql.ParameterResolver {
+	return &parameterResolver{r}
 }
 
 // Poll is the resolver for the Poll type
@@ -251,6 +257,19 @@ func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.Govern
 }
 
 type listingResolver struct{ *Resolver }
+
+type parameterResolver struct{ *Resolver }
+
+func (r *parameterResolver) Value(ctx context.Context, obj *model.Parameter) (string, error) {
+	loaders := ctxLoaders(ctx)
+	paramName := obj.ParamName()
+	parameter, err := loaders.parameterLoader.Load(paramName)
+	if err != nil {
+		return "0", err
+	}
+	value := parameter.Value().String()
+	return value, nil
+}
 
 func (r *listingResolver) ContractAddress(ctx context.Context, obj *model.Listing) (string, error) {
 	return r.Resolver.DetermineAddrCase(obj.ContractAddress().Hex()), nil
@@ -578,6 +597,20 @@ func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
 	txHash := common.HexToHash(txString)
 
 	return r.govEventPersister.GovernanceEventsByTxHash(txHash)
+}
+
+func (r *queryResolver) Parameters(ctx context.Context, paramNames []string) ([]*model.Parameter, error) {
+	parameters := make([]*model.Parameter, 0)
+
+	for _, paramName := range paramNames {
+		parameter, err := r.parameterPersister.ParameterByName(paramName)
+		if err != nil {
+			return nil, err
+		}
+		parameters = append(parameters, parameter)
+	}
+
+	return parameters, nil
 }
 
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
