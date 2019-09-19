@@ -22,6 +22,7 @@ var ctxKey = ctxKeyType{"userCtx"}
 
 type loaders struct {
 	listingLoader             *ListingLoader
+	parameterLoader           *ParameterLoader
 	challengeLoader           *ChallengeLoader
 	challengeAddressLoader    *ChallengeSliceByAddressLoader
 	appealLoader              *AppealLoader
@@ -87,6 +88,16 @@ func DataloaderMiddleware(g *Resolver, next http.Handler) http.Handler {
 				ldms, err := g.discourseListingMapPersister.RetrieveListingMaps(keys)
 				errors := []error{err}
 				return ldms, errors
+			},
+		}
+
+		ldrs.parameterLoader = &ParameterLoader{
+			maxBatch: 100,
+			wait:     100 * time.Millisecond,
+			fetch: func(keys []string) ([]*model.Parameter, []error) {
+				parameters, err := g.parameterPersister.ParametersByName(keys)
+				errors := []error{err}
+				return parameters, errors
 			},
 		}
 

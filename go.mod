@@ -19,7 +19,9 @@ require (
 	github.com/joincivil/civil-events-processor v0.0.0-20190918163656-422e28604df9
 	github.com/joincivil/go-common v0.0.0-20190820182313-639fb94bf980
 	github.com/kelseyhightower/envconfig v1.3.0
+	github.com/kr/pty v1.1.8 // indirect
 	github.com/lib/pq v1.1.0
+	github.com/myitcv/gobin v0.0.13 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pilagod/gorm-cursor-paginator v0.1.0
 	github.com/pkg/errors v0.8.1
