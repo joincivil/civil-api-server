@@ -67,6 +67,7 @@ type Query {
     sortBy: ListingSort
     sortDesc: Boolean = False
   ): ListingResultCursor
+  poll(pollID: Int!): Poll
 
   # Parameterizer Queries
   parameters(paramNames: [String!]): [Parameter]

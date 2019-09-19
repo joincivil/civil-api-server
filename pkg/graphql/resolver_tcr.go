@@ -805,6 +805,10 @@ func (r *queryResolver) TcrListing(ctx context.Context, addr string, lowercaseAd
 	return listing, nil
 }
 
+func (r *queryResolver) Poll(ctx context.Context, pollID int) (*model.Poll, error) {
+	return r.pollPersister.PollByPollID(pollID)
+}
+
 func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pollID *int,
 	canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error) {
 
