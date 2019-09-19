@@ -485,6 +485,7 @@ type ComplexityRoot struct {
 		NrsignupNewsroom             func(childComplexity int) int
 		ParamProposals               func(childComplexity int, paramName string) int
 		Parameters                   func(childComplexity int, paramNames []string) int
+		Poll                         func(childComplexity int, pollID int) int
 		PostsGet                     func(childComplexity int, id string) int
 		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
 		StorefrontCvlPrice           func(childComplexity int) int
@@ -718,6 +719,7 @@ type QueryResolver interface {
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error)
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
+	Poll(ctx context.Context, pollID int) (*model.Poll, error)
 	Parameters(ctx context.Context, paramNames []string) ([]*model.Parameter, error)
 	ParamProposals(ctx context.Context, paramName string) ([]*model.ParameterProposal, error)
 	ChannelsGetByID(ctx context.Context, id string) (*channels.Channel, error)
@@ -3148,6 +3150,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Parameters(childComplexity, args["paramNames"].([]string)), true
 
+	case "Query.poll":
+		if e.complexity.Query.Poll == nil {
+			break
+		}
+
+		args, err := ec.field_Query_poll_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Poll(childComplexity, args["pollID"].(int)), true
+
 	case "Query.postsGet":
 		if e.complexity.Query.PostsGet == nil {
 			break
@@ -3658,6 +3672,7 @@ type Query {
     sortBy: ListingSort
     sortDesc: Boolean = False
   ): ListingResultCursor
+  poll(pollID: Int!): Poll
 
   # Parameterizer Queries
   parameters(paramNames: [String!]): [Parameter]
@@ -5611,6 +5626,20 @@ func (ec *executionContext) field_Query_parameters_args(ctx context.Context, raw
 		}
 	}
 	args["paramNames"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_poll_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["pollID"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pollID"] = arg0
 	return args, nil
 }
 
@@ -16707,6 +16736,47 @@ func (ec *executionContext) _Query_tcrListings(ctx context.Context, field graphq
 	return ec.marshalOListingResultCursor2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐListingResultCursor(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_poll(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_poll_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Poll(rctx, args["pollID"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Poll)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPoll2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐPoll(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_parameters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -23527,6 +23597,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_tcrListings(ctx, field)
+				return res
+			})
+		case "poll":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_poll(ctx, field)
 				return res
 			})
 		case "parameters":
