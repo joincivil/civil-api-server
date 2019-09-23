@@ -82,7 +82,9 @@ func (r *mutationResolver) PostsCreateBoost(ctx context.Context, input posts.Boo
 		return nil, err
 	}
 
-	return post.(*posts.Boost), nil
+	boost := post.(posts.Boost)
+
+	return &boost, nil
 }
 
 func (r *mutationResolver) PostsUpdateBoost(ctx context.Context, postID string, input posts.Boost) (*posts.Boost, error) {
@@ -91,7 +93,9 @@ func (r *mutationResolver) PostsUpdateBoost(ctx context.Context, postID string, 
 		return nil, err
 	}
 
-	return post.(*posts.Boost), nil
+	boost := post.(posts.Boost)
+
+	return &boost, nil
 }
 
 func (r *mutationResolver) PostsCreateComment(ctx context.Context, input posts.Comment) (*posts.Comment, error) {
