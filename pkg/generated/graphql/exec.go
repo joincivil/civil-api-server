@@ -470,6 +470,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Articles                     func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                    func(childComplexity int, id int, lowercaseAddr *bool) int
+		ChallengesStartedByUser      func(childComplexity int, addr string) int
 		ChannelsGetByHandle          func(childComplexity int, handle string) int
 		ChannelsGetByID              func(childComplexity int, id string) int
 		ChannelsGetByNewsroomAddress func(childComplexity int, contractAddress string) int
@@ -720,6 +721,7 @@ type QueryResolver interface {
 	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
 	Poll(ctx context.Context, pollID int) (*model.Poll, error)
+	ChallengesStartedByUser(ctx context.Context, addr string) ([]*model.Challenge, error)
 	Parameters(ctx context.Context, paramNames []string) ([]*model.Parameter, error)
 	ParamProposals(ctx context.Context, paramName string) ([]*model.ParameterProposal, error)
 	ChannelsGetByID(ctx context.Context, id string) (*channels.Channel, error)
@@ -2980,6 +2982,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Challenge(childComplexity, args["id"].(int), args["lowercaseAddr"].(*bool)), true
 
+	case "Query.challengesStartedByUser":
+		if e.complexity.Query.ChallengesStartedByUser == nil {
+			break
+		}
+
+		args, err := ec.field_Query_challengesStartedByUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChallengesStartedByUser(childComplexity, args["addr"].(string)), true
+
 	case "Query.channelsGetByHandle":
 		if e.complexity.Query.ChannelsGetByHandle == nil {
 			break
@@ -3673,6 +3687,8 @@ type Query {
     sortDesc: Boolean = False
   ): ListingResultCursor
   poll(pollID: Int!): Poll
+
+  challengesStartedByUser(addr: String!): [Challenge]
 
   # Parameterizer Queries
   parameters(paramNames: [String!]): [Parameter]
@@ -5292,6 +5308,20 @@ func (ec *executionContext) field_Query_challenge_args(ctx context.Context, rawA
 		}
 	}
 	args["lowercaseAddr"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_challengesStartedByUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["addr"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["addr"] = arg0
 	return args, nil
 }
 
@@ -16777,6 +16807,47 @@ func (ec *executionContext) _Query_poll(ctx context.Context, field graphql.Colle
 	return ec.marshalOPoll2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐPoll(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_challengesStartedByUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_challengesStartedByUser_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChallengesStartedByUser(rctx, args["addr"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Challenge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChallenge2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_parameters(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -23610,6 +23681,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_poll(ctx, field)
 				return res
 			})
+		case "challengesStartedByUser":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_challengesStartedByUser(ctx, field)
+				return res
+			})
 		case "parameters":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -25409,6 +25491,46 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 
 func (ec *executionContext) marshalOChallenge2githubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx context.Context, sel ast.SelectionSet, v model.Challenge) graphql.Marshaler {
 	return ec._Challenge(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOChallenge2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx context.Context, sel ast.SelectionSet, v []*model.Challenge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOChallenge2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOChallenge2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx context.Context, sel ast.SelectionSet, v *model.Challenge) graphql.Marshaler {

@@ -839,6 +839,10 @@ func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pol
 	return allUserChallengeData, nil
 }
 
+func (r *queryResolver) ChallengesStartedByUser(ctx context.Context, addr string) ([]*model.Challenge, error) {
+	return r.challengePersister.ChallengesByChallengerAddress(common.HexToAddress(addr))
+}
+
 func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,
 	after *string) (int, *paginationCursor, error) {
 	afterCursor, err := decodeToPaginationCursor(*after)

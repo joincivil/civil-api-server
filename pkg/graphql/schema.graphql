@@ -69,6 +69,8 @@ type Query {
   ): ListingResultCursor
   poll(pollID: Int!): Poll
 
+  challengesStartedByUser(addr: String!): [Challenge]
+
   # Parameterizer Queries
   parameters(paramNames: [String!]): [Parameter]
   paramProposals(paramName: String!): [ParamProposal]
