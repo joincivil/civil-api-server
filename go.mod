@@ -16,7 +16,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
-	github.com/joincivil/civil-events-processor v0.0.0-20190918163656-422e28604df9
+	github.com/joincivil/civil-events-processor v0.0.0-20190919192235-874a802ea511
 	github.com/joincivil/go-common v0.0.0-20190820182313-639fb94bf980
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kr/pty v1.1.8 // indirect
@@ -28,12 +28,16 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
 	github.com/stripe/stripe-go v61.0.1+incompatible
+	github.com/vektah/gorunpkg v0.0.0-20190126024156-2aeb42363e48 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/dig v1.7.0 // indirect
 	go.uber.org/fx v1.9.0
 	go.uber.org/goleak v0.10.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
+	golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392 // indirect
+	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
+	golang.org/x/tools v0.0.0-20190923165424-71c3ad9cb704 // indirect
 )
 
 replace git.apache.org/thrift.git v0.12.0 => github.com/apache/thrift v0.12.0
