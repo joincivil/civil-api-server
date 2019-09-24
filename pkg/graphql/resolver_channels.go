@@ -26,7 +26,7 @@ func (r *queryResolver) ChannelsGetByHandle(ctx context.Context, handle string) 
 	return r.channelService.GetChannelByHandle(handle)
 }
 
-func (r *queryResolver) IsHandleAvailable(ctx context.Context, handle string) (bool, error) {
+func (r *queryResolver) ChannelsIsHandleAvailable(ctx context.Context, handle string) (bool, error) {
 	channel, err := r.channelService.GetChannelByHandle(handle)
 	if err == nil || channel != nil {
 		return false, nil
