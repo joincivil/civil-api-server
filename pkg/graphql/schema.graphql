@@ -80,6 +80,7 @@ type Query {
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
   channelsGetByHandle(handle: String!): Channel
   channelsGetByUserID(userID: String!): Channel
+  channelsIsHandleAvailable(handle: String!): Boolean!
 
   # Newsroom Queries
   newsroomArticles(

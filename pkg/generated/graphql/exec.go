@@ -475,6 +475,7 @@ type ComplexityRoot struct {
 		ChannelsGetByID              func(childComplexity int, id string) int
 		ChannelsGetByNewsroomAddress func(childComplexity int, contractAddress string) int
 		ChannelsGetByUserID          func(childComplexity int, userID string) int
+		ChannelsIsHandleAvailable    func(childComplexity int, handle string) int
 		CurrentUser                  func(childComplexity int) int
 		GetChannelTotalProceeds      func(childComplexity int, channelID string) int
 		GovernanceEvents             func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
@@ -728,6 +729,7 @@ type QueryResolver interface {
 	ChannelsGetByNewsroomAddress(ctx context.Context, contractAddress string) (*channels.Channel, error)
 	ChannelsGetByHandle(ctx context.Context, handle string) (*channels.Channel, error)
 	ChannelsGetByUserID(ctx context.Context, userID string) (*channels.Channel, error)
+	ChannelsIsHandleAvailable(ctx context.Context, handle string) (bool, error)
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
@@ -3042,6 +3044,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ChannelsGetByUserID(childComplexity, args["userID"].(string)), true
 
+	case "Query.channelsIsHandleAvailable":
+		if e.complexity.Query.ChannelsIsHandleAvailable == nil {
+			break
+		}
+
+		args, err := ec.field_Query_channelsIsHandleAvailable_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ChannelsIsHandleAvailable(childComplexity, args["handle"].(string)), true
+
 	case "Query.currentUser":
 		if e.complexity.Query.CurrentUser == nil {
 			break
@@ -3699,6 +3713,7 @@ type Query {
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
   channelsGetByHandle(handle: String!): Channel
   channelsGetByUserID(userID: String!): Channel
+  channelsIsHandleAvailable(handle: String!): Boolean!
 
   # Newsroom Queries
   newsroomArticles(
@@ -5378,6 +5393,20 @@ func (ec *executionContext) field_Query_channelsGetByUserID_args(ctx context.Con
 		}
 	}
 	args["userID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_channelsIsHandleAvailable_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["handle"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["handle"] = arg0
 	return args, nil
 }
 
@@ -17094,6 +17123,50 @@ func (ec *executionContext) _Query_channelsGetByUserID(ctx context.Context, fiel
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_channelsIsHandleAvailable(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_channelsIsHandleAvailable_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ChannelsIsHandleAvailable(rctx, args["handle"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_newsroomArticles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -23758,6 +23831,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_channelsGetByUserID(ctx, field)
 				return res
 			})
+		case "channelsIsHandleAvailable":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_channelsIsHandleAvailable(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "newsroomArticles":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -26118,7 +26205,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

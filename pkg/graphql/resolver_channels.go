@@ -26,6 +26,15 @@ func (r *queryResolver) ChannelsGetByHandle(ctx context.Context, handle string) 
 	return r.channelService.GetChannelByHandle(handle)
 }
 
+func (r *queryResolver) ChannelsIsHandleAvailable(ctx context.Context, handle string) (bool, error) {
+	channel, err := r.channelService.GetChannelByHandle(handle)
+	if err == nil || channel != nil {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 // mutations
 func (r *mutationResolver) ChannelsCreateNewsroomChannel(ctx context.Context, contractAddress string) (*channels.Channel, error) {
 	token := auth.ForContext(ctx)
@@ -150,15 +159,6 @@ func (r *channelResolver) CurrentUserIsAdmin(ctx context.Context, channel *chann
 	}
 
 	return r.channelService.IsChannelAdmin(token.Sub, channel.ID)
-}
-
-func (r *channelResolver) IsHandleAvailable(ctx context.Context, handle string) bool {
-	channel, err := r.channelService.GetChannelByHandle(handle)
-	if err == nil || channel != nil {
-		return false
-	}
-
-	return true
 }
 
 func (r *channelResolver) EmailAddressRestricted(ctx context.Context, channel *channels.Channel) (*string, error) {
