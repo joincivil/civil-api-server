@@ -44,7 +44,7 @@ func (p *DBPostPersister) CreatePost(authorID string, post Post) (Post, error) {
 		return nil, err
 	}
 	if post.GetType() == "boost" {
-		boost := post.(*Boost)
+		boost := post.(Boost)
 		if boost.DateEnd.Before(time.Now()) {
 			return nil, ErrorBadBoostEndDate
 		}
