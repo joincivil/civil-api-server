@@ -159,6 +159,11 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+// SetAvatarDataURL sets the avatar data url on a channel of any type
+func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error) {
+	return s.persister.SetAvatarDataURL(userID, channelID, avatarDataURL)
+}
+
 // SetHandle sets the handle on a channel of any type
 func (s *Service) SetHandle(userID string, channelID string, handle string) (*Channel, error) {
 	channel, err := s.persister.GetChannel(channelID)

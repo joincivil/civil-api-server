@@ -66,6 +66,12 @@ type SetEmailInput struct {
 	AddToMailing bool
 }
 
+// SetAvatarInput contains the fields needed to set a channels' avatar
+type SetAvatarInput struct {
+	ChannelID     string
+	AvatarDataURL string
+}
+
 // Channel is container for Posts
 type Channel struct {
 	ID              string `gorm:"type:uuid;primary_key"`
@@ -79,6 +85,7 @@ type Channel struct {
 	Members         []ChannelMember
 	StripeAccountID string
 	EmailAddress    string
+	AvatarDataURL   string
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted

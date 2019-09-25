@@ -211,6 +211,32 @@ func (p *DBPersister) SetEmailAddress(userID string, channelID string, emailAddr
 	return ch, nil
 }
 
+// SetAvatarDataURL updates the avatar data url for the channel
+func (p *DBPersister) SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting avatar data url, could not get channel")
+	}
+
+	// make sure the user requesting is an admin
+	err = p.requireAdmin(userID, channelID)
+	if err == ErrorUnauthorized {
+		return nil, ErrorUnauthorized
+	} else if err != nil {
+		return nil, errors.Wrap(err, "error setting avatar data url, not an admin")
+	}
+
+	// TODO(nreynolds): check length of data url
+
+	err = p.db.Model(ch).Update(Channel{AvatarDataURL: avatarDataURL}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting email")
+	}
+
+	return ch, nil
+}
+
 // SetStripeAccountID updates the stripe account id for the channel
 func (p *DBPersister) SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error) {
 	// get channel

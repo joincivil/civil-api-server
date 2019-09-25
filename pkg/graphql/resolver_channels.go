@@ -61,6 +61,15 @@ func (r *mutationResolver) ChannelsConnectStripe(ctx context.Context, input chan
 	return r.channelService.ConnectStripe(token.Sub, input)
 }
 
+func (r *mutationResolver) ChannelsSetAvatar(ctx context.Context, input channels.SetAvatarInput) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	return r.channelService.SetAvatarDataURL(token.Sub, input.ChannelID, input.AvatarDataURL)
+}
+
 func (r *mutationResolver) ChannelsSetHandle(ctx context.Context, input channels.SetHandleInput) (*channels.Channel, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {

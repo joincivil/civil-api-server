@@ -117,6 +117,7 @@ type ComplexityRoot struct {
 	}
 
 	Channel struct {
+		AvatarDataURL          func(childComplexity int) int
 		ChannelType            func(childComplexity int) int
 		CurrentUserIsAdmin     func(childComplexity int) int
 		EmailAddressRestricted func(childComplexity int) int
@@ -276,6 +277,7 @@ type ComplexityRoot struct {
 		AuthSignupEth                     func(childComplexity int, input users.SignatureInput) int
 		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
+		ChannelsSetAvatar                 func(childComplexity int, input channels.SetAvatarInput) int
 		ChannelsSetEmail                  func(childComplexity int, input channels.SetEmailInput) int
 		ChannelsSetEmailConfirm           func(childComplexity int, jwt string) int
 		ChannelsSetHandle                 func(childComplexity int, input channels.SetHandleInput) int
@@ -639,6 +641,7 @@ type MutationResolver interface {
 	ChannelsCreateNewsroomChannel(ctx context.Context, newsroomContractAddress string) (*channels.Channel, error)
 	ChannelsConnectStripe(ctx context.Context, input channels.ConnectStripeInput) (*channels.Channel, error)
 	ChannelsSetHandle(ctx context.Context, input channels.SetHandleInput) (*channels.Channel, error)
+	ChannelsSetAvatar(ctx context.Context, input channels.SetAvatarInput) (*channels.Channel, error)
 	UserChannelSetHandle(ctx context.Context, input channels.UserSetHandleInput) (*channels.Channel, error)
 	UserChannelSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
 	ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
@@ -996,6 +999,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Challenge.TotalTokens(childComplexity), true
+
+	case "Channel.avatarDataUrl":
+		if e.complexity.Channel.AvatarDataURL == nil {
+			break
+		}
+
+		return e.complexity.Channel.AvatarDataURL(childComplexity), true
 
 	case "Channel.channelType":
 		if e.complexity.Channel.ChannelType == nil {
@@ -1791,6 +1801,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ChannelsCreateNewsroomChannel(childComplexity, args["newsroomContractAddress"].(string)), true
+
+	case "Mutation.channelsSetAvatar":
+		if e.complexity.Mutation.ChannelsSetAvatar == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_channelsSetAvatar_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetAvatar(childComplexity, args["input"].(channels.SetAvatarInput)), true
 
 	case "Mutation.channelsSetEmail":
 		if e.complexity.Mutation.ChannelsSetEmail == nil {
@@ -3788,6 +3810,7 @@ type Mutation {
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
   channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  channelsSetAvatar(input: ChannelsSetAvatarInput!): Channel
   userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
   userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmail(input: ChannelsSetEmailInput!): Channel
@@ -4072,6 +4095,7 @@ type Channel {
   currentUserIsAdmin: Boolean!
   handle: String
   EmailAddressRestricted: String
+  avatarDataUrl: String
 }
 
 type ChannelMember {
@@ -4087,6 +4111,11 @@ input ChannelsConnectStripeInput {
 input ChannelsSetHandleInput {
   channelID: String!
   handle: String!
+}
+
+input ChannelsSetAvatarInput {
+  channelID: String!
+  avatarDataURL: String!
 }
 
 input UserChannelSetHandleInput {
@@ -4713,6 +4742,20 @@ func (ec *executionContext) field_Mutation_channelsCreateNewsroomChannel_args(ct
 		}
 	}
 	args["newsroomContractAddress"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_channelsSetAvatar_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 channels.SetAvatarInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNChannelsSetAvatarInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetAvatarInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -7448,6 +7491,40 @@ func (ec *executionContext) _Channel_EmailAddressRestricted(ctx context.Context,
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_avatarDataUrl(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AvatarDataURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ChannelMember_channel(ctx context.Context, field graphql.CollectedField, obj *channels.ChannelMember) (ret graphql.Marshaler) {
@@ -11058,6 +11135,47 @@ func (ec *executionContext) _Mutation_channelsSetHandle(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().ChannelsSetHandle(rctx, args["input"].(channels.SetHandleInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_channelsSetAvatar(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_channelsSetAvatar_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetAvatar(rctx, args["input"].(channels.SetAvatarInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20128,6 +20246,30 @@ func (ec *executionContext) unmarshalInputChannelsConnectStripeInput(ctx context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputChannelsSetAvatarInput(ctx context.Context, obj interface{}) (channels.SetAvatarInput, error) {
+	var it channels.SetAvatarInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "channelID":
+			var err error
+			it.ChannelID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "avatarDataURL":
+			var err error
+			it.AvatarDataURL, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputChannelsSetEmailInput(ctx context.Context, obj interface{}) (channels.SetEmailInput, error) {
 	var it channels.SetEmailInput
 	var asMap = obj.(map[string]interface{})
@@ -21472,6 +21614,8 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._Channel_EmailAddressRestricted(ctx, field, obj)
 				return res
 			})
+		case "avatarDataUrl":
+			out.Values[i] = ec._Channel_avatarDataUrl(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -22532,6 +22676,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsConnectStripe(ctx, field)
 		case "channelsSetHandle":
 			out.Values[i] = ec._Mutation_channelsSetHandle(ctx, field)
+		case "channelsSetAvatar":
+			out.Values[i] = ec._Mutation_channelsSetAvatar(ctx, field)
 		case "userChannelSetHandle":
 			out.Values[i] = ec._Mutation_userChannelSetHandle(ctx, field)
 		case "userChannelSetEmail":
@@ -24657,6 +24803,10 @@ func (ec *executionContext) unmarshalNChannelsConnectStripeInput2githubᚗcomᚋ
 	return ec.unmarshalInputChannelsConnectStripeInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNChannelsSetAvatarInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetAvatarInput(ctx context.Context, v interface{}) (channels.SetAvatarInput, error) {
+	return ec.unmarshalInputChannelsSetAvatarInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNChannelsSetEmailInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetEmailInput(ctx context.Context, v interface{}) (channels.SetEmailInput, error) {
 	return ec.unmarshalInputChannelsSetEmailInput(ctx, v)
 }
@@ -26205,7 +26355,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
