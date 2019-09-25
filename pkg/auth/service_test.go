@@ -12,8 +12,10 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/testutils"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
+
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/joincivil/go-common/pkg/eth"
+
 	ctime "github.com/joincivil/go-common/pkg/time"
 )
 
@@ -309,7 +311,8 @@ func TestSignupEth(t *testing.T) {
 	}
 
 	msg := "Sign up with Civil @ " + time.Now().Format(time.RFC3339)
-	hash := crypto.Keccak256Hash([]byte(msg))
+	ethMsg := eth.AsEthereumSignature(msg)
+	hash := crypto.Keccak256Hash([]byte(ethMsg))
 
 	signature, err := crypto.Sign(hash.Bytes(), pk)
 	if err != nil {
@@ -338,7 +341,8 @@ func TestLoginEth(t *testing.T) {
 	}
 
 	msg := "Log in to Civil @ " + time.Now().Format(time.RFC3339)
-	hash := crypto.Keccak256Hash([]byte(msg))
+	ethMsg := eth.AsEthereumSignature(msg)
+	hash := crypto.Keccak256Hash([]byte(ethMsg))
 
 	signature, err := crypto.Sign(hash.Bytes(), pk)
 	if err != nil {

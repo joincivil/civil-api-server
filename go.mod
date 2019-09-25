@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/joincivil/civil-events-processor v0.0.0-20190919192235-874a802ea511
-	github.com/joincivil/go-common v0.0.0-20190925143036-fd6931bba467
+	github.com/joincivil/go-common v0.0.0-20190925193724-76b6a01ea496
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/lib/pq v1.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
