@@ -17,7 +17,7 @@ require (
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/joincivil/civil-events-processor v0.0.0-20190919192235-874a802ea511
-	github.com/joincivil/go-common v0.0.0-20190925193724-76b6a01ea496
+	github.com/joincivil/go-common v0.0.0-20190926153429-c09dca466b06
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/lib/pq v1.1.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -32,8 +32,6 @@ require (
 	go.uber.org/fx v1.9.0
 	go.uber.org/goleak v0.10.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
-	golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392 // indirect
-	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
 )
 
 replace git.apache.org/thrift.git v0.12.0 => github.com/apache/thrift v0.12.0
