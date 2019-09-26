@@ -13,6 +13,10 @@ var (
 	ErrorInvalidEmail = errors.New("invalid email")
 	// ErrorHandleAlreadySet is returned when a user tries to update their handle but they already have a handle set (TODO: remove this once logic exists to let users update handles appropriately)
 	ErrorHandleAlreadySet = errors.New("handle already set")
+	// ErrorBadAvatarDataURLType is returned when a user tries to update their avatar but submits a non-image data url
+	ErrorBadAvatarDataURLType = errors.New("bad avatar data url type")
+	// ErrorBadAvatarDataURLSubType is returned when a user tries to update their avatar but submits a non-jpg/png data url
+	ErrorBadAvatarDataURLSubType = errors.New("bad avatar data url subtype")
 	// ErrorUnauthorized is returned when attempting to perform an action the user is not authorized to do
 	ErrorUnauthorized = errors.New("unauthorized")
 	// ErrorsInvalidInput is returned when the input is invalid

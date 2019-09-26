@@ -1,13 +1,20 @@
 package channels
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
+	"github.com/nfnt/resize"
 	uuid "github.com/satori/go.uuid"
+	"github.com/vincent-petithory/dataurl"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"regexp"
 	"strings"
 )
@@ -161,7 +168,47 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 
 // SetAvatarDataURL sets the avatar data url on a channel of any type
 func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error) {
-	return s.persister.SetAvatarDataURL(userID, channelID, avatarDataURL)
+	decodedDataURL, err := dataurl.DecodeString(avatarDataURL)
+	if err != nil {
+		return nil, err
+	}
+	if decodedDataURL.Type != "image" {
+		return nil, ErrorBadAvatarDataURLType
+	}
+	if decodedDataURL.Subtype != "png" && decodedDataURL.Subtype != "jpg" {
+		return nil, ErrorBadAvatarDataURLSubType
+	}
+	channel, err := s.persister.SetAvatarDataURL(userID, channelID, avatarDataURL)
+	if err != nil {
+		return nil, err
+	}
+	go s.processAvatar(userID, channelID, avatarDataURL)
+	return channel, nil
+}
+
+func (s *Service) processAvatar(userID string, channelID string, avatarDataURL string) error {
+	decodedAvatarDataURL, err := dataurl.DecodeString(avatarDataURL)
+	if err != nil {
+		return err
+	}
+	justData := strings.Split(avatarDataURL, ",")[1]
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(justData))
+	m, _, err := image.Decode(reader)
+	if err != nil {
+		return err
+	}
+	mTiny := resize.Resize(100, 100, m, resize.Lanczos3)
+
+	var buff bytes.Buffer
+	if decodedAvatarDataURL.Subtype == "jpeg" {
+		jpeg.Encode(&buff, mTiny, nil)
+	} else if decodedAvatarDataURL.Subtype == "png" {
+		png.Encode(&buff, mTiny)
+	}
+
+	mTinyBase64Str := base64.StdEncoding.EncodeToString(buff.Bytes())
+	mTinyDataURL := "data:" + decodedAvatarDataURL.ContentType() + ";base64," + mTinyBase64Str
+	return s.persister.SetTiny100AvatarDataURL(userID, channelID, mTinyDataURL)
 }
 
 // SetHandle sets the handle on a channel of any type

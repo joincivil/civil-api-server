@@ -20,6 +20,7 @@ require (
 	github.com/joincivil/go-common v0.0.0-20190926153429-c09dca466b06
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/lib/pq v1.1.0
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pilagod/gorm-cursor-paginator v0.1.0
 	github.com/pkg/errors v0.8.1
@@ -27,6 +28,7 @@ require (
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
 	github.com/stripe/stripe-go v61.0.1+incompatible
 	github.com/vektah/gqlparser v1.1.2
+	github.com/vincent-petithory/dataurl v0.0.0-20160330182126-9a301d65acbb
 	go.uber.org/atomic v1.4.0 // indirect
 	go.uber.org/dig v1.7.0 // indirect
 	go.uber.org/fx v1.9.0

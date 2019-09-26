@@ -237,6 +237,32 @@ func (p *DBPersister) SetAvatarDataURL(userID string, channelID string, avatarDa
 	return ch, nil
 }
 
+// SetTiny100AvatarDataURL updates the tiny100 avatar data url for the channel
+func (p *DBPersister) SetTiny100AvatarDataURL(userID string, channelID string, avatarDataURL string) error {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return errors.Wrap(err, "error setting avatar data url, could not get channel")
+	}
+
+	make sure the user requesting is an admin
+	err = p.requireAdmin(userID, channelID)
+	if err == ErrorUnauthorized {
+		return ErrorUnauthorized
+	} else if err != nil {
+		return errors.Wrap(err, "error setting avatar data url, not an admin")
+	}
+
+	// TODO(nreynolds): check length of data url
+
+	err = p.db.Model(ch).Update(Channel{Tiny100AvatarDataURL: avatarDataURL}).Error
+	if err != nil {
+		return errors.Wrap(err, "error setting email")
+	}
+
+	return nil
+}
+
 // SetStripeAccountID updates the stripe account id for the channel
 func (p *DBPersister) SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error) {
 	// get channel
