@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/golang/glog"
-
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/joincivil/go-common/pkg/eth"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
@@ -239,12 +237,10 @@ func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) 
 		Signature:      input.Signature,
 	})
 	if err != nil {
-		log.Infof("logineth: err on verify")
 		return nil, err
 	}
 
 	identifier := users.UserCriteria{EthAddress: strings.ToLower(input.Signer)}
-	log.Infof("logineth: identifier: %+v", identifier)
 	user, err := s.userService.GetUser(identifier)
 	if err != nil && err == cpersist.ErrPersisterNoResults {
 		return nil, fmt.Errorf("user does not exist")
