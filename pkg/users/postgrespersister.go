@@ -145,10 +145,11 @@ func (p *PostgresPersister) userQuery(criteria *UserCriteria, tableName string) 
 	} else if criteria.Email != "" {
 		queryBuf.WriteString(" WHERE r1.email = :email") // nolint: gosec
 	} else if criteria.EthAddress != "" {
-		queryBuf.WriteString(" WHERE r1.eth_address = :eth_address") // nolint: gosec
+		queryBuf.WriteString(" WHERE LOWER(r1.eth_address) = LOWER(:eth_address)") // nolint: gosec
 	} else if criteria.NewsroomAddr != "" {
 		queryBuf.WriteString(" WHERE r1.assoc_nr_addr @> ARRAY[:nr_addr]") // nolint: gosec
 	}
+	queryBuf.WriteString(" ORDER BY r1.date_created")
 	return queryBuf.String()
 }
 
