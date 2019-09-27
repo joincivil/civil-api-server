@@ -19,6 +19,8 @@ var (
 	ErrorBadAvatarDataURLSubType = errors.New("bad avatar data url subtype")
 	// ErrorBadAvatarSize is returned when a user tries to update their avatar but submits an image of incorrect size (client should send 400x400 image)
 	ErrorBadAvatarSize = errors.New("bad avatar image size")
+	// ErrorBadAvatarEncoding is returned when a user tries to update their avatar but submits an image with incorrect encoding (client should send base64 encoded image)
+	ErrorBadAvatarEncoding = errors.New("bad avatar image encoding")
 	// ErrorUnauthorized is returned when attempting to perform an action the user is not authorized to do
 	ErrorUnauthorized = errors.New("unauthorized")
 	// ErrorsInvalidInput is returned when the input is invalid

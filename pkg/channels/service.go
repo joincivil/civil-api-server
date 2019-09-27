@@ -174,34 +174,37 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
-func getImageFromValidDataURL(dataURL string) (*image.Image, error) {
-	justData := strings.Split(dataURL, ",")[1]
+func getImageAndDecodedDataURLFromDataURL(dataURL string) (*image.Image, *dataurl.DataURL, error) {
+	decodedDataURL, err := dataurl.DecodeString(dataURL)
+	if err != nil {
+		return nil, nil, err
+	}
+	if decodedDataURL.Type != "image" {
+		return nil, nil, ErrorBadAvatarDataURLType
+	}
+	if decodedDataURL.Subtype != "png" && decodedDataURL.Subtype != "jpg" {
+		return nil, nil, ErrorBadAvatarDataURLSubType
+	}
+	if decodedDataURL.Encoding != "base64" {
+		return nil, nil, ErrorBadAvatarEncoding
+	}
+
+	justData := strings.Split(dataURL, ",")[1] // TODO: should be able to get this from the decodedDataURL instead of splitting the string
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(justData))
 	m, _, err := image.Decode(reader)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &m, nil
+	return &m, decodedDataURL, nil
 }
 
 // SetAvatarDataURL sets the avatar data url on a channel of any type
 func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error) {
-	decodedDataURL, err := dataurl.DecodeString(avatarDataURL)
+	image, decodedDataURL, err := getImageAndDecodedDataURLFromDataURL(avatarDataURL)
 	if err != nil {
 		return nil, err
 	}
-	if decodedDataURL.Type != "image" {
-		return nil, ErrorBadAvatarDataURLType
-	}
-	if decodedDataURL.Subtype != "png" && decodedDataURL.Subtype != "jpg" {
-		return nil, ErrorBadAvatarDataURLSubType
-	}
-
-	m, err := getImageFromValidDataURL(avatarDataURL)
-	if err != nil {
-		return nil, err
-	}
-	if (*m).Bounds().Size().X != 400 || (*m).Bounds().Size().Y != 400 {
+	if (*image).Bounds().Size().X != 400 || (*image).Bounds().Size().Y != 400 {
 		return nil, ErrorBadAvatarSize
 	}
 
@@ -210,40 +213,32 @@ func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataUR
 		return nil, err
 	}
 	go func(p *tunny.Pool) {
-		p.Process(processAvatarInputs{userID, channelID, avatarDataURL})
+		p.Process(processAvatarInputs{userID, channelID, image, decodedDataURL})
 	}(s.imageProcessingPool)
 
 	return channel, nil
 }
 
 type processAvatarInputs struct {
-	userID        string
-	channelID     string
-	avatarDataURL string
+	userID         string
+	channelID      string
+	image          *image.Image
+	decodedDataURL *dataurl.DataURL
 }
 
 func (s *Service) processAvatar(payload interface{}) interface{} {
 	inputs := payload.(processAvatarInputs)
-	decodedAvatarDataURL, err := dataurl.DecodeString(inputs.avatarDataURL)
-	if err != nil {
-		return err
-	}
-	justData := strings.Split(inputs.avatarDataURL, ",")[1]
-	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(justData))
-	m, _, err := image.Decode(reader)
-	if err != nil {
-		return err
-	}
-	mTiny := resize.Resize(100, 100, m, resize.Lanczos3)
+
+	mTiny := resize.Resize(100, 100, *(inputs.image), resize.Lanczos3)
 
 	var buff bytes.Buffer
-	if decodedAvatarDataURL.Subtype == "jpeg" {
-		err = jpeg.Encode(&buff, mTiny, nil)
+	if inputs.decodedDataURL.Subtype == "jpeg" {
+		err := jpeg.Encode(&buff, mTiny, nil)
 		if err != nil {
 			return err
 		}
-	} else if decodedAvatarDataURL.Subtype == "png" {
-		err = png.Encode(&buff, mTiny)
+	} else if inputs.decodedDataURL.Subtype == "png" {
+		err := png.Encode(&buff, mTiny)
 		if err != nil {
 			return err
 		}
@@ -252,7 +247,7 @@ func (s *Service) processAvatar(payload interface{}) interface{} {
 	}
 
 	mTinyBase64Str := base64.StdEncoding.EncodeToString(buff.Bytes())
-	mTinyDataURL := "data:" + decodedAvatarDataURL.ContentType() + ";base64," + mTinyBase64Str
+	mTinyDataURL := "data:" + inputs.decodedDataURL.ContentType() + ";base64," + mTinyBase64Str
 	return s.persister.SetTiny100AvatarDataURL(inputs.userID, inputs.channelID, mTinyDataURL)
 }
 
@@ -262,7 +257,7 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 	if err != nil {
 		return nil, err
 	}
-	if channel.Handle != nil {
+	if channel.Handle != nil && *(channel.Handle) != "" {
 		return nil, ErrorHandleAlreadySet
 	}
 	if !IsValidHandle(handle) {
