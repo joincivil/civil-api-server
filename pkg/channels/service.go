@@ -37,16 +37,6 @@ const (
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
-// PreService provides methods to interact with Channels
-type PreService struct {
-	persister            Persister
-	newsroomHelper       NewsroomHelper
-	stripeConnector      StripeConnector
-	tokenGenerator       *utils.JwtTokenGenerator
-	emailer              *email.Emailer
-	signupLoginProtoHost string
-}
-
 // Service provides methods to interact with Channels
 type Service struct {
 	persister            Persister
@@ -184,6 +174,16 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+func getImageFromValidDataURL(dataURL string) (*image.Image, error) {
+	justData := strings.Split(dataURL, ",")[1]
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(justData))
+	m, _, err := image.Decode(reader)
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
 // SetAvatarDataURL sets the avatar data url on a channel of any type
 func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error) {
 	decodedDataURL, err := dataurl.DecodeString(avatarDataURL)
@@ -196,6 +196,15 @@ func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataUR
 	if decodedDataURL.Subtype != "png" && decodedDataURL.Subtype != "jpg" {
 		return nil, ErrorBadAvatarDataURLSubType
 	}
+
+	m, err := getImageFromValidDataURL(avatarDataURL)
+	if err != nil {
+		return nil, err
+	}
+	if (*m).Bounds().Size().X != 400 || (*m).Bounds().Size().Y != 400 {
+		return nil, ErrorBadAvatarSize
+	}
+
 	channel, err := s.persister.SetAvatarDataURL(userID, channelID, avatarDataURL)
 	if err != nil {
 		return nil, err
@@ -229,9 +238,15 @@ func (s *Service) processAvatar(payload interface{}) interface{} {
 
 	var buff bytes.Buffer
 	if decodedAvatarDataURL.Subtype == "jpeg" {
-		jpeg.Encode(&buff, mTiny, nil)
+		err = jpeg.Encode(&buff, mTiny, nil)
+		if err != nil {
+			return err
+		}
 	} else if decodedAvatarDataURL.Subtype == "png" {
-		png.Encode(&buff, mTiny)
+		err = png.Encode(&buff, mTiny)
+		if err != nil {
+			return err
+		}
 	} else {
 		return ErrorBadAvatarDataURLSubType
 	}
