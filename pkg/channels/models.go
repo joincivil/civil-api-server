@@ -66,19 +66,27 @@ type SetEmailInput struct {
 	AddToMailing bool
 }
 
+// SetAvatarInput contains the fields needed to set a channels' avatar
+type SetAvatarInput struct {
+	ChannelID     string
+	AvatarDataURL string
+}
+
 // Channel is container for Posts
 type Channel struct {
-	ID              string `gorm:"type:uuid;primary_key"`
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       *time.Time
-	ChannelType     string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user, newsroom, group
-	Reference       string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user_id, newsroom smart contract address, group DID
-	Handle          *string `gorm:"unique_index:channel_idx_handle"`                  // globally unique identifier for channels
-	RawHandle       *string
-	Members         []ChannelMember
-	StripeAccountID string
-	EmailAddress    string
+	ID                   string `gorm:"type:uuid;primary_key"`
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	DeletedAt            *time.Time
+	ChannelType          string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user, newsroom, group
+	Reference            string  `gorm:"not_null;unique_index:channel_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Handle               *string `gorm:"unique_index:channel_idx_handle"`                  // globally unique identifier for channels
+	RawHandle            *string
+	Members              []ChannelMember
+	StripeAccountID      string
+	EmailAddress         string
+	AvatarDataURL        string
+	Tiny100AvatarDataURL string // avatar data url scaled down to width 100
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted
