@@ -126,6 +126,7 @@ type ComplexityRoot struct {
 		IsStripeConnected      func(childComplexity int) int
 		Newsroom               func(childComplexity int) int
 		PostsSearch            func(childComplexity int, search posts.SearchInput) int
+		Tiny100AvatarDataURL   func(childComplexity int) int
 	}
 
 	ChannelMember struct {
@@ -1067,6 +1068,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.PostsSearch(childComplexity, args["search"].(posts.SearchInput)), true
+
+	case "Channel.tiny100AvatarDataUrl":
+		if e.complexity.Channel.Tiny100AvatarDataURL == nil {
+			break
+		}
+
+		return e.complexity.Channel.Tiny100AvatarDataURL(childComplexity), true
 
 	case "ChannelMember.channel":
 		if e.complexity.ChannelMember.Channel == nil {
@@ -4096,6 +4104,7 @@ type Channel {
   handle: String
   EmailAddressRestricted: String
   avatarDataUrl: String
+  tiny100AvatarDataUrl: String
 }
 
 type ChannelMember {
@@ -7513,6 +7522,40 @@ func (ec *executionContext) _Channel_avatarDataUrl(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.AvatarDataURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_tiny100AvatarDataUrl(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tiny100AvatarDataURL, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21616,6 +21659,8 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 			})
 		case "avatarDataUrl":
 			out.Values[i] = ec._Channel_avatarDataUrl(ctx, field, obj)
+		case "tiny100AvatarDataUrl":
+			out.Values[i] = ec._Channel_tiny100AvatarDataUrl(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

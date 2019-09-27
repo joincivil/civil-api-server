@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/99designs/gqlgen v0.9.3
 	github.com/DATA-DOG/go-sqlmock v1.3.3 // indirect
+	github.com/Jeffail/tunny v0.0.0-20181108205650-4921fff29480
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/didip/tollbooth v4.0.0+incompatible
 	github.com/didip/tollbooth_chi v0.0.0-20170928041846-6ab5f3083f3d

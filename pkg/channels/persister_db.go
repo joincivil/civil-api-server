@@ -245,7 +245,7 @@ func (p *DBPersister) SetTiny100AvatarDataURL(userID string, channelID string, a
 		return errors.Wrap(err, "error setting avatar data url, could not get channel")
 	}
 
-	make sure the user requesting is an admin
+	// make sure the user requesting is an admin
 	err = p.requireAdmin(userID, channelID)
 	if err == ErrorUnauthorized {
 		return ErrorUnauthorized

@@ -441,6 +441,7 @@ type Channel {
   handle: String
   EmailAddressRestricted: String
   avatarDataUrl: String
+  tiny100AvatarDataUrl: String
 }
 
 type ChannelMember {

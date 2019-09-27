@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/Jeffail/tunny"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/utils"
@@ -16,6 +17,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -35,6 +37,16 @@ const (
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
 )
 
+// PreService provides methods to interact with Channels
+type PreService struct {
+	persister            Persister
+	newsroomHelper       NewsroomHelper
+	stripeConnector      StripeConnector
+	tokenGenerator       *utils.JwtTokenGenerator
+	emailer              *email.Emailer
+	signupLoginProtoHost string
+}
+
 // Service provides methods to interact with Channels
 type Service struct {
 	persister            Persister
@@ -43,6 +55,7 @@ type Service struct {
 	tokenGenerator       *utils.JwtTokenGenerator
 	emailer              *email.Emailer
 	signupLoginProtoHost string
+	imageProcessingPool  *tunny.Pool
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -67,14 +80,19 @@ func NewServiceFromConfig(persister Persister, newsroomHelper NewsroomHelper, st
 func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
 	emailer *email.Emailer, signupLoginProtoHost string) *Service {
 
-	return &Service{
+	s := &Service{
 		persister,
 		newsroomHelper,
 		stripeConnector,
 		tokenGenerator,
 		emailer,
 		signupLoginProtoHost,
+		nil,
 	}
+	multiplier := 1
+	numCPUs := runtime.NumCPU() * multiplier
+	s.imageProcessingPool = tunny.NewFunc(numCPUs, s.processAvatar)
+	return s
 }
 
 // GetUserChannels retrieves the Channels a user is a member of
@@ -182,16 +200,26 @@ func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataUR
 	if err != nil {
 		return nil, err
 	}
-	go s.processAvatar(userID, channelID, avatarDataURL)
+	go func(p *tunny.Pool) {
+		p.Process(processAvatarInputs{userID, channelID, avatarDataURL})
+	}(s.imageProcessingPool)
+
 	return channel, nil
 }
 
-func (s *Service) processAvatar(userID string, channelID string, avatarDataURL string) error {
-	decodedAvatarDataURL, err := dataurl.DecodeString(avatarDataURL)
+type processAvatarInputs struct {
+	userID        string
+	channelID     string
+	avatarDataURL string
+}
+
+func (s *Service) processAvatar(payload interface{}) interface{} {
+	inputs := payload.(processAvatarInputs)
+	decodedAvatarDataURL, err := dataurl.DecodeString(inputs.avatarDataURL)
 	if err != nil {
 		return err
 	}
-	justData := strings.Split(avatarDataURL, ",")[1]
+	justData := strings.Split(inputs.avatarDataURL, ",")[1]
 	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(justData))
 	m, _, err := image.Decode(reader)
 	if err != nil {
@@ -204,11 +232,13 @@ func (s *Service) processAvatar(userID string, channelID string, avatarDataURL s
 		jpeg.Encode(&buff, mTiny, nil)
 	} else if decodedAvatarDataURL.Subtype == "png" {
 		png.Encode(&buff, mTiny)
+	} else {
+		return ErrorBadAvatarDataURLSubType
 	}
 
 	mTinyBase64Str := base64.StdEncoding.EncodeToString(buff.Bytes())
 	mTinyDataURL := "data:" + decodedAvatarDataURL.ContentType() + ";base64," + mTinyBase64Str
-	return s.persister.SetTiny100AvatarDataURL(userID, channelID, mTinyDataURL)
+	return s.persister.SetTiny100AvatarDataURL(inputs.userID, inputs.channelID, mTinyDataURL)
 }
 
 // SetHandle sets the handle on a channel of any type
