@@ -227,8 +227,6 @@ func (p *DBPersister) SetAvatarDataURL(userID string, channelID string, avatarDa
 		return nil, errors.Wrap(err, "error setting avatar data url, not an admin")
 	}
 
-	// TODO(nreynolds): check length of data url
-
 	err = p.db.Model(ch).Update(Channel{AvatarDataURL: avatarDataURL}).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "error setting email")
