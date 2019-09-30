@@ -69,6 +69,8 @@ func (p *DBPostPersister) GetPost(id string) (Post, error) {
 		return nil, ErrorNotFound
 	}
 
+	log.Infof("postModel %v", postModel)
+
 	return BaseToPostInterface(postModel)
 }
 
@@ -240,5 +242,6 @@ func BaseToPostInterface(base *PostModel) (Post, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("post: %v", post)
 	return post.(Post), nil
 }

@@ -332,6 +332,16 @@ type ComplexityRoot struct {
 		TcrApplyTx         func(childComplexity int) int
 	}
 
+	OpenGraphData struct {
+		Description func(childComplexity int) int
+		Determiner  func(childComplexity int) int
+		Locale      func(childComplexity int) int
+		SiteName    func(childComplexity int) int
+		Title       func(childComplexity int) int
+		Type        func(childComplexity int) int
+		URL         func(childComplexity int) int
+	}
+
 	PageInfo struct {
 		EndCursor   func(childComplexity int) int
 		HasNextPage func(childComplexity int) int
@@ -449,6 +459,7 @@ type ComplexityRoot struct {
 		Children      func(childComplexity int) int
 		CreatedAt     func(childComplexity int) int
 		ID            func(childComplexity int) int
+		OpenGraphData func(childComplexity int) int
 		ParentID      func(childComplexity int) int
 		Payments      func(childComplexity int) int
 		PaymentsTotal func(childComplexity int, currencyCode string) int
@@ -2282,6 +2293,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NrsignupNewsroom.TcrApplyTx(childComplexity), true
 
+	case "OpenGraphData.description":
+		if e.complexity.OpenGraphData.Description == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphData.Description(childComplexity), true
+
+	case "OpenGraphData.determiner":
+		if e.complexity.OpenGraphData.Determiner == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphData.Determiner(childComplexity), true
+
+	case "OpenGraphData.locale":
+		if e.complexity.OpenGraphData.Locale == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphData.Locale(childComplexity), true
+
+	case "OpenGraphData.siteName":
+		if e.complexity.OpenGraphData.SiteName == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphData.SiteName(childComplexity), true
+
+	case "OpenGraphData.title":
+		if e.complexity.OpenGraphData.Title == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphData.Title(childComplexity), true
+
+	case "OpenGraphData.type":
+		if e.complexity.OpenGraphData.Type == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphData.Type(childComplexity), true
+
+	case "OpenGraphData.url":
+		if e.complexity.OpenGraphData.URL == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphData.URL(childComplexity), true
+
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
 			break
@@ -2893,6 +2953,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostExternalLink.ID(childComplexity), true
+
+	case "PostExternalLink.openGraphData":
+		if e.complexity.PostExternalLink.OpenGraphData == nil {
+			break
+		}
+
+		return e.complexity.PostExternalLink.OpenGraphData(childComplexity), true
 
 	case "PostExternalLink.parentID":
 		if e.complexity.PostExternalLink.ParentID == nil {
@@ -4205,7 +4272,26 @@ type PostExternalLink implements Post {
   paymentsTotal(currencyCode: String!): Float!
   url: String
   channel: Channel
+  openGraphData: OpenGraphData!
 }
+
+type OpenGraphData {
+  type: String!
+  url: String!
+  title: String!
+  description: String!
+  determiner: String!
+  siteName: String!
+  locale: String!
+}
+
+# type Image {
+#   url: String!
+#   secureUrl: String!
+#   type: String!
+#   width: Int
+#   height: Int
+# }
 
 type PostSearchResult {
   posts: [Post!]
@@ -12932,6 +13018,265 @@ func (ec *executionContext) _NrsignupNewsroom_tcrApplyTx(ctx context.Context, fi
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OpenGraphData_type(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphData_url(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphData_title(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphData_description(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphData_determiner(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Determiner, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphData_siteName(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SiteName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphData_locale(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Locale, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -16216,6 +16561,43 @@ func (ec *executionContext) _PostExternalLink_channel(ctx context.Context, field
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostExternalLink_openGraphData(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostExternalLink",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OpenGraphData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(posts.OpenGraphData)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNOpenGraphData2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐOpenGraphData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostSearchResult_posts(ctx context.Context, field graphql.CollectedField, obj *posts.PostSearchResult) (ret graphql.Marshaler) {
@@ -22912,6 +23294,63 @@ func (ec *executionContext) _NrsignupNewsroom(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var openGraphDataImplementors = []string{"OpenGraphData"}
+
+func (ec *executionContext) _OpenGraphData(ctx context.Context, sel ast.SelectionSet, obj *posts.OpenGraphData) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphDataImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenGraphData")
+		case "type":
+			out.Values[i] = ec._OpenGraphData_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "url":
+			out.Values[i] = ec._OpenGraphData_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "title":
+			out.Values[i] = ec._OpenGraphData_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._OpenGraphData_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "determiner":
+			out.Values[i] = ec._OpenGraphData_determiner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "siteName":
+			out.Values[i] = ec._OpenGraphData_siteName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "locale":
+			out.Values[i] = ec._OpenGraphData_locale(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var pageInfoImplementors = []string{"PageInfo"}
 
 func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *PageInfo) graphql.Marshaler {
@@ -23712,6 +24151,11 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 				res = ec._PostExternalLink_channel(ctx, field, obj)
 				return res
 			})
+		case "openGraphData":
+			out.Values[i] = ec._PostExternalLink_openGraphData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -25282,6 +25726,10 @@ func (ec *executionContext) marshalNMetadata2ᚖgithubᚗcomᚋjoincivilᚋcivil
 
 func (ec *executionContext) unmarshalNNrsignupStepsInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐNrsignupStepsInput(ctx context.Context, v interface{}) (NrsignupStepsInput, error) {
 	return ec.unmarshalInputNrsignupStepsInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNOpenGraphData2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐOpenGraphData(ctx context.Context, sel ast.SelectionSet, v posts.OpenGraphData) graphql.Marshaler {
+	return ec._OpenGraphData(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v PageInfo) graphql.Marshaler {

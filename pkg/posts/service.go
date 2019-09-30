@@ -1,10 +1,10 @@
 package posts
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"github.com/dyatlov/go-htmlinfo/htmlinfo"
 	"github.com/goware/urlx"
-	"github.com/jinzhu/gorm/dialects/postgres"
+	// "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
 	"net/http"
@@ -87,16 +87,19 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 
 			ref := "externallink+" + channel.Reference + "+" + htmlInfo.CanonicalURL
 			externallink.Reference = &ref
-			ogJSON, err := htmlInfo.OGInfo.ToJSON()
-			if err != nil {
-				return nil, err
+			// ogJSON, err := htmlInfo.OGInfo.ToJSON()
+			// if err != nil {
+			// 	return nil, err
+			// }
+
+			// htmlInfo.OGInfo.
+			externallink.OpenGraphData = OpenGraphData{
+				Type:        htmlInfo.OGInfo.Type,
+				URL:         htmlInfo.OGInfo.URL,
+				Title:       htmlInfo.OGInfo.Title,
+				Description: htmlInfo.OGInfo.Description,
 			}
-			var ogJsonb postgres.Jsonb
-			err = json.Unmarshal(ogJSON, &ogJsonb)
-			if err != nil {
-				return nil, err
-			}
-			externallink.OpenGraphData = ogJsonb
+			// externallink.OpenGraphData = htmlInfo.OGInfo
 			return s.PostPersister.CreatePost(authorID, externallink)
 		}
 		return nil, ErrorNotImplemented

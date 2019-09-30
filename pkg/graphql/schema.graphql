@@ -542,7 +542,26 @@ type PostExternalLink implements Post {
   paymentsTotal(currencyCode: String!): Float!
   url: String
   channel: Channel
+  openGraphData: OpenGraphData!
 }
+
+type OpenGraphData {
+  type: String!
+  url: String!
+  title: String!
+  description: String!
+  determiner: String!
+  siteName: String!
+  locale: String!
+}
+
+# type Image {
+#   url: String!
+#   secureUrl: String!
+#   type: String!
+#   width: Int
+#   height: Int
+# }
 
 type PostSearchResult {
   posts: [Post!]
