@@ -10,6 +10,18 @@ import (
 	"github.com/joincivil/go-common/pkg/email"
 )
 
+func (r *mutationResolver) validatePayerChannelID(ctx context.Context, channelID string) error {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	if err != nil || !isAdmin {
+		return ErrAccessDenied
+	}
+	return nil
+}
+
 // MUTATIONS
 func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postID string, payment payments.EtherPayment) (*payments.EtherPayment, error) {
 
@@ -19,13 +31,9 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 	}
 
 	if payment.PayerChannelID != "" {
-		token := auth.ForContext(ctx)
-		if token == nil {
-			return nil, ErrAccessDenied
-		}
-		isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, payment.PayerChannelID)
-		if err != nil || !isAdmin {
-			return nil, ErrAccessDenied
+		err = r.validatePayerChannelID(ctx, payment.PayerChannelID)
+		if err != nil {
+			return &payments.EtherPayment{}, err
 		}
 	}
 
@@ -47,13 +55,9 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	}
 
 	if payment.PayerChannelID != "" {
-		token := auth.ForContext(ctx)
-		if token == nil {
-			return nil, ErrAccessDenied
-		}
-		isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, payment.PayerChannelID)
-		if err != nil || !isAdmin {
-			return nil, ErrAccessDenied
+		err = r.validatePayerChannelID(ctx, payment.PayerChannelID)
+		if err != nil {
+			return &payments.StripePayment{}, err
 		}
 	}
 
