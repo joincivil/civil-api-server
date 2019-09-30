@@ -74,11 +74,14 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 				return nil, err
 			}
 
-			defer resp.Body.Close()
+			defer resp.Body.Close() // nolint: errcheck
 
 			htmlInfo := htmlinfo.NewHTMLInfo()
 
 			err = htmlInfo.Parse(resp.Body, &(externallink.URL), nil)
+			if err != nil {
+				return nil, err
+			}
 
 			ref := "externallink+" + channel.Reference + "+" + htmlInfo.CanonicalURL
 			externallink.Reference = &ref
