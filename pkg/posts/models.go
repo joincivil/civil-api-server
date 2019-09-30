@@ -106,8 +106,8 @@ func (b Comment) GetType() string {
 // ExternalLink is a type of Post that links to another web page
 type ExternalLink struct {
 	PostModel     `json:"-"`
-	URL           string `json:"url"`
-	OpenGraphData string `json:"open_graph_data"`
+	URL           string         `json:"url"`
+	OpenGraphData postgres.Jsonb `json:"open_graph_data"`
 }
 
 // GetType returns the post type "Boost"
