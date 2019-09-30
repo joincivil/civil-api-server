@@ -80,7 +80,8 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 
 			err = htmlInfo.Parse(resp.Body, &(externallink.URL), nil)
 
-			externallink.CanonicalURL = htmlInfo.CanonicalURL
+			ref := "externallink+" + channel.Reference + "+" + htmlInfo.CanonicalURL
+			externallink.Reference = &ref
 			externallink.OpenGraphData = htmlInfo.OGInfo.String()
 
 			return s.PostPersister.CreatePost(authorID, externallink)
