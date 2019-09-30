@@ -5,10 +5,16 @@ go 1.12
 require (
 	github.com/99designs/gqlgen v0.9.3
 	github.com/DATA-DOG/go-sqlmock v1.3.3 // indirect
+	github.com/Jeffail/gabs v1.4.0 // indirect
 	github.com/Jeffail/tunny v0.0.0-20181108205650-4921fff29480
+	github.com/PuerkitoBio/goquery v1.5.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/didip/tollbooth v4.0.0+incompatible
 	github.com/didip/tollbooth_chi v0.0.0-20170928041846-6ab5f3083f3d
+	github.com/dyatlov/go-htmlinfo v0.0.0-20180517114536-d9417c75de65
+	github.com/dyatlov/go-oembed v0.0.0-20180429203341-4bc5ab7a42e9 // indirect
+	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 // indirect
+	github.com/dyatlov/go-readability v0.0.0-20150926130635-e7b2080f87f8 // indirect
 	github.com/ethereum/go-ethereum v0.0.0-20190528221609-008d250e3c57
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
