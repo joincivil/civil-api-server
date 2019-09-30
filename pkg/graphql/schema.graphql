@@ -656,6 +656,8 @@ input PaymentsCreateStripePaymentInput {
   amount: Float!
   paymentToken: String!
   emailAddress: String
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 # Payment inputs
@@ -668,6 +670,8 @@ input PaymentsCreateEtherPaymentInput {
   fromAddress: String!
   amount: Float!
   usdAmount: String!
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 # Payment inputs
@@ -677,6 +681,8 @@ input PaymentsCreateTokenPaymentInput {
   transactionID: String!
   tokenAddress: String!
   emailAddress: String
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 ## User object schemas

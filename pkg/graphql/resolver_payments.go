@@ -18,13 +18,24 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 		return &payments.EtherPayment{}, errors.New("could not find post")
 	}
 
+	if payment.PayerChannelID != "" {
+		token := auth.ForContext(ctx)
+		if token == nil {
+			return nil, ErrAccessDenied
+		}
+		isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, payment.PayerChannelID)
+		if err != nil || !isAdmin {
+			return nil, ErrAccessDenied
+		}
+	}
+
 	channelID := post.GetChannelID()
 	tmplData, err2 := r.GetEthPaymentEmailTemplateData(post, payment)
 	if err2 != nil {
 		return &payments.EtherPayment{}, errors.New("error creating email template data")
 	}
 
-	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment.TransactionID, payment.EmailAddress, tmplData)
+	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment, tmplData)
 	return &p, err
 }
 
@@ -33,6 +44,17 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	post, err := r.postService.GetPost(postID)
 	if err != nil {
 		return &payments.StripePayment{}, errors.New("could not find post")
+	}
+
+	if payment.PayerChannelID != "" {
+		token := auth.ForContext(ctx)
+		if token == nil {
+			return nil, ErrAccessDenied
+		}
+		isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, payment.PayerChannelID)
+		if err != nil || !isAdmin {
+			return nil, ErrAccessDenied
+		}
 	}
 
 	channelID := post.GetChannelID()

@@ -4319,6 +4319,8 @@ input PaymentsCreateStripePaymentInput {
   amount: Float!
   paymentToken: String!
   emailAddress: String
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 # Payment inputs
@@ -4331,6 +4333,8 @@ input PaymentsCreateEtherPaymentInput {
   fromAddress: String!
   amount: Float!
   usdAmount: String!
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 # Payment inputs
@@ -4340,6 +4344,8 @@ input PaymentsCreateTokenPaymentInput {
   transactionID: String!
   tokenAddress: String!
   emailAddress: String
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 ## User object schemas
@@ -20679,6 +20685,18 @@ func (ec *executionContext) unmarshalInputPaymentsCreateEtherPaymentInput(ctx co
 			if err != nil {
 				return it, err
 			}
+		case "payerChannelID":
+			var err error
+			it.PayerChannelID, err = ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "shouldPublicize":
+			var err error
+			it.ShouldPublicize, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -20727,6 +20745,18 @@ func (ec *executionContext) unmarshalInputPaymentsCreateStripePaymentInput(ctx c
 			if err != nil {
 				return it, err
 			}
+		case "payerChannelID":
+			var err error
+			it.PayerChannelID, err = ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "shouldPublicize":
+			var err error
+			it.ShouldPublicize, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -20766,6 +20796,18 @@ func (ec *executionContext) unmarshalInputPaymentsCreateTokenPaymentInput(ctx co
 		case "emailAddress":
 			var err error
 			it.EmailAddress, err = ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "payerChannelID":
+			var err error
+			it.PayerChannelID, err = ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "shouldPublicize":
+			var err error
+			it.ShouldPublicize, err = ec.unmarshalOBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}
