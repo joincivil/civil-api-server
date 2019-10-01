@@ -110,10 +110,6 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/posts.Boost
   PostBoostItem:
     model: github.com/joincivil/civil-api-server/pkg/posts.BoostItem
-  # OpenGraphData:
-  #   model: github.com/joincivil/civil-api-server/pkg/posts.OpenGraphData
-  # Image:
-  #   model: github.com/joincivil/civil-api-server/pkg/posts.Image
   PostExternalLink:
     model: github.com/joincivil/civil-api-server/pkg/posts.ExternalLink
   PostComment:
