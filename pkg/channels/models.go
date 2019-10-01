@@ -87,6 +87,7 @@ type Channel struct {
 	EmailAddress         string
 	AvatarDataURL        string
 	Tiny100AvatarDataURL string // avatar data url scaled down to width 100
+	Tiny72AvatarDataURL  string // avatar data url scaled down to width 72 height 72
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted
