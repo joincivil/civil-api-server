@@ -25,22 +25,24 @@ type Payment interface {
 
 // PaymentModel defines the GORM model for a payment
 type PaymentModel struct {
-	ID           string    `gorm:"type:uuid;primary_key"`
-	CreatedAt    time.Time `gorm:"not null"`
-	UpdatedAt    time.Time `gorm:"not null"`
-	DeletedAt    *time.Time
-	PaymentType  string  `gorm:"not null;unique_index:payments_idx_type_reference"`
-	Reference    string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
-	Status       string  `gorm:"not null"`
-	CurrencyCode string  `gorm:"not null"`
-	Amount       float64 `gorm:"not null"`
-	ExchangeRate float64 `gorm:"not null"`
-	Comment      string
-	Reaction     string
-	Data         postgres.Jsonb
-	OwnerID      string `gorm:"not null"`
-	OwnerType    string `gorm:"not null"`
-	EmailAddress string
+	ID              string    `gorm:"type:uuid;primary_key"`
+	CreatedAt       time.Time `gorm:"not null"`
+	UpdatedAt       time.Time `gorm:"not null"`
+	DeletedAt       *time.Time
+	PaymentType     string  `gorm:"not null;unique_index:payments_idx_type_reference"`
+	Reference       string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Status          string  `gorm:"not null"`
+	CurrencyCode    string  `gorm:"not null"`
+	Amount          float64 `gorm:"not null"`
+	ExchangeRate    float64 `gorm:"not null"`
+	Comment         string
+	Reaction        string
+	Data            postgres.Jsonb
+	OwnerID         string `gorm:"not null"`
+	OwnerType       string `gorm:"not null"`
+	EmailAddress    string
+	PayerChannelID  string
+	ShouldPublicize bool
 }
 
 // TableName returns the gorm table name for Base
