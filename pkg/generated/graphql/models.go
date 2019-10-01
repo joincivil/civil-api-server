@@ -63,9 +63,9 @@ type NrsignupStepsInput struct {
 }
 
 type OpenGraphArticle struct {
-	PublishedTime  *time.Time          `json:"publishedTime"`
-	ModifiedTime   *time.Time          `json:"modifiedTime"`
-	ExpirationTime *time.Time          `json:"expirationTime"`
+	PublishedTime  *time.Time          `json:"published_time"`
+	ModifiedTime   *time.Time          `json:"modified_time"`
+	ExpirationTime *time.Time          `json:"expiration_time"`
 	Section        *string             `json:"section"`
 	Tags           []string            `json:"tags"`
 	Authors        []*OpenGraphProfile `json:"authors"`
@@ -73,14 +73,14 @@ type OpenGraphArticle struct {
 
 type OpenGraphAudio struct {
 	URL       string  `json:"url"`
-	SecureURL *string `json:"secureURL"`
+	SecureURL *string `json:"secure_url"`
 	Type      *string `json:"type"`
 	Draft     *bool   `json:"draft"`
 }
 
 type OpenGraphBook struct {
 	Isbn        *string             `json:"isbn"`
-	ReleaseDate *string             `json:"releaseDate"`
+	ReleaseDate *string             `json:"release_date"`
 	Tags        []string            `json:"tags"`
 	Authors     []*OpenGraphProfile `json:"authors"`
 }
@@ -91,9 +91,9 @@ type OpenGraphData struct {
 	Title            string            `json:"title"`
 	Description      string            `json:"description"`
 	Determiner       string            `json:"determiner"`
-	SiteName         string            `json:"siteName"`
+	SiteName         string            `json:"site_name"`
 	Locale           string            `json:"locale"`
-	LocalesAlternate []string          `json:"localesAlternate"`
+	LocalesAlternate []string          `json:"locales_alternate"`
 	Images           []*OpenGraphImage `json:"images"`
 	Audios           []*OpenGraphAudio `json:"audios"`
 	Videos           []*OpenGraphVideo `json:"videos"`
@@ -104,7 +104,7 @@ type OpenGraphData struct {
 
 type OpenGraphImage struct {
 	URL       string  `json:"url"`
-	SecureURL *string `json:"secureURL"`
+	SecureURL *string `json:"secure_url"`
 	Type      *string `json:"type"`
 	Width     *int    `json:"width"`
 	Height    *int    `json:"height"`
@@ -112,15 +112,15 @@ type OpenGraphImage struct {
 }
 
 type OpenGraphProfile struct {
-	FirstName *string `json:"firstName"`
-	LastName  *string `json:"lastName"`
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
 	Username  *string `json:"username"`
 	Gender    *string `json:"gender"`
 }
 
 type OpenGraphVideo struct {
 	URL       string  `json:"url"`
-	SecureURL *string `json:"secureURL"`
+	SecureURL *string `json:"secure_url"`
 	Type      *string `json:"type"`
 	Width     *int    `json:"width"`
 	Height    *int    `json:"height"`

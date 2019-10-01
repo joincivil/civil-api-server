@@ -2356,21 +2356,21 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphArticle.Authors(childComplexity), true
 
-	case "OpenGraphArticle.expirationTime":
+	case "OpenGraphArticle.expiration_time":
 		if e.complexity.OpenGraphArticle.ExpirationTime == nil {
 			break
 		}
 
 		return e.complexity.OpenGraphArticle.ExpirationTime(childComplexity), true
 
-	case "OpenGraphArticle.modifiedTime":
+	case "OpenGraphArticle.modified_time":
 		if e.complexity.OpenGraphArticle.ModifiedTime == nil {
 			break
 		}
 
 		return e.complexity.OpenGraphArticle.ModifiedTime(childComplexity), true
 
-	case "OpenGraphArticle.publishedTime":
+	case "OpenGraphArticle.published_time":
 		if e.complexity.OpenGraphArticle.PublishedTime == nil {
 			break
 		}
@@ -2398,7 +2398,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphAudio.Draft(childComplexity), true
 
-	case "OpenGraphAudio.secureURL":
+	case "OpenGraphAudio.secure_url":
 		if e.complexity.OpenGraphAudio.SecureURL == nil {
 			break
 		}
@@ -2433,7 +2433,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphBook.Isbn(childComplexity), true
 
-	case "OpenGraphBook.releaseDate":
+	case "OpenGraphBook.release_date":
 		if e.complexity.OpenGraphBook.ReleaseDate == nil {
 			break
 		}
@@ -2496,7 +2496,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphData.Locale(childComplexity), true
 
-	case "OpenGraphData.localesAlternate":
+	case "OpenGraphData.locales_alternate":
 		if e.complexity.OpenGraphData.LocalesAlternate == nil {
 			break
 		}
@@ -2510,7 +2510,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphData.Profile(childComplexity), true
 
-	case "OpenGraphData.siteName":
+	case "OpenGraphData.site_name":
 		if e.complexity.OpenGraphData.SiteName == nil {
 			break
 		}
@@ -2559,7 +2559,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphImage.Height(childComplexity), true
 
-	case "OpenGraphImage.secureURL":
+	case "OpenGraphImage.secure_url":
 		if e.complexity.OpenGraphImage.SecureURL == nil {
 			break
 		}
@@ -2587,7 +2587,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphImage.Width(childComplexity), true
 
-	case "OpenGraphProfile.firstName":
+	case "OpenGraphProfile.first_name":
 		if e.complexity.OpenGraphProfile.FirstName == nil {
 			break
 		}
@@ -2601,7 +2601,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphProfile.Gender(childComplexity), true
 
-	case "OpenGraphProfile.lastName":
+	case "OpenGraphProfile.last_name":
 		if e.complexity.OpenGraphProfile.LastName == nil {
 			break
 		}
@@ -2629,7 +2629,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.OpenGraphVideo.Height(childComplexity), true
 
-	case "OpenGraphVideo.secureURL":
+	case "OpenGraphVideo.secure_url":
 		if e.complexity.OpenGraphVideo.SecureURL == nil {
 			break
 		}
@@ -4596,9 +4596,9 @@ type OpenGraphData {
   title: String!
   description: String!
   determiner: String!
-  siteName: String!
+  site_name: String!
   locale: String!
-  localesAlternate: [String!]
+  locales_alternate: [String!]
   images: [OpenGraphImage!]
   audios: [OpenGraphAudio!]
   videos: [OpenGraphVideo!]
@@ -4609,7 +4609,7 @@ type OpenGraphData {
 
 type OpenGraphImage {
   url: String!
-  secureURL: String
+  secure_url: String
   type: String
   width: Int
   height: Int
@@ -4618,7 +4618,7 @@ type OpenGraphImage {
 
 type OpenGraphVideo {
   url: String!
-  secureURL: String
+  secure_url: String
   type: String
   width: Int
   height: Int
@@ -4627,30 +4627,30 @@ type OpenGraphVideo {
 
 type OpenGraphAudio {
   url: String!
-  secureURL: String
+  secure_url: String
   type: String
   draft: Boolean
 }
 
 type OpenGraphArticle {
-  publishedTime: Time
-  modifiedTime: Time
-  expirationTime: Time
+  published_time: Time
+  modified_time: Time
+  expiration_time: Time
   section: String
   tags: [String!]
   authors: [OpenGraphProfile!]
 }
 
 type OpenGraphProfile {
-  firstName: String
-  lastName: String
+  first_name: String
+  last_name: String
   username: String
   gender: String
 }
 
 type OpenGraphBook {
   isbn: String
-  releaseDate: String
+  release_date: String
   tags: [String!]
   authors: [OpenGraphProfile!]
 }
@@ -13380,7 +13380,7 @@ func (ec *executionContext) _NrsignupNewsroom_tcrApplyTx(ctx context.Context, fi
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphArticle_publishedTime(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphArticle_published_time(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13414,7 +13414,7 @@ func (ec *executionContext) _OpenGraphArticle_publishedTime(ctx context.Context,
 	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphArticle_modifiedTime(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphArticle_modified_time(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13448,7 +13448,7 @@ func (ec *executionContext) _OpenGraphArticle_modifiedTime(ctx context.Context, 
 	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphArticle_expirationTime(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphArticle_expiration_time(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13621,7 +13621,7 @@ func (ec *executionContext) _OpenGraphAudio_url(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphAudio_secureURL(ctx context.Context, field graphql.CollectedField, obj *OpenGraphAudio) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphAudio_secure_url(ctx context.Context, field graphql.CollectedField, obj *OpenGraphAudio) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13757,7 +13757,7 @@ func (ec *executionContext) _OpenGraphBook_isbn(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphBook_releaseDate(ctx context.Context, field graphql.CollectedField, obj *OpenGraphBook) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphBook_release_date(ctx context.Context, field graphql.CollectedField, obj *OpenGraphBook) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14044,7 +14044,7 @@ func (ec *executionContext) _OpenGraphData_determiner(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_siteName(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_site_name(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14118,7 +14118,7 @@ func (ec *executionContext) _OpenGraphData_locale(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_localesAlternate(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_locales_alternate(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14393,7 +14393,7 @@ func (ec *executionContext) _OpenGraphImage_url(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphImage_secureURL(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphImage_secure_url(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14563,7 +14563,7 @@ func (ec *executionContext) _OpenGraphImage_draft(ctx context.Context, field gra
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphProfile_firstName(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphProfile_first_name(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14597,7 +14597,7 @@ func (ec *executionContext) _OpenGraphProfile_firstName(ctx context.Context, fie
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphProfile_lastName(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphProfile_last_name(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -14736,7 +14736,7 @@ func (ec *executionContext) _OpenGraphVideo_url(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphVideo_secureURL(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphVideo_secure_url(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -24934,12 +24934,12 @@ func (ec *executionContext) _OpenGraphArticle(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OpenGraphArticle")
-		case "publishedTime":
-			out.Values[i] = ec._OpenGraphArticle_publishedTime(ctx, field, obj)
-		case "modifiedTime":
-			out.Values[i] = ec._OpenGraphArticle_modifiedTime(ctx, field, obj)
-		case "expirationTime":
-			out.Values[i] = ec._OpenGraphArticle_expirationTime(ctx, field, obj)
+		case "published_time":
+			out.Values[i] = ec._OpenGraphArticle_published_time(ctx, field, obj)
+		case "modified_time":
+			out.Values[i] = ec._OpenGraphArticle_modified_time(ctx, field, obj)
+		case "expiration_time":
+			out.Values[i] = ec._OpenGraphArticle_expiration_time(ctx, field, obj)
 		case "section":
 			out.Values[i] = ec._OpenGraphArticle_section(ctx, field, obj)
 		case "tags":
@@ -24973,8 +24973,8 @@ func (ec *executionContext) _OpenGraphAudio(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "secureURL":
-			out.Values[i] = ec._OpenGraphAudio_secureURL(ctx, field, obj)
+		case "secure_url":
+			out.Values[i] = ec._OpenGraphAudio_secure_url(ctx, field, obj)
 		case "type":
 			out.Values[i] = ec._OpenGraphAudio_type(ctx, field, obj)
 		case "draft":
@@ -25003,8 +25003,8 @@ func (ec *executionContext) _OpenGraphBook(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("OpenGraphBook")
 		case "isbn":
 			out.Values[i] = ec._OpenGraphBook_isbn(ctx, field, obj)
-		case "releaseDate":
-			out.Values[i] = ec._OpenGraphBook_releaseDate(ctx, field, obj)
+		case "release_date":
+			out.Values[i] = ec._OpenGraphBook_release_date(ctx, field, obj)
 		case "tags":
 			out.Values[i] = ec._OpenGraphBook_tags(ctx, field, obj)
 		case "authors":
@@ -25056,8 +25056,8 @@ func (ec *executionContext) _OpenGraphData(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "siteName":
-			out.Values[i] = ec._OpenGraphData_siteName(ctx, field, obj)
+		case "site_name":
+			out.Values[i] = ec._OpenGraphData_site_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -25066,8 +25066,8 @@ func (ec *executionContext) _OpenGraphData(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "localesAlternate":
-			out.Values[i] = ec._OpenGraphData_localesAlternate(ctx, field, obj)
+		case "locales_alternate":
+			out.Values[i] = ec._OpenGraphData_locales_alternate(ctx, field, obj)
 		case "images":
 			out.Values[i] = ec._OpenGraphData_images(ctx, field, obj)
 		case "audios":
@@ -25107,8 +25107,8 @@ func (ec *executionContext) _OpenGraphImage(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "secureURL":
-			out.Values[i] = ec._OpenGraphImage_secureURL(ctx, field, obj)
+		case "secure_url":
+			out.Values[i] = ec._OpenGraphImage_secure_url(ctx, field, obj)
 		case "type":
 			out.Values[i] = ec._OpenGraphImage_type(ctx, field, obj)
 		case "width":
@@ -25139,10 +25139,10 @@ func (ec *executionContext) _OpenGraphProfile(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OpenGraphProfile")
-		case "firstName":
-			out.Values[i] = ec._OpenGraphProfile_firstName(ctx, field, obj)
-		case "lastName":
-			out.Values[i] = ec._OpenGraphProfile_lastName(ctx, field, obj)
+		case "first_name":
+			out.Values[i] = ec._OpenGraphProfile_first_name(ctx, field, obj)
+		case "last_name":
+			out.Values[i] = ec._OpenGraphProfile_last_name(ctx, field, obj)
 		case "username":
 			out.Values[i] = ec._OpenGraphProfile_username(ctx, field, obj)
 		case "gender":
@@ -25174,8 +25174,8 @@ func (ec *executionContext) _OpenGraphVideo(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "secureURL":
-			out.Values[i] = ec._OpenGraphVideo_secureURL(ctx, field, obj)
+		case "secure_url":
+			out.Values[i] = ec._OpenGraphVideo_secure_url(ctx, field, obj)
 		case "type":
 			out.Values[i] = ec._OpenGraphVideo_type(ctx, field, obj)
 		case "width":
@@ -28960,7 +28960,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

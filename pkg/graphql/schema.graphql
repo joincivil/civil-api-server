@@ -551,9 +551,9 @@ type OpenGraphData {
   title: String!
   description: String!
   determiner: String!
-  siteName: String!
+  site_name: String!
   locale: String!
-  localesAlternate: [String!]
+  locales_alternate: [String!]
   images: [OpenGraphImage!]
   audios: [OpenGraphAudio!]
   videos: [OpenGraphVideo!]
@@ -564,7 +564,7 @@ type OpenGraphData {
 
 type OpenGraphImage {
   url: String!
-  secureURL: String
+  secure_url: String
   type: String
   width: Int
   height: Int
@@ -573,7 +573,7 @@ type OpenGraphImage {
 
 type OpenGraphVideo {
   url: String!
-  secureURL: String
+  secure_url: String
   type: String
   width: Int
   height: Int
@@ -582,30 +582,30 @@ type OpenGraphVideo {
 
 type OpenGraphAudio {
   url: String!
-  secureURL: String
+  secure_url: String
   type: String
   draft: Boolean
 }
 
 type OpenGraphArticle {
-  publishedTime: Time
-  modifiedTime: Time
-  expirationTime: Time
+  published_time: Time
+  modified_time: Time
+  expiration_time: Time
   section: String
   tags: [String!]
   authors: [OpenGraphProfile!]
 }
 
 type OpenGraphProfile {
-  firstName: String
-  lastName: String
+  first_name: String
+  last_name: String
   username: String
   gender: String
 }
 
 type OpenGraphBook {
   isbn: String
-  releaseDate: String
+  release_date: String
   tags: [String!]
   authors: [OpenGraphProfile!]
 }
