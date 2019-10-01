@@ -553,16 +553,62 @@ type OpenGraphData {
   determiner: String!
   siteName: String!
   locale: String!
-  # images: [Image!]
+  localesAlternate: [String!]
+  images: [Image!]
+  audios: [Audio!]
+  videos: [Video!]
+  article: Article
+  book: Book
+  profile: Profile
 }
 
-# type Image {
-#   url: String!
-#   secureURL: String!
-#   type: String!
-#   width: Int
-#   height: Int
-# }
+type Image {
+  url: String!
+  secureURL: String
+  type: String
+  width: Int
+  height: Int
+  draft: Boolean
+}
+
+type Video {
+  url: String!
+  secureURL: String
+  type: String
+  width: Int
+  height: Int
+  draft: Boolean
+}
+
+type Audio {
+  url: String!
+  secureURL: String
+  type: String
+  draft: Boolean
+}
+
+type Article {
+  publishedTime: Time
+  modifiedTime: Time
+  expirationTime: Time
+  section: String
+  tags: [String!]
+  authors: [Profile!]
+}
+
+type Profile {
+  firstName: String
+  lastName: String
+  username: String
+  gender: String
+}
+
+type Book {
+  isbn: String
+  releaseDate: String
+  tags: [String!]
+  authors: [Profile!]
+}
 
 type PostSearchResult {
   posts: [Post!]
