@@ -82,25 +82,9 @@ type ComplexityRoot struct {
 		Statement                   func(childComplexity int) int
 	}
 
-	Article struct {
-		Authors        func(childComplexity int) int
-		ExpirationTime func(childComplexity int) int
-		ModifiedTime   func(childComplexity int) int
-		PublishedTime  func(childComplexity int) int
-		Section        func(childComplexity int) int
-		Tags           func(childComplexity int) int
-	}
-
 	ArticlePayload struct {
 		Key   func(childComplexity int) int
 		Value func(childComplexity int) int
-	}
-
-	Audio struct {
-		Draft     func(childComplexity int) int
-		SecureURL func(childComplexity int) int
-		Type      func(childComplexity int) int
-		URL       func(childComplexity int) int
 	}
 
 	AuthLoginResponse struct {
@@ -115,13 +99,6 @@ type ComplexityRoot struct {
 		Index       func(childComplexity int) int
 		TxHash      func(childComplexity int) int
 		TxIndex     func(childComplexity int) int
-	}
-
-	Book struct {
-		Authors     func(childComplexity int) int
-		Isbn        func(childComplexity int) int
-		ReleaseDate func(childComplexity int) int
-		Tags        func(childComplexity int) int
 	}
 
 	Challenge struct {
@@ -236,15 +213,6 @@ type ComplexityRoot struct {
 	GovernanceEventResultCursor struct {
 		Edges    func(childComplexity int) int
 		PageInfo func(childComplexity int) int
-	}
-
-	Image struct {
-		Draft     func(childComplexity int) int
-		Height    func(childComplexity int) int
-		SecureURL func(childComplexity int) int
-		Type      func(childComplexity int) int
-		URL       func(childComplexity int) int
-		Width     func(childComplexity int) int
 	}
 
 	JSONField struct {
@@ -364,6 +332,29 @@ type ComplexityRoot struct {
 		TcrApplyTx         func(childComplexity int) int
 	}
 
+	OpenGraphArticle struct {
+		Authors        func(childComplexity int) int
+		ExpirationTime func(childComplexity int) int
+		ModifiedTime   func(childComplexity int) int
+		PublishedTime  func(childComplexity int) int
+		Section        func(childComplexity int) int
+		Tags           func(childComplexity int) int
+	}
+
+	OpenGraphAudio struct {
+		Draft     func(childComplexity int) int
+		SecureURL func(childComplexity int) int
+		Type      func(childComplexity int) int
+		URL       func(childComplexity int) int
+	}
+
+	OpenGraphBook struct {
+		Authors     func(childComplexity int) int
+		Isbn        func(childComplexity int) int
+		ReleaseDate func(childComplexity int) int
+		Tags        func(childComplexity int) int
+	}
+
 	OpenGraphData struct {
 		Article          func(childComplexity int) int
 		Audios           func(childComplexity int) int
@@ -379,6 +370,31 @@ type ComplexityRoot struct {
 		Type             func(childComplexity int) int
 		URL              func(childComplexity int) int
 		Videos           func(childComplexity int) int
+	}
+
+	OpenGraphImage struct {
+		Draft     func(childComplexity int) int
+		Height    func(childComplexity int) int
+		SecureURL func(childComplexity int) int
+		Type      func(childComplexity int) int
+		URL       func(childComplexity int) int
+		Width     func(childComplexity int) int
+	}
+
+	OpenGraphProfile struct {
+		FirstName func(childComplexity int) int
+		Gender    func(childComplexity int) int
+		LastName  func(childComplexity int) int
+		Username  func(childComplexity int) int
+	}
+
+	OpenGraphVideo struct {
+		Draft     func(childComplexity int) int
+		Height    func(childComplexity int) int
+		SecureURL func(childComplexity int) int
+		Type      func(childComplexity int) int
+		URL       func(childComplexity int) int
+		Width     func(childComplexity int) int
 	}
 
 	PageInfo struct {
@@ -520,13 +536,6 @@ type ComplexityRoot struct {
 		Usd          func(childComplexity int) int
 	}
 
-	Profile struct {
-		FirstName func(childComplexity int) int
-		Gender    func(childComplexity int) int
-		LastName  func(childComplexity int) int
-		Username  func(childComplexity int) int
-	}
-
 	Query struct {
 		Articles                     func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                    func(childComplexity int, id int, lowercaseAddr *bool) int
@@ -604,15 +613,6 @@ type ComplexityRoot struct {
 		UserDidCommit     func(childComplexity int) int
 		UserDidReveal     func(childComplexity int) int
 		VoterReward       func(childComplexity int) int
-	}
-
-	Video struct {
-		Draft     func(childComplexity int) int
-		Height    func(childComplexity int) int
-		SecureURL func(childComplexity int) int
-		Type      func(childComplexity int) int
-		URL       func(childComplexity int) int
-		Width     func(childComplexity int) int
 	}
 }
 
@@ -914,48 +914,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Appeal.Statement(childComplexity), true
 
-	case "Article.authors":
-		if e.complexity.Article.Authors == nil {
-			break
-		}
-
-		return e.complexity.Article.Authors(childComplexity), true
-
-	case "Article.expirationTime":
-		if e.complexity.Article.ExpirationTime == nil {
-			break
-		}
-
-		return e.complexity.Article.ExpirationTime(childComplexity), true
-
-	case "Article.modifiedTime":
-		if e.complexity.Article.ModifiedTime == nil {
-			break
-		}
-
-		return e.complexity.Article.ModifiedTime(childComplexity), true
-
-	case "Article.publishedTime":
-		if e.complexity.Article.PublishedTime == nil {
-			break
-		}
-
-		return e.complexity.Article.PublishedTime(childComplexity), true
-
-	case "Article.section":
-		if e.complexity.Article.Section == nil {
-			break
-		}
-
-		return e.complexity.Article.Section(childComplexity), true
-
-	case "Article.tags":
-		if e.complexity.Article.Tags == nil {
-			break
-		}
-
-		return e.complexity.Article.Tags(childComplexity), true
-
 	case "ArticlePayload.key":
 		if e.complexity.ArticlePayload.Key == nil {
 			break
@@ -969,34 +927,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ArticlePayload.Value(childComplexity), true
-
-	case "Audio.draft":
-		if e.complexity.Audio.Draft == nil {
-			break
-		}
-
-		return e.complexity.Audio.Draft(childComplexity), true
-
-	case "Audio.secureURL":
-		if e.complexity.Audio.SecureURL == nil {
-			break
-		}
-
-		return e.complexity.Audio.SecureURL(childComplexity), true
-
-	case "Audio.type":
-		if e.complexity.Audio.Type == nil {
-			break
-		}
-
-		return e.complexity.Audio.Type(childComplexity), true
-
-	case "Audio.url":
-		if e.complexity.Audio.URL == nil {
-			break
-		}
-
-		return e.complexity.Audio.URL(childComplexity), true
 
 	case "AuthLoginResponse.refreshToken":
 		if e.complexity.AuthLoginResponse.RefreshToken == nil {
@@ -1053,34 +983,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BlockData.TxIndex(childComplexity), true
-
-	case "Book.authors":
-		if e.complexity.Book.Authors == nil {
-			break
-		}
-
-		return e.complexity.Book.Authors(childComplexity), true
-
-	case "Book.isbn":
-		if e.complexity.Book.Isbn == nil {
-			break
-		}
-
-		return e.complexity.Book.Isbn(childComplexity), true
-
-	case "Book.releaseDate":
-		if e.complexity.Book.ReleaseDate == nil {
-			break
-		}
-
-		return e.complexity.Book.ReleaseDate(childComplexity), true
-
-	case "Book.tags":
-		if e.complexity.Book.Tags == nil {
-			break
-		}
-
-		return e.complexity.Book.Tags(childComplexity), true
 
 	case "Challenge.appeal":
 		if e.complexity.Challenge.Appeal == nil {
@@ -1611,48 +1513,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GovernanceEventResultCursor.PageInfo(childComplexity), true
-
-	case "Image.draft":
-		if e.complexity.Image.Draft == nil {
-			break
-		}
-
-		return e.complexity.Image.Draft(childComplexity), true
-
-	case "Image.height":
-		if e.complexity.Image.Height == nil {
-			break
-		}
-
-		return e.complexity.Image.Height(childComplexity), true
-
-	case "Image.secureURL":
-		if e.complexity.Image.SecureURL == nil {
-			break
-		}
-
-		return e.complexity.Image.SecureURL(childComplexity), true
-
-	case "Image.type":
-		if e.complexity.Image.Type == nil {
-			break
-		}
-
-		return e.complexity.Image.Type(childComplexity), true
-
-	case "Image.url":
-		if e.complexity.Image.URL == nil {
-			break
-		}
-
-		return e.complexity.Image.URL(childComplexity), true
-
-	case "Image.width":
-		if e.complexity.Image.Width == nil {
-			break
-		}
-
-		return e.complexity.Image.Width(childComplexity), true
 
 	case "JsonField.key":
 		if e.complexity.JSONField.Key == nil {
@@ -2489,6 +2349,104 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NrsignupNewsroom.TcrApplyTx(childComplexity), true
 
+	case "OpenGraphArticle.authors":
+		if e.complexity.OpenGraphArticle.Authors == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphArticle.Authors(childComplexity), true
+
+	case "OpenGraphArticle.expirationTime":
+		if e.complexity.OpenGraphArticle.ExpirationTime == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphArticle.ExpirationTime(childComplexity), true
+
+	case "OpenGraphArticle.modifiedTime":
+		if e.complexity.OpenGraphArticle.ModifiedTime == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphArticle.ModifiedTime(childComplexity), true
+
+	case "OpenGraphArticle.publishedTime":
+		if e.complexity.OpenGraphArticle.PublishedTime == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphArticle.PublishedTime(childComplexity), true
+
+	case "OpenGraphArticle.section":
+		if e.complexity.OpenGraphArticle.Section == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphArticle.Section(childComplexity), true
+
+	case "OpenGraphArticle.tags":
+		if e.complexity.OpenGraphArticle.Tags == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphArticle.Tags(childComplexity), true
+
+	case "OpenGraphAudio.draft":
+		if e.complexity.OpenGraphAudio.Draft == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphAudio.Draft(childComplexity), true
+
+	case "OpenGraphAudio.secureURL":
+		if e.complexity.OpenGraphAudio.SecureURL == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphAudio.SecureURL(childComplexity), true
+
+	case "OpenGraphAudio.type":
+		if e.complexity.OpenGraphAudio.Type == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphAudio.Type(childComplexity), true
+
+	case "OpenGraphAudio.url":
+		if e.complexity.OpenGraphAudio.URL == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphAudio.URL(childComplexity), true
+
+	case "OpenGraphBook.authors":
+		if e.complexity.OpenGraphBook.Authors == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphBook.Authors(childComplexity), true
+
+	case "OpenGraphBook.isbn":
+		if e.complexity.OpenGraphBook.Isbn == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphBook.Isbn(childComplexity), true
+
+	case "OpenGraphBook.releaseDate":
+		if e.complexity.OpenGraphBook.ReleaseDate == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphBook.ReleaseDate(childComplexity), true
+
+	case "OpenGraphBook.tags":
+		if e.complexity.OpenGraphBook.Tags == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphBook.Tags(childComplexity), true
+
 	case "OpenGraphData.article":
 		if e.complexity.OpenGraphData.Article == nil {
 			break
@@ -2586,6 +2544,118 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OpenGraphData.Videos(childComplexity), true
+
+	case "OpenGraphImage.draft":
+		if e.complexity.OpenGraphImage.Draft == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphImage.Draft(childComplexity), true
+
+	case "OpenGraphImage.height":
+		if e.complexity.OpenGraphImage.Height == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphImage.Height(childComplexity), true
+
+	case "OpenGraphImage.secureURL":
+		if e.complexity.OpenGraphImage.SecureURL == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphImage.SecureURL(childComplexity), true
+
+	case "OpenGraphImage.type":
+		if e.complexity.OpenGraphImage.Type == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphImage.Type(childComplexity), true
+
+	case "OpenGraphImage.url":
+		if e.complexity.OpenGraphImage.URL == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphImage.URL(childComplexity), true
+
+	case "OpenGraphImage.width":
+		if e.complexity.OpenGraphImage.Width == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphImage.Width(childComplexity), true
+
+	case "OpenGraphProfile.firstName":
+		if e.complexity.OpenGraphProfile.FirstName == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphProfile.FirstName(childComplexity), true
+
+	case "OpenGraphProfile.gender":
+		if e.complexity.OpenGraphProfile.Gender == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphProfile.Gender(childComplexity), true
+
+	case "OpenGraphProfile.lastName":
+		if e.complexity.OpenGraphProfile.LastName == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphProfile.LastName(childComplexity), true
+
+	case "OpenGraphProfile.username":
+		if e.complexity.OpenGraphProfile.Username == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphProfile.Username(childComplexity), true
+
+	case "OpenGraphVideo.draft":
+		if e.complexity.OpenGraphVideo.Draft == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphVideo.Draft(childComplexity), true
+
+	case "OpenGraphVideo.height":
+		if e.complexity.OpenGraphVideo.Height == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphVideo.Height(childComplexity), true
+
+	case "OpenGraphVideo.secureURL":
+		if e.complexity.OpenGraphVideo.SecureURL == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphVideo.SecureURL(childComplexity), true
+
+	case "OpenGraphVideo.type":
+		if e.complexity.OpenGraphVideo.Type == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphVideo.Type(childComplexity), true
+
+	case "OpenGraphVideo.url":
+		if e.complexity.OpenGraphVideo.URL == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphVideo.URL(childComplexity), true
+
+	case "OpenGraphVideo.width":
+		if e.complexity.OpenGraphVideo.Width == nil {
+			break
+		}
+
+		return e.complexity.OpenGraphVideo.Width(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -3302,34 +3372,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProceedsQueryResult.Usd(childComplexity), true
 
-	case "Profile.firstName":
-		if e.complexity.Profile.FirstName == nil {
-			break
-		}
-
-		return e.complexity.Profile.FirstName(childComplexity), true
-
-	case "Profile.gender":
-		if e.complexity.Profile.Gender == nil {
-			break
-		}
-
-		return e.complexity.Profile.Gender(childComplexity), true
-
-	case "Profile.lastName":
-		if e.complexity.Profile.LastName == nil {
-			break
-		}
-
-		return e.complexity.Profile.LastName(childComplexity), true
-
-	case "Profile.username":
-		if e.complexity.Profile.Username == nil {
-			break
-		}
-
-		return e.complexity.Profile.Username(childComplexity), true
-
 	case "Query.articles":
 		if e.complexity.Query.Articles == nil {
 			break
@@ -3938,48 +3980,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.UserChallengeVoteData.VoterReward(childComplexity), true
-
-	case "Video.draft":
-		if e.complexity.Video.Draft == nil {
-			break
-		}
-
-		return e.complexity.Video.Draft(childComplexity), true
-
-	case "Video.height":
-		if e.complexity.Video.Height == nil {
-			break
-		}
-
-		return e.complexity.Video.Height(childComplexity), true
-
-	case "Video.secureURL":
-		if e.complexity.Video.SecureURL == nil {
-			break
-		}
-
-		return e.complexity.Video.SecureURL(childComplexity), true
-
-	case "Video.type":
-		if e.complexity.Video.Type == nil {
-			break
-		}
-
-		return e.complexity.Video.Type(childComplexity), true
-
-	case "Video.url":
-		if e.complexity.Video.URL == nil {
-			break
-		}
-
-		return e.complexity.Video.URL(childComplexity), true
-
-	case "Video.width":
-		if e.complexity.Video.Width == nil {
-			break
-		}
-
-		return e.complexity.Video.Width(childComplexity), true
 
 	}
 	return 0, false
@@ -4599,15 +4599,15 @@ type OpenGraphData {
   siteName: String!
   locale: String!
   localesAlternate: [String!]
-  images: [Image!]
-  audios: [Audio!]
-  videos: [Video!]
-  article: Article
-  book: Book
-  profile: Profile
+  images: [OpenGraphImage!]
+  audios: [OpenGraphAudio!]
+  videos: [OpenGraphVideo!]
+  article: OpenGraphArticle
+  book: OpenGraphBook
+  profile: OpenGraphProfile
 }
 
-type Image {
+type OpenGraphImage {
   url: String!
   secureURL: String
   type: String
@@ -4616,7 +4616,7 @@ type Image {
   draft: Boolean
 }
 
-type Video {
+type OpenGraphVideo {
   url: String!
   secureURL: String
   type: String
@@ -4625,34 +4625,34 @@ type Video {
   draft: Boolean
 }
 
-type Audio {
+type OpenGraphAudio {
   url: String!
   secureURL: String
   type: String
   draft: Boolean
 }
 
-type Article {
+type OpenGraphArticle {
   publishedTime: Time
   modifiedTime: Time
   expirationTime: Time
   section: String
   tags: [String!]
-  authors: [Profile!]
+  authors: [OpenGraphProfile!]
 }
 
-type Profile {
+type OpenGraphProfile {
   firstName: String
   lastName: String
   username: String
   gender: String
 }
 
-type Book {
+type OpenGraphBook {
   isbn: String
   releaseDate: String
   tags: [String!]
-  authors: [Profile!]
+  authors: [OpenGraphProfile!]
 }
 
 type PostSearchResult {
@@ -6860,210 +6860,6 @@ func (ec *executionContext) _Appeal_appealGrantedStatementURI(ctx context.Contex
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Article_publishedTime(ctx context.Context, field graphql.CollectedField, obj *Article) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Article",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.PublishedTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*time.Time)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Article_modifiedTime(ctx context.Context, field graphql.CollectedField, obj *Article) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Article",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ModifiedTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*time.Time)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Article_expirationTime(ctx context.Context, field graphql.CollectedField, obj *Article) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Article",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ExpirationTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*time.Time)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Article_section(ctx context.Context, field graphql.CollectedField, obj *Article) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Article",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Section, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Article_tags(ctx context.Context, field graphql.CollectedField, obj *Article) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Article",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tags, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Article_authors(ctx context.Context, field graphql.CollectedField, obj *Article) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Article",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Authors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*Profile)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOProfile2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _ArticlePayload_key(ctx context.Context, field graphql.CollectedField, obj *ArticlePayload) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7136,145 +6932,6 @@ func (ec *executionContext) _ArticlePayload_value(ctx context.Context, field gra
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNArticlePayloadValue2githubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐArticlePayloadValue(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Audio_url(ctx context.Context, field graphql.CollectedField, obj *Audio) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Audio",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Audio_secureURL(ctx context.Context, field graphql.CollectedField, obj *Audio) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Audio",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SecureURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Audio_type(ctx context.Context, field graphql.CollectedField, obj *Audio) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Audio",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Audio_draft(ctx context.Context, field graphql.CollectedField, obj *Audio) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Audio",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Draft, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _AuthLoginResponse_token(ctx context.Context, field graphql.CollectedField, obj *auth.LoginResponse) (ret graphql.Marshaler) {
@@ -7562,142 +7219,6 @@ func (ec *executionContext) _BlockData_index(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Book_isbn(ctx context.Context, field graphql.CollectedField, obj *Book) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Book",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Isbn, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Book_releaseDate(ctx context.Context, field graphql.CollectedField, obj *Book) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Book",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ReleaseDate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Book_tags(ctx context.Context, field graphql.CollectedField, obj *Book) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Book",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Tags, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Book_authors(ctx context.Context, field graphql.CollectedField, obj *Book) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Book",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Authors, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]*Profile)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOProfile2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Challenge_challengeID(ctx context.Context, field graphql.CollectedField, obj *model.Challenge) (ret graphql.Marshaler) {
@@ -10378,213 +9899,6 @@ func (ec *executionContext) _GovernanceEventResultCursor_pageInfo(ctx context.Co
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Image_url(ctx context.Context, field graphql.CollectedField, obj *Image) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Image",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Image_secureURL(ctx context.Context, field graphql.CollectedField, obj *Image) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Image",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SecureURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Image_type(ctx context.Context, field graphql.CollectedField, obj *Image) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Image",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Image_width(ctx context.Context, field graphql.CollectedField, obj *Image) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Image",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Width, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Image_height(ctx context.Context, field graphql.CollectedField, obj *Image) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Image",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Height, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Image_draft(ctx context.Context, field graphql.CollectedField, obj *Image) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Image",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Draft, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _JsonField_key(ctx context.Context, field graphql.CollectedField, obj *jsonstore.JSONField) (ret graphql.Marshaler) {
@@ -14066,6 +13380,485 @@ func (ec *executionContext) _NrsignupNewsroom_tcrApplyTx(ctx context.Context, fi
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OpenGraphArticle_publishedTime(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphArticle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PublishedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphArticle_modifiedTime(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphArticle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ModifiedTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphArticle_expirationTime(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphArticle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpirationTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphArticle_section(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphArticle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Section, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphArticle_tags(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphArticle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tags, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphArticle_authors(ctx context.Context, field graphql.CollectedField, obj *OpenGraphArticle) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphArticle",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Authors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*OpenGraphProfile)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOpenGraphProfile2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphAudio_url(ctx context.Context, field graphql.CollectedField, obj *OpenGraphAudio) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphAudio",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphAudio_secureURL(ctx context.Context, field graphql.CollectedField, obj *OpenGraphAudio) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphAudio",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SecureURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphAudio_type(ctx context.Context, field graphql.CollectedField, obj *OpenGraphAudio) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphAudio",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphAudio_draft(ctx context.Context, field graphql.CollectedField, obj *OpenGraphAudio) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphAudio",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Draft, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphBook_isbn(ctx context.Context, field graphql.CollectedField, obj *OpenGraphBook) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphBook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Isbn, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphBook_releaseDate(ctx context.Context, field graphql.CollectedField, obj *OpenGraphBook) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphBook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReleaseDate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphBook_tags(ctx context.Context, field graphql.CollectedField, obj *OpenGraphBook) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphBook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tags, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphBook_authors(ctx context.Context, field graphql.CollectedField, obj *OpenGraphBook) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphBook",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Authors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*OpenGraphProfile)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOOpenGraphProfile2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OpenGraphData_type(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -14387,10 +14180,10 @@ func (ec *executionContext) _OpenGraphData_images(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Image)
+	res := resTmp.([]*OpenGraphImage)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOImage2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐImage(ctx, field.Selections, res)
+	return ec.marshalOOpenGraphImage2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphImage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OpenGraphData_audios(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
@@ -14421,10 +14214,10 @@ func (ec *executionContext) _OpenGraphData_audios(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Audio)
+	res := resTmp.([]*OpenGraphAudio)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOAudio2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐAudio(ctx, field.Selections, res)
+	return ec.marshalOOpenGraphAudio2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphAudio(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OpenGraphData_videos(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
@@ -14455,10 +14248,10 @@ func (ec *executionContext) _OpenGraphData_videos(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*Video)
+	res := resTmp.([]*OpenGraphVideo)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOVideo2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐVideo(ctx, field.Selections, res)
+	return ec.marshalOOpenGraphVideo2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphVideo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OpenGraphData_article(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
@@ -14489,10 +14282,10 @@ func (ec *executionContext) _OpenGraphData_article(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Article)
+	res := resTmp.(*OpenGraphArticle)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOArticle2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐArticle(ctx, field.Selections, res)
+	return ec.marshalOOpenGraphArticle2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphArticle(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OpenGraphData_book(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
@@ -14523,10 +14316,10 @@ func (ec *executionContext) _OpenGraphData_book(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Book)
+	res := resTmp.(*OpenGraphBook)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBook2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐBook(ctx, field.Selections, res)
+	return ec.marshalOOpenGraphBook2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphBook(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _OpenGraphData_profile(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
@@ -14557,10 +14350,560 @@ func (ec *executionContext) _OpenGraphData_profile(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*Profile)
+	res := resTmp.(*OpenGraphProfile)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx, field.Selections, res)
+	return ec.marshalOOpenGraphProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphImage_url(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphImage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphImage_secureURL(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphImage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SecureURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphImage_type(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphImage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphImage_width(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphImage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Width, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphImage_height(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphImage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Height, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphImage_draft(ctx context.Context, field graphql.CollectedField, obj *OpenGraphImage) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphImage",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Draft, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphProfile_firstName(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphProfile",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FirstName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphProfile_lastName(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphProfile",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphProfile_username(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphProfile",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphProfile_gender(ctx context.Context, field graphql.CollectedField, obj *OpenGraphProfile) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphProfile",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Gender, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphVideo_url(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphVideo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.URL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphVideo_secureURL(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphVideo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SecureURL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphVideo_type(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphVideo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphVideo_width(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphVideo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Width, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphVideo_height(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphVideo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Height, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _OpenGraphVideo_draft(ctx context.Context, field graphql.CollectedField, obj *OpenGraphVideo) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "OpenGraphVideo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Draft, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
@@ -18158,142 +18501,6 @@ func (ec *executionContext) _ProceedsQueryResult_ether(ctx context.Context, fiel
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Profile_firstName(ctx context.Context, field graphql.CollectedField, obj *Profile) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Profile",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.FirstName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Profile_lastName(ctx context.Context, field graphql.CollectedField, obj *Profile) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Profile",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LastName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Profile_username(ctx context.Context, field graphql.CollectedField, obj *Profile) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Profile",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Username, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Profile_gender(ctx context.Context, field graphql.CollectedField, obj *Profile) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Profile",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Gender, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -20918,213 +21125,6 @@ func (ec *executionContext) _UserChallengeVoteData_parentChallengeID(ctx context
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Video_url(ctx context.Context, field graphql.CollectedField, obj *Video) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Video",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Video_secureURL(ctx context.Context, field graphql.CollectedField, obj *Video) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Video",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.SecureURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Video_type(ctx context.Context, field graphql.CollectedField, obj *Video) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Video",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Video_width(ctx context.Context, field graphql.CollectedField, obj *Video) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Video",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Width, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Video_height(ctx context.Context, field graphql.CollectedField, obj *Video) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Video",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Height, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Video_draft(ctx context.Context, field graphql.CollectedField, obj *Video) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Video",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Draft, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -23320,40 +23320,6 @@ func (ec *executionContext) _Appeal(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
-var articleImplementors = []string{"Article"}
-
-func (ec *executionContext) _Article(ctx context.Context, sel ast.SelectionSet, obj *Article) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, articleImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Article")
-		case "publishedTime":
-			out.Values[i] = ec._Article_publishedTime(ctx, field, obj)
-		case "modifiedTime":
-			out.Values[i] = ec._Article_modifiedTime(ctx, field, obj)
-		case "expirationTime":
-			out.Values[i] = ec._Article_expirationTime(ctx, field, obj)
-		case "section":
-			out.Values[i] = ec._Article_section(ctx, field, obj)
-		case "tags":
-			out.Values[i] = ec._Article_tags(ctx, field, obj)
-		case "authors":
-			out.Values[i] = ec._Article_authors(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var articlePayloadImplementors = []string{"ArticlePayload"}
 
 func (ec *executionContext) _ArticlePayload(ctx context.Context, sel ast.SelectionSet, obj *ArticlePayload) graphql.Marshaler {
@@ -23375,39 +23341,6 @@ func (ec *executionContext) _ArticlePayload(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var audioImplementors = []string{"Audio"}
-
-func (ec *executionContext) _Audio(ctx context.Context, sel ast.SelectionSet, obj *Audio) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, audioImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Audio")
-		case "url":
-			out.Values[i] = ec._Audio_url(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "secureURL":
-			out.Values[i] = ec._Audio_secureURL(ctx, field, obj)
-		case "type":
-			out.Values[i] = ec._Audio_type(ctx, field, obj)
-		case "draft":
-			out.Values[i] = ec._Audio_draft(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23483,36 +23416,6 @@ func (ec *executionContext) _BlockData(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var bookImplementors = []string{"Book"}
-
-func (ec *executionContext) _Book(ctx context.Context, sel ast.SelectionSet, obj *Book) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, bookImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Book")
-		case "isbn":
-			out.Values[i] = ec._Book_isbn(ctx, field, obj)
-		case "releaseDate":
-			out.Values[i] = ec._Book_releaseDate(ctx, field, obj)
-		case "tags":
-			out.Values[i] = ec._Book_tags(ctx, field, obj)
-		case "authors":
-			out.Values[i] = ec._Book_authors(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24371,43 +24274,6 @@ func (ec *executionContext) _GovernanceEventResultCursor(ctx context.Context, se
 	return out
 }
 
-var imageImplementors = []string{"Image"}
-
-func (ec *executionContext) _Image(ctx context.Context, sel ast.SelectionSet, obj *Image) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, imageImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Image")
-		case "url":
-			out.Values[i] = ec._Image_url(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "secureURL":
-			out.Values[i] = ec._Image_secureURL(ctx, field, obj)
-		case "type":
-			out.Values[i] = ec._Image_type(ctx, field, obj)
-		case "width":
-			out.Values[i] = ec._Image_width(ctx, field, obj)
-		case "height":
-			out.Values[i] = ec._Image_height(ctx, field, obj)
-		case "draft":
-			out.Values[i] = ec._Image_draft(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var jsonFieldImplementors = []string{"JsonField"}
 
 func (ec *executionContext) _JsonField(ctx context.Context, sel ast.SelectionSet, obj *jsonstore.JSONField) graphql.Marshaler {
@@ -25057,6 +24923,103 @@ func (ec *executionContext) _NrsignupNewsroom(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var openGraphArticleImplementors = []string{"OpenGraphArticle"}
+
+func (ec *executionContext) _OpenGraphArticle(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphArticle) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphArticleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenGraphArticle")
+		case "publishedTime":
+			out.Values[i] = ec._OpenGraphArticle_publishedTime(ctx, field, obj)
+		case "modifiedTime":
+			out.Values[i] = ec._OpenGraphArticle_modifiedTime(ctx, field, obj)
+		case "expirationTime":
+			out.Values[i] = ec._OpenGraphArticle_expirationTime(ctx, field, obj)
+		case "section":
+			out.Values[i] = ec._OpenGraphArticle_section(ctx, field, obj)
+		case "tags":
+			out.Values[i] = ec._OpenGraphArticle_tags(ctx, field, obj)
+		case "authors":
+			out.Values[i] = ec._OpenGraphArticle_authors(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var openGraphAudioImplementors = []string{"OpenGraphAudio"}
+
+func (ec *executionContext) _OpenGraphAudio(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphAudio) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphAudioImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenGraphAudio")
+		case "url":
+			out.Values[i] = ec._OpenGraphAudio_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "secureURL":
+			out.Values[i] = ec._OpenGraphAudio_secureURL(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._OpenGraphAudio_type(ctx, field, obj)
+		case "draft":
+			out.Values[i] = ec._OpenGraphAudio_draft(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var openGraphBookImplementors = []string{"OpenGraphBook"}
+
+func (ec *executionContext) _OpenGraphBook(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphBook) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphBookImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenGraphBook")
+		case "isbn":
+			out.Values[i] = ec._OpenGraphBook_isbn(ctx, field, obj)
+		case "releaseDate":
+			out.Values[i] = ec._OpenGraphBook_releaseDate(ctx, field, obj)
+		case "tags":
+			out.Values[i] = ec._OpenGraphBook_tags(ctx, field, obj)
+		case "authors":
+			out.Values[i] = ec._OpenGraphBook_authors(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var openGraphDataImplementors = []string{"OpenGraphData"}
 
 func (ec *executionContext) _OpenGraphData(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphData) graphql.Marshaler {
@@ -25117,6 +25080,110 @@ func (ec *executionContext) _OpenGraphData(ctx context.Context, sel ast.Selectio
 			out.Values[i] = ec._OpenGraphData_book(ctx, field, obj)
 		case "profile":
 			out.Values[i] = ec._OpenGraphData_profile(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var openGraphImageImplementors = []string{"OpenGraphImage"}
+
+func (ec *executionContext) _OpenGraphImage(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphImage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphImageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenGraphImage")
+		case "url":
+			out.Values[i] = ec._OpenGraphImage_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "secureURL":
+			out.Values[i] = ec._OpenGraphImage_secureURL(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._OpenGraphImage_type(ctx, field, obj)
+		case "width":
+			out.Values[i] = ec._OpenGraphImage_width(ctx, field, obj)
+		case "height":
+			out.Values[i] = ec._OpenGraphImage_height(ctx, field, obj)
+		case "draft":
+			out.Values[i] = ec._OpenGraphImage_draft(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var openGraphProfileImplementors = []string{"OpenGraphProfile"}
+
+func (ec *executionContext) _OpenGraphProfile(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphProfile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphProfileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenGraphProfile")
+		case "firstName":
+			out.Values[i] = ec._OpenGraphProfile_firstName(ctx, field, obj)
+		case "lastName":
+			out.Values[i] = ec._OpenGraphProfile_lastName(ctx, field, obj)
+		case "username":
+			out.Values[i] = ec._OpenGraphProfile_username(ctx, field, obj)
+		case "gender":
+			out.Values[i] = ec._OpenGraphProfile_gender(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var openGraphVideoImplementors = []string{"OpenGraphVideo"}
+
+func (ec *executionContext) _OpenGraphVideo(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphVideo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphVideoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OpenGraphVideo")
+		case "url":
+			out.Values[i] = ec._OpenGraphVideo_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "secureURL":
+			out.Values[i] = ec._OpenGraphVideo_secureURL(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._OpenGraphVideo_type(ctx, field, obj)
+		case "width":
+			out.Values[i] = ec._OpenGraphVideo_width(ctx, field, obj)
+		case "height":
+			out.Values[i] = ec._OpenGraphVideo_height(ctx, field, obj)
+		case "draft":
+			out.Values[i] = ec._OpenGraphVideo_draft(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26013,36 +26080,6 @@ func (ec *executionContext) _ProceedsQueryResult(ctx context.Context, sel ast.Se
 	return out
 }
 
-var profileImplementors = []string{"Profile"}
-
-func (ec *executionContext) _Profile(ctx context.Context, sel ast.SelectionSet, obj *Profile) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, profileImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Profile")
-		case "firstName":
-			out.Values[i] = ec._Profile_firstName(ctx, field, obj)
-		case "lastName":
-			out.Values[i] = ec._Profile_lastName(ctx, field, obj)
-		case "username":
-			out.Values[i] = ec._Profile_username(ctx, field, obj)
-		case "gender":
-			out.Values[i] = ec._Profile_gender(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -26762,43 +26799,6 @@ func (ec *executionContext) _UserChallengeVoteData(ctx context.Context, sel ast.
 	return out
 }
 
-var videoImplementors = []string{"Video"}
-
-func (ec *executionContext) _Video(ctx context.Context, sel ast.SelectionSet, obj *Video) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, videoImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Video")
-		case "url":
-			out.Values[i] = ec._Video_url(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "secureURL":
-			out.Values[i] = ec._Video_secureURL(ctx, field, obj)
-		case "type":
-			out.Values[i] = ec._Video_type(ctx, field, obj)
-		case "width":
-			out.Values[i] = ec._Video_width(ctx, field, obj)
-		case "height":
-			out.Values[i] = ec._Video_height(ctx, field, obj)
-		case "draft":
-			out.Values[i] = ec._Video_draft(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -27104,20 +27104,6 @@ func (ec *executionContext) marshalNArticlePayloadValue2githubᚗcomᚋjoincivil
 	return v
 }
 
-func (ec *executionContext) marshalNAudio2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐAudio(ctx context.Context, sel ast.SelectionSet, v Audio) graphql.Marshaler {
-	return ec._Audio(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNAudio2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐAudio(ctx context.Context, sel ast.SelectionSet, v *Audio) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Audio(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNAuthApplicationEnum2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋauthᚐApplicationEnum(ctx context.Context, v interface{}) (auth.ApplicationEnum, error) {
 	var res auth.ApplicationEnum
 	return res, res.UnmarshalGQL(v)
@@ -27326,20 +27312,6 @@ func (ec *executionContext) marshalNGovernanceEventEdge2ᚕᚖgithubᚗcomᚋjoi
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) marshalNImage2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐImage(ctx context.Context, sel ast.SelectionSet, v Image) graphql.Marshaler {
-	return ec._Image(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNImage2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐImage(ctx context.Context, sel ast.SelectionSet, v *Image) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Image(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
@@ -27609,6 +27581,20 @@ func (ec *executionContext) unmarshalNNrsignupStepsInput2githubᚗcomᚋjoincivi
 	return ec.unmarshalInputNrsignupStepsInput(ctx, v)
 }
 
+func (ec *executionContext) marshalNOpenGraphAudio2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphAudio(ctx context.Context, sel ast.SelectionSet, v OpenGraphAudio) graphql.Marshaler {
+	return ec._OpenGraphAudio(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOpenGraphAudio2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphAudio(ctx context.Context, sel ast.SelectionSet, v *OpenGraphAudio) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OpenGraphAudio(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNOpenGraphData2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphData(ctx context.Context, sel ast.SelectionSet, v OpenGraphData) graphql.Marshaler {
 	return ec._OpenGraphData(ctx, sel, &v)
 }
@@ -27621,6 +27607,48 @@ func (ec *executionContext) marshalNOpenGraphData2ᚖgithubᚗcomᚋjoincivilᚋ
 		return graphql.Null
 	}
 	return ec._OpenGraphData(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOpenGraphImage2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphImage(ctx context.Context, sel ast.SelectionSet, v OpenGraphImage) graphql.Marshaler {
+	return ec._OpenGraphImage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOpenGraphImage2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphImage(ctx context.Context, sel ast.SelectionSet, v *OpenGraphImage) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OpenGraphImage(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOpenGraphProfile2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx context.Context, sel ast.SelectionSet, v OpenGraphProfile) graphql.Marshaler {
+	return ec._OpenGraphProfile(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOpenGraphProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx context.Context, sel ast.SelectionSet, v *OpenGraphProfile) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OpenGraphProfile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNOpenGraphVideo2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphVideo(ctx context.Context, sel ast.SelectionSet, v OpenGraphVideo) graphql.Marshaler {
+	return ec._OpenGraphVideo(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOpenGraphVideo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphVideo(ctx context.Context, sel ast.SelectionSet, v *OpenGraphVideo) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OpenGraphVideo(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v PageInfo) graphql.Marshaler {
@@ -27721,20 +27749,6 @@ func (ec *executionContext) unmarshalNPostCreateExternalLinkInput2githubᚗcom�
 
 func (ec *executionContext) unmarshalNPostSearchInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐSearchInput(ctx context.Context, v interface{}) (posts.SearchInput, error) {
 	return ec.unmarshalInputPostSearchInput(ctx, v)
-}
-
-func (ec *executionContext) marshalNProfile2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx context.Context, sel ast.SelectionSet, v Profile) graphql.Marshaler {
-	return ec._Profile(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx context.Context, sel ast.SelectionSet, v *Profile) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Profile(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -27851,20 +27865,6 @@ func (ec *executionContext) unmarshalNUserChannelSetHandleInput2githubᚗcomᚋj
 
 func (ec *executionContext) unmarshalNUserSignatureInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋusersᚐSignatureInput(ctx context.Context, v interface{}) (users.SignatureInput, error) {
 	return ec.unmarshalInputUserSignatureInput(ctx, v)
-}
-
-func (ec *executionContext) marshalNVideo2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐVideo(ctx context.Context, sel ast.SelectionSet, v Video) graphql.Marshaler {
-	return ec._Video(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNVideo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐVideo(ctx context.Context, sel ast.SelectionSet, v *Video) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Video(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -28104,57 +28104,6 @@ func (ec *executionContext) marshalOAppeal2ᚖgithubᚗcomᚋjoincivilᚋcivil�
 	return ec._Appeal(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOArticle2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐArticle(ctx context.Context, sel ast.SelectionSet, v Article) graphql.Marshaler {
-	return ec._Article(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOArticle2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐArticle(ctx context.Context, sel ast.SelectionSet, v *Article) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Article(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOAudio2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐAudio(ctx context.Context, sel ast.SelectionSet, v []*Audio) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNAudio2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐAudio(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) marshalOAuthLoginResponse2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋauthᚐLoginResponse(ctx context.Context, sel ast.SelectionSet, v auth.LoginResponse) graphql.Marshaler {
 	return ec._AuthLoginResponse(ctx, sel, &v)
 }
@@ -28164,17 +28113,6 @@ func (ec *executionContext) marshalOAuthLoginResponse2ᚖgithubᚗcomᚋjoincivi
 		return graphql.Null
 	}
 	return ec._AuthLoginResponse(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOBook2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐBook(ctx context.Context, sel ast.SelectionSet, v Book) graphql.Marshaler {
-	return ec._Book(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOBook2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐBook(ctx context.Context, sel ast.SelectionSet, v *Book) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Book(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
@@ -28532,46 +28470,6 @@ func (ec *executionContext) marshalOGovernanceEventResultCursor2ᚖgithubᚗcom�
 	return ec._GovernanceEventResultCursor(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOImage2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐImage(ctx context.Context, sel ast.SelectionSet, v []*Image) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNImage2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐImage(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
 	return graphql.UnmarshalInt(v)
 }
@@ -28683,6 +28581,199 @@ func (ec *executionContext) marshalONrsignupNewsroom2ᚖgithubᚗcomᚋjoincivil
 		return graphql.Null
 	}
 	return ec._NrsignupNewsroom(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOOpenGraphArticle2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphArticle(ctx context.Context, sel ast.SelectionSet, v OpenGraphArticle) graphql.Marshaler {
+	return ec._OpenGraphArticle(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOOpenGraphArticle2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphArticle(ctx context.Context, sel ast.SelectionSet, v *OpenGraphArticle) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OpenGraphArticle(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOOpenGraphAudio2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphAudio(ctx context.Context, sel ast.SelectionSet, v []*OpenGraphAudio) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOpenGraphAudio2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphAudio(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOOpenGraphBook2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphBook(ctx context.Context, sel ast.SelectionSet, v OpenGraphBook) graphql.Marshaler {
+	return ec._OpenGraphBook(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOOpenGraphBook2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphBook(ctx context.Context, sel ast.SelectionSet, v *OpenGraphBook) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OpenGraphBook(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOOpenGraphImage2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphImage(ctx context.Context, sel ast.SelectionSet, v []*OpenGraphImage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOpenGraphImage2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphImage(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOOpenGraphProfile2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx context.Context, sel ast.SelectionSet, v OpenGraphProfile) graphql.Marshaler {
+	return ec._OpenGraphProfile(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOOpenGraphProfile2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx context.Context, sel ast.SelectionSet, v []*OpenGraphProfile) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOpenGraphProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOOpenGraphProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphProfile(ctx context.Context, sel ast.SelectionSet, v *OpenGraphProfile) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._OpenGraphProfile(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOOpenGraphVideo2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphVideo(ctx context.Context, sel ast.SelectionSet, v []*OpenGraphVideo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNOpenGraphVideo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphVideo(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalOParamProposal2githubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐParameterProposal(ctx context.Context, sel ast.SelectionSet, v model.ParameterProposal) graphql.Marshaler {
@@ -28997,57 +29088,6 @@ func (ec *executionContext) marshalOProceedsQueryResult2ᚖgithubᚗcomᚋjoinci
 	return ec._ProceedsQueryResult(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOProfile2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx context.Context, sel ast.SelectionSet, v Profile) graphql.Marshaler {
-	return ec._Profile(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOProfile2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx context.Context, sel ast.SelectionSet, v []*Profile) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalOProfile2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐProfile(ctx context.Context, sel ast.SelectionSet, v *Profile) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Profile(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalORawObject2githubᚗcomᚋjoincivilᚋgoᚑcommonᚋpkgᚋpersistenceᚋpostgresᚐJsonbPayload(ctx context.Context, v interface{}) (postgres.JsonbPayload, error) {
 	return utils.UnmarshalJsonbPayloadScalar(v)
 }
@@ -29238,46 +29278,6 @@ func (ec *executionContext) unmarshalOUserUpdateInput2ᚖgithubᚗcomᚋjoincivi
 	}
 	res, err := ec.unmarshalOUserUpdateInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋusersᚐUserUpdateInput(ctx, v)
 	return &res, err
-}
-
-func (ec *executionContext) marshalOVideo2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐVideo(ctx context.Context, sel ast.SelectionSet, v []*Video) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNVideo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐVideo(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

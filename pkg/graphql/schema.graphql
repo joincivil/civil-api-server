@@ -554,15 +554,15 @@ type OpenGraphData {
   siteName: String!
   locale: String!
   localesAlternate: [String!]
-  images: [Image!]
-  audios: [Audio!]
-  videos: [Video!]
-  article: Article
-  book: Book
-  profile: Profile
+  images: [OpenGraphImage!]
+  audios: [OpenGraphAudio!]
+  videos: [OpenGraphVideo!]
+  article: OpenGraphArticle
+  book: OpenGraphBook
+  profile: OpenGraphProfile
 }
 
-type Image {
+type OpenGraphImage {
   url: String!
   secureURL: String
   type: String
@@ -571,7 +571,7 @@ type Image {
   draft: Boolean
 }
 
-type Video {
+type OpenGraphVideo {
   url: String!
   secureURL: String
   type: String
@@ -580,34 +580,34 @@ type Video {
   draft: Boolean
 }
 
-type Audio {
+type OpenGraphAudio {
   url: String!
   secureURL: String
   type: String
   draft: Boolean
 }
 
-type Article {
+type OpenGraphArticle {
   publishedTime: Time
   modifiedTime: Time
   expirationTime: Time
   section: String
   tags: [String!]
-  authors: [Profile!]
+  authors: [OpenGraphProfile!]
 }
 
-type Profile {
+type OpenGraphProfile {
   firstName: String
   lastName: String
   username: String
   gender: String
 }
 
-type Book {
+type OpenGraphBook {
   isbn: String
   releaseDate: String
   tags: [String!]
-  authors: [Profile!]
+  authors: [OpenGraphProfile!]
 }
 
 type PostSearchResult {

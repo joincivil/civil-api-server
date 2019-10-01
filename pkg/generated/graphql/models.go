@@ -8,25 +8,9 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/model"
 )
 
-type Article struct {
-	PublishedTime  *time.Time `json:"publishedTime"`
-	ModifiedTime   *time.Time `json:"modifiedTime"`
-	ExpirationTime *time.Time `json:"expirationTime"`
-	Section        *string    `json:"section"`
-	Tags           []string   `json:"tags"`
-	Authors        []*Profile `json:"authors"`
-}
-
 type ArticlePayload struct {
 	Key   string                    `json:"key"`
 	Value model.ArticlePayloadValue `json:"value"`
-}
-
-type Audio struct {
-	URL       string  `json:"url"`
-	SecureURL *string `json:"secureURL"`
-	Type      *string `json:"type"`
-	Draft     *bool   `json:"draft"`
 }
 
 type BlockData struct {
@@ -35,13 +19,6 @@ type BlockData struct {
 	TxIndex     int    `json:"txIndex"`
 	BlockHash   string `json:"blockHash"`
 	Index       int    `json:"index"`
-}
-
-type Book struct {
-	Isbn        *string    `json:"isbn"`
-	ReleaseDate *string    `json:"releaseDate"`
-	Tags        []string   `json:"tags"`
-	Authors     []*Profile `json:"authors"`
 }
 
 type DateRange struct {
@@ -57,15 +34,6 @@ type GovernanceEventEdge struct {
 type GovernanceEventResultCursor struct {
 	Edges    []*GovernanceEventEdge `json:"edges"`
 	PageInfo *PageInfo              `json:"pageInfo"`
-}
-
-type Image struct {
-	URL       string  `json:"url"`
-	SecureURL *string `json:"secureURL"`
-	Type      *string `json:"type"`
-	Width     *int    `json:"width"`
-	Height    *int    `json:"height"`
-	Draft     *bool   `json:"draft"`
 }
 
 type JsonbInput struct {
@@ -94,40 +62,72 @@ type NrsignupStepsInput struct {
 	LastSeen     *int `json:"lastSeen"`
 }
 
+type OpenGraphArticle struct {
+	PublishedTime  *time.Time          `json:"publishedTime"`
+	ModifiedTime   *time.Time          `json:"modifiedTime"`
+	ExpirationTime *time.Time          `json:"expirationTime"`
+	Section        *string             `json:"section"`
+	Tags           []string            `json:"tags"`
+	Authors        []*OpenGraphProfile `json:"authors"`
+}
+
+type OpenGraphAudio struct {
+	URL       string  `json:"url"`
+	SecureURL *string `json:"secureURL"`
+	Type      *string `json:"type"`
+	Draft     *bool   `json:"draft"`
+}
+
+type OpenGraphBook struct {
+	Isbn        *string             `json:"isbn"`
+	ReleaseDate *string             `json:"releaseDate"`
+	Tags        []string            `json:"tags"`
+	Authors     []*OpenGraphProfile `json:"authors"`
+}
+
 type OpenGraphData struct {
-	Type             string   `json:"type"`
-	URL              string   `json:"url"`
-	Title            string   `json:"title"`
-	Description      string   `json:"description"`
-	Determiner       string   `json:"determiner"`
-	SiteName         string   `json:"siteName"`
-	Locale           string   `json:"locale"`
-	LocalesAlternate []string `json:"localesAlternate"`
-	Images           []*Image `json:"images"`
-	Audios           []*Audio `json:"audios"`
-	Videos           []*Video `json:"videos"`
-	Article          *Article `json:"article"`
-	Book             *Book    `json:"book"`
-	Profile          *Profile `json:"profile"`
+	Type             string            `json:"type"`
+	URL              string            `json:"url"`
+	Title            string            `json:"title"`
+	Description      string            `json:"description"`
+	Determiner       string            `json:"determiner"`
+	SiteName         string            `json:"siteName"`
+	Locale           string            `json:"locale"`
+	LocalesAlternate []string          `json:"localesAlternate"`
+	Images           []*OpenGraphImage `json:"images"`
+	Audios           []*OpenGraphAudio `json:"audios"`
+	Videos           []*OpenGraphVideo `json:"videos"`
+	Article          *OpenGraphArticle `json:"article"`
+	Book             *OpenGraphBook    `json:"book"`
+	Profile          *OpenGraphProfile `json:"profile"`
 }
 
-type PageInfo struct {
-	EndCursor   *string `json:"endCursor"`
-	HasNextPage bool    `json:"hasNextPage"`
-}
-
-type Profile struct {
-	FirstName *string `json:"firstName"`
-	LastName  *string `json:"lastName"`
-	Username  *string `json:"username"`
-	Gender    *string `json:"gender"`
-}
-
-type Video struct {
+type OpenGraphImage struct {
 	URL       string  `json:"url"`
 	SecureURL *string `json:"secureURL"`
 	Type      *string `json:"type"`
 	Width     *int    `json:"width"`
 	Height    *int    `json:"height"`
 	Draft     *bool   `json:"draft"`
+}
+
+type OpenGraphProfile struct {
+	FirstName *string `json:"firstName"`
+	LastName  *string `json:"lastName"`
+	Username  *string `json:"username"`
+	Gender    *string `json:"gender"`
+}
+
+type OpenGraphVideo struct {
+	URL       string  `json:"url"`
+	SecureURL *string `json:"secureURL"`
+	Type      *string `json:"type"`
+	Width     *int    `json:"width"`
+	Height    *int    `json:"height"`
+	Draft     *bool   `json:"draft"`
+}
+
+type PageInfo struct {
+	EndCursor   *string `json:"endCursor"`
+	HasNextPage bool    `json:"hasNextPage"`
 }

@@ -1,7 +1,6 @@
 package graphql
 
 import (
-	// "bytes"
 	context "context"
 	"encoding/json"
 	"errors"
@@ -193,7 +192,7 @@ func (r *postExternalLinkResolver) PaymentsTotal(ctx context.Context, link *post
 	return r.paymentService.TotalPayments(link.ID, currencyCode)
 }
 
-// OpenGraphData tktktk
+// OpenGraphData returns the open graph data for this post
 func (r *postExternalLinkResolver) OpenGraphData(ctx context.Context, link *posts.ExternalLink) (*graphql.OpenGraphData, error) {
 	var ogdata graphql.OpenGraphData
 	err := json.Unmarshal(link.OpenGraphData, &ogdata)
