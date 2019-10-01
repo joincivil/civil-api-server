@@ -3,6 +3,8 @@
 package graphql
 
 import (
+	"time"
+
 	"github.com/joincivil/civil-events-processor/pkg/model"
 )
 
@@ -58,6 +60,71 @@ type NrsignupStepsInput struct {
 	Step         *int `json:"step"`
 	FurthestStep *int `json:"furthestStep"`
 	LastSeen     *int `json:"lastSeen"`
+}
+
+type OpenGraphArticle struct {
+	PublishedTime  *time.Time          `json:"published_time"`
+	ModifiedTime   *time.Time          `json:"modified_time"`
+	ExpirationTime *time.Time          `json:"expiration_time"`
+	Section        *string             `json:"section"`
+	Tags           []string            `json:"tags"`
+	Authors        []*OpenGraphProfile `json:"authors"`
+}
+
+type OpenGraphAudio struct {
+	URL       string  `json:"url"`
+	SecureURL *string `json:"secure_url"`
+	Type      *string `json:"type"`
+	Draft     *bool   `json:"draft"`
+}
+
+type OpenGraphBook struct {
+	Isbn        *string             `json:"isbn"`
+	ReleaseDate *string             `json:"release_date"`
+	Tags        []string            `json:"tags"`
+	Authors     []*OpenGraphProfile `json:"authors"`
+}
+
+type OpenGraphData struct {
+	Type             string            `json:"type"`
+	URL              string            `json:"url"`
+	Title            string            `json:"title"`
+	Description      string            `json:"description"`
+	Determiner       string            `json:"determiner"`
+	SiteName         string            `json:"site_name"`
+	Locale           string            `json:"locale"`
+	LocalesAlternate []string          `json:"locales_alternate"`
+	Images           []*OpenGraphImage `json:"images"`
+	Audios           []*OpenGraphAudio `json:"audios"`
+	Videos           []*OpenGraphVideo `json:"videos"`
+	Article          *OpenGraphArticle `json:"article"`
+	Book             *OpenGraphBook    `json:"book"`
+	Profile          *OpenGraphProfile `json:"profile"`
+}
+
+type OpenGraphImage struct {
+	URL       string  `json:"url"`
+	SecureURL *string `json:"secure_url"`
+	Type      *string `json:"type"`
+	Width     *int    `json:"width"`
+	Height    *int    `json:"height"`
+	Draft     *bool   `json:"draft"`
+}
+
+type OpenGraphProfile struct {
+	FirstName *string `json:"first_name"`
+	LastName  *string `json:"last_name"`
+	Username  *string `json:"username"`
+	Gender    *string `json:"gender"`
+}
+
+type OpenGraphVideo struct {
+	URL       string  `json:"url"`
+	SecureURL *string `json:"secure_url"`
+	Type      *string `json:"type"`
+	Width     *int    `json:"width"`
+	Height    *int    `json:"height"`
+	Draft     *bool   `json:"draft"`
 }
 
 type PageInfo struct {

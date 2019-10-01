@@ -542,6 +542,72 @@ type PostExternalLink implements Post {
   paymentsTotal(currencyCode: String!): Float!
   url: String
   channel: Channel
+  openGraphData: OpenGraphData!
+}
+
+type OpenGraphData {
+  type: String!
+  url: String!
+  title: String!
+  description: String!
+  determiner: String!
+  site_name: String!
+  locale: String!
+  locales_alternate: [String!]
+  images: [OpenGraphImage!]
+  audios: [OpenGraphAudio!]
+  videos: [OpenGraphVideo!]
+  article: OpenGraphArticle
+  book: OpenGraphBook
+  profile: OpenGraphProfile
+}
+
+type OpenGraphImage {
+  url: String!
+  secure_url: String
+  type: String
+  width: Int
+  height: Int
+  draft: Boolean
+}
+
+type OpenGraphVideo {
+  url: String!
+  secure_url: String
+  type: String
+  width: Int
+  height: Int
+  draft: Boolean
+}
+
+type OpenGraphAudio {
+  url: String!
+  secure_url: String
+  type: String
+  draft: Boolean
+}
+
+type OpenGraphArticle {
+  published_time: Time
+  modified_time: Time
+  expiration_time: Time
+  section: String
+  tags: [String!]
+  authors: [OpenGraphProfile!]
+}
+
+type OpenGraphProfile {
+  first_name: String
+  last_name: String
+  username: String
+  gender: String
+}
+
+type OpenGraphBook {
+  isbn: String
+  release_date: String
+  tags: [String!]
+  authors: [OpenGraphProfile!]
 }
 
 type PostSearchResult {

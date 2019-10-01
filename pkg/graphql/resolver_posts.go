@@ -2,8 +2,8 @@ package graphql
 
 import (
 	context "context"
+	"encoding/json"
 	"errors"
-
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -190,6 +190,16 @@ func (r *postExternalLinkResolver) Payments(ctx context.Context, post *posts.Ext
 // PaymentsTotal is the sum if payments for this Post
 func (r *postExternalLinkResolver) PaymentsTotal(ctx context.Context, link *posts.ExternalLink, currencyCode string) (float64, error) {
 	return r.paymentService.TotalPayments(link.ID, currencyCode)
+}
+
+// OpenGraphData returns the open graph data for this post
+func (r *postExternalLinkResolver) OpenGraphData(ctx context.Context, link *posts.ExternalLink) (*graphql.OpenGraphData, error) {
+	var ogdata graphql.OpenGraphData
+	err := json.Unmarshal(link.OpenGraphData, &ogdata)
+	if err != nil {
+		return nil, err
+	}
+	return &ogdata, nil
 }
 
 type postCommentResolver struct {

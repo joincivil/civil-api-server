@@ -1,9 +1,11 @@
 package posts
 
 import (
+	"github.com/dyatlov/go-htmlinfo/htmlinfo"
 	"github.com/goware/urlx"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
+	"net/http"
 )
 
 // Service provides methods to interact with Posts
@@ -65,7 +67,32 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 			if channelHost != submittedHost {
 				return nil, ErrorBadURLSubmitted
 			}
-			return s.PostPersister.CreatePost(authorID, post)
+
+			resp, err := http.Get(externallink.URL)
+
+			if err != nil {
+				return nil, err
+			}
+
+			defer resp.Body.Close() // nolint: errcheck
+
+			htmlInfo := htmlinfo.NewHTMLInfo()
+
+			err = htmlInfo.Parse(resp.Body, &(externallink.URL), nil)
+			if err != nil {
+				return nil, err
+			}
+
+			ref := "externallink+" + channel.Reference + "+" + htmlInfo.CanonicalURL
+			externallink.Reference = &ref
+
+			ogJSON, err := htmlInfo.OGInfo.ToJSON()
+			if err != nil {
+				return nil, err
+			}
+			externallink.OpenGraphData = ogJSON
+
+			return s.PostPersister.CreatePost(authorID, externallink)
 		}
 		return nil, ErrorNotImplemented
 	}
