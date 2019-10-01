@@ -13,5 +13,5 @@ type Persister interface {
 	SetEmailAddress(userID string, channelID string, emailAddress string) (*Channel, error)
 	SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error)
 	SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error)
-	SetTiny100AvatarDataURL(userID string, channelID string, tiny100AvatarDataURL string) error
+	SetTiny72AvatarDataURL(userID string, channelID string, tiny72AvatarDataURL string) error
 }

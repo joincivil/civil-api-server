@@ -235,8 +235,8 @@ func (p *DBPersister) SetAvatarDataURL(userID string, channelID string, avatarDa
 	return ch, nil
 }
 
-// SetTiny100AvatarDataURL updates the tiny100 avatar data url for the channel
-func (p *DBPersister) SetTiny100AvatarDataURL(userID string, channelID string, avatarDataURL string) error {
+// SetTiny72AvatarDataURL updates the tiny72 avatar data url for the channel
+func (p *DBPersister) SetTiny72AvatarDataURL(userID string, channelID string, avatarDataURL string) error {
 	// get channel
 	ch, err := p.GetChannel(channelID)
 	if err != nil {
@@ -251,7 +251,7 @@ func (p *DBPersister) SetTiny100AvatarDataURL(userID string, channelID string, a
 		return errors.Wrap(err, "error setting avatar data url, not an admin")
 	}
 
-	err = p.db.Model(ch).Update(Channel{Tiny100AvatarDataURL: avatarDataURL}).Error
+	err = p.db.Model(ch).Update(Channel{Tiny72AvatarDataURL: avatarDataURL}).Error
 	if err != nil {
 		return errors.Wrap(err, "error setting email")
 	}

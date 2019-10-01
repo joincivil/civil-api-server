@@ -204,7 +204,7 @@ func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataUR
 	if err != nil {
 		return nil, err
 	}
-	if (*image).Bounds().Size().X != 400 || (*image).Bounds().Size().Y != 400 {
+	if (*image).Bounds().Size().X != 336 || (*image).Bounds().Size().Y != 336 {
 		return nil, ErrorBadAvatarSize
 	}
 
@@ -229,7 +229,7 @@ type processAvatarInputs struct {
 func (s *Service) processAvatar(payload interface{}) interface{} {
 	inputs := payload.(processAvatarInputs)
 
-	mTiny := resize.Resize(100, 100, *(inputs.image), resize.Lanczos3)
+	mTiny := resize.Resize(72, 72, *(inputs.image), resize.Lanczos3)
 
 	var buff bytes.Buffer
 	if inputs.decodedDataURL.Subtype == "jpeg" {
@@ -248,7 +248,7 @@ func (s *Service) processAvatar(payload interface{}) interface{} {
 
 	mTinyBase64Str := base64.StdEncoding.EncodeToString(buff.Bytes())
 	mTinyDataURL := "data:" + inputs.decodedDataURL.ContentType() + ";base64," + mTinyBase64Str
-	return s.persister.SetTiny100AvatarDataURL(inputs.userID, inputs.channelID, mTinyDataURL)
+	return s.persister.SetTiny72AvatarDataURL(inputs.userID, inputs.channelID, mTinyDataURL)
 }
 
 // SetHandle sets the handle on a channel of any type
