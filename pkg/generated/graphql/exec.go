@@ -723,6 +723,7 @@ type PostExternalLinkResolver interface {
 	PaymentsTotal(ctx context.Context, obj *posts.ExternalLink, currencyCode string) (float64, error)
 
 	Channel(ctx context.Context, obj *posts.ExternalLink) (*channels.Channel, error)
+	OpenGraphData(ctx context.Context, obj *posts.ExternalLink) (*OpenGraphData, error)
 }
 type QueryResolver interface {
 	Articles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error)
@@ -4283,11 +4284,12 @@ type OpenGraphData {
   determiner: String!
   siteName: String!
   locale: String!
+  # images: [Image!]
 }
 
 # type Image {
 #   url: String!
-#   secureUrl: String!
+#   secureURL: String!
 #   type: String!
 #   width: Int
 #   height: Int
@@ -13018,7 +13020,7 @@ func (ec *executionContext) _NrsignupNewsroom_tcrApplyTx(ctx context.Context, fi
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_type(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_type(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13055,7 +13057,7 @@ func (ec *executionContext) _OpenGraphData_type(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_url(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_url(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13092,7 +13094,7 @@ func (ec *executionContext) _OpenGraphData_url(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_title(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_title(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13129,7 +13131,7 @@ func (ec *executionContext) _OpenGraphData_title(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_description(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_description(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13166,7 +13168,7 @@ func (ec *executionContext) _OpenGraphData_description(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_determiner(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_determiner(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13203,7 +13205,7 @@ func (ec *executionContext) _OpenGraphData_determiner(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_siteName(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_siteName(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -13240,7 +13242,7 @@ func (ec *executionContext) _OpenGraphData_siteName(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _OpenGraphData_locale(ctx context.Context, field graphql.CollectedField, obj *posts.OpenGraphData) (ret graphql.Marshaler) {
+func (ec *executionContext) _OpenGraphData_locale(ctx context.Context, field graphql.CollectedField, obj *OpenGraphData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -16576,13 +16578,13 @@ func (ec *executionContext) _PostExternalLink_openGraphData(ctx context.Context,
 		Object:   "PostExternalLink",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OpenGraphData, nil
+		return ec.resolvers.PostExternalLink().OpenGraphData(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -16594,10 +16596,10 @@ func (ec *executionContext) _PostExternalLink_openGraphData(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(posts.OpenGraphData)
+	res := resTmp.(*OpenGraphData)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNOpenGraphData2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐOpenGraphData(ctx, field.Selections, res)
+	return ec.marshalNOpenGraphData2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphData(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostSearchResult_posts(ctx context.Context, field graphql.CollectedField, obj *posts.PostSearchResult) (ret graphql.Marshaler) {
@@ -23296,7 +23298,7 @@ func (ec *executionContext) _NrsignupNewsroom(ctx context.Context, sel ast.Selec
 
 var openGraphDataImplementors = []string{"OpenGraphData"}
 
-func (ec *executionContext) _OpenGraphData(ctx context.Context, sel ast.SelectionSet, obj *posts.OpenGraphData) graphql.Marshaler {
+func (ec *executionContext) _OpenGraphData(ctx context.Context, sel ast.SelectionSet, obj *OpenGraphData) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.RequestContext, sel, openGraphDataImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -24152,10 +24154,19 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 				return res
 			})
 		case "openGraphData":
-			out.Values[i] = ec._PostExternalLink_openGraphData(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PostExternalLink_openGraphData(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -25728,8 +25739,18 @@ func (ec *executionContext) unmarshalNNrsignupStepsInput2githubᚗcomᚋjoincivi
 	return ec.unmarshalInputNrsignupStepsInput(ctx, v)
 }
 
-func (ec *executionContext) marshalNOpenGraphData2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐOpenGraphData(ctx context.Context, sel ast.SelectionSet, v posts.OpenGraphData) graphql.Marshaler {
+func (ec *executionContext) marshalNOpenGraphData2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphData(ctx context.Context, sel ast.SelectionSet, v OpenGraphData) graphql.Marshaler {
 	return ec._OpenGraphData(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOpenGraphData2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphData(ctx context.Context, sel ast.SelectionSet, v *OpenGraphData) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._OpenGraphData(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPageInfo2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v PageInfo) graphql.Marshaler {

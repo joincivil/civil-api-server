@@ -6,6 +6,7 @@ import (
 	// "github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joincivil/civil-api-server/pkg/payments"
+	// cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 )
 
 const (
@@ -107,8 +108,8 @@ func (b Comment) GetType() string {
 // ExternalLink is a type of Post that links to another web page
 type ExternalLink struct {
 	PostModel     `json:"-"`
-	URL           string        `json:"url"`
-	OpenGraphData OpenGraphData `json:"open_graph_data"`
+	URL           string `json:"url"`
+	OpenGraphData []byte `json:"open_graph_data"`
 	// OpenGraphData *opengraph.OpenGraph `json:"open_graph_data"`
 }
 
@@ -122,17 +123,17 @@ type OpenGraphData struct {
 	SiteName    string `json:"site_name"`
 	Locale      string `json:"locale"`
 	// LocalesAlternate []string `json:"locales_alterante"`
-	// Images           []Image  `json:"images"`
+	Images []Image `json:"images"`
 }
 
 // Image contains the open graph image data
-// type Image struct {
-// 	URL       string `json:"url"`
-// 	SecureURL string `json:"secure_url"`
-// 	Type      string `json:"type"`
-// 	Width     uint64 `json:"width"`
-// 	Height    uint64 `json:"height"`
-// }
+type Image struct {
+	URL       string `json:"url"`
+	SecureURL string `json:"secure_url"`
+	Type      string `json:"type"`
+	Width     uint64 `json:"width"`
+	Height    uint64 `json:"height"`
+}
 
 // GetType returns the post type "Boost"
 func (b ExternalLink) GetType() string {

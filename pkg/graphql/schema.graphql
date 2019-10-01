@@ -553,11 +553,12 @@ type OpenGraphData {
   determiner: String!
   siteName: String!
   locale: String!
+  # images: [Image!]
 }
 
 # type Image {
 #   url: String!
-#   secureUrl: String!
+#   secureURL: String!
 #   type: String!
 #   width: Int
 #   height: Int

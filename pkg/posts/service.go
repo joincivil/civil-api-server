@@ -7,6 +7,7 @@ import (
 	// "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
+	// cpostgres "github.com/joincivil/go-common/pkg/persistence/postgres"
 	"net/http"
 )
 
@@ -93,12 +94,20 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 			// }
 
 			// htmlInfo.OGInfo.
-			externallink.OpenGraphData = OpenGraphData{
-				Type:        htmlInfo.OGInfo.Type,
-				URL:         htmlInfo.OGInfo.URL,
-				Title:       htmlInfo.OGInfo.Title,
-				Description: htmlInfo.OGInfo.Description,
+
+			ogJSON, err := htmlInfo.OGInfo.ToJSON()
+			if err != nil {
+				return nil, err
 			}
+
+			externallink.OpenGraphData = ogJSON
+
+			// externallink.OpenGraphData = cpostgres.JsonbPayload{
+			// 	"Type":        htmlInfo.OGInfo.Type,
+			// 	"URL":         htmlInfo.OGInfo.URL,
+			// 	"Title":       htmlInfo.OGInfo.Title,
+			// 	"Description": htmlInfo.OGInfo.Description,
+			// }
 			// externallink.OpenGraphData = htmlInfo.OGInfo
 			return s.PostPersister.CreatePost(authorID, externallink)
 		}

@@ -60,6 +60,16 @@ type NrsignupStepsInput struct {
 	LastSeen     *int `json:"lastSeen"`
 }
 
+type OpenGraphData struct {
+	Type        string `json:"type"`
+	URL         string `json:"url"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Determiner  string `json:"determiner"`
+	SiteName    string `json:"siteName"`
+	Locale      string `json:"locale"`
+}
+
 type PageInfo struct {
 	EndCursor   *string `json:"endCursor"`
 	HasNextPage bool    `json:"hasNextPage"`
