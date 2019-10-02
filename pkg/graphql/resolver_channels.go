@@ -67,6 +67,11 @@ func (r *mutationResolver) ChannelsSetAvatar(ctx context.Context, input channels
 		return nil, ErrAccessDenied
 	}
 
+	_, err := r.userService.SetHasSeenUCEmailPrompt(token.Sub)
+	if err != nil {
+		return nil, err
+	}
+
 	return r.channelService.SetAvatarDataURL(token.Sub, input.ChannelID, input.AvatarDataURL)
 }
 

@@ -768,6 +768,7 @@ type User {
   channels: [ChannelMember]
   userChannel: Channel
   userChannelEmailPromptSeen: Boolean
+  userChannelAvatarPromptSeen: Boolean
 }
 
 input UserSignatureInput {

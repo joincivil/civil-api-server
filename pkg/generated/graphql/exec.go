@@ -583,18 +583,19 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Channels                   func(childComplexity int) int
-		CivilianWhitelistTxID      func(childComplexity int) int
-		Email                      func(childComplexity int) int
-		EthAddress                 func(childComplexity int) int
-		NrFurthestStep             func(childComplexity int) int
-		NrLastSeen                 func(childComplexity int) int
-		NrStep                     func(childComplexity int) int
-		QuizPayload                func(childComplexity int) int
-		QuizStatus                 func(childComplexity int) int
-		UID                        func(childComplexity int) int
-		UserChannel                func(childComplexity int) int
-		UserChannelEmailPromptSeen func(childComplexity int) int
+		Channels                    func(childComplexity int) int
+		CivilianWhitelistTxID       func(childComplexity int) int
+		Email                       func(childComplexity int) int
+		EthAddress                  func(childComplexity int) int
+		NrFurthestStep              func(childComplexity int) int
+		NrLastSeen                  func(childComplexity int) int
+		NrStep                      func(childComplexity int) int
+		QuizPayload                 func(childComplexity int) int
+		QuizStatus                  func(childComplexity int) int
+		UID                         func(childComplexity int) int
+		UserChannel                 func(childComplexity int) int
+		UserChannelAvatarPromptSeen func(childComplexity int) int
+		UserChannelEmailPromptSeen  func(childComplexity int) int
 	}
 
 	UserChallengeVoteData struct {
@@ -3870,6 +3871,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UserChannel(childComplexity), true
 
+	case "User.userChannelAvatarPromptSeen":
+		if e.complexity.User.UserChannelAvatarPromptSeen == nil {
+			break
+		}
+
+		return e.complexity.User.UserChannelAvatarPromptSeen(childComplexity), true
+
 	case "User.userChannelEmailPromptSeen":
 		if e.complexity.User.UserChannelEmailPromptSeen == nil {
 			break
@@ -4821,6 +4829,7 @@ type User {
   channels: [ChannelMember]
   userChannel: Channel
   userChannelEmailPromptSeen: Boolean
+  userChannelAvatarPromptSeen: Boolean
 }
 
 input UserSignatureInput {
@@ -20582,6 +20591,40 @@ func (ec *executionContext) _User_userChannelEmailPromptSeen(ctx context.Context
 	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _User_userChannelAvatarPromptSeen(ctx context.Context, field graphql.CollectedField, obj *users.User) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserChannelAvatarPromptSeen, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _UserChallengeVoteData_pollID(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -26692,6 +26735,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			})
 		case "userChannelEmailPromptSeen":
 			out.Values[i] = ec._User_userChannelEmailPromptSeen(ctx, field, obj)
+		case "userChannelAvatarPromptSeen":
+			out.Values[i] = ec._User_userChannelAvatarPromptSeen(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -29047,7 +29092,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
