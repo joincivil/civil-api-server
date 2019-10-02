@@ -215,6 +215,7 @@ type Mutation {
   userUpdate(uid: String, input: UserUpdateInput): User
 
   skipUserChannelEmailPrompt(hasSeen: Boolean): User
+  skipUserChannelAvatarPrompt(hasSeen: Boolean): User
 }
 
 # Enum of valid values for application types for auth
