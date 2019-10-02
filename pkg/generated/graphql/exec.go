@@ -303,6 +303,7 @@ type ComplexityRoot struct {
 		PostsUpdateBoost                  func(childComplexity int, postID string, input posts.Boost) int
 		PostsUpdateComment                func(childComplexity int, postID string, input posts.Comment) int
 		PostsUpdateExternalLink           func(childComplexity int, postID string, input posts.ExternalLink) int
+		SkipUserChannelAvatarPrompt       func(childComplexity int, hasSeen *bool) int
 		SkipUserChannelEmailPrompt        func(childComplexity int, hasSeen *bool) int
 		StorefrontAirswapCancelled        func(childComplexity int) int
 		StorefrontAirswapTxHash           func(childComplexity int, txHash string) int
@@ -583,18 +584,19 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Channels                   func(childComplexity int) int
-		CivilianWhitelistTxID      func(childComplexity int) int
-		Email                      func(childComplexity int) int
-		EthAddress                 func(childComplexity int) int
-		NrFurthestStep             func(childComplexity int) int
-		NrLastSeen                 func(childComplexity int) int
-		NrStep                     func(childComplexity int) int
-		QuizPayload                func(childComplexity int) int
-		QuizStatus                 func(childComplexity int) int
-		UID                        func(childComplexity int) int
-		UserChannel                func(childComplexity int) int
-		UserChannelEmailPromptSeen func(childComplexity int) int
+		Channels                    func(childComplexity int) int
+		CivilianWhitelistTxID       func(childComplexity int) int
+		Email                       func(childComplexity int) int
+		EthAddress                  func(childComplexity int) int
+		NrFurthestStep              func(childComplexity int) int
+		NrLastSeen                  func(childComplexity int) int
+		NrStep                      func(childComplexity int) int
+		QuizPayload                 func(childComplexity int) int
+		QuizStatus                  func(childComplexity int) int
+		UID                         func(childComplexity int) int
+		UserChannel                 func(childComplexity int) int
+		UserChannelAvatarPromptSeen func(childComplexity int) int
+		UserChannelEmailPromptSeen  func(childComplexity int) int
 	}
 
 	UserChallengeVoteData struct {
@@ -739,6 +741,7 @@ type MutationResolver interface {
 	UserSetEthAddress(ctx context.Context, input users.SignatureInput) (*string, error)
 	UserUpdate(ctx context.Context, uid *string, input *users.UserUpdateInput) (*users.User, error)
 	SkipUserChannelEmailPrompt(ctx context.Context, hasSeen *bool) (*users.User, error)
+	SkipUserChannelAvatarPrompt(ctx context.Context, hasSeen *bool) (*users.User, error)
 }
 type ParamProposalResolver interface {
 	PropID(ctx context.Context, obj *model.ParameterProposal) (string, error)
@@ -2167,6 +2170,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PostsUpdateExternalLink(childComplexity, args["postID"].(string), args["input"].(posts.ExternalLink)), true
+
+	case "Mutation.skipUserChannelAvatarPrompt":
+		if e.complexity.Mutation.SkipUserChannelAvatarPrompt == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_skipUserChannelAvatarPrompt_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SkipUserChannelAvatarPrompt(childComplexity, args["hasSeen"].(*bool)), true
 
 	case "Mutation.skipUserChannelEmailPrompt":
 		if e.complexity.Mutation.SkipUserChannelEmailPrompt == nil {
@@ -3870,6 +3885,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UserChannel(childComplexity), true
 
+	case "User.userChannelAvatarPromptSeen":
+		if e.complexity.User.UserChannelAvatarPromptSeen == nil {
+			break
+		}
+
+		return e.complexity.User.UserChannelAvatarPromptSeen(childComplexity), true
+
 	case "User.userChannelEmailPromptSeen":
 		if e.complexity.User.UserChannelEmailPromptSeen == nil {
 			break
@@ -4268,6 +4290,7 @@ type Mutation {
   userUpdate(uid: String, input: UserUpdateInput): User
 
   skipUserChannelEmailPrompt(hasSeen: Boolean): User
+  skipUserChannelAvatarPrompt(hasSeen: Boolean): User
 }
 
 # Enum of valid values for application types for auth
@@ -4821,6 +4844,7 @@ type User {
   channels: [ChannelMember]
   userChannel: Channel
   userChannelEmailPromptSeen: Boolean
+  userChannelAvatarPromptSeen: Boolean
 }
 
 input UserSignatureInput {
@@ -5592,6 +5616,20 @@ func (ec *executionContext) field_Mutation_postsUpdateExternalLink_args(ctx cont
 		}
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_skipUserChannelAvatarPrompt_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *bool
+	if tmp, ok := rawArgs["hasSeen"]; ok {
+		arg0, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hasSeen"] = arg0
 	return args, nil
 }
 
@@ -12939,6 +12977,47 @@ func (ec *executionContext) _Mutation_skipUserChannelEmailPrompt(ctx context.Con
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().SkipUserChannelEmailPrompt(rctx, args["hasSeen"].(*bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*users.User)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋusersᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_skipUserChannelAvatarPrompt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_skipUserChannelAvatarPrompt_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SkipUserChannelAvatarPrompt(rctx, args["hasSeen"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20582,6 +20661,40 @@ func (ec *executionContext) _User_userChannelEmailPromptSeen(ctx context.Context
 	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _User_userChannelAvatarPromptSeen(ctx context.Context, field graphql.CollectedField, obj *users.User) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UserChannelAvatarPromptSeen, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _UserChallengeVoteData_pollID(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -24927,6 +25040,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_userUpdate(ctx, field)
 		case "skipUserChannelEmailPrompt":
 			out.Values[i] = ec._Mutation_skipUserChannelEmailPrompt(ctx, field)
+		case "skipUserChannelAvatarPrompt":
+			out.Values[i] = ec._Mutation_skipUserChannelAvatarPrompt(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26692,6 +26807,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			})
 		case "userChannelEmailPromptSeen":
 			out.Values[i] = ec._User_userChannelEmailPromptSeen(ctx, field, obj)
+		case "userChannelAvatarPromptSeen":
+			out.Values[i] = ec._User_userChannelAvatarPromptSeen(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -29047,7 +29164,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
