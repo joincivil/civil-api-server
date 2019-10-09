@@ -4,6 +4,7 @@ import (
 	context "context"
 	"encoding/json"
 	"errors"
+	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -144,7 +145,7 @@ func (r *mutationResolver) PostsCreateExternalLinkEmbedded(ctx context.Context, 
 
 		return post.(*posts.ExternalLink), nil
 	}
-	return nil, ErrBadURLSubmitted
+	return nil, ErrEmptyURLSubmitted
 }
 
 func (r *mutationResolver) PostsUpdateExternalLink(ctx context.Context, postID string, input posts.ExternalLink) (*posts.ExternalLink, error) {
@@ -158,8 +159,8 @@ func (r *mutationResolver) PostsUpdateExternalLink(ctx context.Context, postID s
 
 // errors
 var (
-	ErrNotImplemented  = errors.New("field not yet implemented")
-	ErrBadURLSubmitted = errors.New("bad url submitted")
+	ErrNotImplemented    = errors.New("field not yet implemented")
+	ErrEmptyURLSubmitted = errors.New("empty url submitted")
 )
 
 // TYPE RESOLVERS

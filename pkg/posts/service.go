@@ -37,7 +37,7 @@ func (s *Service) CreateExternalLinkEmbedded(post Post) (Post, error) {
 			return nil, err
 		}
 
-		return s.PostPersister.CreatePost("", *externalLink)
+		return s.PostPersister.CreatePost(externalLink.ChannelID, *externalLink)
 	}
 	return nil, ErrorNotImplemented
 }
