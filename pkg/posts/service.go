@@ -2,9 +2,9 @@ package posts
 
 import (
 	"github.com/dyatlov/go-htmlinfo/htmlinfo"
-	"github.com/goware/urlx"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
+	"github.com/joincivil/civil-events-processor/pkg/utils"
 	"net/http"
 )
 
@@ -24,6 +24,24 @@ func NewService(persister PostPersister, channelSer *channels.Service, newsroomS
 	}
 }
 
+// CreateExternalLinkEmbedded creates a new Post, with business logic ensuring posts are correct, and follow certain rules
+func (s *Service) CreateExternalLinkEmbedded(post Post) (Post, error) {
+	base, err := PostInterfaceToBase(post)
+	if err != nil {
+		return nil, err
+	}
+	postType := base.PostType
+	if postType == externallink {
+		externalLink, err := s.getExternalLink(post)
+		if err != nil {
+			return nil, err
+		}
+
+		return s.PostPersister.CreatePost("", *externalLink)
+	}
+	return nil, ErrorNotImplemented
+}
+
 // CreatePost creates a new Post, with business logic ensuring posts are correct, and follow certain rules
 func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 	base, err := PostInterfaceToBase(post)
@@ -34,67 +52,71 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 	if postType == boost {
 		return s.PostPersister.CreatePost(authorID, post)
 	} else if postType == externallink {
-
-		channel, err := s.channelService.GetChannel(base.ChannelID)
+		externalLink, err := s.getExternalLink(post)
 		if err != nil {
 			return nil, err
 		}
-		channelType := channel.ChannelType
-		if channelType == "newsroom" {
-			externallink := post.(ExternalLink)
-			submittedURL, err := urlx.Parse(externallink.URL)
-			if err != nil {
-				return nil, err
-			}
-			submittedHost, _, err := urlx.SplitHostPort(submittedURL)
-			if err != nil {
-				return nil, err
-			}
 
-			newsroom, err := s.newsroomService.GetNewsroomByAddress(channel.Reference)
-			if err != nil {
-				return nil, err
-			}
-			channelURL, err := urlx.Parse(newsroom.Charter.NewsroomURL)
-			if err != nil {
-				return nil, err
-			}
-			channelHost, _, err := urlx.SplitHostPort(channelURL)
-			if err != nil {
-				return nil, err
-			}
-
-			if channelHost != submittedHost {
-				return nil, ErrorBadURLSubmitted
-			}
-
-			resp, err := http.Get(externallink.URL)
-
-			if err != nil {
-				return nil, err
-			}
-
-			defer resp.Body.Close() // nolint: errcheck
-
-			htmlInfo := htmlinfo.NewHTMLInfo()
-
-			err = htmlInfo.Parse(resp.Body, &(externallink.URL), nil)
-			if err != nil {
-				return nil, err
-			}
-
-			ref := "externallink+" + channel.Reference + "+" + htmlInfo.CanonicalURL
-			externallink.Reference = &ref
-
-			ogJSON, err := htmlInfo.OGInfo.ToJSON()
-			if err != nil {
-				return nil, err
-			}
-			externallink.OpenGraphData = ogJSON
-
-			return s.PostPersister.CreatePost(authorID, externallink)
-		}
-		return nil, ErrorNotImplemented
+		return s.PostPersister.CreatePost(authorID, *externalLink)
 	}
 	return nil, nil
+}
+
+func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
+
+	base, err := PostInterfaceToBase(post)
+	if err != nil {
+		return nil, err
+	}
+	channel, err := s.channelService.GetChannel(base.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+	channelType := channel.ChannelType
+	if channelType == "newsroom" {
+		externalLink := post.(ExternalLink)
+		cleanedSubmittedURL, err := utils.CleanURL(externalLink.URL)
+		if err != nil {
+			return nil, err
+		}
+
+		newsroom, err := s.newsroomService.GetNewsroomByAddress(channel.Reference)
+		if err != nil {
+			return nil, err
+		}
+		cleanedChannelURL, err := utils.CleanURL(newsroom.Charter.NewsroomURL)
+		if err != nil {
+			return nil, err
+		}
+
+		if cleanedChannelURL != cleanedSubmittedURL {
+			return nil, ErrorBadURLSubmitted
+		}
+
+		resp, err := http.Get(externalLink.URL)
+
+		if err != nil {
+			return nil, err
+		}
+
+		defer resp.Body.Close() // nolint: errcheck
+
+		htmlInfo := htmlinfo.NewHTMLInfo()
+
+		err = htmlInfo.Parse(resp.Body, &(externalLink.URL), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		ref := "externallink+" + channel.Reference + "+" + htmlInfo.CanonicalURL
+		externalLink.Reference = &ref
+
+		ogJSON, err := htmlInfo.OGInfo.ToJSON()
+		if err != nil {
+			return nil, err
+		}
+		externalLink.OpenGraphData = ogJSON
+		return &externalLink, nil
+	}
+	return nil, ErrorNotImplemented
 }

@@ -4,11 +4,13 @@ import (
 	context "context"
 	"encoding/json"
 	"errors"
+	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
+	"github.com/joincivil/civil-events-processor/pkg/utils"
 )
 
 // PostBoost is the resolver for the PostBoost type
@@ -119,6 +121,31 @@ func (r *mutationResolver) PostsCreateExternalLink(ctx context.Context, input po
 	}
 
 	return post.(*posts.ExternalLink), nil
+}
+
+func (r *mutationResolver) PostsCreateExternalLinkEmbedded(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error) {
+	if input.URL != "" {
+		cleanedURL, err := utils.CleanURL(input.URL)
+		if err != nil {
+			return nil, err
+		}
+		listing, err := r.listingPersister.ListingByCleanedNewsroomURL(cleanedURL)
+		if err != nil {
+			return nil, err
+		}
+		channel, err := r.channelService.GetChannelByReference("newsroom", listing.ContractAddress().Hex())
+		if err != nil {
+			return nil, err
+		}
+		input.ChannelID = channel.ID
+		post, err := r.postService.CreateExternalLinkEmbedded(input)
+		if err != nil {
+			return nil, err
+		}
+
+		return post.(*posts.ExternalLink), nil
+	}
+	return nil, ErrNotImplemented
 }
 
 func (r *mutationResolver) PostsUpdateExternalLink(ctx context.Context, postID string, input posts.ExternalLink) (*posts.ExternalLink, error) {

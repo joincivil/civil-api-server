@@ -301,6 +301,7 @@ type ComplexityRoot struct {
 		PostsCreateBoost                  func(childComplexity int, input posts.Boost) int
 		PostsCreateComment                func(childComplexity int, input posts.Comment) int
 		PostsCreateExternalLink           func(childComplexity int, input posts.ExternalLink) int
+		PostsCreateExternalLinkEmbedded   func(childComplexity int, input posts.ExternalLink) int
 		PostsUpdateBoost                  func(childComplexity int, postID string, input posts.Boost) int
 		PostsUpdateComment                func(childComplexity int, postID string, input posts.Comment) int
 		PostsUpdateExternalLink           func(childComplexity int, postID string, input posts.ExternalLink) int
@@ -737,6 +738,7 @@ type MutationResolver interface {
 	PostsCreateBoost(ctx context.Context, input posts.Boost) (*posts.Boost, error)
 	PostsUpdateBoost(ctx context.Context, postID string, input posts.Boost) (*posts.Boost, error)
 	PostsCreateExternalLink(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error)
+	PostsCreateExternalLinkEmbedded(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error)
 	PostsUpdateExternalLink(ctx context.Context, postID string, input posts.ExternalLink) (*posts.ExternalLink, error)
 	PostsCreateComment(ctx context.Context, input posts.Comment) (*posts.Comment, error)
 	PostsUpdateComment(ctx context.Context, postID string, input posts.Comment) (*posts.Comment, error)
@@ -2146,6 +2148,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PostsCreateExternalLink(childComplexity, args["input"].(posts.ExternalLink)), true
+
+	case "Mutation.postsCreateExternalLinkEmbedded":
+		if e.complexity.Mutation.PostsCreateExternalLinkEmbedded == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_postsCreateExternalLinkEmbedded_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PostsCreateExternalLinkEmbedded(childComplexity, args["input"].(posts.ExternalLink)), true
 
 	case "Mutation.postsUpdateBoost":
 		if e.complexity.Mutation.PostsUpdateBoost == nil {
@@ -4300,6 +4314,7 @@ type Mutation {
   postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
 
   postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+  postsCreateExternalLinkEmbedded(input: PostCreateExternalLinkInput!): PostExternalLink
   postsUpdateExternalLink(
     postID: String!
     input: PostCreateExternalLinkInput!
@@ -5569,6 +5584,20 @@ func (ec *executionContext) field_Mutation_postsCreateComment_args(ctx context.C
 	var arg0 posts.Comment
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalNPostCreateCommentInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐComment(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_postsCreateExternalLinkEmbedded_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 posts.ExternalLink
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNPostCreateExternalLinkInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐExternalLink(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -12678,6 +12707,47 @@ func (ec *executionContext) _Mutation_postsCreateExternalLink(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().PostsCreateExternalLink(rctx, args["input"].(posts.ExternalLink))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*posts.ExternalLink)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPostExternalLink2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐExternalLink(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_postsCreateExternalLinkEmbedded(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_postsCreateExternalLinkEmbedded_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PostsCreateExternalLinkEmbedded(rctx, args["input"].(posts.ExternalLink))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -25189,6 +25259,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_postsUpdateBoost(ctx, field)
 		case "postsCreateExternalLink":
 			out.Values[i] = ec._Mutation_postsCreateExternalLink(ctx, field)
+		case "postsCreateExternalLinkEmbedded":
+			out.Values[i] = ec._Mutation_postsCreateExternalLinkEmbedded(ctx, field)
 		case "postsUpdateExternalLink":
 			out.Values[i] = ec._Mutation_postsUpdateExternalLink(ctx, field)
 		case "postsCreateComment":
