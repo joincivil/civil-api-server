@@ -4,7 +4,6 @@ import (
 	context "context"
 	"encoding/json"
 	"errors"
-	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
