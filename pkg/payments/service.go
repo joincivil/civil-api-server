@@ -113,8 +113,8 @@ func (s *Service) sendStripePaymentReceiptEmail(emailAddress string, tmplData em
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
-func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, txID string, emailAddress string, tmplData email.TemplateData) (EtherPayment, error) {
-	hash := common.HexToHash(txID)
+func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, etherPayment EtherPayment, tmplData email.TemplateData) (EtherPayment, error) {
+	hash := common.HexToHash(etherPayment.TransactionID)
 	if (hash == common.Hash{}) {
 		return EtherPayment{}, errors.New("invalid tx id")
 	}
@@ -131,7 +131,7 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 	}
 	payment.ID = id.String()
 	payment.PaymentType = "ether"
-	payment.Reference = txID
+	payment.Reference = etherPayment.TransactionID
 
 	payment.Status = "pending"
 	payment.OwnerID = ownerID
@@ -139,9 +139,12 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 	payment.CurrencyCode = "ETH"
 	payment.ExchangeRate = 0
 	payment.Amount = 0
-	payment.EmailAddress = emailAddress
+	payment.EmailAddress = etherPayment.EmailAddress
 
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(fmt.Sprintf("{\"PaymentAddress\":\"%v\"}", expectedAddress.String()))}
+
+	payment.PayerChannelID = etherPayment.PayerChannelID
+	payment.ShouldPublicize = etherPayment.ShouldPublicize
 
 	if err = s.db.Create(&payment).Error; err != nil {
 		log.Errorf("An error occurred: %v\n", err)
@@ -149,8 +152,8 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 	}
 
 	// only send payment receipt if email is given
-	if emailAddress != "" {
-		err = s.sendEthPaymentStartedEmail(emailAddress, tmplData)
+	if etherPayment.EmailAddress != "" {
+		err = s.sendEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
 		if err != nil {
 			return EtherPayment{
 				PaymentModel: payment,

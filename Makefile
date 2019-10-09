@@ -120,7 +120,7 @@ pubsub-stop: check-docker-env ## Stops the pubsub simulator
 ## golangci-lint config in .golangci.yml
 .PHONY: lint
 lint: check-go-env ## Runs linting.
-	@golangci-lint run ./...
+	@GOGC=20 golangci-lint run ./...
 
 .PHONY: build
 build: check-go-env ## Builds the graphql server

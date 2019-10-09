@@ -67,12 +67,20 @@ type Query {
     sortBy: ListingSort
     sortDesc: Boolean = False
   ): ListingResultCursor
+  poll(pollID: Int!): Poll
+
+  challengesStartedByUser(addr: String!): [Challenge]
+
+  # Parameterizer Queries
+  parameters(paramNames: [String!]): [Parameter]
+  paramProposals(paramName: String!): [ParamProposal]
 
   # Channel Queries
   channelsGetByID(id: String!): Channel
   channelsGetByNewsroomAddress(contractAddress: String!): Channel
   channelsGetByHandle(handle: String!): Channel
   channelsGetByUserID(userID: String!): Channel
+  channelsIsHandleAvailable(handle: String!): Boolean!
 
   # Newsroom Queries
   newsroomArticles(
@@ -147,6 +155,7 @@ type Mutation {
   channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
   channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
   channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+  channelsSetAvatar(input: ChannelsSetAvatarInput!): Channel
   userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
   userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmail(input: ChannelsSetEmailInput!): Channel
@@ -206,6 +215,7 @@ type Mutation {
   userUpdate(uid: String, input: UserUpdateInput): User
 
   skipUserChannelEmailPrompt(hasSeen: Boolean): User
+  skipUserChannelAvatarPrompt(hasSeen: Boolean): User
 }
 
 # Enum of valid values for application types for auth
@@ -300,6 +310,25 @@ type GovernanceEventEdge {
 type GovernanceEventResultCursor {
   edges: [GovernanceEventEdge]!
   pageInfo: PageInfo!
+}
+
+# A type that reflects values in model.Parameter
+type Parameter {
+  paramName: String!
+  value: String!
+}
+
+type ParamProposal {
+  id: String!
+  propID: String!
+  name: String!
+  value: String!
+  deposit: String!
+  appExpiry: String!
+  challengeID: String!
+  proposer: String!
+  accepted: Boolean
+  expired: Boolean
 }
 
 # A type that reflects values in model.Listing
@@ -412,6 +441,9 @@ type Channel {
   currentUserIsAdmin: Boolean!
   handle: String
   EmailAddressRestricted: String
+  avatarDataUrl: String
+  tiny100AvatarDataUrl: String
+  tiny72AvatarDataUrl: String
 }
 
 type ChannelMember {
@@ -427,6 +459,11 @@ input ChannelsConnectStripeInput {
 input ChannelsSetHandleInput {
   channelID: String!
   handle: String!
+}
+
+input ChannelsSetAvatarInput {
+  channelID: String!
+  avatarDataURL: String!
 }
 
 input UserChannelSetHandleInput {
@@ -507,6 +544,72 @@ type PostExternalLink implements Post {
   paymentsTotal(currencyCode: String!): Float!
   url: String
   channel: Channel
+  openGraphData: OpenGraphData!
+}
+
+type OpenGraphData {
+  type: String!
+  url: String!
+  title: String!
+  description: String!
+  determiner: String!
+  site_name: String!
+  locale: String!
+  locales_alternate: [String!]
+  images: [OpenGraphImage!]
+  audios: [OpenGraphAudio!]
+  videos: [OpenGraphVideo!]
+  article: OpenGraphArticle
+  book: OpenGraphBook
+  profile: OpenGraphProfile
+}
+
+type OpenGraphImage {
+  url: String!
+  secure_url: String
+  type: String
+  width: Int
+  height: Int
+  draft: Boolean
+}
+
+type OpenGraphVideo {
+  url: String!
+  secure_url: String
+  type: String
+  width: Int
+  height: Int
+  draft: Boolean
+}
+
+type OpenGraphAudio {
+  url: String!
+  secure_url: String
+  type: String
+  draft: Boolean
+}
+
+type OpenGraphArticle {
+  published_time: Time
+  modified_time: Time
+  expiration_time: Time
+  section: String
+  tags: [String!]
+  authors: [OpenGraphProfile!]
+}
+
+type OpenGraphProfile {
+  first_name: String
+  last_name: String
+  username: String
+  gender: String
+}
+
+type OpenGraphBook {
+  isbn: String
+  release_date: String
+  tags: [String!]
+  authors: [OpenGraphProfile!]
 }
 
 type PostSearchResult {
@@ -621,6 +724,8 @@ input PaymentsCreateStripePaymentInput {
   amount: Float!
   paymentToken: String!
   emailAddress: String
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 # Payment inputs
@@ -633,6 +738,8 @@ input PaymentsCreateEtherPaymentInput {
   fromAddress: String!
   amount: Float!
   usdAmount: String!
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 # Payment inputs
@@ -642,6 +749,8 @@ input PaymentsCreateTokenPaymentInput {
   transactionID: String!
   tokenAddress: String!
   emailAddress: String
+  payerChannelID: String
+  shouldPublicize: Boolean
 }
 
 ## User object schemas
@@ -660,6 +769,7 @@ type User {
   channels: [ChannelMember]
   userChannel: Channel
   userChannelEmailPromptSeen: Boolean
+  userChannelAvatarPromptSeen: Boolean
 }
 
 input UserSignatureInput {

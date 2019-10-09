@@ -1,14 +1,23 @@
 package channels
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/Jeffail/tunny"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
+	"github.com/nfnt/resize"
 	uuid "github.com/satori/go.uuid"
+	"github.com/vincent-petithory/dataurl"
+	"image"
+	"image/jpeg"
+	"image/png"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -36,6 +45,7 @@ type Service struct {
 	tokenGenerator       *utils.JwtTokenGenerator
 	emailer              *email.Emailer
 	signupLoginProtoHost string
+	imageProcessingPool  *tunny.Pool
 }
 
 // NewsroomHelper describes methods needed to get the members of a newsroom multisig
@@ -60,14 +70,19 @@ func NewServiceFromConfig(persister Persister, newsroomHelper NewsroomHelper, st
 func NewService(persister Persister, newsroomHelper NewsroomHelper, stripeConnector StripeConnector, tokenGenerator *utils.JwtTokenGenerator,
 	emailer *email.Emailer, signupLoginProtoHost string) *Service {
 
-	return &Service{
+	s := &Service{
 		persister,
 		newsroomHelper,
 		stripeConnector,
 		tokenGenerator,
 		emailer,
 		signupLoginProtoHost,
+		nil,
 	}
+	multiplier := 1
+	numCPUs := runtime.NumCPU() * multiplier
+	s.imageProcessingPool = tunny.NewFunc(numCPUs, s.processAvatar)
+	return s
 }
 
 // GetUserChannels retrieves the Channels a user is a member of
@@ -159,13 +174,90 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+func getImageAndDecodedDataURLFromDataURL(dataURL string) (*image.Image, *dataurl.DataURL, error) {
+	decodedDataURL, err := dataurl.DecodeString(dataURL)
+	if err != nil {
+		return nil, nil, err
+	}
+	if decodedDataURL.Type != "image" {
+		return nil, nil, ErrorBadAvatarDataURLType
+	}
+	if decodedDataURL.Subtype != "png" && decodedDataURL.Subtype != "jpg" {
+		return nil, nil, ErrorBadAvatarDataURLSubType
+	}
+	if decodedDataURL.Encoding != "base64" {
+		return nil, nil, ErrorBadAvatarEncoding
+	}
+
+	justData := strings.Split(dataURL, ",")[1] // TODO: should be able to get this from the decodedDataURL instead of splitting the string
+	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(justData))
+	m, _, err := image.Decode(reader)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &m, decodedDataURL, nil
+}
+
+// SetAvatarDataURL sets the avatar data url on a channel of any type
+func (s *Service) SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error) {
+	image, decodedDataURL, err := getImageAndDecodedDataURLFromDataURL(avatarDataURL)
+	if err != nil {
+		return nil, err
+	}
+	if (*image).Bounds().Size().X != 336 || (*image).Bounds().Size().Y != 336 {
+		return nil, ErrorBadAvatarSize
+	}
+
+	channel, err := s.persister.SetAvatarDataURL(userID, channelID, avatarDataURL)
+	if err != nil {
+		return nil, err
+	}
+	go func(p *tunny.Pool) {
+		p.Process(processAvatarInputs{userID, channelID, image, decodedDataURL})
+	}(s.imageProcessingPool)
+
+	return channel, nil
+}
+
+type processAvatarInputs struct {
+	userID         string
+	channelID      string
+	image          *image.Image
+	decodedDataURL *dataurl.DataURL
+}
+
+func (s *Service) processAvatar(payload interface{}) interface{} {
+	inputs := payload.(processAvatarInputs)
+
+	mTiny := resize.Resize(72, 72, *(inputs.image), resize.Lanczos3)
+
+	var buff bytes.Buffer
+	if inputs.decodedDataURL.Subtype == "jpeg" {
+		err := jpeg.Encode(&buff, mTiny, nil)
+		if err != nil {
+			return err
+		}
+	} else if inputs.decodedDataURL.Subtype == "png" {
+		err := png.Encode(&buff, mTiny)
+		if err != nil {
+			return err
+		}
+	} else {
+		return ErrorBadAvatarDataURLSubType
+	}
+
+	mTinyBase64Str := base64.StdEncoding.EncodeToString(buff.Bytes())
+	mTinyDataURL := "data:" + inputs.decodedDataURL.ContentType() + ";base64," + mTinyBase64Str
+	return s.persister.SetTiny72AvatarDataURL(inputs.userID, inputs.channelID, mTinyDataURL)
+}
+
 // SetHandle sets the handle on a channel of any type
 func (s *Service) SetHandle(userID string, channelID string, handle string) (*Channel, error) {
 	channel, err := s.persister.GetChannel(channelID)
 	if err != nil {
 		return nil, err
 	}
-	if channel.Handle != nil {
+	if channel.Handle != nil && *(channel.Handle) != "" {
 		return nil, ErrorHandleAlreadySet
 	}
 	if !IsValidHandle(handle) {

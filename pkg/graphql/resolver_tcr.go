@@ -14,6 +14,7 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
 	"github.com/joincivil/go-common/pkg/bytes"
+	cbytes "github.com/joincivil/go-common/pkg/bytes"
 	"github.com/joincivil/go-common/pkg/eth"
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
@@ -49,6 +50,16 @@ func (r *Resolver) GovernanceEvent() graphql.GovernanceEventResolver {
 // Listing is the resolver for the Listing type
 func (r *Resolver) Listing() graphql.ListingResolver {
 	return &listingResolver{r}
+}
+
+// Parameter is the resolver for the Parameter type
+func (r *Resolver) Parameter() graphql.ParameterResolver {
+	return &parameterResolver{r}
+}
+
+// ParamProposal is the resolver for the ParamProposal type
+func (r *Resolver) ParamProposal() graphql.ParamProposalResolver {
+	return &paramProposalResolver{r}
 }
 
 // Poll is the resolver for the Poll type
@@ -251,6 +262,45 @@ func (r *governanceEventResolver) Listing(ctx context.Context, obj *model.Govern
 }
 
 type listingResolver struct{ *Resolver }
+
+type parameterResolver struct{ *Resolver }
+
+func (r *parameterResolver) Value(ctx context.Context, obj *model.Parameter) (string, error) {
+	loaders := ctxLoaders(ctx)
+	paramName := obj.ParamName()
+	parameter, err := loaders.parameterLoader.Load(paramName)
+	if err != nil {
+		return "0", err
+	}
+	value := parameter.Value().String()
+	return value, nil
+}
+
+type paramProposalResolver struct{ *Resolver }
+
+func (r *paramProposalResolver) PropID(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return cbytes.Byte32ToHexString(obj.PropID()), nil
+}
+
+func (r *paramProposalResolver) Value(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.Value().String(), nil
+}
+
+func (r *paramProposalResolver) AppExpiry(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.AppExpiry().String(), nil
+}
+
+func (r *paramProposalResolver) ChallengeID(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.ChallengeID().String(), nil
+}
+
+func (r *paramProposalResolver) Deposit(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.Deposit().String(), nil
+}
+
+func (r *paramProposalResolver) Proposer(ctx context.Context, obj *model.ParameterProposal) (string, error) {
+	return obj.Proposer().String(), nil
+}
 
 func (r *listingResolver) ContractAddress(ctx context.Context, obj *model.Listing) (string, error) {
 	return r.Resolver.DetermineAddrCase(obj.ContractAddress().Hex()), nil
@@ -580,6 +630,28 @@ func (r *queryResolver) TcrGovernanceEventsTxHash(ctx context.Context,
 	return r.govEventPersister.GovernanceEventsByTxHash(txHash)
 }
 
+func (r *queryResolver) Parameters(ctx context.Context, paramNames []string) ([]*model.Parameter, error) {
+	parameters := make([]*model.Parameter, 0)
+
+	for _, paramName := range paramNames {
+		parameter, err := r.parameterPersister.ParameterByName(paramName)
+		if err != nil {
+			return nil, err
+		}
+		parameters = append(parameters, parameter)
+	}
+
+	return parameters, nil
+}
+
+func (r *queryResolver) ParamProposals(ctx context.Context, paramName string) ([]*model.ParameterProposal, error) {
+	proposals, err := r.paramProposalPersister.ParamProposalByName(paramName, true)
+	if err != nil {
+		return nil, err
+	}
+	return proposals, nil
+}
+
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
 	currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType,
@@ -733,6 +805,10 @@ func (r *queryResolver) TcrListing(ctx context.Context, addr string, lowercaseAd
 	return listing, nil
 }
 
+func (r *queryResolver) Poll(ctx context.Context, pollID int) (*model.Poll, error) {
+	return r.pollPersister.PollByPollID(pollID)
+}
+
 func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pollID *int,
 	canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error) {
 
@@ -761,6 +837,10 @@ func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pol
 	}
 
 	return allUserChallengeData, nil
+}
+
+func (r *queryResolver) ChallengesStartedByUser(ctx context.Context, addr string) ([]*model.Challenge, error) {
+	return r.challengePersister.ChallengesByChallengerAddress(common.HexToAddress(addr))
 }
 
 func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,

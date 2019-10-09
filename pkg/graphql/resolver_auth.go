@@ -103,6 +103,7 @@ func (r *mutationResolver) AuthSignupEmailConfirm(ctx context.Context, signupJWT
 func (r *mutationResolver) AuthLoginEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error) {
 	response, err := r.authService.LoginEth(&input)
 	if err != nil {
+		log.Errorf("Error logging in via eth: err: %+v", err)
 		return nil, fmt.Errorf("signature invalid or not signed up")
 	}
 

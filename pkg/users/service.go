@@ -240,3 +240,20 @@ func (s *UserService) SetHasSeenUCEmailPrompt(uid string) (*User, error) {
 	}
 	return user, nil
 }
+
+// SetHasSeenUCAvatarPrompt sets that a user has seen the prompt to set their User Channel Avatar
+func (s *UserService) SetHasSeenUCAvatarPrompt(uid string) (*User, error) {
+
+	user, err := s.GetUser(UserCriteria{UID: uid})
+	if err != nil {
+		return nil, err
+	}
+
+	user.UserChannelAvatarPromptSeen = true
+
+	err = s.userPersister.UpdateUser(user, []string{"UserChannelAvatarPromptSeen"})
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}

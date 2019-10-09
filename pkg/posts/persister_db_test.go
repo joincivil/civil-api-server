@@ -25,8 +25,8 @@ func helperCreatePost(t *testing.T, persister posts.PostPersister, post posts.Po
 	return createdPost
 }
 
-func makeValidBoost() *posts.Boost {
-	return &posts.Boost{
+func makeValidBoost() posts.Boost {
+	return posts.Boost{
 		PostModel: posts.PostModel{
 			ChannelID: aliceNewsroomUUID,
 		},
@@ -48,8 +48,8 @@ func makeValidBoost() *posts.Boost {
 	}
 }
 
-func makeBadEndDateBoost() *posts.Boost {
-	return &posts.Boost{
+func makeBadEndDateBoost() posts.Boost {
+	return posts.Boost{
 		PostModel: posts.PostModel{
 			ChannelID: aliceNewsroomUUID,
 		},

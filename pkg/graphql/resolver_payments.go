@@ -10,6 +10,18 @@ import (
 	"github.com/joincivil/go-common/pkg/email"
 )
 
+func (r *mutationResolver) validatePayerChannelID(ctx context.Context, channelID string) error {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	if err != nil || !isAdmin {
+		return ErrAccessDenied
+	}
+	return nil
+}
+
 // MUTATIONS
 func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postID string, payment payments.EtherPayment) (*payments.EtherPayment, error) {
 
@@ -18,13 +30,20 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 		return &payments.EtherPayment{}, errors.New("could not find post")
 	}
 
+	if payment.PayerChannelID != "" {
+		err = r.validatePayerChannelID(ctx, payment.PayerChannelID)
+		if err != nil {
+			return &payments.EtherPayment{}, err
+		}
+	}
+
 	channelID := post.GetChannelID()
 	tmplData, err2 := r.GetEthPaymentEmailTemplateData(post, payment)
 	if err2 != nil {
 		return &payments.EtherPayment{}, errors.New("error creating email template data")
 	}
 
-	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment.TransactionID, payment.EmailAddress, tmplData)
+	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", postID, payment, tmplData)
 	return &p, err
 }
 
@@ -33,6 +52,13 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	post, err := r.postService.GetPost(postID)
 	if err != nil {
 		return &payments.StripePayment{}, errors.New("could not find post")
+	}
+
+	if payment.PayerChannelID != "" {
+		err = r.validatePayerChannelID(ctx, payment.PayerChannelID)
+		if err != nil {
+			return &payments.StripePayment{}, err
+		}
 	}
 
 	channelID := post.GetChannelID()

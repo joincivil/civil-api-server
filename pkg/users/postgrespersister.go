@@ -145,10 +145,11 @@ func (p *PostgresPersister) userQuery(criteria *UserCriteria, tableName string) 
 	} else if criteria.Email != "" {
 		queryBuf.WriteString(" WHERE r1.email = :email") // nolint: gosec
 	} else if criteria.EthAddress != "" {
-		queryBuf.WriteString(" WHERE r1.eth_address = :eth_address") // nolint: gosec
+		queryBuf.WriteString(" WHERE LOWER(r1.eth_address) = LOWER(:eth_address)") // nolint: gosec
 	} else if criteria.NewsroomAddr != "" {
 		queryBuf.WriteString(" WHERE r1.assoc_nr_addr @> ARRAY[:nr_addr]") // nolint: gosec
 	}
+	queryBuf.WriteString(" ORDER BY r1.date_created")
 	return queryBuf.String()
 }
 
@@ -254,7 +255,8 @@ func CreateUserTableQuery(tableName string) string {
 			nr_far_step INT DEFAULT 0,
 			nr_last_seen INT DEFAULT 0,
 			assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[],
-			uc_email_prompt_seen BOOL DEFAULT FALSE
+			uc_email_prompt_seen BOOL DEFAULT FALSE,
+			uc_avatar_prompt_seen BOOL DEFAULT FALSE
         );
     `, tableName)
 	return queryString
@@ -274,11 +276,12 @@ func CreateUserTableMigrationQuery(tableName string) string {
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS nr_last_seen INT DEFAULT 0;
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS assoc_nr_addr TEXT[] DEFAULT ARRAY[]::TEXT[];
 		ALTER TABLE %s ADD COLUMN IF NOT EXISTS uc_email_prompt_seen BOOL DEFAULT FALSE;
+		ALTER TABLE %s ADD COLUMN IF NOT EXISTS uc_avatar_prompt_seen BOOL DEFAULT FALSE;
 		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_applicant_id;
 		ALTER TABLE %s DROP COLUMN IF EXISTS onfido_check_id;
 		ALTER TABLE %s DROP COLUMN IF EXISTS kyc_status;
 	`, tableName, tableName, tableName, tableName, tableName, tableName,
-		tableName, tableName, tableName)
+		tableName, tableName, tableName, tableName)
 	return queryString
 }
 

@@ -49,6 +49,9 @@ type User struct {
 
 	// UserChannelEmailPromptSeen whether or not the user has seen the prompt to set their user channel email address
 	UserChannelEmailPromptSeen bool `db:"uc_email_prompt_seen"`
+
+	// UserChannelAvatarPromptSeen whether or not the user has seen the prompt to set their user channel avatar
+	UserChannelAvatarPromptSeen bool `db:"uc_avatar_prompt_seen"`
 }
 
 // TokenControllerUpdater describes methods that the user service will use to manage the whitelists a user is a member of

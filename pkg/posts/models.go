@@ -43,6 +43,7 @@ type PostModel struct {
 	ChannelID    string  `gorm:"type:uuid;index:idx_post_channel_id"`
 	AuthorID     string  `gorm:"type:uuid;index:idx_post_author_id;not null"`
 	PostType     string  `gorm:"index:idx_post_type"`
+	Reference    *string `gorm:"unique_index:idx_post_reference"`
 	Data         postgres.Jsonb
 	PostPayments []*payments.PaymentModel `gorm:"polymorphic:Owner;"`
 }
@@ -104,8 +105,9 @@ func (b Comment) GetType() string {
 
 // ExternalLink is a type of Post that links to another web page
 type ExternalLink struct {
-	PostModel `json:"-"`
-	URL       string `json:"url"`
+	PostModel     `json:"-"`
+	URL           string `json:"url"`
+	OpenGraphData []byte `json:"open_graph_data"`
 }
 
 // GetType returns the post type "Boost"
