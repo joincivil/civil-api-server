@@ -322,11 +322,15 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 
 	var paymentsSlice []Payment
 	for _, result := range pays {
+		if !result.ShouldPublicize {
+			result.PayerChannelID = ""
+		}
 		payment, err := ModelToInterface(&result)
 		if err != nil {
 			log.Errorf("An error occurred: %v\n", err)
 			return nil, err
 		}
+
 		paymentsSlice = append(paymentsSlice, payment)
 	}
 

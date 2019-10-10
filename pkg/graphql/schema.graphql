@@ -675,6 +675,7 @@ interface Payment {
   createdAt: Time!
   updatedAt: Time!
   usdEquivalent: Float!
+  payerChannelID: String
 }
 
 type PaymentStripe implements Payment {
@@ -687,6 +688,7 @@ type PaymentStripe implements Payment {
   createdAt: Time!
   updatedAt: Time!
   usdEquivalent: Float!
+  payerChannelID: String
 }
 
 type PaymentEther implements Payment {
@@ -701,6 +703,7 @@ type PaymentEther implements Payment {
   transactionID: String!
   usdEquivalent: Float!
   fromAddress: String!
+  payerChannelID: String
 }
 
 type PaymentToken implements Payment {
@@ -714,6 +717,7 @@ type PaymentToken implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  payerChannelID: String
 }
 
 # Payment inputs
