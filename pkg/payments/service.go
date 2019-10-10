@@ -330,7 +330,6 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 			log.Errorf("An error occurred: %v\n", err)
 			return nil, err
 		}
-
 		paymentsSlice = append(paymentsSlice, payment)
 	}
 
