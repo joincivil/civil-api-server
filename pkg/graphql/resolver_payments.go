@@ -80,7 +80,7 @@ func (r *mutationResolver) PaymentsCreateTokenPayment(ctx context.Context, postI
 }
 
 func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payment payments.EtherPayment) (email.TemplateData, error) {
-	if post.GetType() == "boost" {
+	if post.GetType() == posts.TypeBoost {
 		boost := post.(*posts.Boost)
 		channel, err := r.channelService.GetChannel(post.GetChannelID())
 		if err != nil {
@@ -104,7 +104,7 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 }
 
 func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, payment payments.StripePayment) (email.TemplateData, error) {
-	if post.GetType() == "boost" {
+	if post.GetType() == posts.TypeBoost {
 		boost := post.(*posts.Boost)
 		channel, err := r.channelService.GetChannel(post.GetChannelID())
 		if err != nil {

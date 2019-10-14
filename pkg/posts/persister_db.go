@@ -43,7 +43,7 @@ func (p *DBPostPersister) CreatePost(authorID string, post Post) (Post, error) {
 	if err != nil {
 		return nil, err
 	}
-	if post.GetType() == "boost" {
+	if post.GetType() == TypeBoost {
 		boost := post.(Boost)
 		if boost.DateEnd.Before(time.Now()) {
 			return nil, ErrorBadBoostEndDate
@@ -223,15 +223,15 @@ func PostInterfaceToBase(post Post) (*PostModel, error) {
 func BaseToPostInterface(base *PostModel) (Post, error) {
 	var post Post
 	switch base.PostType {
-	case boost:
+	case TypeBoost:
 		post = &Boost{
 			PostModel: *base,
 		}
-	case externallink:
+	case TypeExternalLink:
 		post = &ExternalLink{
 			PostModel: *base,
 		}
-	case comment:
+	case TypeComment:
 		post = &Comment{
 			PostModel: *base,
 		}

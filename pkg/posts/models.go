@@ -7,10 +7,11 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/payments"
 )
 
+// TYPES
 const (
-	boost        = "boost"
-	externallink = "externallink"
-	comment      = "comment"
+	TypeBoost        = "boost"
+	TypeExternalLink = "externallink"
+	TypeComment      = "comment"
 )
 
 // Post represents a Civil Post
@@ -89,7 +90,7 @@ type BoostItem struct {
 
 // GetType returns the post type "Boost"
 func (b Boost) GetType() string {
-	return boost
+	return TypeBoost
 }
 
 // Comment is a type of Post that contains just type
@@ -100,7 +101,7 @@ type Comment struct {
 
 // GetType returns the post type "Boost"
 func (b Comment) GetType() string {
-	return comment
+	return TypeComment
 }
 
 // ExternalLink is a type of Post that links to another web page
@@ -112,5 +113,5 @@ type ExternalLink struct {
 
 // GetType returns the post type "Boost"
 func (b ExternalLink) GetType() string {
-	return externallink
+	return TypeExternalLink
 }
