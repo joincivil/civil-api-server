@@ -31,7 +31,7 @@ func (s *Service) CreateExternalLinkEmbedded(post Post) (Post, error) {
 		return nil, err
 	}
 	postType := base.PostType
-	if postType == externallink {
+	if postType == TypeExternalLink {
 		externalLink, err := s.getExternalLink(post)
 		if err != nil {
 			return nil, err
@@ -49,9 +49,9 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 		return nil, err
 	}
 	postType := base.PostType
-	if postType == boost {
+	if postType == TypeBoost {
 		return s.PostPersister.CreatePost(authorID, post)
-	} else if postType == externallink {
+	} else if postType == TypeExternalLink {
 		externalLink, err := s.getExternalLink(post)
 		if err != nil {
 			return nil, err
@@ -108,7 +108,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
-		ref := "externallink+" + channel.Reference + "+" + htmlInfo.CanonicalURL
+		ref := TypeExternalLink + "+" + channel.Reference + "+" + htmlInfo.CanonicalURL
 		externalLink.Reference = &ref
 
 		ogJSON, err := htmlInfo.OGInfo.ToJSON()
