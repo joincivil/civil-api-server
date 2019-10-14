@@ -192,6 +192,7 @@ type Mutation {
   postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
 
   postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+  postsCreateExternalLinkEmbedded(input: PostCreateExternalLinkInput!): PostExternalLink
   postsUpdateExternalLink(
     postID: String!
     input: PostCreateExternalLinkInput!
