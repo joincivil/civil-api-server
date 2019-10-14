@@ -57,6 +57,9 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	ParamProposal() ParamProposalResolver
 	Parameter() ParameterResolver
+	PaymentEther() PaymentEtherResolver
+	PaymentStripe() PaymentStripeResolver
+	PaymentToken() PaymentTokenResolver
 	Poll() PollResolver
 	PostBoost() PostBoostResolver
 	PostComment() PostCommentResolver
@@ -431,6 +434,7 @@ type ComplexityRoot struct {
 		CurrencyCode   func(childComplexity int) int
 		ExchangeRate   func(childComplexity int) int
 		FromAddress    func(childComplexity int) int
+		PayerChannel   func(childComplexity int) int
 		PayerChannelID func(childComplexity int) int
 		Reaction       func(childComplexity int) int
 		Status         func(childComplexity int) int
@@ -445,6 +449,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		CurrencyCode   func(childComplexity int) int
 		ExchangeRate   func(childComplexity int) int
+		PayerChannel   func(childComplexity int) int
 		PayerChannelID func(childComplexity int) int
 		Reaction       func(childComplexity int) int
 		Status         func(childComplexity int) int
@@ -458,6 +463,7 @@ type ComplexityRoot struct {
 		CreatedAt      func(childComplexity int) int
 		CurrencyCode   func(childComplexity int) int
 		ExchangeRate   func(childComplexity int) int
+		PayerChannel   func(childComplexity int) int
 		PayerChannelID func(childComplexity int) int
 		Reaction       func(childComplexity int) int
 		Status         func(childComplexity int) int
@@ -761,6 +767,15 @@ type ParamProposalResolver interface {
 }
 type ParameterResolver interface {
 	Value(ctx context.Context, obj *model.Parameter) (string, error)
+}
+type PaymentEtherResolver interface {
+	PayerChannel(ctx context.Context, obj *payments.EtherPayment) (*channels.Channel, error)
+}
+type PaymentStripeResolver interface {
+	PayerChannel(ctx context.Context, obj *payments.StripePayment) (*channels.Channel, error)
+}
+type PaymentTokenResolver interface {
+	PayerChannel(ctx context.Context, obj *payments.TokenPayment) (*channels.Channel, error)
 }
 type PollResolver interface {
 	CommitEndDate(ctx context.Context, obj *model.Poll) (int, error)
@@ -2846,6 +2861,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaymentEther.FromAddress(childComplexity), true
 
+	case "PaymentEther.payerChannel":
+		if e.complexity.PaymentEther.PayerChannel == nil {
+			break
+		}
+
+		return e.complexity.PaymentEther.PayerChannel(childComplexity), true
+
 	case "PaymentEther.payerChannelID":
 		if e.complexity.PaymentEther.PayerChannelID == nil {
 			break
@@ -2923,6 +2945,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaymentStripe.ExchangeRate(childComplexity), true
 
+	case "PaymentStripe.payerChannel":
+		if e.complexity.PaymentStripe.PayerChannel == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.PayerChannel(childComplexity), true
+
 	case "PaymentStripe.payerChannelID":
 		if e.complexity.PaymentStripe.PayerChannelID == nil {
 			break
@@ -2992,6 +3021,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaymentToken.ExchangeRate(childComplexity), true
+
+	case "PaymentToken.payerChannel":
+		if e.complexity.PaymentToken.PayerChannel == nil {
+			break
+		}
+
+		return e.complexity.PaymentToken.PayerChannel(childComplexity), true
 
 	case "PaymentToken.payerChannelID":
 		if e.complexity.PaymentToken.PayerChannelID == nil {
@@ -4800,6 +4836,7 @@ interface Payment {
   updatedAt: Time!
   usdEquivalent: Float!
   payerChannelID: String
+  payerChannel: Channel
 }
 
 type PaymentStripe implements Payment {
@@ -4813,6 +4850,7 @@ type PaymentStripe implements Payment {
   updatedAt: Time!
   usdEquivalent: Float!
   payerChannelID: String
+  payerChannel: Channel
 }
 
 type PaymentEther implements Payment {
@@ -4828,6 +4866,7 @@ type PaymentEther implements Payment {
   usdEquivalent: Float!
   fromAddress: String!
   payerChannelID: String
+  payerChannel: Channel
 }
 
 type PaymentToken implements Payment {
@@ -4842,6 +4881,7 @@ type PaymentToken implements Payment {
   transactionID: String!
   usdEquivalent: Float!
   payerChannelID: String
+  payerChannel: Channel
 }
 
 # Payment inputs
@@ -16114,6 +16154,40 @@ func (ec *executionContext) _PaymentEther_payerChannelID(ctx context.Context, fi
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PaymentEther_payerChannel(ctx context.Context, field graphql.CollectedField, obj *payments.EtherPayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentEther",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaymentEther().PayerChannel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PaymentStripe_status(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -16467,6 +16541,40 @@ func (ec *executionContext) _PaymentStripe_payerChannelID(ctx context.Context, f
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentStripe_payerChannel(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentStripe",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaymentStripe().PayerChannel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PaymentToken_status(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) (ret graphql.Marshaler) {
@@ -16859,6 +16967,40 @@ func (ec *executionContext) _PaymentToken_payerChannelID(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentToken_payerChannel(ctx context.Context, field graphql.CollectedField, obj *payments.TokenPayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentToken",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PaymentToken().PayerChannel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Poll_commitEndDate(ctx context.Context, field graphql.CollectedField, obj *model.Poll) (ret graphql.Marshaler) {
@@ -25857,40 +25999,51 @@ func (ec *executionContext) _PaymentEther(ctx context.Context, sel ast.Selection
 		case "exchangeRate":
 			out.Values[i] = ec._PaymentEther_exchangeRate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "amount":
 			out.Values[i] = ec._PaymentEther_amount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._PaymentEther_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._PaymentEther_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "transactionID":
 			out.Values[i] = ec._PaymentEther_transactionID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "usdEquivalent":
 			out.Values[i] = ec._PaymentEther_usdEquivalent(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "fromAddress":
 			out.Values[i] = ec._PaymentEther_fromAddress(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "payerChannelID":
 			out.Values[i] = ec._PaymentEther_payerChannelID(ctx, field, obj)
+		case "payerChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaymentEther_payerChannel(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -25924,30 +26077,41 @@ func (ec *executionContext) _PaymentStripe(ctx context.Context, sel ast.Selectio
 		case "exchangeRate":
 			out.Values[i] = ec._PaymentStripe_exchangeRate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "amount":
 			out.Values[i] = ec._PaymentStripe_amount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._PaymentStripe_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._PaymentStripe_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "usdEquivalent":
 			out.Values[i] = ec._PaymentStripe_usdEquivalent(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "payerChannelID":
 			out.Values[i] = ec._PaymentStripe_payerChannelID(ctx, field, obj)
+		case "payerChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaymentStripe_payerChannel(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -25981,35 +26145,46 @@ func (ec *executionContext) _PaymentToken(ctx context.Context, sel ast.Selection
 		case "exchangeRate":
 			out.Values[i] = ec._PaymentToken_exchangeRate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "amount":
 			out.Values[i] = ec._PaymentToken_amount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "createdAt":
 			out.Values[i] = ec._PaymentToken_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "updatedAt":
 			out.Values[i] = ec._PaymentToken_updatedAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "transactionID":
 			out.Values[i] = ec._PaymentToken_transactionID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "usdEquivalent":
 			out.Values[i] = ec._PaymentToken_usdEquivalent(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "payerChannelID":
 			out.Values[i] = ec._PaymentToken_payerChannelID(ctx, field, obj)
+		case "payerChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PaymentToken_payerChannel(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
+	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/go-common/pkg/email"
@@ -139,4 +141,56 @@ func (r *queryResolver) GetChannelTotalProceeds(ctx context.Context, channelID s
 
 	result := r.paymentService.GetChannelTotalProceeds(channelID)
 	return result, nil
+}
+
+// PaymentEther is the resolver for the PaymentEther type
+func (r *Resolver) PaymentEther() graphql.PaymentEtherResolver {
+	return &etherPaymentResolver{Resolver: r, paymentResolver: &paymentResolver{r}}
+}
+
+// PaymentStripe is the resolver for the PaymentStripe type
+func (r *Resolver) PaymentStripe() graphql.PaymentStripeResolver {
+	return &stripePaymentResolver{Resolver: r, paymentResolver: &paymentResolver{r}}
+}
+
+// PaymentToken is the resolver for the PaymentToken type
+func (r *Resolver) PaymentToken() graphql.PaymentTokenResolver {
+	return &tokenPaymentResolver{Resolver: r, paymentResolver: &paymentResolver{r}}
+}
+
+// TYPE RESOLVERS
+type paymentResolver struct{ *Resolver }
+
+type etherPaymentResolver struct {
+	*Resolver
+	*paymentResolver
+}
+type stripePaymentResolver struct {
+	*Resolver
+	*paymentResolver
+}
+type tokenPaymentResolver struct {
+	*Resolver
+	*paymentResolver
+}
+
+func (r *etherPaymentResolver) PayerChannel(ctx context.Context, payment *payments.EtherPayment) (*channels.Channel, error) {
+	if !payment.ShouldPublicize {
+		return nil, nil
+	}
+	return r.channelService.GetChannel(payment.PayerChannelID)
+}
+
+func (r *stripePaymentResolver) PayerChannel(ctx context.Context, payment *payments.StripePayment) (*channels.Channel, error) {
+	if !payment.ShouldPublicize {
+		return nil, nil
+	}
+	return r.channelService.GetChannel(payment.PayerChannelID)
+}
+
+func (r *tokenPaymentResolver) PayerChannel(ctx context.Context, payment *payments.TokenPayment) (*channels.Channel, error) {
+	if !payment.ShouldPublicize {
+		return nil, nil
+	}
+	return r.channelService.GetChannel(payment.PayerChannelID)
 }
