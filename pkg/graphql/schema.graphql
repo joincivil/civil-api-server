@@ -438,6 +438,7 @@ type Channel {
   newsroom: Newsroom
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
+  stripeAccountID: String
   currentUserIsAdmin: Boolean!
   handle: String
   EmailAddressRestricted: String
