@@ -73,7 +73,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 		return nil, err
 	}
 	channelType := channel.ChannelType
-	if channelType == "newsroom" {
+	if channelType == channels.TypeNewsroom {
 		externalLink := post.(ExternalLink)
 		cleanedSubmittedURL, err := utils.CleanURL(externalLink.URL)
 		if err != nil {
