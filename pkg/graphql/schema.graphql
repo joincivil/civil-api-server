@@ -192,6 +192,7 @@ type Mutation {
   postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
 
   postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+  postsCreateExternalLinkEmbedded(input: PostCreateExternalLinkInput!): PostExternalLink
   postsUpdateExternalLink(
     postID: String!
     input: PostCreateExternalLinkInput!
@@ -438,6 +439,7 @@ type Channel {
   newsroom: Newsroom
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
+  stripeAccountID: String
   currentUserIsAdmin: Boolean!
   handle: String
   EmailAddressRestricted: String
@@ -675,6 +677,8 @@ interface Payment {
   createdAt: Time!
   updatedAt: Time!
   usdEquivalent: Float!
+  payerChannelID: String
+  payerChannel: Channel
 }
 
 type PaymentStripe implements Payment {
@@ -687,6 +691,8 @@ type PaymentStripe implements Payment {
   createdAt: Time!
   updatedAt: Time!
   usdEquivalent: Float!
+  payerChannelID: String
+  payerChannel: Channel
 }
 
 type PaymentEther implements Payment {
@@ -701,6 +707,8 @@ type PaymentEther implements Payment {
   transactionID: String!
   usdEquivalent: Float!
   fromAddress: String!
+  payerChannelID: String
+  payerChannel: Channel
 }
 
 type PaymentToken implements Payment {
@@ -714,6 +722,8 @@ type PaymentToken implements Payment {
   updatedAt: Time!
   transactionID: String!
   usdEquivalent: Float!
+  payerChannelID: String
+  payerChannel: Channel
 }
 
 # Payment inputs

@@ -51,6 +51,10 @@ func (t *testListingPersister) ListingByAddress(address common.Address) (*pmodel
 	return t.Listings[0], nil
 }
 
+func (t *testListingPersister) ListingByCleanedNewsroomURL(cleanURL string) (*pmodel.Listing, error) {
+	return t.Listings[0], nil
+}
+
 func (t *testListingPersister) CreateListing(listing *pmodel.Listing) error {
 	return nil
 }
