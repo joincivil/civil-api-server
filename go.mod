@@ -13,12 +13,11 @@ require (
 	github.com/didip/tollbooth_chi v0.0.0-20170928041846-6ab5f3083f3d
 	github.com/dyatlov/go-htmlinfo v0.0.0-20180517114536-d9417c75de65
 	github.com/dyatlov/go-oembed v0.0.0-20180429203341-4bc5ab7a42e9 // indirect
-	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8
+	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 // indirect
 	github.com/dyatlov/go-readability v0.0.0-20150926130635-e7b2080f87f8 // indirect
 	github.com/ethereum/go-ethereum v0.0.0-20190528221609-008d250e3c57
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/goware/urlx v0.3.1
 	github.com/iancoleman/strcase v0.0.0-20180726023541-3605ed457bf7
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/jinzhu/gorm v1.9.8
@@ -34,7 +33,6 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
 	github.com/stripe/stripe-go v61.0.1+incompatible
-	github.com/vektah/gorunpkg v0.0.0-20190126024156-2aeb42363e48 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	github.com/vincent-petithory/dataurl v0.0.0-20160330182126-9a301d65acbb
 	go.uber.org/atomic v1.4.0 // indirect
@@ -45,7 +43,6 @@ require (
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
 	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb // indirect
 	golang.org/x/sys v0.0.0-20191009170203-06d7bd2c5f4f // indirect
-	golang.org/x/tools v0.0.0-20191007185444-6536af71d98a // indirect
 )
 
 replace git.apache.org/thrift.git v0.12.0 => github.com/apache/thrift v0.12.0
