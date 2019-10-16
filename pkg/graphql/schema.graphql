@@ -96,6 +96,7 @@ type Query {
   # Post Queries
   postsGet(id: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
+  postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult

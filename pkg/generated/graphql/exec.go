@@ -572,6 +572,7 @@ type ComplexityRoot struct {
 		Poll                         func(childComplexity int, pollID int) int
 		PostsGet                     func(childComplexity int, id string) int
 		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
+		PostsSearchGroupedByChannel  func(childComplexity int, search posts.SearchInput) int
 		StorefrontCvlPrice           func(childComplexity int) int
 		StorefrontCvlQuoteTokens     func(childComplexity int, tokensToBuy float64) int
 		StorefrontCvlQuoteUsd        func(childComplexity int, usdToSpend float64) int
@@ -831,6 +832,7 @@ type QueryResolver interface {
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
+	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
@@ -3732,6 +3734,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PostsSearch(childComplexity, args["search"].(posts.SearchInput)), true
 
+	case "Query.postsSearchGroupedByChannel":
+		if e.complexity.Query.PostsSearchGroupedByChannel == nil {
+			break
+		}
+
+		args, err := ec.field_Query_postsSearchGroupedByChannel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsSearchGroupedByChannel(childComplexity, args["search"].(posts.SearchInput)), true
+
 	case "Query.storefrontCvlPrice":
 		if e.complexity.Query.StorefrontCvlPrice == nil {
 			break
@@ -4254,6 +4268,7 @@ type Query {
   # Post Queries
   postsGet(id: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
+  postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
@@ -6373,6 +6388,20 @@ func (ec *executionContext) field_Query_postsGet_args(ctx context.Context, rawAr
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_postsSearchGroupedByChannel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 posts.SearchInput
+	if tmp, ok := rawArgs["search"]; ok {
+		arg0, err = ec.unmarshalNPostSearchInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐSearchInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["search"] = arg0
 	return args, nil
 }
 
@@ -20016,6 +20045,47 @@ func (ec *executionContext) _Query_postsSearch(ctx context.Context, field graphq
 	return ec.marshalOPostSearchResult2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPostSearchResult(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_postsSearchGroupedByChannel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_postsSearchGroupedByChannel_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PostsSearchGroupedByChannel(rctx, args["search"].(posts.SearchInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*posts.PostSearchResult)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPostSearchResult2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPostSearchResult(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_getChannelTotalProceeds(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -27014,6 +27084,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_postsSearch(ctx, field)
 				return res
 			})
+		case "postsSearchGroupedByChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_postsSearchGroupedByChannel(ctx, field)
+				return res
+			})
 		case "getChannelTotalProceeds":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -29593,7 +29674,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

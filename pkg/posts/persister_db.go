@@ -3,13 +3,13 @@ package posts
 import (
 	"encoding/json"
 	"errors"
-	"time"
-
+	"fmt"
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	paginator "github.com/pilagod/gorm-cursor-paginator"
 	uuid "github.com/satori/go.uuid"
+	"time"
 )
 
 var (
@@ -129,7 +129,54 @@ func (p *DBPostPersister) DeletePost(requestorUserID string, id string) error {
 	return nil
 }
 
-// SearchPosts retrieves posts making the search criteria
+// SearchPostsMostRecentPerChannel retrieves most recent post for each channel matching the search criteria
+func (p *DBPostPersister) SearchPostsMostRecentPerChannel(search *SearchInput) (*PostSearchResult, error) {
+	var dbResults []PostModel
+	pager := initModelPaginatorFrom(search.Paging)
+	stmt := p.db.Raw(fmt.Sprintf(`
+		SELECT * FROM posts WHERE created_at IN (SELECT MAX(created_at) FROM posts WHERE deleted_at IS NULL GROUP BY channel_id) ORDER BY created_at DESC;
+	`))
+
+	if search.PostType != "" {
+		stmt = p.db.Raw(fmt.Sprintf(`
+			SELECT * FROM posts 
+			WHERE posts.created_at IN 
+			(
+				SELECT MAX(posts.created_at) 
+				FROM posts p
+				WHERE p.deleted_at IS NULL 
+				AND p.post_type = ? 
+				GROUP BY p.channel_id
+			) 
+			ORDER BY posts.created_at DESC;
+			`),
+			search.PostType)
+	}
+
+	results := pager.Paginate(stmt, &dbResults)
+	if results.Error != nil {
+		log.Errorf("An error occurred: %v\n", results.Error)
+		return nil, results.Error
+	}
+
+	var posts []Post
+	for _, result := range dbResults {
+		post, err := BaseToPostInterface(&result)
+		if err != nil {
+			log.Errorf("An error occurred: %v\n", err)
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	cursors := pager.GetNextCursors()
+
+	response := &PostSearchResult{Posts: posts, Pagination: Pagination{AfterCursor: cursors.AfterCursor, BeforeCursor: cursors.BeforeCursor}}
+
+	return response, nil
+}
+
+// SearchPosts retrieves posts matching the search criteria
 func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, error) {
 	var dbResults []PostModel
 	pager := initModelPaginatorFrom(search.Paging)

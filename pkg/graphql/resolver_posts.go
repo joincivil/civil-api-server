@@ -40,6 +40,13 @@ func (r *queryResolver) PostsSearch(ctx context.Context, input posts.SearchInput
 	return results, err
 }
 
+func (r *queryResolver) PostsSearchGroupedByChannel(ctx context.Context, input posts.SearchInput) (*posts.PostSearchResult, error) {
+
+	results, err := r.postService.SearchPostsMostRecentPerChannel(&input)
+
+	return results, err
+}
+
 // MUTATIONS
 func (r *mutationResolver) postCreate(ctx context.Context, post posts.Post) (posts.Post, error) {
 	token := auth.ForContext(ctx)

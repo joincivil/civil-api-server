@@ -7,4 +7,5 @@ type PostPersister interface {
 	EditPost(requestorUserID string, postID string, patch Post) (Post, error)
 	DeletePost(requestorUserID string, id string) error
 	SearchPosts(search *SearchInput) (*PostSearchResult, error)
+	SearchPostsMostRecentPerChannel(search *SearchInput) (*PostSearchResult, error)
 }
