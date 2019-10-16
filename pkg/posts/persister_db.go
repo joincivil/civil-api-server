@@ -3,7 +3,6 @@ package posts
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -132,25 +131,11 @@ func (p *DBPostPersister) DeletePost(requestorUserID string, id string) error {
 // SearchPostsMostRecentPerChannel retrieves most recent post for each channel matching the search criteria
 func (p *DBPostPersister) SearchPostsMostRecentPerChannel(search *SearchInput) (*PostSearchResult, error) {
 	var dbResults []PostModel
-	pager := initModelPaginatorFrom(search.Paging)
-	stmt := p.db.Raw(fmt.Sprintf(`
-		SELECT * FROM posts WHERE created_at IN (SELECT MAX(created_at) FROM posts WHERE deleted_at IS NULL GROUP BY channel_id) ORDER BY created_at DESC;
-	`))
 
+	pager := initModelPaginatorFrom(search.Paging)
+	stmt := p.db.Where("created_at IN(SELECT MAX(created_at) FROM posts WHERE deleted_at IS NULL GROUP BY channel_id)", search.PostType)
 	if search.PostType != "" {
-		stmt = p.db.Raw(fmt.Sprintf(`
-			SELECT * FROM posts 
-			WHERE posts.created_at IN 
-			(
-				SELECT MAX(posts.created_at) 
-				FROM posts p
-				WHERE p.deleted_at IS NULL 
-				AND p.post_type = ? 
-				GROUP BY p.channel_id
-			) 
-			ORDER BY posts.created_at DESC;
-			`),
-			search.PostType)
+		stmt = p.db.Where("created_at IN(SELECT MAX(created_at) FROM posts WHERE deleted_at IS NULL AND post_type = ? GROUP BY channel_id)", search.PostType)
 	}
 
 	results := pager.Paginate(stmt, &dbResults)
