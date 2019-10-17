@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	gql "github.com/99designs/gqlgen/graphql"
 	"github.com/iancoleman/strcase"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -636,8 +637,15 @@ func (r *queryResolver) Parameters(ctx context.Context, paramNames []string) ([]
 	for _, paramName := range paramNames {
 		parameter, err := r.parameterPersister.ParameterByName(paramName)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "error retrieving parameter by name")
 		}
+
+		if parameter == nil || parameter.Value() == nil {
+			r.errorReporter.Msg(fmt.Sprintf("missing parameterizer value for %v", paramName), nil)
+			gql.AddErrorf(ctx, "no value for %v", paramName)
+			parameter = nil
+		}
+
 		parameters = append(parameters, parameter)
 	}
 
