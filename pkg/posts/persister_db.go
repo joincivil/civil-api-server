@@ -128,6 +128,33 @@ func (p *DBPostPersister) DeletePost(requestorUserID string, id string) error {
 	return nil
 }
 
+// SearchPostsRankedV1 retrieves most recent externallink post for each channel, followed by all the rest of the posts in reverse chronological order
+func (p *DBPostPersister) SearchPostsRankedV1(limit int, offset int) (*PostSearchResult, error) {
+	var dbResults []PostModel
+
+	stmt := p.db.Raw("select * from vw_post_feed limit ? offset ?", limit, offset)
+
+	results := stmt.Scan(&dbResults)
+	if results.Error != nil {
+		log.Errorf("An error occurred: %v\n", results.Error)
+		return nil, results.Error
+	}
+
+	var posts []Post
+	for _, result := range dbResults {
+		post, err := BaseToPostInterface(&result)
+		if err != nil {
+			log.Errorf("An error occurred: %v\n", err)
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	response := &PostSearchResult{Posts: posts}
+
+	return response, nil
+}
+
 // SearchPostsMostRecentPerChannel retrieves most recent post for each channel matching the search criteria
 func (p *DBPostPersister) SearchPostsMostRecentPerChannel(search *SearchInput) (*PostSearchResult, error) {
 	var dbResults []PostModel
