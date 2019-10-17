@@ -3,6 +3,7 @@ package posts
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -24,6 +25,10 @@ var (
 	ErrorBadBoostEndDate = errors.New("bad End Date submitting for Boost")
 )
 
+const (
+	defaultStoryfeedV1ViewName = "vw_post_feed"
+)
+
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
 type DBPostPersister struct {
 	db *gorm.DB
@@ -34,6 +39,34 @@ func NewDBPostPersister(db *gorm.DB) PostPersister {
 	return &DBPostPersister{
 		db,
 	}
+}
+
+// CreateViews creates the views if they don't exist
+func (p *DBPostPersister) CreateViews() error {
+	createStoryfeedV1ViewQuery := CreateStoryfeedV1ViewQuery(defaultStoryfeedV1ViewName)
+	db := p.db.Exec(createStoryfeedV1ViewQuery)
+	if db.Error != nil {
+		return fmt.Errorf("Error creating storyfeedV1 view in postgres: %v", db.Error)
+	}
+	return nil
+}
+
+// CreateStoryfeedV1ViewQuery returns the query to create the storyfeedV1 view
+func CreateStoryfeedV1ViewQuery(viewName string) string {
+	queryString := fmt.Sprintf(`
+	CREATE OR REPLACE VIEW %s as (
+		select *, (case when post_num = 1 then 1 ELSE null end) as rank  FROM
+		(
+			select 
+				*, 
+				count(1) over (partition by channel_id order by created_at desc) as post_num
+				from posts
+				where post_type = 'externallink'
+		) data
+		order by rank, created_at desc
+	)
+    `, viewName)
+	return queryString
 }
 
 // CreatePost creates a new Post and saves it to the database
@@ -132,7 +165,7 @@ func (p *DBPostPersister) DeletePost(requestorUserID string, id string) error {
 func (p *DBPostPersister) SearchPostsRankedV1(limit int, offset int) (*PostSearchResult, error) {
 	var dbResults []PostModel
 
-	stmt := p.db.Raw("select * from vw_post_feed limit ? offset ?", limit, offset)
+	stmt := p.db.Raw(fmt.Sprintf("select * from %s limit %d offset %d", defaultStoryfeedV1ViewName, limit, offset))
 
 	results := stmt.Scan(&dbResults)
 	if results.Error != nil {

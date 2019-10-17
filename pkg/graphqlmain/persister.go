@@ -7,6 +7,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/discourse"
 
 	"github.com/joincivil/civil-api-server/pkg/jsonstore"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 )
@@ -26,6 +27,15 @@ func RunPersisterMigrations(userPersister *users.PostgresPersister) error {
 		return fmt.Errorf("Error running migrations: err: %v", err)
 	}
 
+	return nil
+}
+
+// RunPostPersisterMigrations creates views for persister
+func RunPostPersisterMigrations(postPersister posts.PostPersister) error {
+	err := (postPersister).CreateViews()
+	if err != nil {
+		return fmt.Errorf("Error creating views: err: %v", err)
+	}
 	return nil
 }
 
