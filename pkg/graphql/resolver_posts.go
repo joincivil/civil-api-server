@@ -48,7 +48,7 @@ func (r *queryResolver) PostsSearchGroupedByChannel(ctx context.Context, input p
 	return results, err
 }
 
-func (r *queryResolver) PostsStoryfeedV1(ctx context.Context, first *int, after *string) (*graphql.PostResultCursor, error) {
+func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *string) (*graphql.PostResultCursor, error) {
 
 	cursor := defaultPaginationCursor
 	var offset int
@@ -62,7 +62,7 @@ func (r *queryResolver) PostsStoryfeedV1(ctx context.Context, first *int, after 
 		}
 	}
 
-	results, err := r.postService.SearchPostsRankedV1(count, offset)
+	results, err := r.postService.SearchPostsRanked(count, offset)
 	if err != nil {
 		return nil, err
 	}

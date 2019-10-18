@@ -26,7 +26,7 @@ var (
 )
 
 const (
-	defaultStoryfeedV1ViewName = "vw_post_feed"
+	defaultStoryfeedViewName = "vw_post_feed"
 )
 
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
@@ -43,16 +43,16 @@ func NewDBPostPersister(db *gorm.DB) PostPersister {
 
 // CreateViews creates the views if they don't exist
 func (p *DBPostPersister) CreateViews() error {
-	createStoryfeedV1ViewQuery := CreateStoryfeedV1ViewQuery(defaultStoryfeedV1ViewName)
-	db := p.db.Exec(createStoryfeedV1ViewQuery)
+	createStoryfeedViewQuery := CreateStoryfeedViewQuery(defaultStoryfeedViewName)
+	db := p.db.Exec(createStoryfeedViewQuery)
 	if db.Error != nil {
-		return fmt.Errorf("Error creating storyfeedV1 view in postgres: %v", db.Error)
+		return fmt.Errorf("Error creating storyfeed view in postgres: %v", db.Error)
 	}
 	return nil
 }
 
-// CreateStoryfeedV1ViewQuery returns the query to create the storyfeedV1 view
-func CreateStoryfeedV1ViewQuery(viewName string) string {
+// CreateStoryfeedViewQuery returns the query to create the storyfeed view
+func CreateStoryfeedViewQuery(viewName string) string {
 	queryString := fmt.Sprintf(`
 	CREATE OR REPLACE VIEW %s as (
 		select *, (case when post_num = 1 then 1 ELSE null end) as rank  FROM
@@ -161,11 +161,11 @@ func (p *DBPostPersister) DeletePost(requestorUserID string, id string) error {
 	return nil
 }
 
-// SearchPostsRankedV1 retrieves most recent externallink post for each channel, followed by all the rest of the posts in reverse chronological order
-func (p *DBPostPersister) SearchPostsRankedV1(limit int, offset int) (*PostSearchResult, error) {
+// SearchPostsRanked retrieves most recent externallink post for each channel, followed by all the rest of the posts in reverse chronological order
+func (p *DBPostPersister) SearchPostsRanked(limit int, offset int) (*PostSearchResult, error) {
 	var dbResults []PostModel
 
-	stmt := p.db.Raw(fmt.Sprintf("select * from %s limit %d offset %d", defaultStoryfeedV1ViewName, limit, offset))
+	stmt := p.db.Raw(fmt.Sprintf("select * from %s limit %d offset %d", defaultStoryfeedViewName, limit, offset))
 
 	results := stmt.Scan(&dbResults)
 	if results.Error != nil {
