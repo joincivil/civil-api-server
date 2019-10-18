@@ -3,13 +3,13 @@ package posts
 import (
 	"encoding/json"
 	"errors"
-	"time"
-
+	"fmt"
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	paginator "github.com/pilagod/gorm-cursor-paginator"
 	uuid "github.com/satori/go.uuid"
+	"time"
 )
 
 var (
@@ -25,6 +25,10 @@ var (
 	ErrorBadBoostEndDate = errors.New("bad End Date submitting for Boost")
 )
 
+const (
+	defaultStoryfeedViewName = "vw_post_feed"
+)
+
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
 type DBPostPersister struct {
 	db *gorm.DB
@@ -35,6 +39,34 @@ func NewDBPostPersister(db *gorm.DB) PostPersister {
 	return &DBPostPersister{
 		db,
 	}
+}
+
+// CreateViews creates the views if they don't exist
+func (p *DBPostPersister) CreateViews() error {
+	createStoryfeedViewQuery := CreateStoryfeedViewQuery(defaultStoryfeedViewName)
+	db := p.db.Exec(createStoryfeedViewQuery)
+	if db.Error != nil {
+		return fmt.Errorf("Error creating storyfeed view in postgres: %v", db.Error)
+	}
+	return nil
+}
+
+// CreateStoryfeedViewQuery returns the query to create the storyfeed view
+func CreateStoryfeedViewQuery(viewName string) string {
+	queryString := fmt.Sprintf(`
+	CREATE OR REPLACE VIEW %s as (
+		select *, (case when post_num = 1 then 1 ELSE null end) as rank  FROM
+		(
+			select 
+				*, 
+				count(1) over (partition by channel_id order by created_at desc) as post_num
+				from posts
+				where post_type = 'externallink'
+		) data
+		order by rank, created_at desc
+	)
+    `, viewName)
+	return queryString
 }
 
 // CreatePost creates a new Post and saves it to the database
@@ -129,7 +161,67 @@ func (p *DBPostPersister) DeletePost(requestorUserID string, id string) error {
 	return nil
 }
 
-// SearchPosts retrieves posts making the search criteria
+// SearchPostsRanked retrieves most recent externallink post for each channel, followed by all the rest of the posts in reverse chronological order
+func (p *DBPostPersister) SearchPostsRanked(limit int, offset int) (*PostSearchResult, error) {
+	var dbResults []PostModel
+
+	stmt := p.db.Raw(fmt.Sprintf("select * from %s limit %d offset %d", defaultStoryfeedViewName, limit, offset))
+
+	results := stmt.Scan(&dbResults)
+	if results.Error != nil {
+		log.Errorf("An error occurred: %v\n", results.Error)
+		return nil, results.Error
+	}
+
+	var posts []Post
+	for _, result := range dbResults {
+		post, err := BaseToPostInterface(&result)
+		if err != nil {
+			log.Errorf("An error occurred: %v\n", err)
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	response := &PostSearchResult{Posts: posts}
+
+	return response, nil
+}
+
+// SearchPostsMostRecentPerChannel retrieves most recent post for each channel matching the search criteria
+func (p *DBPostPersister) SearchPostsMostRecentPerChannel(search *SearchInput) (*PostSearchResult, error) {
+	var dbResults []PostModel
+
+	pager := initModelPaginatorFrom(search.Paging)
+	stmt := p.db.Where("created_at IN(SELECT MAX(created_at) FROM posts WHERE deleted_at IS NULL GROUP BY channel_id)", search.PostType)
+	if search.PostType != "" {
+		stmt = p.db.Where("created_at IN(SELECT MAX(created_at) FROM posts WHERE deleted_at IS NULL AND post_type = ? GROUP BY channel_id)", search.PostType)
+	}
+
+	results := pager.Paginate(stmt, &dbResults)
+	if results.Error != nil {
+		log.Errorf("An error occurred: %v\n", results.Error)
+		return nil, results.Error
+	}
+
+	var posts []Post
+	for _, result := range dbResults {
+		post, err := BaseToPostInterface(&result)
+		if err != nil {
+			log.Errorf("An error occurred: %v\n", err)
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	cursors := pager.GetNextCursors()
+
+	response := &PostSearchResult{Posts: posts, Pagination: Pagination{AfterCursor: cursors.AfterCursor, BeforeCursor: cursors.BeforeCursor}}
+
+	return response, nil
+}
+
+// SearchPosts retrieves posts matching the search criteria
 func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, error) {
 	var dbResults []PostModel
 	pager := initModelPaginatorFrom(search.Paging)

@@ -20,6 +20,7 @@ var MainModule = fx.Options(
 	EventProcessorModule,
 	PubSubModule,
 	fx.Invoke(RunPersisterMigrations),
+	fx.Invoke(RunPostPersisterMigrations),
 	fx.Invoke(RunServer),
 	fx.Invoke(payments.PaymentUpdaterCron),
 )

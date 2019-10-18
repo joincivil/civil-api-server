@@ -4,6 +4,7 @@ import (
 	context "context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -38,6 +39,94 @@ func (r *queryResolver) PostsSearch(ctx context.Context, input posts.SearchInput
 	results, err := r.postService.SearchPosts(&input)
 
 	return results, err
+}
+
+func (r *queryResolver) PostsSearchGroupedByChannel(ctx context.Context, input posts.SearchInput) (*posts.PostSearchResult, error) {
+
+	results, err := r.postService.SearchPostsMostRecentPerChannel(&input)
+
+	return results, err
+}
+
+func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *string) (*graphql.PostResultCursor, error) {
+
+	cursor := defaultPaginationCursor
+	var offset int
+	var err error
+	count := r.criteriaCount(first)
+	// Figure out the pagination index start point if given
+	if after != nil && *after != "" {
+		offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	results, err := r.postService.SearchPostsRanked(count, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	posts, hasNextPage := r.postsReturnPosts(results.Posts, count)
+
+	edges := r.postsBuildEdges(posts, cursor)
+	endCursor := r.postsEndCursor(edges)
+
+	return &graphql.PostResultCursor{
+		Edges: edges,
+		PageInfo: &graphql.PageInfo{
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+	}, err
+}
+
+func (r *queryResolver) postsReturnPosts(allPosts []posts.Post,
+	count int) ([]posts.Post, bool) {
+	allPostsLen := len(allPosts)
+
+	hasNextPage := false
+	var posts []posts.Post
+
+	// Figure out the "true" events we want to return.
+	// If the posts actually equals what we requested, then we have more results
+	// and hasNextPage should be true
+	if allPostsLen == count {
+		hasNextPage = true
+		posts = allPosts[:allPostsLen-1]
+	} else {
+		posts = allPosts
+	}
+	return posts, hasNextPage
+}
+
+func (r *queryResolver) postsBuildEdges(posts []posts.Post,
+	cursor *paginationCursor) []*graphql.PostEdge {
+
+	edges := make([]*graphql.PostEdge, len(posts))
+
+	// Build edges
+	// Only support sorted offset until we need other types
+	for index, post := range posts {
+		cv := cursor.ValueInt()
+		newCursor := &paginationCursor{
+			typeName: cursor.typeName,
+			value:    fmt.Sprintf("%v", cv+index),
+		}
+		edges[index] = &graphql.PostEdge{
+			Cursor: newCursor.Encode(),
+			Post:   post,
+		}
+	}
+	return edges
+}
+
+func (r *queryResolver) postsEndCursor(edges []*graphql.PostEdge) *string {
+	var endCursor *string
+	if len(edges) > 0 {
+		endCursor = &(edges[len(edges)-1]).Cursor
+	}
+	return endCursor
 }
 
 // MUTATIONS
