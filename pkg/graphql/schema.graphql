@@ -95,6 +95,7 @@ type Query {
 
   # Post Queries
   postsGet(id: String!): Post!
+  postsGetByReference(reference: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
   postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
   postsStoryfeed(first: Int, after: String): PostResultCursor

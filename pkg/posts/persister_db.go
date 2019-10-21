@@ -104,6 +104,21 @@ func (p *DBPostPersister) GetPost(id string) (Post, error) {
 	return BaseToPostInterface(postModel)
 }
 
+// GetPostByReference retrieves a Post by the reference
+func (p *DBPostPersister) GetPostByReference(reference string) (Post, error) {
+	if reference == "" {
+		return nil, ErrorNotFound
+	}
+	postModel := &PostModel{Reference: &reference}
+	p.db.First(postModel)
+
+	if (postModel.CreatedAt == time.Time{}) {
+		return nil, ErrorNotFound
+	}
+
+	return BaseToPostInterface(postModel)
+}
+
 // EditPost removes a post from the database (soft_deletes by setting deleted_at flag)
 func (p *DBPostPersister) EditPost(requestorUserID string, postID string, patch Post) (Post, error) {
 
