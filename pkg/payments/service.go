@@ -31,6 +31,9 @@ const (
 
 	// TODO: get correct group ID for payments
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
+
+	postTypeBoost        = "boost"
+	postTypeExternalLink = "externallink"
 )
 
 // StripeCharger defines the functions needed to create a charge with Stripe
@@ -172,9 +175,9 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, postTyp
 
 	// only send payment receipt if email is given
 	if etherPayment.EmailAddress != "" {
-		if postType == "boost" {
+		if postType == postTypeBoost {
 			err = s.sendBoostEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
-		} else if postType == "externallink" {
+		} else if postType == postTypeExternalLink {
 			err = s.sendExternalLinkEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
 		} else {
 			log.Errorf("Error when sending ETH payment started email. OwnerPostType unknown.")
@@ -261,7 +264,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			update.Amount = res.Amount
 			// only send payment receipt if email is given
 			if payment.EmailAddress != "" {
-				if payment.OwnerPostType == "boost" {
+				if payment.OwnerPostType == postTypeBoost {
 					tmplData := email.TemplateData{
 						"payment_amount_eth": res.Amount,
 						"payment_amount_usd": res.Amount * res.ExchangeRate,
@@ -269,7 +272,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 						"boost_id":           etherPayment.OwnerID,
 					}
 					err2 = s.sendBoostEthPaymentFinishedEmail(payment.EmailAddress, tmplData)
-				} else if payment.OwnerPostType == "externallink" {
+				} else if payment.OwnerPostType == postTypeExternalLink {
 					tmplData := email.TemplateData{
 						"payment_amount_eth": res.Amount,
 						"payment_amount_usd": res.Amount * res.ExchangeRate,
@@ -340,9 +343,9 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 	// only send payment receipt if email is given
 	if payment.EmailAddress != "" {
-		if postType == "boost" {
+		if postType == postTypeBoost {
 			err = s.sendBoostStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
-		} else if postType == "externallink" {
+		} else if postType == postTypeExternalLink {
 			err = s.sendExternalLinkStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
 		} else {
 			log.Errorf("Error when sending Stripe payment complete email. OwnerPostType unknown.")
