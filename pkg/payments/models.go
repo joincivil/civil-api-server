@@ -40,6 +40,7 @@ type PaymentModel struct {
 	Data            postgres.Jsonb
 	OwnerID         string `gorm:"not null"`
 	OwnerType       string `gorm:"not null"`
+	OwnerPostType   string
 	EmailAddress    string
 	PayerChannelID  string
 	ShouldPublicize bool

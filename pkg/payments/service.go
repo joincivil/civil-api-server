@@ -16,9 +16,12 @@ import (
 )
 
 const (
-	ethPaymentStartedEmailTemplateID    = "d-a4595d0eb8c941ab897b9414ac846aff"
-	ethPaymentFinishedEmailTemplateID   = "d-1e8763f27ef843cd8850ca297a426f3d"
-	stripePaymentReceiptEmailTemplateID = "d-b5d79746c540439fac8791b192135aa6"
+	boostEthPaymentStartedEmailTemplateID           = "d-a4595d0eb8c941ab897b9414ac846aff"
+	boostEthPaymentFinishedEmailTemplateID          = "d-1e8763f27ef843cd8850ca297a426f3d"
+	boostStripePaymentReceiptEmailTemplateID        = "d-b5d79746c540439fac8791b192135aa6"
+	externalLinkEthPaymentStartedEmailTemplateID    = "d-a6b6a640436b40cf921811a80f4709b9"
+	externalLinkEthPaymentFinishedEmailTemplateID   = "d-7b7a6f1d0d144bcd995dd92a27429976"
+	externalLinkStripePaymentReceiptEmailTemplateID = "d-e6cc3a3a827e418b81f4af65bc802dcc"
 
 	civilEmailName      = "Civil"
 	supportEmailAddress = "support@civil.co"
@@ -97,23 +100,38 @@ func (s *Service) GetChannelTotalProceeds(channelID string) *ProceedsQueryResult
 	return &result
 }
 
-func (s *Service) sendEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) error {
-	req := getTemplateRequest(ethPaymentStartedEmailTemplateID, emailAddress, tmplData)
+func (s *Service) sendBoostEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(boostEthPaymentStartedEmailTemplateID, emailAddress, tmplData)
 	return s.emailer.SendTemplateEmail(req)
 }
 
-func (s *Service) sendEthPaymentFinishedEmail(emailAddress string, tmplData email.TemplateData) error {
-	req := getTemplateRequest(ethPaymentFinishedEmailTemplateID, emailAddress, tmplData)
+func (s *Service) sendBoostEthPaymentFinishedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(boostEthPaymentFinishedEmailTemplateID, emailAddress, tmplData)
 	return s.emailer.SendTemplateEmail(req)
 }
 
-func (s *Service) sendStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) error {
-	req := getTemplateRequest(stripePaymentReceiptEmailTemplateID, emailAddress, tmplData)
+func (s *Service) sendBoostStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(boostStripePaymentReceiptEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendExternalLinkEthPaymentStartedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(externalLinkEthPaymentStartedEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendExternalLinkEthPaymentFinishedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(externalLinkEthPaymentFinishedEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendExternalLinkStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(externalLinkStripePaymentReceiptEmailTemplateID, emailAddress, tmplData)
 	return s.emailer.SendTemplateEmail(req)
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
-func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID string, etherPayment EtherPayment, tmplData email.TemplateData) (EtherPayment, error) {
+func (s *Service) CreateEtherPayment(channelID string, ownerType string, postType string, ownerID string, etherPayment EtherPayment, tmplData email.TemplateData) (EtherPayment, error) {
 	hash := common.HexToHash(etherPayment.TransactionID)
 	if (hash == common.Hash{}) {
 		return EtherPayment{}, errors.New("invalid tx id")
@@ -136,6 +154,7 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 	payment.Status = "pending"
 	payment.OwnerID = ownerID
 	payment.OwnerType = ownerType
+	payment.OwnerPostType = postType
 	payment.CurrencyCode = "ETH"
 	payment.ExchangeRate = 0
 	payment.Amount = 0
@@ -153,7 +172,13 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, ownerID
 
 	// only send payment receipt if email is given
 	if etherPayment.EmailAddress != "" {
-		err = s.sendEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
+		if postType == "boost" {
+			err = s.sendBoostEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
+		} else if postType == "externallink" {
+			err = s.sendExternalLinkEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
+		} else {
+			log.Errorf("Error when sending ETH payment started email. OwnerPostType unknown.")
+		}
 		if err != nil {
 			return EtherPayment{
 				PaymentModel: payment,
@@ -236,13 +261,24 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			update.Amount = res.Amount
 			// only send payment receipt if email is given
 			if payment.EmailAddress != "" {
-				tmplData := email.TemplateData{
-					"payment_amount_eth": res.Amount,
-					"payment_amount_usd": res.Amount * res.ExchangeRate,
-					"payment_to_address": etherPayment.PaymentAddress,
-					"boost_id":           etherPayment.OwnerID,
+				if payment.OwnerPostType == "boost" {
+					tmplData := email.TemplateData{
+						"payment_amount_eth": res.Amount,
+						"payment_amount_usd": res.Amount * res.ExchangeRate,
+						"payment_to_address": etherPayment.PaymentAddress,
+						"boost_id":           etherPayment.OwnerID,
+					}
+					err2 = s.sendBoostEthPaymentFinishedEmail(payment.EmailAddress, tmplData)
+				} else if payment.OwnerPostType == "externallink" {
+					tmplData := email.TemplateData{
+						"payment_amount_eth": res.Amount,
+						"payment_amount_usd": res.Amount * res.ExchangeRate,
+						"payment_to_address": etherPayment.PaymentAddress,
+					}
+					err2 = s.sendExternalLinkEthPaymentFinishedEmail(payment.EmailAddress, tmplData)
+				} else {
+					log.Errorf("Error when sending ETH payment complete email. OwnerPostType unknown.")
 				}
-				err2 = s.sendEthPaymentFinishedEmail(payment.EmailAddress, tmplData)
 			}
 		}
 	}
@@ -261,7 +297,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 }
 
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
-func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerID string, payment StripePayment, tmplData email.TemplateData) (StripePayment, error) {
+func (s *Service) CreateStripePayment(channelID string, ownerType string, postType string, ownerID string, payment StripePayment, tmplData email.TemplateData) (StripePayment, error) {
 
 	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
 	if err != nil {
@@ -292,6 +328,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(res.StripeResponseJSON)}
 	payment.OwnerID = ownerID
 	payment.OwnerType = ownerType
+	payment.OwnerPostType = postType
 	payment.Reference = res.ID
 
 	// TODO(dankins): this should be set when we support currencies other than USD
@@ -303,7 +340,13 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, ownerI
 	}
 	// only send payment receipt if email is given
 	if payment.EmailAddress != "" {
-		err = s.sendStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+		if postType == "boost" {
+			err = s.sendBoostStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+		} else if postType == "externallink" {
+			err = s.sendExternalLinkStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+		} else {
+			log.Errorf("Error when sending Stripe payment complete email. OwnerPostType unknown.")
+		}
 		if err != nil {
 			return payment, err
 		}
