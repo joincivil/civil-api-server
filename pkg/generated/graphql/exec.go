@@ -581,6 +581,7 @@ type ComplexityRoot struct {
 		Parameters                   func(childComplexity int, paramNames []string) int
 		Poll                         func(childComplexity int, pollID int) int
 		PostsGet                     func(childComplexity int, id string) int
+		PostsGetByReference          func(childComplexity int, reference string) int
 		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
 		PostsSearchGroupedByChannel  func(childComplexity int, search posts.SearchInput) int
 		PostsStoryfeed               func(childComplexity int, first *int, after *string) int
@@ -842,6 +843,7 @@ type QueryResolver interface {
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
+	PostsGetByReference(ctx context.Context, reference string) (posts.Post, error)
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsStoryfeed(ctx context.Context, first *int, after *string) (*PostResultCursor, error)
@@ -3762,6 +3764,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PostsGet(childComplexity, args["id"].(string)), true
 
+	case "Query.postsGetByReference":
+		if e.complexity.Query.PostsGetByReference == nil {
+			break
+		}
+
+		args, err := ec.field_Query_postsGetByReference_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsGetByReference(childComplexity, args["reference"].(string)), true
+
 	case "Query.postsSearch":
 		if e.complexity.Query.PostsSearch == nil {
 			break
@@ -4319,6 +4333,7 @@ type Query {
 
   # Post Queries
   postsGet(id: String!): Post!
+  postsGetByReference(reference: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
   postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
   postsStoryfeed(first: Int, after: String): PostResultCursor
@@ -6439,6 +6454,20 @@ func (ec *executionContext) field_Query_poll_args(ctx context.Context, rawArgs m
 		}
 	}
 	args["pollID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_postsGetByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["reference"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reference"] = arg0
 	return args, nil
 }
 
@@ -20239,6 +20268,50 @@ func (ec *executionContext) _Query_postsGet(ctx context.Context, field graphql.C
 	return ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_postsGetByReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_postsGetByReference_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PostsGetByReference(rctx, args["reference"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(posts.Post)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_postsSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -27413,6 +27486,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "postsGetByReference":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_postsGetByReference(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "postsSearch":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -30062,7 +30149,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

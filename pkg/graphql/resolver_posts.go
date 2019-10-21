@@ -34,6 +34,10 @@ func (r *queryResolver) PostsGet(ctx context.Context, id string) (posts.Post, er
 	return r.postService.GetPost(id)
 }
 
+func (r *queryResolver) PostsGetByReference(ctx context.Context, reference string) (posts.Post, error) {
+	return r.postService.GetPostByReference(reference)
+}
+
 func (r *queryResolver) PostsSearch(ctx context.Context, input posts.SearchInput) (*posts.PostSearchResult, error) {
 
 	results, err := r.postService.SearchPosts(&input)
