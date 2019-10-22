@@ -282,6 +282,11 @@ func (r *postBoostResolver) Payments(ctx context.Context, boost *posts.Boost) ([
 	return r.paymentService.GetPayments(boost.ID)
 }
 
+// CleanedPayments returns "cleaned payments" associated with this Post
+func (r *postBoostResolver) CleanedPayments(ctx context.Context, boost *posts.Boost) ([]*payments.CleanedPayment, error) {
+	return r.paymentService.GetCleanedPayments(boost.ID)
+}
+
 // PaymentsTotal is the sum if payments for this Post
 func (r *postBoostResolver) PaymentsTotal(ctx context.Context, boost *posts.Boost, currencyCode string) (float64, error) {
 	return r.paymentService.TotalPayments(boost.ID, currencyCode)
@@ -305,6 +310,11 @@ func (r *postExternalLinkResolver) Channel(ctx context.Context, post *posts.Exte
 // Payments returns payments associated with this Post
 func (r *postExternalLinkResolver) Payments(ctx context.Context, post *posts.ExternalLink) ([]payments.Payment, error) {
 	return r.paymentService.GetPayments(post.ID)
+}
+
+// CleanedPayments returns "cleaned payments" associated with this Post
+func (r *postExternalLinkResolver) CleanedPayments(ctx context.Context, post *posts.ExternalLink) ([]*payments.CleanedPayment, error) {
+	return r.paymentService.GetCleanedPayments(post.ID)
 }
 
 // PaymentsTotal is the sum if payments for this Post
@@ -342,7 +352,23 @@ func (r *postCommentResolver) Payments(ctx context.Context, post *posts.Comment)
 	return r.paymentService.GetPayments(post.ID)
 }
 
+// CleanedPayments returns "cleaned payments" associated with this Post
+func (r *postCommentResolver) CleanedPayments(ctx context.Context, boost *posts.Comment) ([]*payments.CleanedPayment, error) {
+	return nil, nil
+}
+
 // PaymentsTotal is the sum if payments for this Post
 func (r *postCommentResolver) PaymentsTotal(ctx context.Context, comment *posts.Comment, currencyCode string) (float64, error) {
 	return r.paymentService.TotalPayments(comment.ID, currencyCode)
+}
+
+// CleanedPayment is a custom resolver for CleanedPayments (so can get payer channel data)
+func (r *Resolver) CleanedPayment() graphql.CleanedPaymentResolver {
+	return &cleanedPaymentResolver{Resolver: r}
+}
+
+type cleanedPaymentResolver struct{ *Resolver }
+
+func (r *cleanedPaymentResolver) PayerChannel(ctx context.Context, payment *payments.CleanedPayment) (*channels.Channel, error) {
+	return r.channelService.GetChannel(payment.PayerChannelID)
 }

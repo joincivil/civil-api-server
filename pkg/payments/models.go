@@ -132,3 +132,10 @@ type ProceedsQueryResult struct {
 	EthUsdAmount string
 	Ether        string
 }
+
+// CleanedPayment defines the model for a cleaned payment
+type CleanedPayment struct {
+	UsdEquivalent    float64
+	MostRecentUpdate time.Time
+	PayerChannelID   string
+}

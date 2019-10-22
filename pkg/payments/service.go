@@ -382,6 +382,52 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	return paymentsSlice, nil
 }
 
+// GetCleanedPayments returns the payments associated with a Post, grouped by channelID if payment should be publicized
+func (s *Service) GetCleanedPayments(postID string) ([]*CleanedPayment, error) {
+	var pays []CleanedPayment
+
+	// nolint: gosec
+	stmt := s.db.Raw(fmt.Sprintf(`
+		SELECT * FROM(
+
+			SELECT * FROM(
+				SELECT SUM(amount * exchange_rate) as usd_equivalent,
+					max(created_at) as most_recent_update,  
+					payer_channel_id
+				FROM payments WHERE owner_id = '%s' AND should_publicize = true GROUP BY payer_channel_id
+			) publicized_group
+
+			UNION
+
+			SELECT * FROM( 
+				SELECT (amount * exchange_rate) as usd_equivalent,
+					created_at as most_recent_update, 
+					'' as payer_channel_id
+				FROM payments WHERE owner_id = '%s' AND should_publicize = false
+			) unpublicized_ungroup
+
+		) data 
+		ORDER BY usd_equivalent DESC`, postID, postID))
+
+	results := stmt.Scan(&pays)
+
+	if results.Error != nil {
+		return nil, results.Error
+	}
+
+	var paymentsSlice []*CleanedPayment
+	for _, result := range pays {
+		cleanedPayment := CleanedPayment{
+			UsdEquivalent:    result.UsdEquivalent,
+			MostRecentUpdate: result.MostRecentUpdate,
+			PayerChannelID:   result.PayerChannelID,
+		}
+		paymentsSlice = append(paymentsSlice, &cleanedPayment)
+	}
+
+	return paymentsSlice, nil
+}
+
 // GetPayment returns the payment with the given ID
 func (s *Service) GetPayment(paymentID string) (Payment, error) {
 	var paymentModel PaymentModel
