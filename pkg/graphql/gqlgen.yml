@@ -90,10 +90,8 @@ models:
     model: github.com/joincivil/civil-events-processor/pkg/model.Poll
   Payment:
     model: github.com/joincivil/civil-api-server/pkg/payments.Payment
-  CleanedPaymentsResult:
-    model: github.com/joincivil/civil-api-server/pkg/payments.CleanedPaymentsResult
-  CleanedPayment:
-    model: github.com/joincivil/civil-api-server/pkg/payments.CleanedPayment
+  SanitizedPayment:
+    model: github.com/joincivil/civil-api-server/pkg/payments.SanitizedPayment
   PaymentStripe:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
   PaymentEther:

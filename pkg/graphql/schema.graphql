@@ -505,7 +505,7 @@ interface Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
-  cleanedPayments: [CleanedPayment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   channel: Channel
 }
@@ -519,7 +519,7 @@ type PostBoost implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
-  cleanedPayments: [CleanedPayment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   currencyCode: String
   goalAmount: Float
@@ -546,7 +546,7 @@ type PostComment implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
-  cleanedPayments: [CleanedPayment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   text: String!
   channel: Channel
@@ -561,7 +561,7 @@ type PostExternalLink implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
-  cleanedPayments: [CleanedPayment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   url: String
   channel: Channel
@@ -700,7 +700,7 @@ interface Payment {
   payerChannel: Channel
 }
 
-type CleanedPayment {
+type SanitizedPayment {
   usdEquivalent: Float!
   payerChannelID: String
   mostRecentUpdate: Time!

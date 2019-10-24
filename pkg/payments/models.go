@@ -133,8 +133,8 @@ type ProceedsQueryResult struct {
 	Ether        string
 }
 
-// CleanedPayment defines the model for a cleaned payment
-type CleanedPayment struct {
+// SanitizedPayment defines the model for a sanitized payment (stripped of payment type, other unnecessary info)
+type SanitizedPayment struct {
 	UsdEquivalent    float64
 	MostRecentUpdate time.Time
 	PayerChannelID   string

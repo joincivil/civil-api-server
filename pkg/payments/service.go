@@ -382,9 +382,9 @@ func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	return paymentsSlice, nil
 }
 
-// GetCleanedPayments returns the payments associated with a Post, grouped by channelID if payment should be publicized
-func (s *Service) GetCleanedPayments(postID string) ([]*CleanedPayment, error) {
-	var pays []CleanedPayment
+// GetGroupedSanitizedPayments returns the payments associated with a Post, grouped by channelID if payment should be publicized
+func (s *Service) GetGroupedSanitizedPayments(postID string) ([]*SanitizedPayment, error) {
+	var pays []SanitizedPayment
 
 	// nolint: gosec
 	stmt := s.db.Raw(fmt.Sprintf(`
@@ -415,14 +415,14 @@ func (s *Service) GetCleanedPayments(postID string) ([]*CleanedPayment, error) {
 		return nil, results.Error
 	}
 
-	var paymentsSlice []*CleanedPayment
+	var paymentsSlice []*SanitizedPayment
 	for _, result := range pays {
-		cleanedPayment := CleanedPayment{
+		sanitizedPayment := SanitizedPayment{
 			UsdEquivalent:    result.UsdEquivalent,
 			MostRecentUpdate: result.MostRecentUpdate,
 			PayerChannelID:   result.PayerChannelID,
 		}
-		paymentsSlice = append(paymentsSlice, &cleanedPayment)
+		paymentsSlice = append(paymentsSlice, &sanitizedPayment)
 	}
 
 	return paymentsSlice, nil
