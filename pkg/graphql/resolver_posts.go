@@ -282,6 +282,11 @@ func (r *postBoostResolver) Payments(ctx context.Context, boost *posts.Boost) ([
 	return r.paymentService.GetPayments(boost.ID)
 }
 
+// GroupedSanitizedPayments returns "sanitized payments" associated with this Post, grouped by channel
+func (r *postBoostResolver) GroupedSanitizedPayments(ctx context.Context, boost *posts.Boost) ([]*payments.SanitizedPayment, error) {
+	return r.paymentService.GetGroupedSanitizedPayments(boost.ID)
+}
+
 // PaymentsTotal is the sum if payments for this Post
 func (r *postBoostResolver) PaymentsTotal(ctx context.Context, boost *posts.Boost, currencyCode string) (float64, error) {
 	return r.paymentService.TotalPayments(boost.ID, currencyCode)
@@ -305,6 +310,11 @@ func (r *postExternalLinkResolver) Channel(ctx context.Context, post *posts.Exte
 // Payments returns payments associated with this Post
 func (r *postExternalLinkResolver) Payments(ctx context.Context, post *posts.ExternalLink) ([]payments.Payment, error) {
 	return r.paymentService.GetPayments(post.ID)
+}
+
+// GroupedSanitizedPayments returns "cleaned payments" associated with this Post
+func (r *postExternalLinkResolver) GroupedSanitizedPayments(ctx context.Context, post *posts.ExternalLink) ([]*payments.SanitizedPayment, error) {
+	return r.paymentService.GetGroupedSanitizedPayments(post.ID)
 }
 
 // PaymentsTotal is the sum if payments for this Post
@@ -342,7 +352,23 @@ func (r *postCommentResolver) Payments(ctx context.Context, post *posts.Comment)
 	return r.paymentService.GetPayments(post.ID)
 }
 
+// GroupedSanitizedPayments returns "sanitized payments" associated with this Post, grouped by channel
+func (r *postCommentResolver) GroupedSanitizedPayments(ctx context.Context, boost *posts.Comment) ([]*payments.SanitizedPayment, error) {
+	return nil, nil
+}
+
 // PaymentsTotal is the sum if payments for this Post
 func (r *postCommentResolver) PaymentsTotal(ctx context.Context, comment *posts.Comment, currencyCode string) (float64, error) {
 	return r.paymentService.TotalPayments(comment.ID, currencyCode)
+}
+
+// SanitizedPayment is a custom resolver for SanitizedPayments (so can get payer channel data)
+func (r *Resolver) SanitizedPayment() graphql.SanitizedPaymentResolver {
+	return &sanitizedPaymentResolver{Resolver: r}
+}
+
+type sanitizedPaymentResolver struct{ *Resolver }
+
+func (r *sanitizedPaymentResolver) PayerChannel(ctx context.Context, payment *payments.SanitizedPayment) (*channels.Channel, error) {
+	return r.channelService.GetChannel(payment.PayerChannelID)
 }

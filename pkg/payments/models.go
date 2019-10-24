@@ -132,3 +132,10 @@ type ProceedsQueryResult struct {
 	EthUsdAmount string
 	Ether        string
 }
+
+// SanitizedPayment defines the model for a sanitized payment (stripped of payment type, other unnecessary info)
+type SanitizedPayment struct {
+	UsdEquivalent    float64
+	MostRecentUpdate time.Time
+	PayerChannelID   string
+}
