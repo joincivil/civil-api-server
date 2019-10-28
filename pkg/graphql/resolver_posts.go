@@ -279,6 +279,10 @@ func (r *postBoostResolver) Channel(ctx context.Context, post *posts.Boost) (*ch
 
 // Payments returns payments associated with this Post
 func (r *postBoostResolver) Payments(ctx context.Context, boost *posts.Boost) ([]payments.Payment, error) {
+	isAdmin := r.isPostChannelAdmin(ctx, boost.ChannelID)
+	if !isAdmin {
+		return nil, ErrUserNotAuthorized
+	}
 	return r.paymentService.GetPayments(boost.ID)
 }
 
@@ -309,6 +313,10 @@ func (r *postExternalLinkResolver) Channel(ctx context.Context, post *posts.Exte
 
 // Payments returns payments associated with this Post
 func (r *postExternalLinkResolver) Payments(ctx context.Context, post *posts.ExternalLink) ([]payments.Payment, error) {
+	isAdmin := r.isPostChannelAdmin(ctx, post.ChannelID)
+	if !isAdmin {
+		return nil, ErrUserNotAuthorized
+	}
 	return r.paymentService.GetPayments(post.ID)
 }
 
@@ -349,6 +357,10 @@ func (r *postCommentResolver) Children(context.Context, *posts.Comment) ([]posts
 
 // Payments returns payments associated with this Post
 func (r *postCommentResolver) Payments(ctx context.Context, post *posts.Comment) ([]payments.Payment, error) {
+	isAdmin := r.isPostChannelAdmin(ctx, post.ChannelID)
+	if !isAdmin {
+		return nil, ErrUserNotAuthorized
+	}
 	return r.paymentService.GetPayments(post.ID)
 }
 
@@ -371,4 +383,20 @@ type sanitizedPaymentResolver struct{ *Resolver }
 
 func (r *sanitizedPaymentResolver) PayerChannel(ctx context.Context, payment *payments.SanitizedPayment) (*channels.Channel, error) {
 	return r.channelService.GetChannel(payment.PayerChannelID)
+}
+
+func (r *Resolver) isPostChannelAdmin(ctx context.Context, channelID string) bool {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return false
+	}
+
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	if err != nil {
+		return false
+	}
+	if !isAdmin {
+		return false
+	}
+	return true
 }
