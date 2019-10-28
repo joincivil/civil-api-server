@@ -395,8 +395,5 @@ func (r *Resolver) isPostChannelAdmin(ctx context.Context, channelID string) boo
 	if err != nil {
 		return false
 	}
-	if !isAdmin {
-		return false
-	}
-	return true
+	return isAdmin
 }
