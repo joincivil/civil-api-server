@@ -5,6 +5,7 @@ package graphql
 import (
 	"time"
 
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-events-processor/pkg/model"
 )
 
@@ -130,4 +131,14 @@ type OpenGraphVideo struct {
 type PageInfo struct {
 	EndCursor   *string `json:"endCursor"`
 	HasNextPage bool    `json:"hasNextPage"`
+}
+
+type PostEdge struct {
+	Cursor string     `json:"cursor"`
+	Post   posts.Post `json:"post"`
+}
+
+type PostResultCursor struct {
+	Edges    []*PostEdge `json:"edges"`
+	PageInfo *PageInfo   `json:"pageInfo"`
 }

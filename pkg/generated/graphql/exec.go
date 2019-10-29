@@ -65,6 +65,7 @@ type ResolverRoot interface {
 	PostComment() PostCommentResolver
 	PostExternalLink() PostExternalLinkResolver
 	Query() QueryResolver
+	SanitizedPayment() SanitizedPaymentResolver
 	User() UserResolver
 	UserChallengeVoteData() UserChallengeVoteDataResolver
 }
@@ -481,24 +482,25 @@ type ComplexityRoot struct {
 	}
 
 	PostBoost struct {
-		About         func(childComplexity int) int
-		AuthorID      func(childComplexity int) int
-		Channel       func(childComplexity int) int
-		ChannelID     func(childComplexity int) int
-		Children      func(childComplexity int) int
-		CreatedAt     func(childComplexity int) int
-		CurrencyCode  func(childComplexity int) int
-		DateEnd       func(childComplexity int) int
-		GoalAmount    func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Items         func(childComplexity int) int
-		ParentID      func(childComplexity int) int
-		Payments      func(childComplexity int) int
-		PaymentsTotal func(childComplexity int, currencyCode string) int
-		Title         func(childComplexity int) int
-		UpdatedAt     func(childComplexity int) int
-		What          func(childComplexity int) int
-		Why           func(childComplexity int) int
+		About                    func(childComplexity int) int
+		AuthorID                 func(childComplexity int) int
+		Channel                  func(childComplexity int) int
+		ChannelID                func(childComplexity int) int
+		Children                 func(childComplexity int) int
+		CreatedAt                func(childComplexity int) int
+		CurrencyCode             func(childComplexity int) int
+		DateEnd                  func(childComplexity int) int
+		GoalAmount               func(childComplexity int) int
+		GroupedSanitizedPayments func(childComplexity int) int
+		ID                       func(childComplexity int) int
+		Items                    func(childComplexity int) int
+		ParentID                 func(childComplexity int) int
+		Payments                 func(childComplexity int) int
+		PaymentsTotal            func(childComplexity int, currencyCode string) int
+		Title                    func(childComplexity int) int
+		UpdatedAt                func(childComplexity int) int
+		What                     func(childComplexity int) int
+		Why                      func(childComplexity int) int
 	}
 
 	PostBoostItem struct {
@@ -507,32 +509,44 @@ type ComplexityRoot struct {
 	}
 
 	PostComment struct {
-		AuthorID      func(childComplexity int) int
-		Channel       func(childComplexity int) int
-		ChannelID     func(childComplexity int) int
-		Children      func(childComplexity int) int
-		CreatedAt     func(childComplexity int) int
-		ID            func(childComplexity int) int
-		ParentID      func(childComplexity int) int
-		Payments      func(childComplexity int) int
-		PaymentsTotal func(childComplexity int, currencyCode string) int
-		Text          func(childComplexity int) int
-		UpdatedAt     func(childComplexity int) int
+		AuthorID                 func(childComplexity int) int
+		Channel                  func(childComplexity int) int
+		ChannelID                func(childComplexity int) int
+		Children                 func(childComplexity int) int
+		CreatedAt                func(childComplexity int) int
+		GroupedSanitizedPayments func(childComplexity int) int
+		ID                       func(childComplexity int) int
+		ParentID                 func(childComplexity int) int
+		Payments                 func(childComplexity int) int
+		PaymentsTotal            func(childComplexity int, currencyCode string) int
+		Text                     func(childComplexity int) int
+		UpdatedAt                func(childComplexity int) int
+	}
+
+	PostEdge struct {
+		Cursor func(childComplexity int) int
+		Post   func(childComplexity int) int
 	}
 
 	PostExternalLink struct {
-		AuthorID      func(childComplexity int) int
-		Channel       func(childComplexity int) int
-		ChannelID     func(childComplexity int) int
-		Children      func(childComplexity int) int
-		CreatedAt     func(childComplexity int) int
-		ID            func(childComplexity int) int
-		OpenGraphData func(childComplexity int) int
-		ParentID      func(childComplexity int) int
-		Payments      func(childComplexity int) int
-		PaymentsTotal func(childComplexity int, currencyCode string) int
-		URL           func(childComplexity int) int
-		UpdatedAt     func(childComplexity int) int
+		AuthorID                 func(childComplexity int) int
+		Channel                  func(childComplexity int) int
+		ChannelID                func(childComplexity int) int
+		Children                 func(childComplexity int) int
+		CreatedAt                func(childComplexity int) int
+		GroupedSanitizedPayments func(childComplexity int) int
+		ID                       func(childComplexity int) int
+		OpenGraphData            func(childComplexity int) int
+		ParentID                 func(childComplexity int) int
+		Payments                 func(childComplexity int) int
+		PaymentsTotal            func(childComplexity int, currencyCode string) int
+		URL                      func(childComplexity int) int
+		UpdatedAt                func(childComplexity int) int
+	}
+
+	PostResultCursor struct {
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
 	}
 
 	PostSearchResult struct {
@@ -571,7 +585,10 @@ type ComplexityRoot struct {
 		Parameters                   func(childComplexity int, paramNames []string) int
 		Poll                         func(childComplexity int, pollID int) int
 		PostsGet                     func(childComplexity int, id string) int
+		PostsGetByReference          func(childComplexity int, reference string) int
 		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
+		PostsSearchGroupedByChannel  func(childComplexity int, search posts.SearchInput) int
+		PostsStoryfeed               func(childComplexity int, first *int, after *string) int
 		StorefrontCvlPrice           func(childComplexity int) int
 		StorefrontCvlQuoteTokens     func(childComplexity int, tokensToBuy float64) int
 		StorefrontCvlQuoteUsd        func(childComplexity int, usdToSpend float64) int
@@ -592,6 +609,13 @@ type ComplexityRoot struct {
 		Role       func(childComplexity int) int
 		Signature  func(childComplexity int) int
 		SocialURLs func(childComplexity int) int
+	}
+
+	SanitizedPayment struct {
+		MostRecentUpdate func(childComplexity int) int
+		PayerChannel     func(childComplexity int) int
+		PayerChannelID   func(childComplexity int) int
+		UsdEquivalent    func(childComplexity int) int
 	}
 
 	User struct {
@@ -787,6 +811,7 @@ type PollResolver interface {
 type PostBoostResolver interface {
 	Children(ctx context.Context, obj *posts.Boost) ([]posts.Post, error)
 	Payments(ctx context.Context, obj *posts.Boost) ([]payments.Payment, error)
+	GroupedSanitizedPayments(ctx context.Context, obj *posts.Boost) ([]*payments.SanitizedPayment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Boost, currencyCode string) (float64, error)
 
 	Channel(ctx context.Context, obj *posts.Boost) (*channels.Channel, error)
@@ -794,6 +819,7 @@ type PostBoostResolver interface {
 type PostCommentResolver interface {
 	Children(ctx context.Context, obj *posts.Comment) ([]posts.Post, error)
 	Payments(ctx context.Context, obj *posts.Comment) ([]payments.Payment, error)
+	GroupedSanitizedPayments(ctx context.Context, obj *posts.Comment) ([]*payments.SanitizedPayment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Comment, currencyCode string) (float64, error)
 
 	Channel(ctx context.Context, obj *posts.Comment) (*channels.Channel, error)
@@ -801,6 +827,7 @@ type PostCommentResolver interface {
 type PostExternalLinkResolver interface {
 	Children(ctx context.Context, obj *posts.ExternalLink) ([]posts.Post, error)
 	Payments(ctx context.Context, obj *posts.ExternalLink) ([]payments.Payment, error)
+	GroupedSanitizedPayments(ctx context.Context, obj *posts.ExternalLink) ([]*payments.SanitizedPayment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.ExternalLink, currencyCode string) (float64, error)
 
 	Channel(ctx context.Context, obj *posts.ExternalLink) (*channels.Channel, error)
@@ -830,7 +857,10 @@ type QueryResolver interface {
 	NewsroomArticles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error)
 	NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupUserJSONData, error)
 	PostsGet(ctx context.Context, id string) (posts.Post, error)
+	PostsGetByReference(ctx context.Context, reference string) (posts.Post, error)
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
+	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
+	PostsStoryfeed(ctx context.Context, first *int, after *string) (*PostResultCursor, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
@@ -839,6 +869,9 @@ type QueryResolver interface {
 	StorefrontCvlQuoteUsd(ctx context.Context, usdToSpend float64) (*float64, error)
 	StorefrontCvlQuoteTokens(ctx context.Context, tokensToBuy float64) (*float64, error)
 	Jsonb(ctx context.Context, id *string) (*jsonstore.JSONb, error)
+}
+type SanitizedPaymentResolver interface {
+	PayerChannel(ctx context.Context, obj *payments.SanitizedPayment) (*channels.Channel, error)
 }
 type UserResolver interface {
 	NrStep(ctx context.Context, obj *users.User) (*int, error)
@@ -3169,6 +3202,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostBoost.GoalAmount(childComplexity), true
 
+	case "PostBoost.groupedSanitizedPayments":
+		if e.complexity.PostBoost.GroupedSanitizedPayments == nil {
+			break
+		}
+
+		return e.complexity.PostBoost.GroupedSanitizedPayments(childComplexity), true
+
 	case "PostBoost.id":
 		if e.complexity.PostBoost.ID == nil {
 			break
@@ -3286,6 +3326,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.CreatedAt(childComplexity), true
 
+	case "PostComment.groupedSanitizedPayments":
+		if e.complexity.PostComment.GroupedSanitizedPayments == nil {
+			break
+		}
+
+		return e.complexity.PostComment.GroupedSanitizedPayments(childComplexity), true
+
 	case "PostComment.id":
 		if e.complexity.PostComment.ID == nil {
 			break
@@ -3333,6 +3380,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.UpdatedAt(childComplexity), true
 
+	case "PostEdge.cursor":
+		if e.complexity.PostEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.PostEdge.Cursor(childComplexity), true
+
+	case "PostEdge.post":
+		if e.complexity.PostEdge.Post == nil {
+			break
+		}
+
+		return e.complexity.PostEdge.Post(childComplexity), true
+
 	case "PostExternalLink.authorID":
 		if e.complexity.PostExternalLink.AuthorID == nil {
 			break
@@ -3367,6 +3428,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostExternalLink.CreatedAt(childComplexity), true
+
+	case "PostExternalLink.groupedSanitizedPayments":
+		if e.complexity.PostExternalLink.GroupedSanitizedPayments == nil {
+			break
+		}
+
+		return e.complexity.PostExternalLink.GroupedSanitizedPayments(childComplexity), true
 
 	case "PostExternalLink.id":
 		if e.complexity.PostExternalLink.ID == nil {
@@ -3421,6 +3489,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostExternalLink.UpdatedAt(childComplexity), true
+
+	case "PostResultCursor.edges":
+		if e.complexity.PostResultCursor.Edges == nil {
+			break
+		}
+
+		return e.complexity.PostResultCursor.Edges(childComplexity), true
+
+	case "PostResultCursor.pageInfo":
+		if e.complexity.PostResultCursor.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.PostResultCursor.PageInfo(childComplexity), true
 
 	case "PostSearchResult.afterCursor":
 		if e.complexity.PostSearchResult.AfterCursor == nil {
@@ -3720,6 +3802,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PostsGet(childComplexity, args["id"].(string)), true
 
+	case "Query.postsGetByReference":
+		if e.complexity.Query.PostsGetByReference == nil {
+			break
+		}
+
+		args, err := ec.field_Query_postsGetByReference_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsGetByReference(childComplexity, args["reference"].(string)), true
+
 	case "Query.postsSearch":
 		if e.complexity.Query.PostsSearch == nil {
 			break
@@ -3731,6 +3825,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.PostsSearch(childComplexity, args["search"].(posts.SearchInput)), true
+
+	case "Query.postsSearchGroupedByChannel":
+		if e.complexity.Query.PostsSearchGroupedByChannel == nil {
+			break
+		}
+
+		args, err := ec.field_Query_postsSearchGroupedByChannel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsSearchGroupedByChannel(childComplexity, args["search"].(posts.SearchInput)), true
+
+	case "Query.postsStoryfeed":
+		if e.complexity.Query.PostsStoryfeed == nil {
+			break
+		}
+
+		args, err := ec.field_Query_postsStoryfeed_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsStoryfeed(childComplexity, args["first"].(*int), args["after"].(*string)), true
 
 	case "Query.storefrontCvlPrice":
 		if e.complexity.Query.StorefrontCvlPrice == nil {
@@ -3890,6 +4008,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RosterMember.SocialURLs(childComplexity), true
+
+	case "SanitizedPayment.mostRecentUpdate":
+		if e.complexity.SanitizedPayment.MostRecentUpdate == nil {
+			break
+		}
+
+		return e.complexity.SanitizedPayment.MostRecentUpdate(childComplexity), true
+
+	case "SanitizedPayment.payerChannel":
+		if e.complexity.SanitizedPayment.PayerChannel == nil {
+			break
+		}
+
+		return e.complexity.SanitizedPayment.PayerChannel(childComplexity), true
+
+	case "SanitizedPayment.payerChannelID":
+		if e.complexity.SanitizedPayment.PayerChannelID == nil {
+			break
+		}
+
+		return e.complexity.SanitizedPayment.PayerChannelID(childComplexity), true
+
+	case "SanitizedPayment.usdEquivalent":
+		if e.complexity.SanitizedPayment.UsdEquivalent == nil {
+			break
+		}
+
+		return e.complexity.SanitizedPayment.UsdEquivalent(childComplexity), true
 
 	case "User.channels":
 		if e.complexity.User.Channels == nil {
@@ -4253,7 +4399,10 @@ type Query {
 
   # Post Queries
   postsGet(id: String!): Post!
+  postsGetByReference(reference: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
+  postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
+  postsStoryfeed(first: Int, after: String): PostResultCursor
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
@@ -4465,9 +4614,21 @@ type GovernanceEventEdge {
   node: GovernanceEvent!
 }
 
+# A type that represents and edge value in a Post
+type PostEdge {
+  cursor: String!
+  post: Post!
+}
+
 # A type that represents return values from GovernanceEvents
 type GovernanceEventResultCursor {
   edges: [GovernanceEventEdge]!
+  pageInfo: PageInfo!
+}
+
+# A type that represents return values from Posts
+type PostResultCursor {
+  edges: [PostEdge]!
   pageInfo: PageInfo!
 }
 
@@ -4648,6 +4809,7 @@ interface Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   channel: Channel
 }
@@ -4661,6 +4823,7 @@ type PostBoost implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   currencyCode: String
   goalAmount: Float
@@ -4687,6 +4850,7 @@ type PostComment implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   text: String!
   channel: Channel
@@ -4701,6 +4865,7 @@ type PostExternalLink implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   url: String
   channel: Channel
@@ -4836,6 +5001,13 @@ interface Payment {
   updatedAt: Time!
   usdEquivalent: Float!
   payerChannelID: String
+  payerChannel: Channel
+}
+
+type SanitizedPayment {
+  usdEquivalent: Float!
+  payerChannelID: String
+  mostRecentUpdate: Time!
   payerChannel: Channel
 }
 
@@ -6362,6 +6534,20 @@ func (ec *executionContext) field_Query_poll_args(ctx context.Context, rawArgs m
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_postsGetByReference_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["reference"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reference"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_postsGet_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -6376,6 +6562,20 @@ func (ec *executionContext) field_Query_postsGet_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_postsSearchGroupedByChannel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 posts.SearchInput
+	if tmp, ok := rawArgs["search"]; ok {
+		arg0, err = ec.unmarshalNPostSearchInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐSearchInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["search"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_postsSearch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -6387,6 +6587,28 @@ func (ec *executionContext) field_Query_postsSearch_args(ctx context.Context, ra
 		}
 	}
 	args["search"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_postsStoryfeed_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
 	return args, nil
 }
 
@@ -17475,6 +17697,40 @@ func (ec *executionContext) _PostBoost_payments(ctx context.Context, field graph
 	return ec.marshalOPayment2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐPayment(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PostBoost_groupedSanitizedPayments(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostBoost",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostBoost().GroupedSanitizedPayments(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*payments.SanitizedPayment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOSanitizedPayment2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐSanitizedPayment(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PostBoost_paymentsTotal(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -18192,6 +18448,40 @@ func (ec *executionContext) _PostComment_payments(ctx context.Context, field gra
 	return ec.marshalOPayment2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐPayment(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PostComment_groupedSanitizedPayments(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostComment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostComment().GroupedSanitizedPayments(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*payments.SanitizedPayment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOSanitizedPayment2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐSanitizedPayment(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PostComment_paymentsTotal(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -18305,6 +18595,80 @@ func (ec *executionContext) _PostComment_channel(ctx context.Context, field grap
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *PostEdge) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostEdge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Cursor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostEdge_post(ctx context.Context, field graphql.CollectedField, obj *PostEdge) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostEdge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Post, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(posts.Post)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostExternalLink_id(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
@@ -18594,6 +18958,40 @@ func (ec *executionContext) _PostExternalLink_payments(ctx context.Context, fiel
 	return ec.marshalOPayment2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐPayment(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PostExternalLink_groupedSanitizedPayments(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostExternalLink",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.PostExternalLink().GroupedSanitizedPayments(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*payments.SanitizedPayment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOSanitizedPayment2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐSanitizedPayment(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PostExternalLink_paymentsTotal(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -18741,6 +19139,80 @@ func (ec *executionContext) _PostExternalLink_openGraphData(ctx context.Context,
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNOpenGraphData2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostResultCursor_edges(ctx context.Context, field graphql.CollectedField, obj *PostResultCursor) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostResultCursor",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Edges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*PostEdge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPostEdge2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostEdge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostResultCursor_pageInfo(ctx context.Context, field graphql.CollectedField, obj *PostResultCursor) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostResultCursor",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostSearchResult_posts(ctx context.Context, field graphql.CollectedField, obj *posts.PostSearchResult) (ret graphql.Marshaler) {
@@ -19975,6 +20447,50 @@ func (ec *executionContext) _Query_postsGet(ctx context.Context, field graphql.C
 	return ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_postsGetByReference(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_postsGetByReference_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PostsGetByReference(rctx, args["reference"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(posts.Post)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_postsSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -20014,6 +20530,88 @@ func (ec *executionContext) _Query_postsSearch(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOPostSearchResult2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPostSearchResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_postsSearchGroupedByChannel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_postsSearchGroupedByChannel_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PostsSearchGroupedByChannel(rctx, args["search"].(posts.SearchInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*posts.PostSearchResult)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPostSearchResult2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPostSearchResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_postsStoryfeed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_postsStoryfeed_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PostsStoryfeed(rctx, args["first"].(*int), args["after"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*PostResultCursor)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPostResultCursor2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostResultCursor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getChannelTotalProceeds(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -20637,6 +21235,148 @@ func (ec *executionContext) _RosterMember_signature(ctx context.Context, field g
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SanitizedPayment_usdEquivalent(ctx context.Context, field graphql.CollectedField, obj *payments.SanitizedPayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SanitizedPayment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UsdEquivalent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SanitizedPayment_payerChannelID(ctx context.Context, field graphql.CollectedField, obj *payments.SanitizedPayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SanitizedPayment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PayerChannelID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SanitizedPayment_mostRecentUpdate(ctx context.Context, field graphql.CollectedField, obj *payments.SanitizedPayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SanitizedPayment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MostRecentUpdate, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SanitizedPayment_payerChannel(ctx context.Context, field graphql.CollectedField, obj *payments.SanitizedPayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SanitizedPayment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SanitizedPayment().PayerChannel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_uid(ctx context.Context, field graphql.CollectedField, obj *users.User) (ret graphql.Marshaler) {
@@ -26348,6 +27088,17 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 				res = ec._PostBoost_payments(ctx, field, obj)
 				return res
 			})
+		case "groupedSanitizedPayments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PostBoost_groupedSanitizedPayments(ctx, field, obj)
+				return res
+			})
 		case "paymentsTotal":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -26498,6 +27249,17 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 				res = ec._PostComment_payments(ctx, field, obj)
 				return res
 			})
+		case "groupedSanitizedPayments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PostComment_groupedSanitizedPayments(ctx, field, obj)
+				return res
+			})
 		case "paymentsTotal":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -26528,6 +27290,38 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 				res = ec._PostComment_channel(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var postEdgeImplementors = []string{"PostEdge"}
+
+func (ec *executionContext) _PostEdge(ctx context.Context, sel ast.SelectionSet, obj *PostEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, postEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PostEdge")
+		case "cursor":
+			out.Values[i] = ec._PostEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "post":
+			out.Values[i] = ec._PostEdge_post(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26599,6 +27393,17 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 				res = ec._PostExternalLink_payments(ctx, field, obj)
 				return res
 			})
+		case "groupedSanitizedPayments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PostExternalLink_groupedSanitizedPayments(ctx, field, obj)
+				return res
+			})
 		case "paymentsTotal":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -26640,6 +27445,38 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var postResultCursorImplementors = []string{"PostResultCursor"}
+
+func (ec *executionContext) _PostResultCursor(ctx context.Context, sel ast.SelectionSet, obj *PostResultCursor) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, postResultCursorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PostResultCursor")
+		case "edges":
+			out.Values[i] = ec._PostResultCursor_edges(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._PostResultCursor_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -27003,6 +27840,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "postsGetByReference":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_postsGetByReference(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "postsSearch":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -27012,6 +27863,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_postsSearch(ctx, field)
+				return res
+			})
+		case "postsSearchGroupedByChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_postsSearchGroupedByChannel(ctx, field)
+				return res
+			})
+		case "postsStoryfeed":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_postsStoryfeed(ctx, field)
 				return res
 			})
 		case "getChannelTotalProceeds":
@@ -27145,6 +28018,51 @@ func (ec *executionContext) _RosterMember(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._RosterMember_avatarUrl(ctx, field, obj)
 		case "signature":
 			out.Values[i] = ec._RosterMember_signature(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var sanitizedPaymentImplementors = []string{"SanitizedPayment"}
+
+func (ec *executionContext) _SanitizedPayment(ctx context.Context, sel ast.SelectionSet, obj *payments.SanitizedPayment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, sanitizedPaymentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SanitizedPayment")
+		case "usdEquivalent":
+			out.Values[i] = ec._SanitizedPayment_usdEquivalent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "payerChannelID":
+			out.Values[i] = ec._SanitizedPayment_payerChannelID(ctx, field, obj)
+		case "mostRecentUpdate":
+			out.Values[i] = ec._SanitizedPayment_mostRecentUpdate(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "payerChannel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SanitizedPayment_payerChannel(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -28380,8 +29298,59 @@ func (ec *executionContext) unmarshalNPostCreateExternalLinkInput2githubᚗcom�
 	return ec.unmarshalInputPostCreateExternalLinkInput(ctx, v)
 }
 
+func (ec *executionContext) marshalNPostEdge2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostEdge(ctx context.Context, sel ast.SelectionSet, v []*PostEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOPostEdge2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) unmarshalNPostSearchInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐSearchInput(ctx context.Context, v interface{}) (posts.SearchInput, error) {
 	return ec.unmarshalInputPostSearchInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNSanitizedPayment2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐSanitizedPayment(ctx context.Context, sel ast.SelectionSet, v payments.SanitizedPayment) graphql.Marshaler {
+	return ec._SanitizedPayment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSanitizedPayment2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐSanitizedPayment(ctx context.Context, sel ast.SelectionSet, v *payments.SanitizedPayment) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SanitizedPayment(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -29688,6 +30657,17 @@ func (ec *executionContext) unmarshalOPostCreateBoostItemInput2ᚕgithubᚗcom�
 	return res, nil
 }
 
+func (ec *executionContext) marshalOPostEdge2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostEdge(ctx context.Context, sel ast.SelectionSet, v PostEdge) graphql.Marshaler {
+	return ec._PostEdge(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPostEdge2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostEdge(ctx context.Context, sel ast.SelectionSet, v *PostEdge) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PostEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOPostExternalLink2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐExternalLink(ctx context.Context, sel ast.SelectionSet, v posts.ExternalLink) graphql.Marshaler {
 	return ec._PostExternalLink(ctx, sel, &v)
 }
@@ -29697,6 +30677,17 @@ func (ec *executionContext) marshalOPostExternalLink2ᚖgithubᚗcomᚋjoincivil
 		return graphql.Null
 	}
 	return ec._PostExternalLink(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOPostResultCursor2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostResultCursor(ctx context.Context, sel ast.SelectionSet, v PostResultCursor) graphql.Marshaler {
+	return ec._PostResultCursor(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOPostResultCursor2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostResultCursor(ctx context.Context, sel ast.SelectionSet, v *PostResultCursor) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PostResultCursor(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPostSearchResult2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPostSearchResult(ctx context.Context, sel ast.SelectionSet, v posts.PostSearchResult) graphql.Marshaler {
@@ -29810,6 +30801,46 @@ func (ec *executionContext) unmarshalORosterMemberInput2ᚖgithubᚗcomᚋjoinci
 	}
 	res, err := ec.unmarshalORosterMemberInput2githubᚗcomᚋjoincivilᚋgoᚑcommonᚋpkgᚋnewsroomᚐCharterRosterMember(ctx, v)
 	return &res, err
+}
+
+func (ec *executionContext) marshalOSanitizedPayment2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐSanitizedPayment(ctx context.Context, sel ast.SelectionSet, v []*payments.SanitizedPayment) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSanitizedPayment2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐSanitizedPayment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

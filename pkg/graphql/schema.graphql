@@ -95,7 +95,10 @@ type Query {
 
   # Post Queries
   postsGet(id: String!): Post!
+  postsGetByReference(reference: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
+  postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
+  postsStoryfeed(first: Int, after: String): PostResultCursor
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
@@ -307,9 +310,21 @@ type GovernanceEventEdge {
   node: GovernanceEvent!
 }
 
+# A type that represents and edge value in a Post
+type PostEdge {
+  cursor: String!
+  post: Post!
+}
+
 # A type that represents return values from GovernanceEvents
 type GovernanceEventResultCursor {
   edges: [GovernanceEventEdge]!
+  pageInfo: PageInfo!
+}
+
+# A type that represents return values from Posts
+type PostResultCursor {
+  edges: [PostEdge]!
   pageInfo: PageInfo!
 }
 
@@ -490,6 +505,7 @@ interface Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   channel: Channel
 }
@@ -503,6 +519,7 @@ type PostBoost implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   currencyCode: String
   goalAmount: Float
@@ -529,6 +546,7 @@ type PostComment implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   text: String!
   channel: Channel
@@ -543,6 +561,7 @@ type PostExternalLink implements Post {
   updatedAt: Time!
   children: [Post]
   payments: [Payment!]
+  groupedSanitizedPayments: [SanitizedPayment!]
   paymentsTotal(currencyCode: String!): Float!
   url: String
   channel: Channel
@@ -678,6 +697,13 @@ interface Payment {
   updatedAt: Time!
   usdEquivalent: Float!
   payerChannelID: String
+  payerChannel: Channel
+}
+
+type SanitizedPayment {
+  usdEquivalent: Float!
+  payerChannelID: String
+  mostRecentUpdate: Time!
   payerChannel: Channel
 }
 

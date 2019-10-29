@@ -4,6 +4,7 @@ import (
 	context "context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -33,11 +34,103 @@ func (r *queryResolver) PostsGet(ctx context.Context, id string) (posts.Post, er
 	return r.postService.GetPost(id)
 }
 
+func (r *queryResolver) PostsGetByReference(ctx context.Context, reference string) (posts.Post, error) {
+	return r.postService.GetPostByReference(reference)
+}
+
 func (r *queryResolver) PostsSearch(ctx context.Context, input posts.SearchInput) (*posts.PostSearchResult, error) {
 
 	results, err := r.postService.SearchPosts(&input)
 
 	return results, err
+}
+
+func (r *queryResolver) PostsSearchGroupedByChannel(ctx context.Context, input posts.SearchInput) (*posts.PostSearchResult, error) {
+
+	results, err := r.postService.SearchPostsMostRecentPerChannel(&input)
+
+	return results, err
+}
+
+func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *string) (*graphql.PostResultCursor, error) {
+
+	cursor := defaultPaginationCursor
+	var offset int
+	var err error
+	count := r.criteriaCount(first)
+	// Figure out the pagination index start point if given
+	if after != nil && *after != "" {
+		offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	results, err := r.postService.SearchPostsRanked(count, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	posts, hasNextPage := r.postsReturnPosts(results.Posts, count)
+
+	edges := r.postsBuildEdges(posts, cursor)
+	endCursor := r.postsEndCursor(edges)
+
+	return &graphql.PostResultCursor{
+		Edges: edges,
+		PageInfo: &graphql.PageInfo{
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+	}, err
+}
+
+func (r *queryResolver) postsReturnPosts(allPosts []posts.Post,
+	count int) ([]posts.Post, bool) {
+	allPostsLen := len(allPosts)
+
+	hasNextPage := false
+	var posts []posts.Post
+
+	// Figure out the "true" events we want to return.
+	// If the posts actually equals what we requested, then we have more results
+	// and hasNextPage should be true
+	if allPostsLen == count {
+		hasNextPage = true
+		posts = allPosts[:allPostsLen-1]
+	} else {
+		posts = allPosts
+	}
+	return posts, hasNextPage
+}
+
+func (r *queryResolver) postsBuildEdges(posts []posts.Post,
+	cursor *paginationCursor) []*graphql.PostEdge {
+
+	edges := make([]*graphql.PostEdge, len(posts))
+
+	// Build edges
+	// Only support sorted offset until we need other types
+	for index, post := range posts {
+		cv := cursor.ValueInt()
+		newCursor := &paginationCursor{
+			typeName: cursor.typeName,
+			value:    fmt.Sprintf("%v", cv+index),
+		}
+		edges[index] = &graphql.PostEdge{
+			Cursor: newCursor.Encode(),
+			Post:   post,
+		}
+	}
+	return edges
+}
+
+func (r *queryResolver) postsEndCursor(edges []*graphql.PostEdge) *string {
+	var endCursor *string
+	if len(edges) > 0 {
+		endCursor = &(edges[len(edges)-1]).Cursor
+	}
+	return endCursor
 }
 
 // MUTATIONS
@@ -186,7 +279,16 @@ func (r *postBoostResolver) Channel(ctx context.Context, post *posts.Boost) (*ch
 
 // Payments returns payments associated with this Post
 func (r *postBoostResolver) Payments(ctx context.Context, boost *posts.Boost) ([]payments.Payment, error) {
+	isAdmin := r.isPostChannelAdmin(ctx, boost.ChannelID)
+	if !isAdmin {
+		return nil, ErrUserNotAuthorized
+	}
 	return r.paymentService.GetPayments(boost.ID)
+}
+
+// GroupedSanitizedPayments returns "sanitized payments" associated with this Post, grouped by channel
+func (r *postBoostResolver) GroupedSanitizedPayments(ctx context.Context, boost *posts.Boost) ([]*payments.SanitizedPayment, error) {
+	return r.paymentService.GetGroupedSanitizedPayments(boost.ID)
 }
 
 // PaymentsTotal is the sum if payments for this Post
@@ -211,7 +313,16 @@ func (r *postExternalLinkResolver) Channel(ctx context.Context, post *posts.Exte
 
 // Payments returns payments associated with this Post
 func (r *postExternalLinkResolver) Payments(ctx context.Context, post *posts.ExternalLink) ([]payments.Payment, error) {
+	isAdmin := r.isPostChannelAdmin(ctx, post.ChannelID)
+	if !isAdmin {
+		return nil, ErrUserNotAuthorized
+	}
 	return r.paymentService.GetPayments(post.ID)
+}
+
+// GroupedSanitizedPayments returns "cleaned payments" associated with this Post
+func (r *postExternalLinkResolver) GroupedSanitizedPayments(ctx context.Context, post *posts.ExternalLink) ([]*payments.SanitizedPayment, error) {
+	return r.paymentService.GetGroupedSanitizedPayments(post.ID)
 }
 
 // PaymentsTotal is the sum if payments for this Post
@@ -246,10 +357,44 @@ func (r *postCommentResolver) Children(context.Context, *posts.Comment) ([]posts
 
 // Payments returns payments associated with this Post
 func (r *postCommentResolver) Payments(ctx context.Context, post *posts.Comment) ([]payments.Payment, error) {
+	isAdmin := r.isPostChannelAdmin(ctx, post.ChannelID)
+	if !isAdmin {
+		return nil, ErrUserNotAuthorized
+	}
 	return r.paymentService.GetPayments(post.ID)
+}
+
+// GroupedSanitizedPayments returns "sanitized payments" associated with this Post, grouped by channel
+func (r *postCommentResolver) GroupedSanitizedPayments(ctx context.Context, boost *posts.Comment) ([]*payments.SanitizedPayment, error) {
+	return nil, nil
 }
 
 // PaymentsTotal is the sum if payments for this Post
 func (r *postCommentResolver) PaymentsTotal(ctx context.Context, comment *posts.Comment, currencyCode string) (float64, error) {
 	return r.paymentService.TotalPayments(comment.ID, currencyCode)
+}
+
+// SanitizedPayment is a custom resolver for SanitizedPayments (so can get payer channel data)
+func (r *Resolver) SanitizedPayment() graphql.SanitizedPaymentResolver {
+	return &sanitizedPaymentResolver{Resolver: r}
+}
+
+type sanitizedPaymentResolver struct{ *Resolver }
+
+// PayerChannel gets the channel associated with a sanitized payment
+func (r *sanitizedPaymentResolver) PayerChannel(ctx context.Context, payment *payments.SanitizedPayment) (*channels.Channel, error) {
+	return r.channelService.GetChannel(payment.PayerChannelID)
+}
+
+func (r *Resolver) isPostChannelAdmin(ctx context.Context, channelID string) bool {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return false
+	}
+
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	if err != nil {
+		return false
+	}
+	return isAdmin
 }

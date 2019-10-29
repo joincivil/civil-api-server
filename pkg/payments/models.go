@@ -40,6 +40,7 @@ type PaymentModel struct {
 	Data            postgres.Jsonb
 	OwnerID         string `gorm:"not null"`
 	OwnerType       string `gorm:"not null"`
+	OwnerPostType   string
 	EmailAddress    string
 	PayerChannelID  string
 	ShouldPublicize bool
@@ -130,4 +131,11 @@ type ProceedsQueryResult struct {
 	Usd          string
 	EthUsdAmount string
 	Ether        string
+}
+
+// SanitizedPayment defines the model for a sanitized payment (stripped of payment type, other unnecessary info)
+type SanitizedPayment struct {
+	UsdEquivalent    float64
+	MostRecentUpdate time.Time
+	PayerChannelID   string
 }

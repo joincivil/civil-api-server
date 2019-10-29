@@ -108,7 +108,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
-		ref := TypeExternalLink + "+" + channel.Reference + "+" + htmlInfo.CanonicalURL
+		ref := TypeExternalLink + "+" + htmlInfo.CanonicalURL
 		externalLink.Reference = &ref
 
 		ogJSON, err := htmlInfo.OGInfo.ToJSON()
