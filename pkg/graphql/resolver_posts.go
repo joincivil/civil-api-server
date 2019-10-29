@@ -381,6 +381,7 @@ func (r *Resolver) SanitizedPayment() graphql.SanitizedPaymentResolver {
 
 type sanitizedPaymentResolver struct{ *Resolver }
 
+// PayerChannel gets the channel associated with a sanitized payment
 func (r *sanitizedPaymentResolver) PayerChannel(ctx context.Context, payment *payments.SanitizedPayment) (*channels.Channel, error) {
 	return r.channelService.GetChannel(payment.PayerChannelID)
 }
