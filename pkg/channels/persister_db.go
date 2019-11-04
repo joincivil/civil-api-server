@@ -1,6 +1,7 @@
 package channels
 
 import (
+	// "fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -100,11 +101,9 @@ func (p *DBPersister) GetChannel(id string) (*Channel, error) {
 func (p *DBPersister) GetChannelByReference(channelType string, reference string) (*Channel, error) {
 	c := &Channel{}
 
-	if p.db.Where(&Channel{
-		ChannelType: channelType,
-		Reference:   reference,
-	}).First(c).RecordNotFound() {
-		return nil, ErrorNotFound
+	stmt := p.db.Where("channel_type = ? AND LOWER(reference) = LOWER(?)", channelType, reference)
+	if stmt.First(c).RecordNotFound() {
+		return c, nil
 	}
 
 	return c, nil
