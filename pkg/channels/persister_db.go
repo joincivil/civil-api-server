@@ -102,7 +102,7 @@ func (p *DBPersister) GetChannelByReference(channelType string, reference string
 
 	stmt := p.db.Where("channel_type = ? AND LOWER(reference) = LOWER(?)", channelType, reference)
 	if stmt.First(c).RecordNotFound() {
-		return c, nil
+		return nil, ErrorNotFound
 	}
 
 	return c, nil
