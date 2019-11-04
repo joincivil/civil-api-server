@@ -1,7 +1,6 @@
 package channels
 
 import (
-	// "fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
