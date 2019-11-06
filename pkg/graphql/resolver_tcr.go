@@ -493,6 +493,8 @@ func (u *userChallengeDataResolver) Challenge(ctx context.Context, obj *model.Us
 	}
 	challenge, err := loaders.challengeLoader.Load(pollID)
 	if err != nil {
+		// it's possible that a user challenge data is not associated with a challenge
+		// (for government  proposals), so don't error here, just return nil
 		return nil, nil
 	}
 	return challenge, nil
