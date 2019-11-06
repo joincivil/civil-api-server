@@ -454,6 +454,7 @@ type Channel {
   id: String!
   channelType: String!
   newsroom: Newsroom
+  listing: Listing
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   stripeAccountID: String
