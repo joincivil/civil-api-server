@@ -172,6 +172,15 @@ func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*
 	}
 	return appeal, nil
 }
+func (r *challengeResolver) Listing(ctx context.Context, obj *model.Challenge) (*model.Listing, error) {
+	loaders := ctxLoaders(ctx)
+	listingAddress := obj.ListingAddress().Hex()
+	listing, err := loaders.listingLoader.Load(listingAddress)
+	if err != nil {
+		return nil, err
+	}
+	return listing, nil
+}
 
 type charterResolver struct{ *Resolver }
 
@@ -475,6 +484,18 @@ func (u *userChallengeDataResolver) VoterReward(ctx context.Context, obj *model.
 }
 func (u *userChallengeDataResolver) ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.ParentChallengeID().Int64()), nil
+}
+func (u *userChallengeDataResolver) Challenge(ctx context.Context, obj *model.UserChallengeData) (*model.Challenge, error) {
+	loaders := ctxLoaders(ctx)
+	pollID, err := u.PollID(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+	challenge, err := loaders.challengeLoader.Load(pollID)
+	if err != nil {
+		return nil, nil
+	}
+	return challenge, nil
 }
 
 // QUERIES
