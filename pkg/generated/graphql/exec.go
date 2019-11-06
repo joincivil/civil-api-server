@@ -110,6 +110,7 @@ type ComplexityRoot struct {
 		ChallengeID         func(childComplexity int) int
 		Challenger          func(childComplexity int) int
 		LastUpdatedDateTs   func(childComplexity int) int
+		Listing             func(childComplexity int) int
 		ListingAddress      func(childComplexity int) int
 		Poll                func(childComplexity int) int
 		RequestAppealExpiry func(childComplexity int) int
@@ -635,6 +636,7 @@ type ComplexityRoot struct {
 	}
 
 	UserChallengeVoteData struct {
+		Challenge         func(childComplexity int) int
 		Choice            func(childComplexity int) int
 		DidCollectAmount  func(childComplexity int) int
 		DidUserCollect    func(childComplexity int) int
@@ -676,6 +678,8 @@ type ChallengeResolver interface {
 	Poll(ctx context.Context, obj *model.Challenge) (*model.Poll, error)
 	RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error)
 	Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error)
+
+	Listing(ctx context.Context, obj *model.Challenge) (*model.Listing, error)
 }
 type ChannelResolver interface {
 	Newsroom(ctx context.Context, obj *channels.Channel) (*newsroom.Newsroom, error)
@@ -893,6 +897,7 @@ type UserChallengeVoteDataResolver interface {
 	NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error)
 	VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error)
 	ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error)
+	Challenge(ctx context.Context, obj *model.UserChallengeData) (*model.Challenge, error)
 }
 
 type executableSchema struct {
@@ -1070,6 +1075,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Challenge.LastUpdatedDateTs(childComplexity), true
+
+	case "Challenge.listing":
+		if e.complexity.Challenge.Listing == nil {
+			break
+		}
+
+		return e.complexity.Challenge.Listing(childComplexity), true
 
 	case "Challenge.listingAddress":
 		if e.complexity.Challenge.ListingAddress == nil {
@@ -4128,6 +4140,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UserChannelEmailPromptSeen(childComplexity), true
 
+	case "UserChallengeVoteData.challenge":
+		if e.complexity.UserChallengeVoteData.Challenge == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.Challenge(childComplexity), true
+
 	case "UserChallengeVoteData.choice":
 		if e.complexity.UserChallengeVoteData.Choice == nil {
 			break
@@ -4583,6 +4602,7 @@ type Challenge {
   requestAppealExpiry: Int!
   appeal: Appeal
   lastUpdatedDateTs: Int!
+  listing: Listing
 }
 
 # A type that represents a Charter
@@ -4728,6 +4748,7 @@ type UserChallengeVoteData {
   numTokens: String!
   voterReward: String!
   parentChallengeID: Int!
+  challenge: Challenge
 }
 
 ## Newsroom object schemas
@@ -8039,6 +8060,40 @@ func (ec *executionContext) _Challenge_lastUpdatedDateTs(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Challenge_listing(ctx context.Context, field graphql.CollectedField, obj *model.Challenge) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Challenge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Challenge().Listing(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Listing)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOListing2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐListing(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Channel_id(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
@@ -22413,6 +22468,40 @@ func (ec *executionContext) _UserChallengeVoteData_parentChallengeID(ctx context
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _UserChallengeVoteData_challenge(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "UserChallengeVoteData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().Challenge(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Challenge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChallenge2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -24897,6 +24986,17 @@ func (ec *executionContext) _Challenge(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "listing":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Challenge_listing(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -28339,6 +28439,17 @@ func (ec *executionContext) _UserChallengeVoteData(ctx context.Context, sel ast.
 				}
 				return res
 			})
+		case "challenge":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserChallengeVoteData_challenge(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -30562,7 +30673,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

@@ -279,6 +279,7 @@ type Challenge {
   requestAppealExpiry: Int!
   appeal: Appeal
   lastUpdatedDateTs: Int!
+  listing: Listing
 }
 
 # A type that represents a Charter
@@ -424,6 +425,7 @@ type UserChallengeVoteData {
   numTokens: String!
   voterReward: String!
   parentChallengeID: Int!
+  challenge: Challenge
 }
 
 ## Newsroom object schemas
