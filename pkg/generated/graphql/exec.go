@@ -600,7 +600,7 @@ type ComplexityRoot struct {
 		TcrGovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
 		TcrListing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
 		TcrListings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
+		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) int
 	}
 
 	RosterMember struct {
@@ -868,7 +868,7 @@ type QueryResolver interface {
 	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsStoryfeed(ctx context.Context, first *int, after *string) (*PostResultCursor, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
-	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error)
+	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) ([]*model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
 	StorefrontCvlPrice(ctx context.Context) (*float64, error)
@@ -3979,7 +3979,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.UserChallengeData(childComplexity, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool)), true
+		return e.complexity.Query.UserChallengeData(childComplexity, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool), args["lowercaseAddr"].(*bool)), true
 
 	case "RosterMember.avatarUrl":
 		if e.complexity.RosterMember.AvatarURL == nil {
@@ -4442,6 +4442,7 @@ type Query {
     canUserCollect: Boolean
     canUserRescue: Boolean
     canUserReveal: Boolean
+    lowercaseAddr: Boolean = True
   ): [UserChallengeVoteData!]!
 
   # User Queries
@@ -6904,6 +6905,14 @@ func (ec *executionContext) field_Query_userChallengeData_args(ctx context.Conte
 		}
 	}
 	args["canUserReveal"] = arg4
+	var arg5 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		arg5, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg5
 	return args, nil
 }
 
@@ -20780,7 +20789,7 @@ func (ec *executionContext) _Query_userChallengeData(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UserChallengeData(rctx, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool))
+		return ec.resolvers.Query().UserChallengeData(rctx, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool), args["lowercaseAddr"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30728,7 +30737,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

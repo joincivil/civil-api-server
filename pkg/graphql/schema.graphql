@@ -110,6 +110,7 @@ type Query {
     canUserCollect: Boolean
     canUserRescue: Boolean
     canUserReveal: Boolean
+    lowercaseAddr: Boolean = True
   ): [UserChallengeVoteData!]!
 
   # User Queries
