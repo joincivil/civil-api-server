@@ -129,6 +129,7 @@ type ComplexityRoot struct {
 		Handle                 func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		IsStripeConnected      func(childComplexity int) int
+		Listing                func(childComplexity int) int
 		Newsroom               func(childComplexity int) int
 		PostsSearch            func(childComplexity int, search posts.SearchInput) int
 		StripeAccountID        func(childComplexity int) int
@@ -683,6 +684,7 @@ type ChallengeResolver interface {
 }
 type ChannelResolver interface {
 	Newsroom(ctx context.Context, obj *channels.Channel) (*newsroom.Newsroom, error)
+	Listing(ctx context.Context, obj *channels.Channel) (*model.Listing, error)
 	PostsSearch(ctx context.Context, obj *channels.Channel, search posts.SearchInput) (*posts.PostSearchResult, error)
 	IsStripeConnected(ctx context.Context, obj *channels.Channel) (bool, error)
 
@@ -1187,6 +1189,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.IsStripeConnected(childComplexity), true
+
+	case "Channel.listing":
+		if e.complexity.Channel.Listing == nil {
+			break
+		}
+
+		return e.complexity.Channel.Listing(childComplexity), true
 
 	case "Channel.newsroom":
 		if e.complexity.Channel.Newsroom == nil {
@@ -4777,6 +4786,7 @@ type Channel {
   id: String!
   channelType: String!
   newsroom: Newsroom
+  listing: Listing
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   stripeAccountID: String
@@ -8202,6 +8212,40 @@ func (ec *executionContext) _Channel_newsroom(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalONewsroom2ᚖgithubᚗcomᚋjoincivilᚋgoᚑcommonᚋpkgᚋnewsroomᚐNewsroom(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_listing(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().Listing(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Listing)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOListing2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐListing(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Channel_postsSearch(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
@@ -25038,6 +25082,17 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Channel_newsroom(ctx, field, obj)
+				return res
+			})
+		case "listing":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_listing(ctx, field, obj)
 				return res
 			})
 		case "postsSearch":

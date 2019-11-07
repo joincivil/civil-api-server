@@ -5,9 +5,11 @@ import (
 
 	"github.com/joincivil/civil-api-server/pkg/posts"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	"github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/go-common/pkg/newsroom"
 )
 
@@ -147,6 +149,15 @@ func (r *channelResolver) Newsroom(ctx context.Context, channel *channels.Channe
 	}
 
 	return r.newsroomService.GetNewsroomByAddress(channel.Reference)
+}
+
+// Listing returns listing associated with this channel
+func (r *channelResolver) Listing(ctx context.Context, channel *channels.Channel) (*model.Listing, error) {
+	if channel.ChannelType != channels.TypeNewsroom {
+		return nil, nil
+	}
+
+	return r.listingPersister.ListingByAddress(common.HexToAddress(channel.Reference))
 }
 
 func (r *channelResolver) PostsSearch(ctx context.Context, channel *channels.Channel, input posts.SearchInput) (*posts.PostSearchResult, error) {
