@@ -38,6 +38,9 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 			return &payments.EtherPayment{}, err
 		}
 	}
+	if payment.PayerChannelID == "" {
+		payment.ShouldPublicize = false
+	}
 
 	channelID := post.GetChannelID()
 	tmplData, err2 := r.GetEthPaymentEmailTemplateData(post, payment)
@@ -61,6 +64,9 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 		if err != nil {
 			return &payments.StripePayment{}, err
 		}
+	}
+	if payment.PayerChannelID == "" {
+		payment.ShouldPublicize = false
 	}
 
 	channelID := post.GetChannelID()
