@@ -108,6 +108,7 @@ type ComplexityRoot struct {
 	Challenge struct {
 		Appeal              func(childComplexity int) int
 		ChallengeID         func(childComplexity int) int
+		ChallengeType       func(childComplexity int) int
 		Challenger          func(childComplexity int) int
 		LastUpdatedDateTs   func(childComplexity int) int
 		Listing             func(childComplexity int) int
@@ -1063,6 +1064,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Challenge.ChallengeID(childComplexity), true
+
+	case "Challenge.challengeType":
+		if e.complexity.Challenge.ChallengeType == nil {
+			break
+		}
+
+		return e.complexity.Challenge.ChallengeType(childComplexity), true
 
 	case "Challenge.challenger":
 		if e.complexity.Challenge.Challenger == nil {
@@ -4613,6 +4621,7 @@ type Challenge {
   appeal: Appeal
   lastUpdatedDateTs: Int!
   listing: Listing
+  challengeType: String!
 }
 
 # A type that represents a Charter
@@ -8113,6 +8122,43 @@ func (ec *executionContext) _Challenge_listing(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOListing2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐListing(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Challenge_challengeType(ctx context.Context, field graphql.CollectedField, obj *model.Challenge) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Challenge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChallengeType(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Channel_id(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
@@ -25050,6 +25096,11 @@ func (ec *executionContext) _Challenge(ctx context.Context, sel ast.SelectionSet
 				res = ec._Challenge_listing(ctx, field, obj)
 				return res
 			})
+		case "challengeType":
+			out.Values[i] = ec._Challenge_challengeType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -30737,7 +30788,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
