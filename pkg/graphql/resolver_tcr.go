@@ -172,6 +172,15 @@ func (r *challengeResolver) Appeal(ctx context.Context, obj *model.Challenge) (*
 	}
 	return appeal, nil
 }
+func (r *challengeResolver) Listing(ctx context.Context, obj *model.Challenge) (*model.Listing, error) {
+	loaders := ctxLoaders(ctx)
+	listingAddress := obj.ListingAddress().Hex()
+	listing, err := loaders.listingLoader.Load(listingAddress)
+	if err != nil {
+		return nil, err
+	}
+	return listing, nil
+}
 
 type charterResolver struct{ *Resolver }
 
@@ -449,32 +458,46 @@ func (r *pollResolver) VotesAgainst(ctx context.Context, obj *model.Poll) (strin
 
 type userChallengeDataResolver struct{ *Resolver }
 
-func (u *userChallengeDataResolver) PollID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+func (r *userChallengeDataResolver) PollID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.PollID().Int64()), nil
 }
-func (u *userChallengeDataResolver) PollRevealDate(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+func (r *userChallengeDataResolver) PollRevealDate(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.PollRevealEndDate().Int64()), nil
 }
-func (u *userChallengeDataResolver) UserAddress(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+func (r *userChallengeDataResolver) UserAddress(ctx context.Context, obj *model.UserChallengeData) (string, error) {
 	return obj.UserAddress().Hex(), nil
 }
-func (u *userChallengeDataResolver) DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+func (r *userChallengeDataResolver) DidCollectAmount(ctx context.Context, obj *model.UserChallengeData) (string, error) {
 	return obj.DidCollectAmount().String(), nil
 }
-func (u *userChallengeDataResolver) Salt(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+func (r *userChallengeDataResolver) Salt(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.Salt().Int64()), nil
 }
-func (u *userChallengeDataResolver) Choice(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+func (r *userChallengeDataResolver) Choice(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.Choice().Int64()), nil
 }
-func (u *userChallengeDataResolver) NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+func (r *userChallengeDataResolver) NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error) {
 	return obj.NumTokens().String(), nil
 }
-func (u *userChallengeDataResolver) VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error) {
+func (r *userChallengeDataResolver) VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error) {
 	return obj.VoterReward().String(), nil
 }
-func (u *userChallengeDataResolver) ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
+func (r *userChallengeDataResolver) ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error) {
 	return int(obj.ParentChallengeID().Int64()), nil
+}
+func (r *userChallengeDataResolver) Challenge(ctx context.Context, obj *model.UserChallengeData) (*model.Challenge, error) {
+	loaders := ctxLoaders(ctx)
+	pollID, err := r.PollID(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+	challenge, err := loaders.challengeLoader.Load(pollID)
+	if err != nil {
+		// it's possible that a user challenge data is not associated with a challenge
+		// (for government  proposals), so don't error here, just return nil
+		return nil, nil
+	}
+	return challenge, nil
 }
 
 // QUERIES
@@ -818,8 +841,8 @@ func (r *queryResolver) Poll(ctx context.Context, pollID int) (*model.Poll, erro
 }
 
 func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pollID *int,
-	canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error) {
-
+	canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) ([]*model.UserChallengeData, error) {
+	r.Resolver.lowercaseAddr = lowercaseAddr
 	criteria := &model.UserChallengeDataCriteria{}
 
 	if addr != nil && *addr != "" {

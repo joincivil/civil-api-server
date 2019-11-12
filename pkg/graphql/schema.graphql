@@ -110,6 +110,7 @@ type Query {
     canUserCollect: Boolean
     canUserRescue: Boolean
     canUserReveal: Boolean
+    lowercaseAddr: Boolean = True
   ): [UserChallengeVoteData!]!
 
   # User Queries
@@ -279,6 +280,8 @@ type Challenge {
   requestAppealExpiry: Int!
   appeal: Appeal
   lastUpdatedDateTs: Int!
+  listing: Listing
+  challengeType: String!
 }
 
 # A type that represents a Charter
@@ -424,6 +427,7 @@ type UserChallengeVoteData {
   numTokens: String!
   voterReward: String!
   parentChallengeID: Int!
+  challenge: Challenge
 }
 
 ## Newsroom object schemas
@@ -452,6 +456,7 @@ type Channel {
   id: String!
   channelType: String!
   newsroom: Newsroom
+  listing: Listing
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   stripeAccountID: String
