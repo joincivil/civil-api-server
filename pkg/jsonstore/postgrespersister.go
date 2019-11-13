@@ -21,9 +21,9 @@ import (
 
 const (
 	// Could make this configurable later if needed
-	maxOpenConns    = 20
-	maxIdleConns    = 5
-	connMaxLifetime = time.Nanosecond
+	maxOpenConns    = 5
+	maxIdleConns    = 3
+	connMaxLifetime = time.Second * 1800 // 30 mins
 
 	defaultJsonbTableName = "jsonb"
 )
