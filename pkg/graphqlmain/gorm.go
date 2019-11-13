@@ -2,6 +2,7 @@ package graphqlmain
 
 import (
 	"fmt"
+	"time"
 
 	log "github.com/golang/glog"
 
@@ -12,6 +13,12 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/utils"
+)
+
+const (
+	maxOpenConns    = 15
+	maxIdleConns    = 5
+	connMaxLifetime = time.Second * 1800 // 30 mins
 )
 
 // NewGorm initializes a new gorm instance and runs migrations
@@ -25,6 +32,9 @@ func NewGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
 		config.PostgresPw(),
 	))
 
+	db.DB().SetMaxIdleConns(maxIdleConns)
+	db.DB().SetMaxOpenConns(maxOpenConns)
+	db.DB().SetConnMaxLifetime(connMaxLifetime)
 	db.LogMode(config.Debug)
 
 	amErr := db.AutoMigrate(
