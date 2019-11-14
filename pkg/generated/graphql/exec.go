@@ -108,8 +108,10 @@ type ComplexityRoot struct {
 	Challenge struct {
 		Appeal              func(childComplexity int) int
 		ChallengeID         func(childComplexity int) int
+		ChallengeType       func(childComplexity int) int
 		Challenger          func(childComplexity int) int
 		LastUpdatedDateTs   func(childComplexity int) int
+		Listing             func(childComplexity int) int
 		ListingAddress      func(childComplexity int) int
 		Poll                func(childComplexity int) int
 		RequestAppealExpiry func(childComplexity int) int
@@ -128,6 +130,7 @@ type ComplexityRoot struct {
 		Handle                 func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		IsStripeConnected      func(childComplexity int) int
+		Listing                func(childComplexity int) int
 		Newsroom               func(childComplexity int) int
 		PostsSearch            func(childComplexity int, search posts.SearchInput) int
 		StripeAccountID        func(childComplexity int) int
@@ -598,7 +601,7 @@ type ComplexityRoot struct {
 		TcrGovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
 		TcrListing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
 		TcrListings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) int
+		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) int
 	}
 
 	RosterMember struct {
@@ -635,6 +638,7 @@ type ComplexityRoot struct {
 	}
 
 	UserChallengeVoteData struct {
+		Challenge         func(childComplexity int) int
 		Choice            func(childComplexity int) int
 		DidCollectAmount  func(childComplexity int) int
 		DidUserCollect    func(childComplexity int) int
@@ -676,9 +680,12 @@ type ChallengeResolver interface {
 	Poll(ctx context.Context, obj *model.Challenge) (*model.Poll, error)
 	RequestAppealExpiry(ctx context.Context, obj *model.Challenge) (int, error)
 	Appeal(ctx context.Context, obj *model.Challenge) (*model.Appeal, error)
+
+	Listing(ctx context.Context, obj *model.Challenge) (*model.Listing, error)
 }
 type ChannelResolver interface {
 	Newsroom(ctx context.Context, obj *channels.Channel) (*newsroom.Newsroom, error)
+	Listing(ctx context.Context, obj *channels.Channel) (*model.Listing, error)
 	PostsSearch(ctx context.Context, obj *channels.Channel, search posts.SearchInput) (*posts.PostSearchResult, error)
 	IsStripeConnected(ctx context.Context, obj *channels.Channel) (bool, error)
 
@@ -862,7 +869,7 @@ type QueryResolver interface {
 	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsStoryfeed(ctx context.Context, first *int, after *string) (*PostResultCursor, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
-	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool) ([]*model.UserChallengeData, error)
+	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) ([]*model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
 	StorefrontCvlPrice(ctx context.Context) (*float64, error)
@@ -893,6 +900,7 @@ type UserChallengeVoteDataResolver interface {
 	NumTokens(ctx context.Context, obj *model.UserChallengeData) (string, error)
 	VoterReward(ctx context.Context, obj *model.UserChallengeData) (string, error)
 	ParentChallengeID(ctx context.Context, obj *model.UserChallengeData) (int, error)
+	Challenge(ctx context.Context, obj *model.UserChallengeData) (*model.Challenge, error)
 }
 
 type executableSchema struct {
@@ -1057,6 +1065,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Challenge.ChallengeID(childComplexity), true
 
+	case "Challenge.challengeType":
+		if e.complexity.Challenge.ChallengeType == nil {
+			break
+		}
+
+		return e.complexity.Challenge.ChallengeType(childComplexity), true
+
 	case "Challenge.challenger":
 		if e.complexity.Challenge.Challenger == nil {
 			break
@@ -1070,6 +1085,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Challenge.LastUpdatedDateTs(childComplexity), true
+
+	case "Challenge.listing":
+		if e.complexity.Challenge.Listing == nil {
+			break
+		}
+
+		return e.complexity.Challenge.Listing(childComplexity), true
 
 	case "Challenge.listingAddress":
 		if e.complexity.Challenge.ListingAddress == nil {
@@ -1175,6 +1197,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.IsStripeConnected(childComplexity), true
+
+	case "Channel.listing":
+		if e.complexity.Channel.Listing == nil {
+			break
+		}
+
+		return e.complexity.Channel.Listing(childComplexity), true
 
 	case "Channel.newsroom":
 		if e.complexity.Channel.Newsroom == nil {
@@ -3958,7 +3987,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.UserChallengeData(childComplexity, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool)), true
+		return e.complexity.Query.UserChallengeData(childComplexity, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool), args["lowercaseAddr"].(*bool)), true
 
 	case "RosterMember.avatarUrl":
 		if e.complexity.RosterMember.AvatarURL == nil {
@@ -4127,6 +4156,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.UserChannelEmailPromptSeen(childComplexity), true
+
+	case "UserChallengeVoteData.challenge":
+		if e.complexity.UserChallengeVoteData.Challenge == nil {
+			break
+		}
+
+		return e.complexity.UserChallengeVoteData.Challenge(childComplexity), true
 
 	case "UserChallengeVoteData.choice":
 		if e.complexity.UserChallengeVoteData.Choice == nil {
@@ -4414,6 +4450,7 @@ type Query {
     canUserCollect: Boolean
     canUserRescue: Boolean
     canUserReveal: Boolean
+    lowercaseAddr: Boolean = True
   ): [UserChallengeVoteData!]!
 
   # User Queries
@@ -4583,6 +4620,8 @@ type Challenge {
   requestAppealExpiry: Int!
   appeal: Appeal
   lastUpdatedDateTs: Int!
+  listing: Listing
+  challengeType: String!
 }
 
 # A type that represents a Charter
@@ -4728,6 +4767,7 @@ type UserChallengeVoteData {
   numTokens: String!
   voterReward: String!
   parentChallengeID: Int!
+  challenge: Challenge
 }
 
 ## Newsroom object schemas
@@ -4756,6 +4796,7 @@ type Channel {
   id: String!
   channelType: String!
   newsroom: Newsroom
+  listing: Listing
   postsSearch(search: PostSearchInput!): PostSearchResult
   isStripeConnected: Boolean!
   stripeAccountID: String
@@ -6873,6 +6914,14 @@ func (ec *executionContext) field_Query_userChallengeData_args(ctx context.Conte
 		}
 	}
 	args["canUserReveal"] = arg4
+	var arg5 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		arg5, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg5
 	return args, nil
 }
 
@@ -8041,6 +8090,77 @@ func (ec *executionContext) _Challenge_lastUpdatedDateTs(ctx context.Context, fi
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Challenge_listing(ctx context.Context, field graphql.CollectedField, obj *model.Challenge) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Challenge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Challenge().Listing(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Listing)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOListing2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐListing(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Challenge_challengeType(ctx context.Context, field graphql.CollectedField, obj *model.Challenge) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Challenge",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChallengeType(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Channel_id(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -8147,6 +8267,40 @@ func (ec *executionContext) _Channel_newsroom(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalONewsroom2ᚖgithubᚗcomᚋjoincivilᚋgoᚑcommonᚋpkgᚋnewsroomᚐNewsroom(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_listing(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().Listing(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Listing)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOListing2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐListing(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Channel_postsSearch(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
@@ -20681,7 +20835,7 @@ func (ec *executionContext) _Query_userChallengeData(ctx context.Context, field 
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().UserChallengeData(rctx, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool))
+		return ec.resolvers.Query().UserChallengeData(rctx, args["userAddr"].(*string), args["pollID"].(*int), args["canUserCollect"].(*bool), args["canUserRescue"].(*bool), args["canUserReveal"].(*bool), args["lowercaseAddr"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22411,6 +22565,40 @@ func (ec *executionContext) _UserChallengeVoteData_parentChallengeID(ctx context
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserChallengeVoteData_challenge(ctx context.Context, field graphql.CollectedField, obj *model.UserChallengeData) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "UserChallengeVoteData",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.UserChallengeVoteData().Challenge(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Challenge)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChallenge2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -24897,6 +25085,22 @@ func (ec *executionContext) _Challenge(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "listing":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Challenge_listing(ctx, field, obj)
+				return res
+			})
+		case "challengeType":
+			out.Values[i] = ec._Challenge_challengeType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24938,6 +25142,17 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Channel_newsroom(ctx, field, obj)
+				return res
+			})
+		case "listing":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_listing(ctx, field, obj)
 				return res
 			})
 		case "postsSearch":
@@ -28339,6 +28554,17 @@ func (ec *executionContext) _UserChallengeVoteData(ctx context.Context, sel ast.
 				}
 				return res
 			})
+		case "challenge":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._UserChallengeVoteData_challenge(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -30562,7 +30788,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

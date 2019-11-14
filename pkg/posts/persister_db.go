@@ -109,8 +109,8 @@ func (p *DBPostPersister) GetPostByReference(reference string) (Post, error) {
 	if reference == "" {
 		return nil, ErrorNotFound
 	}
-	postModel := &PostModel{Reference: &reference}
-	p.db.First(postModel)
+	postModel := &PostModel{}
+	p.db.Where("reference  = ?", reference).First(postModel)
 
 	if (postModel.CreatedAt == time.Time{}) {
 		return nil, ErrorNotFound
