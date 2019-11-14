@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	maxOpenConns    = 15
+	maxOpenConns    = 10
 	maxIdleConns    = 5
 	connMaxLifetime = time.Second * 1800 // 30 mins
 )
