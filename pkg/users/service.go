@@ -37,7 +37,8 @@ type UserService struct {
 }
 
 // NewUserService instantiates a new DefaultUserService
-func NewUserService(userPersister UserPersister, controllerUpdater TokenControllerUpdater, userChannelhelper UserChannelHelper) *UserService {
+func NewUserService(userPersister UserPersister, controllerUpdater TokenControllerUpdater,
+	userChannelhelper UserChannelHelper) *UserService {
 	return &UserService{
 		userPersister,
 		controllerUpdater,

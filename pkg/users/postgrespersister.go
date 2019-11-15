@@ -23,7 +23,7 @@ import (
 
 const (
 	// Could make this configurable later if needed
-	maxOpenConns         = 5
+	maxOpenConns         = 3
 	maxIdleConns         = 3
 	connMaxLifetime      = time.Second * 1800 // 30 mins
 	defaultUserTableName = "civil_user"
@@ -53,16 +53,16 @@ func NewPostgresPersister(host string, port int, user string, password string,
 	return pgPersister, nil
 }
 
-// PostgresPersister implements the persister for Postgresql
-type PostgresPersister struct {
-	db *sqlx.DB
-}
-
 // NewPersisterFromGorm creates a persister using an existing gorm connection
 func NewPersisterFromGorm(gormDB *gorm.DB) *PostgresPersister {
 	db := sqlx.NewDb(gormDB.DB(), "postgres")
 
 	return &PostgresPersister{db}
+}
+
+// PostgresPersister implements the persister for Postgresql
+type PostgresPersister struct {
+	db *sqlx.DB
 }
 
 // Users retrieves a list of users based on the given UserCriteria
