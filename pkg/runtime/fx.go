@@ -12,6 +12,7 @@ var Module = fx.Options(
 	ChannelsRuntime,
 	UsersRuntime,
 	PaymentsRuntime,
+	JsonbRuntime,
 	storefront.RuntimeModule,
 	NewsroomRuntime,
 	fx.Provide(

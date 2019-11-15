@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	maxOpenConns    = 15
+	maxOpenConns    = 10
 	maxIdleConns    = 5
 	connMaxLifetime = time.Second * 1800 // 30 mins
 )
@@ -32,9 +32,27 @@ func NewGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
 		config.PostgresPw(),
 	))
 
-	db.DB().SetMaxIdleConns(maxIdleConns)
-	db.DB().SetMaxOpenConns(maxOpenConns)
-	db.DB().SetConnMaxLifetime(connMaxLifetime)
+	if config.PersisterPostgresMaxConns != nil {
+		db.DB().SetMaxOpenConns(*config.PersisterPostgresMaxConns)
+	} else {
+		// Default value
+		db.DB().SetMaxOpenConns(maxOpenConns)
+	}
+	if config.PersisterPostgresMaxIdle != nil {
+		db.DB().SetMaxIdleConns(*config.PersisterPostgresMaxIdle)
+	} else {
+		// Default value
+		db.DB().SetMaxIdleConns(maxIdleConns)
+	}
+	if config.PersisterPostgresConnLife != nil {
+		db.DB().SetConnMaxLifetime(
+			time.Second * time.Duration(*config.PersisterPostgresConnLife),
+		)
+	} else {
+		// Default value
+		db.DB().SetConnMaxLifetime(connMaxLifetime)
+	}
+
 	db.LogMode(config.Debug)
 
 	amErr := db.AutoMigrate(
