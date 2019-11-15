@@ -18,18 +18,18 @@ import (
 const (
 	maxOpenConns    = 10
 	maxIdleConns    = 5
-	connMaxLifetime = time.Second * 1800 // 30 mins
+	connMaxLifetime = time.Second * 180 // 3 mins
 )
 
 // NewGorm initializes a new gorm instance and runs migrations
 func NewGorm(config *utils.GraphQLConfig) (*gorm.DB, error) {
 
 	db, err := gorm.Open("postgres", fmt.Sprintf("host=%v port=%v user=%v dbname=%v password=%v sslmode=disable",
-		config.PostgresAddress(),
-		config.PostgresPort(),
-		config.PostgresUser(),
-		config.PostgresDbname(),
-		config.PostgresPw(),
+		config.PersisterPostgresAddress,
+		config.PersisterPostgresPort,
+		config.PersisterPostgresUser,
+		config.PersisterPostgresDbname,
+		config.PersisterPostgresPw,
 	))
 
 	if config.PersisterPostgresMaxConns != nil {

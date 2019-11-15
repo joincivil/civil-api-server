@@ -45,7 +45,7 @@ type ServerDeps struct {
 // NewRouter builds a new chi router
 func NewRouter(lc fx.Lifecycle, config *utils.GraphQLConfig) chi.Router {
 	log.Infof("proto %v", config.ApproveGrantProtoHost)
-	port := strconv.Itoa(config.Port)
+	port := strconv.Itoa(config.GqlPort)
 	if port == "" {
 		port = defaultPort
 	}

@@ -16,14 +16,14 @@ require (
 	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 // indirect
 	github.com/dyatlov/go-readability v0.0.0-20150926130635-e7b2080f87f8 // indirect
 	github.com/ethereum/go-ethereum v0.0.0-20190528221609-008d250e3c57
-	github.com/go-chi/chi v3.3.2+incompatible
+	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/iancoleman/strcase v0.0.0-20180726023541-3605ed457bf7
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
-	github.com/joincivil/civil-events-processor v0.0.0-20191114020704-a3bfb1ef9584
-	github.com/joincivil/go-common v0.0.0-20190926153429-c09dca466b06
+	github.com/joincivil/civil-events-processor v0.0.0-20191115220837-0e315045fc43
+	github.com/joincivil/go-common v0.0.0-20191115202858-d23287f7bcb4
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/lib/pq v1.1.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
