@@ -22,7 +22,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
-	github.com/joincivil/civil-events-processor v0.0.0-20191115220837-0e315045fc43
+	github.com/joincivil/civil-events-processor v0.0.0-20191118141640-ebf7214a173a
 	github.com/joincivil/go-common v0.0.0-20191115202858-d23287f7bcb4
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/lib/pq v1.1.0
