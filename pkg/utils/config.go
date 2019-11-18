@@ -22,8 +22,8 @@ const (
 // GraphQLConfig is the master config for the GraphQL API derived from environment
 // variables.
 type GraphQLConfig struct {
-	Port  int  `required:"true" desc:"Sets the GraphQL service port"`
-	Debug bool `default:"false" desc:"If true, enables the GraphQL playground"`
+	GqlPort int  `required:"true" desc:"Sets the GraphQL service port"`
+	Debug   bool `default:"false" desc:"If true, enables the GraphQL playground"`
 
 	JwtSecret string `split_words:"true" desc:"Secret used to encode JWT tokens"`
 
@@ -45,13 +45,16 @@ type GraphQLConfig struct {
 	CheckbookSecret string `split_words:"true" desc:"The checkbook.io api secret"`
 	CheckbookTest   bool   `split_words:"true" default:"false" desc:"If true, enables uses the checkbook sandbox"`
 
-	PersisterType            cconfig.PersisterType `ignored:"true"`
-	PersisterTypeName        string                `split_words:"true" required:"true" desc:"Sets the persister type to use"`
-	PersisterPostgresAddress string                `split_words:"true" desc:"If persister type is Postgresql, sets the address"`
-	PersisterPostgresPort    int                   `split_words:"true" desc:"If persister type is Postgresql, sets the port"`
-	PersisterPostgresDbname  string                `split_words:"true" desc:"If persister type is Postgresql, sets the database name"`
-	PersisterPostgresUser    string                `split_words:"true" desc:"If persister type is Postgresql, sets the database user"`
-	PersisterPostgresPw      string                `split_words:"true" desc:"If persister type is Postgresql, sets the database password"`
+	PersisterType             cconfig.PersisterType `ignored:"true"`
+	PersisterTypeName         string                `split_words:"true" required:"true" desc:"Sets the persister type to use"`
+	PersisterPostgresAddress  string                `split_words:"true" desc:"If persister type is Postgresql, sets the address"`
+	PersisterPostgresPort     int                   `split_words:"true" desc:"If persister type is Postgresql, sets the port"`
+	PersisterPostgresDbname   string                `split_words:"true" desc:"If persister type is Postgresql, sets the database name"`
+	PersisterPostgresUser     string                `split_words:"true" desc:"If persister type is Postgresql, sets the database user"`
+	PersisterPostgresPw       string                `split_words:"true" desc:"If persister type is Postgresql, sets the database password"`
+	PersisterPostgresMaxConns *int                  `split_words:"true" desc:"If persister type is Postgresql, sets the max conns in pool"`
+	PersisterPostgresMaxIdle  *int                  `split_words:"true" desc:"If persister type is Postgresql, sets the max idle conns in pool"`
+	PersisterPostgresConnLife *int                  `split_words:"true" desc:"If persister type is Postgresql, sets the max conn lifetime in secs"`
 
 	VersionNumber string `split_words:"true" desc:"Sets the version to use for crawler related Postgres tables"`
 
@@ -88,29 +91,44 @@ func (c *GraphQLConfig) PersistType() cconfig.PersisterType {
 	return c.PersisterType
 }
 
-// PostgresAddress returns the postgres persister address, implements PersisterConfig
-func (c *GraphQLConfig) PostgresAddress() string {
+// Address returns the persister address, implements PersisterConfig
+func (c *GraphQLConfig) Address() string {
 	return c.PersisterPostgresAddress
 }
 
-// PostgresPort returns the postgres persister port, implements PersisterConfig
-func (c *GraphQLConfig) PostgresPort() int {
+// Port returns the persister port, implements PersisterConfig
+func (c *GraphQLConfig) Port() int {
 	return c.PersisterPostgresPort
 }
 
-// PostgresDbname returns the postgres persister db name, implements PersisterConfig
-func (c *GraphQLConfig) PostgresDbname() string {
+// Dbname returns the persister db name, implements PersisterConfig
+func (c *GraphQLConfig) Dbname() string {
 	return c.PersisterPostgresDbname
 }
 
-// PostgresUser returns the postgres persister user, implements PersisterConfig
-func (c *GraphQLConfig) PostgresUser() string {
+// User returns the persister user, implements PersisterConfig
+func (c *GraphQLConfig) User() string {
 	return c.PersisterPostgresUser
 }
 
-// PostgresPw returns the postgres persister password, implements PersisterConfig
-func (c *GraphQLConfig) PostgresPw() string {
+// Password returns the persister password, implements PersisterConfig
+func (c *GraphQLConfig) Password() string {
 	return c.PersisterPostgresPw
+}
+
+// PoolMaxConns returns the max conns for a pool, if configured, implements PersisterConfig
+func (c *GraphQLConfig) PoolMaxConns() *int {
+	return c.PersisterPostgresMaxConns
+}
+
+// PoolMaxIdleConns returns the max idleconns for a pool, if configured, implements PersisterConfig
+func (c *GraphQLConfig) PoolMaxIdleConns() *int {
+	return c.PersisterPostgresMaxIdle
+}
+
+// PoolConnLifetimeSecs returns the conn lifetime for a pool, if configured, implements PersisterConfig
+func (c *GraphQLConfig) PoolConnLifetimeSecs() *int {
+	return c.PersisterPostgresConnLife
 }
 
 // OutputUsage prints the usage string to os.Stdout

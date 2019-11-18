@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 
 	log "github.com/golang/glog"
+	"github.com/jinzhu/gorm"
 
 	"github.com/jmoiron/sqlx"
 	// driver for postgresql
@@ -21,7 +22,7 @@ import (
 
 const (
 	// Could make this configurable later if needed
-	maxOpenConns    = 5
+	maxOpenConns    = 3
 	maxIdleConns    = 3
 	connMaxLifetime = time.Second * 1800 // 30 mins
 
@@ -49,6 +50,13 @@ func NewPostgresPersister(host string, port int, user string, password string,
 	db.SetMaxIdleConns(maxIdleConns)
 	db.SetConnMaxLifetime(connMaxLifetime)
 	return pgPersister, nil
+}
+
+// NewPersisterFromGorm creates a persister using an existing gorm connection
+func NewPersisterFromGorm(gormDB *gorm.DB) *PostgresPersister {
+	db := sqlx.NewDb(gormDB.DB(), "postgres")
+
+	return &PostgresPersister{db}
 }
 
 // PostgresPersister implements the persister for Postgresql

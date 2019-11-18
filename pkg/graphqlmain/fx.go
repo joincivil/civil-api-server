@@ -2,8 +2,11 @@ package graphqlmain
 
 import (
 	"flag"
-	"github.com/joincivil/civil-api-server/pkg/runtime"
 	"os"
+
+	"github.com/jinzhu/gorm"
+	"github.com/jmoiron/sqlx"
+	"github.com/joincivil/civil-api-server/pkg/runtime"
 
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/payments"
@@ -30,15 +33,16 @@ var EventProcessorModule = fx.Options(
 	fx.Provide(
 		ProvideVersionNumber,
 		ProvidePersisterConfig,
-		helpers.ContentRevisionPersister,
-		helpers.GovernanceEventPersister,
-		helpers.ChallengePersister,
-		helpers.ListingPersister,
-		helpers.ParameterPersister,
-		helpers.ParameterizerPersister,
-		helpers.AppealPersister,
-		helpers.UserChallengeDataPersister,
-		helpers.PollPersister,
+		ProvideSqlxFromGorm,
+		helpers.ContentRevisionPersisterFromSqlx,
+		helpers.GovernanceEventPersisterFromSqlx,
+		helpers.ChallengePersisterFromSqlx,
+		helpers.ListingPersisterFromSqlx,
+		helpers.ParameterPersisterFromSqlx,
+		helpers.ParameterizerPersisterFromSqlx,
+		helpers.AppealPersisterFromSqlx,
+		helpers.UserChallengeDataPersisterFromSqlx,
+		helpers.PollPersisterFromSqlx,
 	),
 )
 
@@ -50,6 +54,11 @@ func ProvideVersionNumber(config *utils.GraphQLConfig) string {
 // ProvidePersisterConfig takes the GraphQLConfig and returns pconfig.PersisterConfig
 func ProvidePersisterConfig(config *utils.GraphQLConfig) pconfig.PersisterConfig {
 	return config
+}
+
+// ProvideSqlxFromGorm takes a Gorm instance and returns it's sqlx.DB object
+func ProvideSqlxFromGorm(db *gorm.DB) *sqlx.DB {
+	return sqlx.NewDb(db.DB(), "postgres")
 }
 
 // BuildConfig initializes the config

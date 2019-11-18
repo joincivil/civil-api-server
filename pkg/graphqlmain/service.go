@@ -40,19 +40,6 @@ func initIPFS() *shell.Shell {
 	return shell.NewShell("https://ipfs.infura.io:5001")
 }
 
-func initJsonbService(config *utils.GraphQLConfig, jsonbPersister jsonstore.JsonbPersister) (
-	*jsonstore.Service, error) {
-	if jsonbPersister == nil {
-		var perr error
-		jsonbPersister, perr = initJsonbPersister(config)
-		if perr != nil {
-			return nil, perr
-		}
-	}
-	jsonbService := jsonstore.NewJsonbService(jsonbPersister)
-	return jsonbService, nil
-}
-
 func initStorefrontService(config *utils.GraphQLConfig, ethHelper *eth.Helper,
 	userService *users.UserService, mailchimp cemail.ListMemberManager) (*storefront.Service, error) {
 	emailLists := storefront.NewMailchimpServiceEmailLists(mailchimp)

@@ -407,7 +407,7 @@ func (s *Service) GetGroupedSanitizedPayments(postID string) ([]*SanitizedPaymen
 			) unpublicized_ungroup
 
 		) data 
-		ORDER BY usd_equivalent DESC`, postID, postID))
+		ORDER BY most_recent_update DESC`, postID, postID))
 
 	results := stmt.Scan(&pays)
 
