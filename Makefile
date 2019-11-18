@@ -128,11 +128,11 @@ build: check-go-env ## Builds the graphql server
 
 .PHONY: test
 test: check-go-env ## Runs unit tests and tests code coverage
-	@echo 'mode: atomic' > coverage.txt && $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -timeout=30s ./...
+	@echo 'mode: atomic' > coverage.txt && $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -p 1 -timeout=30s ./...
 
 .PHONY: test-integration
 test-integration: check-go-env ## Runs tagged integration tests
-	@echo 'mode: atomic' > coverage.txt && PUBSUB_EMULATOR_HOST=localhost:8042 $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -timeout=30s -tags=integration ./...
+	@echo 'mode: atomic' > coverage.txt && PUBSUB_EMULATOR_HOST=localhost:8042 $(GOTEST) -covermode=atomic -coverprofile=coverage.txt -v -race -p 1 -timeout=30s -tags=integration ./...
 
 .PHONY: cover
 cover: test ## Runs unit tests, code coverage, and runs HTML coverage tool.
