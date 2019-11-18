@@ -45,13 +45,16 @@ type GraphQLConfig struct {
 	CheckbookSecret string `split_words:"true" desc:"The checkbook.io api secret"`
 	CheckbookTest   bool   `split_words:"true" default:"false" desc:"If true, enables uses the checkbook sandbox"`
 
-	PersisterType            cconfig.PersisterType `ignored:"true"`
-	PersisterTypeName        string                `split_words:"true" required:"true" desc:"Sets the persister type to use"`
-	PersisterPostgresAddress string                `split_words:"true" desc:"If persister type is Postgresql, sets the address"`
-	PersisterPostgresPort    int                   `split_words:"true" desc:"If persister type is Postgresql, sets the port"`
-	PersisterPostgresDbname  string                `split_words:"true" desc:"If persister type is Postgresql, sets the database name"`
-	PersisterPostgresUser    string                `split_words:"true" desc:"If persister type is Postgresql, sets the database user"`
-	PersisterPostgresPw      string                `split_words:"true" desc:"If persister type is Postgresql, sets the database password"`
+	PersisterType             cconfig.PersisterType `ignored:"true"`
+	PersisterTypeName         string                `split_words:"true" required:"true" desc:"Sets the persister type to use"`
+	PersisterPostgresAddress  string                `split_words:"true" desc:"If persister type is Postgresql, sets the address"`
+	PersisterPostgresPort     int                   `split_words:"true" desc:"If persister type is Postgresql, sets the port"`
+	PersisterPostgresDbname   string                `split_words:"true" desc:"If persister type is Postgresql, sets the database name"`
+	PersisterPostgresUser     string                `split_words:"true" desc:"If persister type is Postgresql, sets the database user"`
+	PersisterPostgresPw       string                `split_words:"true" desc:"If persister type is Postgresql, sets the database password"`
+	PersisterPostgresMaxConns *int                  `split_words:"true" desc:"If persister type is Postgresql, sets the max conns in pool"`
+	PersisterPostgresMaxIdle  *int                  `split_words:"true" desc:"If persister type is Postgresql, sets the max idle conns in pool"`
+	PersisterPostgresConnLife *int                  `split_words:"true" desc:"If persister type is Postgresql, sets the max conn lifetime in secs"`
 
 	VersionNumber string `split_words:"true" desc:"Sets the version to use for crawler related Postgres tables"`
 

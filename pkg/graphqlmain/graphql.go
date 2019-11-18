@@ -3,6 +3,8 @@ package graphqlmain
 import (
 	"context"
 	"fmt"
+
+	"github.com/joincivil/civil-api-server/pkg/jsonstore"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -40,17 +42,16 @@ var GraphqlModule = fx.Options(
 	channels.ChannelModule,
 	posts.PostModule,
 	users.UserModule,
+	jsonstore.JsonbModule,
 	storefront.StorefrontModule,
 	newsrooms.NewsroomModule,
 	fx.Provide(
 		NewRouter,
 		graphql.NewResolver,
 		BuildConfig,
-		initJsonbPersister,
 		NewGorm,
 		NewETHHelper,
 		initDiscourseListingMapPersister,
-		initJsonbService,
 		initDiscourseService,
 		initNrsignupService,
 		auth.NewAuthServiceFromConfig,
