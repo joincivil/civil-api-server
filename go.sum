@@ -213,6 +213,8 @@ github.com/joincivil/civil-events-processor v0.0.0-20191118141640-ebf7214a173a h
 github.com/joincivil/civil-events-processor v0.0.0-20191118141640-ebf7214a173a/go.mod h1:aB4RpaBIr8TpS3XkRqaxT5fqn0wF5hdKXTip6PrIa68=
 github.com/joincivil/go-common v0.0.0-20191115202858-d23287f7bcb4 h1:jsegSa1eGkUPWzbuzf9kJk8U+pw5mpBrT52s9mG/jKo=
 github.com/joincivil/go-common v0.0.0-20191115202858-d23287f7bcb4/go.mod h1:rsFDwXyDKsUrm4pgE10z7AAaAuvFZ4NtN0ghSF3OwL8=
+github.com/joincivil/go-common v0.0.0-20191121182548-7994d712fce3 h1:/87mIuvsTmvEeVFcKRc7H7QftjWajxysS8O4mREVzsI=
+github.com/joincivil/go-common v0.0.0-20191121182548-7994d712fce3/go.mod h1:rsFDwXyDKsUrm4pgE10z7AAaAuvFZ4NtN0ghSF3OwL8=
 github.com/jrick/logrotate v1.0.0/go.mod h1:LNinyqDIJnpAur+b8yyulnQw/wDuN1+BYKlTRt3OuAQ=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/julienschmidt/httprouter v1.2.0 h1:TDTW5Yz1mjftljbcKqRcrYhd4XeOoI98t+9HbQbYf7g=

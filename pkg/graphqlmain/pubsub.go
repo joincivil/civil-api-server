@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
+	"github.com/pkg/errors"
 	"go.uber.org/fx"
 
 	"github.com/joincivil/civil-api-server/pkg/events"
@@ -14,6 +15,7 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/helpers"
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
+	cerrors "github.com/joincivil/go-common/pkg/errors"
 	"github.com/joincivil/go-common/pkg/pubsub"
 )
 
@@ -91,6 +93,7 @@ type PubSubDependencies struct {
 	Config  *PubSubConfig
 	Workers *pubsub.Workers `optional:"true"`
 	Quit    QuitChannel
+	ErrRep  cerrors.ErrorReporter
 }
 
 // RunTokenEventsWorkers starts up the CvlToken events pubsub worker(s)
@@ -103,6 +106,13 @@ func RunTokenEventsWorkers(deps PubSubDependencies, lc fx.Lifecycle) error {
 				log.Info("Starting PubSub")
 				go deps.Workers.Start()
 			}
+			// Log and report the errors coming out of the workers
+			go func() {
+				for err := range deps.Workers.Errors {
+					log.Errorf("error from worker: err: %v", err)
+					deps.ErrRep.Error(errors.WithMessage(err, "error from worker"), nil)
+				}
+			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
