@@ -23,7 +23,7 @@ require (
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/joincivil/civil-events-processor v0.0.0-20191118141640-ebf7214a173a
-	github.com/joincivil/go-common v0.0.0-20191115202858-d23287f7bcb4
+	github.com/joincivil/go-common v0.0.0-20191121182548-7994d712fce3
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/lib/pq v1.1.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646

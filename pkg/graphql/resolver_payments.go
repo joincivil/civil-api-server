@@ -12,7 +12,19 @@ import (
 	"github.com/joincivil/go-common/pkg/email"
 )
 
-func (r *mutationResolver) validatePayerChannelID(ctx context.Context, channelID string) error {
+func (r *mutationResolver) validateUserIsChannelAdmin(ctx context.Context, channelID string) error {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	if err != nil || !isAdmin {
+		return ErrAccessDenied
+	}
+	return nil
+}
+
+func (r *queryResolver) validateUserIsChannelAdmin(ctx context.Context, channelID string) error {
 	token := auth.ForContext(ctx)
 	if token == nil {
 		return ErrAccessDenied
@@ -35,7 +47,7 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 	}
 
 	if payment.PayerChannelID != "" {
-		err = r.validatePayerChannelID(ctx, payment.PayerChannelID)
+		err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
 		if err != nil {
 			return &payments.EtherPayment{}, err
 		}
@@ -63,7 +75,7 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	}
 
 	if payment.PayerChannelID != "" {
-		err = r.validatePayerChannelID(ctx, payment.PayerChannelID)
+		err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
 		if err != nil {
 			return &payments.StripePayment{}, err
 		}
@@ -149,19 +161,22 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 }
 
 func (r *queryResolver) GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error) {
-	token := auth.ForContext(ctx)
-	if token == nil {
-		return nil, ErrAccessDenied
-	}
-	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	err := r.validateUserIsChannelAdmin(ctx, channelID)
 	if err != nil {
 		return nil, err
 	}
-	if !isAdmin {
-		return nil, ErrAccessDenied
-	}
 
 	result := r.paymentService.GetChannelTotalProceeds(channelID)
+	return result, nil
+}
+
+func (r *queryResolver) GetChannelTotalProceedsByBoostType(ctx context.Context, channelID string, boostType string) (*payments.ProceedsQueryResult, error) {
+	err := r.validateUserIsChannelAdmin(ctx, channelID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := r.paymentService.GetChannelTotalProceedsByBoostType(channelID, boostType)
 	return result, nil
 }
 

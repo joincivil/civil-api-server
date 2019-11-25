@@ -567,41 +567,42 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Articles                     func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
-		Challenge                    func(childComplexity int, id int, lowercaseAddr *bool) int
-		ChallengesStartedByUser      func(childComplexity int, addr string) int
-		ChannelsGetByHandle          func(childComplexity int, handle string) int
-		ChannelsGetByID              func(childComplexity int, id string) int
-		ChannelsGetByNewsroomAddress func(childComplexity int, contractAddress string) int
-		ChannelsGetByUserID          func(childComplexity int, userID string) int
-		ChannelsIsHandleAvailable    func(childComplexity int, handle string) int
-		CurrentUser                  func(childComplexity int) int
-		GetChannelTotalProceeds      func(childComplexity int, channelID string) int
-		GovernanceEvents             func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
-		GovernanceEventsTxHash       func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		Jsonb                        func(childComplexity int, id *string) int
-		Listing                      func(childComplexity int, addr string, lowercaseAddr *bool) int
-		Listings                     func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		NewsroomArticles             func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
-		NrsignupNewsroom             func(childComplexity int) int
-		ParamProposals               func(childComplexity int, paramName string) int
-		Parameters                   func(childComplexity int, paramNames []string) int
-		Poll                         func(childComplexity int, pollID int) int
-		PostsGet                     func(childComplexity int, id string) int
-		PostsGetByReference          func(childComplexity int, reference string) int
-		PostsSearch                  func(childComplexity int, search posts.SearchInput) int
-		PostsSearchGroupedByChannel  func(childComplexity int, search posts.SearchInput) int
-		PostsStoryfeed               func(childComplexity int, first *int, after *string) int
-		StorefrontCvlPrice           func(childComplexity int) int
-		StorefrontCvlQuoteTokens     func(childComplexity int, tokensToBuy float64) int
-		StorefrontCvlQuoteUsd        func(childComplexity int, usdToSpend float64) int
-		StorefrontEthPrice           func(childComplexity int) int
-		TcrChallenge                 func(childComplexity int, id int, lowercaseAddr *bool) int
-		TcrGovernanceEvents          func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
-		TcrGovernanceEventsTxHash    func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		TcrListing                   func(childComplexity int, addr string, lowercaseAddr *bool) int
-		TcrListings                  func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
-		UserChallengeData            func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) int
+		Articles                           func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
+		Challenge                          func(childComplexity int, id int, lowercaseAddr *bool) int
+		ChallengesStartedByUser            func(childComplexity int, addr string) int
+		ChannelsGetByHandle                func(childComplexity int, handle string) int
+		ChannelsGetByID                    func(childComplexity int, id string) int
+		ChannelsGetByNewsroomAddress       func(childComplexity int, contractAddress string) int
+		ChannelsGetByUserID                func(childComplexity int, userID string) int
+		ChannelsIsHandleAvailable          func(childComplexity int, handle string) int
+		CurrentUser                        func(childComplexity int) int
+		GetChannelTotalProceeds            func(childComplexity int, channelID string) int
+		GetChannelTotalProceedsByBoostType func(childComplexity int, channelID string, boostType string) int
+		GovernanceEvents                   func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		GovernanceEventsTxHash             func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		Jsonb                              func(childComplexity int, id *string) int
+		Listing                            func(childComplexity int, addr string, lowercaseAddr *bool) int
+		Listings                           func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
+		NewsroomArticles                   func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
+		NrsignupNewsroom                   func(childComplexity int) int
+		ParamProposals                     func(childComplexity int, paramName string) int
+		Parameters                         func(childComplexity int, paramNames []string) int
+		Poll                               func(childComplexity int, pollID int) int
+		PostsGet                           func(childComplexity int, id string) int
+		PostsGetByReference                func(childComplexity int, reference string) int
+		PostsSearch                        func(childComplexity int, search posts.SearchInput) int
+		PostsSearchGroupedByChannel        func(childComplexity int, search posts.SearchInput) int
+		PostsStoryfeed                     func(childComplexity int, first *int, after *string) int
+		StorefrontCvlPrice                 func(childComplexity int) int
+		StorefrontCvlQuoteTokens           func(childComplexity int, tokensToBuy float64) int
+		StorefrontCvlQuoteUsd              func(childComplexity int, usdToSpend float64) int
+		StorefrontEthPrice                 func(childComplexity int) int
+		TcrChallenge                       func(childComplexity int, id int, lowercaseAddr *bool) int
+		TcrGovernanceEvents                func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
+		TcrGovernanceEventsTxHash          func(childComplexity int, txHash string, lowercaseAddr *bool) int
+		TcrListing                         func(childComplexity int, addr string, lowercaseAddr *bool) int
+		TcrListings                        func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
+		UserChallengeData                  func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) int
 	}
 
 	RosterMember struct {
@@ -869,6 +870,7 @@ type QueryResolver interface {
 	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsStoryfeed(ctx context.Context, first *int, after *string) (*PostResultCursor, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
+	GetChannelTotalProceedsByBoostType(ctx context.Context, channelID string, boostType string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) ([]*model.UserChallengeData, error)
 	CurrentUser(ctx context.Context) (*users.User, error)
 	StorefrontEthPrice(ctx context.Context) (*float64, error)
@@ -3704,6 +3706,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetChannelTotalProceeds(childComplexity, args["channelID"].(string)), true
 
+	case "Query.getChannelTotalProceedsByBoostType":
+		if e.complexity.Query.GetChannelTotalProceedsByBoostType == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getChannelTotalProceedsByBoostType_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetChannelTotalProceedsByBoostType(childComplexity, args["channelID"].(string), args["boostType"].(string)), true
+
 	case "Query.governanceEvents":
 		if e.complexity.Query.GovernanceEvents == nil {
 			break
@@ -4442,6 +4456,7 @@ type Query {
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
+  getChannelTotalProceedsByBoostType(channelID: String!, boostType: String!): ProceedsQueryResult
 
   # UserChallengeData Queries
   userChallengeData(
@@ -6280,6 +6295,28 @@ func (ec *executionContext) field_Query_channelsIsHandleAvailable_args(ctx conte
 		}
 	}
 	args["handle"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getChannelTotalProceedsByBoostType_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["boostType"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["boostType"] = arg1
 	return args, nil
 }
 
@@ -20809,6 +20846,47 @@ func (ec *executionContext) _Query_getChannelTotalProceeds(ctx context.Context, 
 	return ec.marshalOProceedsQueryResult2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐProceedsQueryResult(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_getChannelTotalProceedsByBoostType(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getChannelTotalProceedsByBoostType_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetChannelTotalProceedsByBoostType(rctx, args["channelID"].(string), args["boostType"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*payments.ProceedsQueryResult)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOProceedsQueryResult2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐProceedsQueryResult(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_userChallengeData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -28113,6 +28191,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_getChannelTotalProceeds(ctx, field)
 				return res
 			})
+		case "getChannelTotalProceedsByBoostType":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getChannelTotalProceedsByBoostType(ctx, field)
+				return res
+			})
 		case "userChallengeData":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -30788,7 +30877,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

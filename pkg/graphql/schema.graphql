@@ -102,6 +102,7 @@ type Query {
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
+  getChannelTotalProceedsByBoostType(channelID: String!, boostType: String!): ProceedsQueryResult
 
   # UserChallengeData Queries
   userChallengeData(
