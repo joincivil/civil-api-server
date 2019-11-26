@@ -99,3 +99,8 @@ func (s *Service) SaveJSONb(id string, namespace string, jsonb *JSONb) (*JSONb, 
 	updatedJSONb, err := s.jsonbPersister.SaveJsonb(jsonb)
 	return updatedJSONb, err
 }
+
+// DeleteJSONb deletes an existing Jsonb object
+func (s *Service) DeleteJSONb(jsonb *JSONb) error {
+	return s.jsonbPersister.DeleteJsonb(jsonb)
+}

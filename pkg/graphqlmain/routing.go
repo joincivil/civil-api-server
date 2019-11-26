@@ -8,7 +8,6 @@ import (
 	"github.com/didip/tollbooth_chi"
 	"github.com/go-chi/chi"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
-	"github.com/joincivil/civil-api-server/pkg/utils"
 )
 
 func healthCheckRouting(router chi.Router) error {
@@ -18,12 +17,11 @@ func healthCheckRouting(router chi.Router) error {
 	return nil
 }
 
-func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
-	nrsignupService *nrsignup.Service, tokenGenerator *utils.JwtTokenGenerator) error {
+func nrsignupRouting(deps ServerDeps) error {
 
 	grantApproveConfig := &nrsignup.NewsroomSignupApproveGrantConfig{
-		NrsignupService: nrsignupService,
-		TokenGenerator:  tokenGenerator,
+		NrsignupService: deps.NewsroomSignupService,
+		TokenGenerator:  deps.JwtGenerator,
 	}
 
 	// Set some rate limiters for the invoice handlers
@@ -31,11 +29,12 @@ func nrsignupRouting(router chi.Router, config *utils.GraphQLConfig,
 	limiter.SetIPLookups([]string{"X-Forwarded-For", "RemoteAddr", "X-Real-IP"})
 	limiter.SetMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
 
-	router.Route(fmt.Sprintf("/%v/nrsignup", invoicingVersion), func(r chi.Router) {
+	deps.Router.Route(fmt.Sprintf("/%v/nrsignup", invoicingVersion), func(r chi.Router) {
 		r.Route(fmt.Sprintf("/grantapprove/{%v}", nrsignup.GrantApproveTokenURLParam), func(r chi.Router) {
 			r.Use(tollbooth_chi.LimitHandler(limiter))
 			r.Get("/", nrsignup.NewsroomSignupApproveGrantHandler(grantApproveConfig))
 		})
 	})
+
 	return nil
 }

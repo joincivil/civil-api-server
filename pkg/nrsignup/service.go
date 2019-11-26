@@ -3,6 +3,7 @@ package nrsignup
 import (
 	"encoding/json"
 	"fmt"
+	"go.uber.org/fx"
 	"math/big"
 	"sync"
 
@@ -72,16 +73,48 @@ const (
 func NewNewsroomSignupService(helper *eth.Helper, emailer *email.Emailer, userService *users.UserService,
 	jsonbService *jsonstore.Service, tokenGenerator *utils.JwtTokenGenerator,
 	grantLandingProtoHost string, paramAddr string, registryListID string) (*Service, error) {
+	return NewService(ServiceDeps{
+		EthHelper:      helper,
+		Emailer:        emailer,
+		UserService:    userService,
+		JsonbService:   jsonbService,
+		TokenGenerator: tokenGenerator,
+		Config: ServiceConfig{
+			grantLandingProtoHost, paramAddr, registryListID,
+		},
+	}), nil
+}
+
+// ServiceConfig contains the configuration fields for ServiceDeps
+type ServiceConfig struct {
+	GrantLandingProtoHost string
+	ParamAddr             string
+	RegistryListID        string
+}
+
+// ServiceDeps contains the fields needed to build a new Service
+type ServiceDeps struct {
+	fx.In
+	EthHelper      *eth.Helper
+	Emailer        *email.Emailer
+	UserService    *users.UserService
+	JsonbService   *jsonstore.Service
+	TokenGenerator *utils.JwtTokenGenerator
+	Config         ServiceConfig
+}
+
+// NewService constructs a new Service instance
+func NewService(deps ServiceDeps) *Service {
 	return &Service{
-		client:                helper.Blockchain,
-		emailer:               emailer,
-		userService:           userService,
-		jsonbService:          jsonbService,
-		tokenGenerator:        tokenGenerator,
-		grantLandingProtoHost: grantLandingProtoHost,
-		parameterizerAddr:     paramAddr,
-		registryListID:        registryListID,
-	}, nil
+		client:                deps.EthHelper.Blockchain,
+		emailer:               deps.Emailer,
+		userService:           deps.UserService,
+		jsonbService:          deps.JsonbService,
+		tokenGenerator:        deps.TokenGenerator,
+		grantLandingProtoHost: deps.Config.GrantLandingProtoHost,
+		parameterizerAddr:     deps.Config.ParamAddr,
+		registryListID:        deps.Config.RegistryListID,
+	}
 }
 
 // Service is a struct and methods used for handling newsroom signup functionality
@@ -320,6 +353,27 @@ func (s *Service) StartPollNewsroomDeployTx(newsroomOwnerUID string) error {
 // newsroom owner that it has completed.
 func (s *Service) StartPollApplicationTx(newsroomOwnerUID string) error {
 	return nil
+}
+
+// DeleteNewsroomData deletes the nrsignup data for the user
+func (s *Service) DeleteNewsroomData(newsroomOwnerUID string) error {
+	s.alterMutex.Lock()
+	defer s.alterMutex.Unlock()
+
+	// Set both the namespace and ID as the newsroom owner ID
+	jsonbs, err := s.jsonbService.RetrieveJSONb(
+		DefaultJsonbID,
+		jsonstore.DefaultJsonbGraphqlNs,
+		newsroomOwnerUID,
+	)
+	if err != nil {
+		return err
+	}
+	if len(jsonbs) != 1 {
+		return fmt.Errorf("retrieved more than 1 result from the JSONb store")
+	}
+
+	return s.jsonbService.DeleteJSONb(jsonbs[0])
 }
 
 func (s *Service) buildGrantDecisionLink(newsroomOwnerUID string, approved bool) (string, error) {
