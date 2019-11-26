@@ -117,7 +117,7 @@ type CreateNewsroomChannelInput struct {
 func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Address, input CreateNewsroomChannelInput) (*Channel, error) {
 
 	channelType := TypeNewsroom
-	reference := input.ContractAddress
+	reference := strings.ToLower(input.ContractAddress)
 
 	// convert contract address string to common.Address
 	newsroomAddress := common.HexToAddress(reference)
