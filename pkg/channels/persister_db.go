@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
+	"strings"
 )
 
 // DBPersister implements the Persister interface using GORM
@@ -100,8 +101,10 @@ func (p *DBPersister) GetChannel(id string) (*Channel, error) {
 func (p *DBPersister) GetChannelByReference(channelType string, reference string) (*Channel, error) {
 	c := &Channel{}
 
-	stmt := p.db.Where("channel_type = ? AND LOWER(reference) = LOWER(?)", channelType, reference)
-	if stmt.First(c).RecordNotFound() {
+	if p.db.Where(&Channel{
+		ChannelType: channelType,
+		Reference:   strings.ToLower(reference),
+	}).First(c).RecordNotFound() {
 		return nil, ErrorNotFound
 	}
 
