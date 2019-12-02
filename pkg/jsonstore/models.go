@@ -151,4 +151,7 @@ type JsonbPersister interface {
 	// SaveJsonb saves a populated Jsonb object. Returns the new/updated
 	// object or error.
 	SaveJsonb(jsonb *JSONb) (*JSONb, error)
+
+	// DeleteJsonb deletes an existing Jsonb object
+	DeleteJsonb(jsonb *JSONb) error
 }

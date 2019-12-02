@@ -908,7 +908,7 @@ func (r *queryResolver) criteriaCount(first *int) int {
 	return criteriaCount
 }
 
-func (m *mutationResolver) TcrListingSaveTopicID(ctx context.Context, addr string,
+func (r *mutationResolver) TcrListingSaveTopicID(ctx context.Context, addr string,
 	topicID int) (string, error) {
 	// Needs to have a valid auth token
 	token := auth.ForContext(ctx)
@@ -934,7 +934,7 @@ func (m *mutationResolver) TcrListingSaveTopicID(ctx context.Context, addr strin
 	listingAddr := common.HexToAddress(addr)
 
 	// Verify that the listing exists
-	existingListing, err := m.listingPersister.ListingByAddress(listingAddr)
+	existingListing, err := r.listingPersister.ListingByAddress(listingAddr)
 	if err != nil && err != cpersist.ErrPersisterNoResults {
 		return ResponseError, err
 	}
@@ -943,7 +943,7 @@ func (m *mutationResolver) TcrListingSaveTopicID(ctx context.Context, addr strin
 	}
 
 	// If listing exists, store the topic ID
-	err = m.discourseService.SaveDiscourseTopicID(
+	err = r.discourseService.SaveDiscourseTopicID(
 		common.HexToAddress(addr),
 		int64(topicID),
 	)

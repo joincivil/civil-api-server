@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -66,6 +67,7 @@ type ResolverRoot interface {
 	PostExternalLink() PostExternalLinkResolver
 	Query() QueryResolver
 	SanitizedPayment() SanitizedPaymentResolver
+	Subscription() SubscriptionResolver
 	User() UserResolver
 	UserChallengeVoteData() UserChallengeVoteDataResolver
 }
@@ -622,6 +624,10 @@ type ComplexityRoot struct {
 		UsdEquivalent    func(childComplexity int) int
 	}
 
+	Subscription struct {
+		FastPass func(childComplexity int, newsroomOwnerUID string) int
+	}
+
 	User struct {
 		Channels                    func(childComplexity int) int
 		CivilianWhitelistTxID       func(childComplexity int) int
@@ -881,6 +887,9 @@ type QueryResolver interface {
 }
 type SanitizedPaymentResolver interface {
 	PayerChannel(ctx context.Context, obj *payments.SanitizedPayment) (*channels.Channel, error)
+}
+type SubscriptionResolver interface {
+	FastPass(ctx context.Context, newsroomOwnerUID string) (<-chan string, error)
 }
 type UserResolver interface {
 	NrStep(ctx context.Context, obj *users.User) (*int, error)
@@ -4080,6 +4089,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SanitizedPayment.UsdEquivalent(childComplexity), true
 
+	case "Subscription.fastPass":
+		if e.complexity.Subscription.FastPass == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_fastPass_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.FastPass(childComplexity, args["newsroomOwnerUID"].(string)), true
+
 	case "User.channels":
 		if e.complexity.User.Channels == nil {
 			break
@@ -4329,7 +4350,36 @@ func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefini
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDefinition) func() *graphql.Response {
-	return graphql.OneShot(graphql.ErrorResponse(ctx, "subscriptions are not supported"))
+	ec := executionContext{graphql.GetRequestContext(ctx), e}
+
+	next := ec._Subscription(ctx, op.SelectionSet)
+	if ec.Errors != nil {
+		return graphql.OneShot(&graphql.Response{Data: []byte("null"), Errors: ec.Errors})
+	}
+
+	var buf bytes.Buffer
+	return func() *graphql.Response {
+		buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+			return buf.Bytes()
+		})
+
+		if buf == nil {
+			return nil
+		}
+
+		return &graphql.Response{
+			Data:       buf,
+			Errors:     ec.Errors,
+			Extensions: ec.Extensions,
+		}
+	}
 }
 
 type executionContext struct {
@@ -5340,6 +5390,10 @@ scalar JsonFieldValue
 scalar RawObject
 scalar Time
 `},
+	&ast.Source{Name: "schema_subscriptions.graphql", Input: `
+type Subscription {
+    fastPass(newsroomOwnerUID: String!): String!
+}`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -6959,6 +7013,20 @@ func (ec *executionContext) field_Query_userChallengeData_args(ctx context.Conte
 		}
 	}
 	args["lowercaseAddr"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_fastPass_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["newsroomOwnerUID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["newsroomOwnerUID"] = arg0
 	return args, nil
 }
 
@@ -21611,6 +21679,40 @@ func (ec *executionContext) _SanitizedPayment_payerChannel(ctx context.Context, 
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Subscription_fastPass(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Field: field,
+		Args:  nil,
+	})
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_fastPass_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
+	//          and Tracer stack
+	rctx := ctx
+	results, err := ec.resolvers.Subscription().FastPass(rctx, args["newsroomOwnerUID"].(string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNString2string(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _User_uid(ctx context.Context, field graphql.CollectedField, obj *users.User) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -28376,6 +28478,26 @@ func (ec *executionContext) _SanitizedPayment(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, subscriptionImplementors)
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "fastPass":
+		return ec._Subscription_fastPass(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
 }
 
 var userImplementors = []string{"User"}

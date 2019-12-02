@@ -63,6 +63,7 @@ type ResolverConfig struct {
 	JSONbService                 *jsonstore.Service
 	NewsroomService              newsrooms.Service
 	NrsignupService              *nrsignup.Service
+	NewsroomTools                *newsrooms.Tools
 	PaymentService               *payments.Service
 	PostService                  *posts.Service
 	StorefrontService            *storefront.Service
@@ -90,6 +91,7 @@ func NewResolver(config ResolverConfig) *Resolver {
 		userService:                  config.UserService,
 		jsonbService:                 config.JSONbService,
 		newsroomService:              config.NewsroomService,
+		newsroomTools:                config.NewsroomTools,
 		nrsignupService:              config.NrsignupService,
 		paymentService:               config.PaymentService,
 		postService:                  config.PostService,
@@ -119,6 +121,7 @@ type Resolver struct {
 	nrsignupService              *nrsignup.Service
 	channelService               *channels.Service
 	newsroomService              newsrooms.Service
+	newsroomTools                *newsrooms.Tools
 	paymentService               *payments.Service
 	postService                  *posts.Service
 	storefrontService            *storefront.Service
@@ -138,6 +141,11 @@ func (r *Resolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}
 }
 
+// Subscription is the resolver for the Subscription type
+func (r *Resolver) Subscription() graphql.SubscriptionResolver {
+	return &subscriptionResolver{r}
+}
+
 // DetermineAddrCase determines the case of an address
 func (r *Resolver) DetermineAddrCase(addr string) string {
 	if *r.lowercaseAddr {
@@ -149,3 +157,5 @@ func (r *Resolver) DetermineAddrCase(addr string) string {
 type queryResolver struct{ *Resolver }
 
 type mutationResolver struct{ *Resolver }
+
+type subscriptionResolver struct{ *Resolver }

@@ -10,5 +10,6 @@ var NewsroomModule = fx.Options(
 	fx.Provide(
 		NewCachingService,
 		newsroom.NewService,
+		NewTools,
 	),
 )

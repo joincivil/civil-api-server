@@ -23,3 +23,9 @@ func (p *InMemoryJSONbPersister) SaveJsonb(jsonb *JSONb) (*JSONb, error) {
 	p.Store[jsonb.Key] = jsonb
 	return jsonb, nil
 }
+
+// DeleteJsonb deletes JSONb in the inmemory store
+func (p *InMemoryJSONbPersister) DeleteJsonb(jsonb *JSONb) error {
+	delete(p.Store, jsonb.Key)
+	return nil
+}

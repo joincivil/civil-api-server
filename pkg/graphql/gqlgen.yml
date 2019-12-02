@@ -2,7 +2,9 @@
 #
 # Refer to https://gqlgen.com/config/
 # for detailed .gqlgen.yml documentation.
-schema: schema.graphql
+schema:
+  - schema.graphql
+  - schema_subscriptions.graphql
 
 exec:
   filename: ../generated/graphql/exec.go

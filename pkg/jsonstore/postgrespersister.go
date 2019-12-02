@@ -75,6 +75,11 @@ func (p *PostgresPersister) SaveJsonb(jsonb *JSONb) (*JSONb, error) {
 	return p.saveJsonbForTable(jsonb, defaultJsonbTableName)
 }
 
+// DeleteJsonb deletes a populated Jsonb object or an error
+func (p *PostgresPersister) DeleteJsonb(jsonb *JSONb) error {
+	return p.deleteJsonbForTable(jsonb.Key, defaultJsonbTableName)
+}
+
 // CreateTables creates the tables if they don't exist
 func (p *PostgresPersister) CreateTables() error {
 	jsonbTableQuery := CreateJsonbTableQuery(defaultJsonbTableName)
@@ -162,6 +167,16 @@ func (p *PostgresPersister) saveJsonbForTable(jsonb *JSONb, tableName string) (*
 	}
 
 	return jsb, nil
+}
+
+func (p *PostgresPersister) deleteJsonbForTable(key string, tableName string) error {
+	_, err := p.db.Exec("delete from "+tableName+" where key = $1", key)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Appends a custom on conflict statement to an existing insert statement to

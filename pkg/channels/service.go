@@ -113,7 +113,7 @@ type CreateNewsroomChannelInput struct {
 	ContractAddress string
 }
 
-// CreateNewsroomChannel creates a channel with type "user"
+// CreateNewsroomChannel creates a channel with type "newsroom"
 func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Address, input CreateNewsroomChannelInput) (*Channel, error) {
 
 	channelType := TypeNewsroom
