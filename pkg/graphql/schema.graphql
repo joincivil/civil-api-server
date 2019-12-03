@@ -177,6 +177,7 @@ type Mutation {
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
+  nrsignupDelete: String!
 
   # Payment Mutations
   paymentsCreateStripePayment(

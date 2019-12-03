@@ -295,6 +295,7 @@ type ComplexityRoot struct {
 		ChannelsSetHandle                 func(childComplexity int, input channels.SetHandleInput) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
+		NrsignupDelete                    func(childComplexity int) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -776,6 +777,7 @@ type MutationResolver interface {
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
 	NrsignupUpdateSteps(ctx context.Context, input NrsignupStepsInput) (string, error)
+	NrsignupDelete(ctx context.Context) (string, error)
 	PaymentsCreateStripePayment(ctx context.Context, postID string, input payments.StripePayment) (*payments.StripePayment, error)
 	PaymentsCreateEtherPayment(ctx context.Context, postID string, input payments.EtherPayment) (*payments.EtherPayment, error)
 	PaymentsCreateTokenPayment(ctx context.Context, postID string, input payments.TokenPayment) (*payments.TokenPayment, error)
@@ -2061,6 +2063,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.NrsignupApproveGrant(childComplexity, args["approved"].(bool), args["newsroomOwnerUID"].(string)), true
+
+	case "Mutation.nrsignupDelete":
+		if e.complexity.Mutation.NrsignupDelete == nil {
+			break
+		}
+
+		return e.complexity.Mutation.NrsignupDelete(childComplexity), true
 
 	case "Mutation.nrsignupPollNewsroomDeploy":
 		if e.complexity.Mutation.NrsignupPollNewsroomDeploy == nil {
@@ -4581,6 +4590,7 @@ type Mutation {
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
+  nrsignupDelete: String!
 
   # Payment Mutations
   paymentsCreateStripePayment(
@@ -12970,6 +12980,43 @@ func (ec *executionContext) _Mutation_nrsignupUpdateSteps(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().NrsignupUpdateSteps(rctx, args["input"].(NrsignupStepsInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_nrsignupDelete(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupDelete(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26515,6 +26562,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "nrsignupDelete":
+			out.Values[i] = ec._Mutation_nrsignupDelete(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "paymentsCreateStripePayment":
 			out.Values[i] = ec._Mutation_paymentsCreateStripePayment(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -30999,7 +31051,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
