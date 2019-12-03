@@ -153,6 +153,20 @@ func (r *queryResolver) NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupU
 	return newsroom, nil
 }
 
+func (r *mutationResolver) NrsignupDelete(ctx context.Context) (string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	err := r.nrsignupService.DeleteNewsroomData(token.Sub)
+	if err != nil {
+		return "", err
+	}
+
+	return ResponseOK, nil
+}
+
 func (r *subscriptionResolver) FastPass(ctx context.Context, newsroomOwnerUID string) (<-chan string, error) {
 
 	updates := make(chan string)
