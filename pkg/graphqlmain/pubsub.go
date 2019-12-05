@@ -2,7 +2,6 @@ package graphqlmain
 
 import (
 	"context"
-
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -105,14 +104,14 @@ func RunTokenEventsWorkers(deps PubSubDependencies, lc fx.Lifecycle) error {
 			if deps.Workers != nil {
 				log.Info("Starting PubSub")
 				go deps.Workers.Start()
+				// Log and report the errors coming out of the workers
+				go func() {
+					for err := range deps.Workers.Errors {
+						log.Errorf("error from worker: err: %v", err)
+						deps.ErrRep.Error(errors.WithMessage(err, "error from worker"), nil)
+					}
+				}()
 			}
-			// Log and report the errors coming out of the workers
-			go func() {
-				for err := range deps.Workers.Errors {
-					log.Errorf("error from worker: err: %v", err)
-					deps.ErrRep.Error(errors.WithMessage(err, "error from worker"), nil)
-				}
-			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
