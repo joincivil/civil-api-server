@@ -40,6 +40,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/channels.ConnectStripeInput
   ChannelsSetHandleInput:
     model: github.com/joincivil/civil-api-server/pkg/channels.SetHandleInput
+  ChannelsSetStripeCustomerIDInput:
+    model: github.com/joincivil/civil-api-server/pkg/channels.SetStripeCustomerIDInput
   ChannelsSetAvatarInput:
     model: github.com/joincivil/civil-api-server/pkg/channels.SetAvatarInput
   UserChannelSetHandleInput:

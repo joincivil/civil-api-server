@@ -260,6 +260,56 @@ func (p *DBPersister) SetTiny72AvatarDataURL(userID string, channelID string, av
 	return nil
 }
 
+// SetStripeCustomerID updates the stripe customer id for the channel
+func (p *DBPersister) SetStripeCustomerID(userID string, channelID string, stripeCustomerID string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// make sure the user requesting is an admin
+	err = p.requireAdmin(userID, channelID)
+	if err == ErrorUnauthorized {
+		return nil, ErrorUnauthorized
+	} else if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// update the stripe account id
+	err = p.db.Model(ch).Update(Channel{StripeCustomerID: stripeCustomerID}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	return ch, nil
+}
+
+// ClearStripeCustomerID clears the stripe customer id for the channel
+func (p *DBPersister) ClearStripeCustomerID(userID string, channelID string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// make sure the user requesting is an admin
+	err = p.requireAdmin(userID, channelID)
+	if err == ErrorUnauthorized {
+		return nil, ErrorUnauthorized
+	} else if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// clears the stripe account id
+	err = p.db.Model(ch).Update(Channel{StripeCustomerID: ""}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	return ch, nil
+}
+
 // SetStripeAccountID updates the stripe account id for the channel
 func (p *DBPersister) SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error) {
 	// get channel

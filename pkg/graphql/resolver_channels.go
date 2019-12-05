@@ -86,6 +86,24 @@ func (r *mutationResolver) ChannelsSetHandle(ctx context.Context, input channels
 	return r.channelService.SetHandle(token.Sub, input.ChannelID, input.Handle)
 }
 
+func (r *mutationResolver) ChannelsSetStripeCustomerID(ctx context.Context, input channels.SetStripeCustomerIDInput) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	return r.channelService.SetStripeCustomerID(token.Sub, input.ChannelID, input.StripeCustomerID)
+}
+
+func (r *mutationResolver) ChannelsClearStripeCustomerID(ctx context.Context, channelID string) (*channels.Channel, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+
+	return r.channelService.ClearStripeCustomerID(token.Sub, channelID)
+}
+
 func (r *mutationResolver) UserChannelSetHandle(ctx context.Context, input channels.UserSetHandleInput) (*channels.Channel, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
@@ -200,4 +218,20 @@ func (r *channelResolver) EmailAddressRestricted(ctx context.Context, channel *c
 	}
 
 	return &channel.EmailAddress, nil
+}
+
+func (r *channelResolver) StripeCustomerIDRestricted(ctx context.Context, channel *channels.Channel) (*string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channel.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrAccessDenied
+	}
+
+	return &channel.StripeCustomerID, nil
 }
