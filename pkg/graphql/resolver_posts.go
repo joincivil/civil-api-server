@@ -223,11 +223,11 @@ func (r *mutationResolver) PostsCreateExternalLinkEmbedded(ctx context.Context, 
 		}
 		listing, err := r.listingPersister.ListingByCleanedNewsroomURL(cleanedURL)
 		if err != nil {
-			return nil, err
+			return nil, ErrNoListingFoundForURL
 		}
 		channel, err := r.channelService.GetChannelByReference("newsroom", listing.ContractAddress().Hex())
 		if err != nil {
-			return nil, err
+			return nil, ErrNoChannelFoundForNewsroom
 		}
 		input.ChannelID = channel.ID
 		post, err := r.postService.CreateExternalLinkEmbedded(input)
@@ -251,8 +251,10 @@ func (r *mutationResolver) PostsUpdateExternalLink(ctx context.Context, postID s
 
 // errors
 var (
-	ErrNotImplemented    = errors.New("field not yet implemented")
-	ErrEmptyURLSubmitted = errors.New("empty url submitted")
+	ErrNotImplemented            = errors.New("field not yet implemented")
+	ErrEmptyURLSubmitted         = errors.New("empty url submitted")
+	ErrNoListingFoundForURL      = errors.New("no listing found associated with submitted url")
+	ErrNoChannelFoundForNewsroom = errors.New("no channel found for listing")
 )
 
 // TYPE RESOLVERS
