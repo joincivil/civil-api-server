@@ -72,6 +72,12 @@ type SetAvatarInput struct {
 	AvatarDataURL string
 }
 
+// SetStripeCustomerIDInput contains the fields needed to set a channel stripe customer id
+type SetStripeCustomerIDInput struct {
+	ChannelID        string
+	StripeCustomerID string
+}
+
 // Channel is container for Posts
 type Channel struct {
 	ID                   string `gorm:"type:uuid;primary_key"`
@@ -88,6 +94,7 @@ type Channel struct {
 	AvatarDataURL        string
 	Tiny100AvatarDataURL string // avatar data url scaled down to width 100
 	Tiny72AvatarDataURL  string // avatar data url scaled down to width 72 height 72
+	StripeCustomerID     string
 }
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted

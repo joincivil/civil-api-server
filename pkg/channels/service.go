@@ -251,6 +251,16 @@ func (s *Service) processAvatar(payload interface{}) interface{} {
 	return s.persister.SetTiny72AvatarDataURL(inputs.userID, inputs.channelID, mTinyDataURL)
 }
 
+// SetStripeCustomerID sets the stripe customer id on a channel of any type
+func (s *Service) SetStripeCustomerID(userID string, channelID string, stripeCustomerID string) (*Channel, error) {
+	return s.persister.SetStripeCustomerID(userID, channelID, stripeCustomerID)
+}
+
+// ClearStripeCustomerID sets the stripe customer id on a channel of any type
+func (s *Service) ClearStripeCustomerID(userID string, channelID string) (*Channel, error) {
+	return s.persister.ClearStripeCustomerID(userID, channelID)
+}
+
 // SetHandle sets the handle on a channel of any type
 func (s *Service) SetHandle(userID string, channelID string, handle string) (*Channel, error) {
 	channel, err := s.persister.GetChannel(channelID)
