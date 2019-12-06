@@ -34,6 +34,11 @@ type PostSearchResult struct {
 	Pagination
 }
 
+// StoryfeedFilter contains fields used to filter storyfeed query
+type StoryfeedFilter struct {
+	StoryfeedAlg string
+}
+
 // PostModel contains fields common to all types of Posts
 type PostModel struct {
 	ID           string `gorm:"type:uuid;primary_key"`
