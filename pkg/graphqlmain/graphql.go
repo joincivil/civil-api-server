@@ -3,7 +3,9 @@ package graphqlmain
 import (
 	"context"
 	"fmt"
+
 	gqlgen "github.com/99designs/gqlgen/graphql"
+	"github.com/pkg/errors"
 	"github.com/vektah/gqlparser/gqlerror"
 
 	log "github.com/golang/glog"
@@ -69,15 +71,18 @@ func graphQLRouting(router chi.Router, errorReporter cerrors.ErrorReporter, reso
 		handler.ErrorPresenter(
 			func(ctx context.Context, e error) *gqlerror.Error {
 				// Send the error to the error reporter
-				errorReporter.Error(e, nil)
-				return gqlgen.DefaultErrorPresenter(ctx, e)
+				err := errors.Cause(e)
+				log.Errorf("gql error: %+v", err)
+				errorReporter.Error(err, nil)
+				return gqlgen.DefaultErrorPresenter(ctx, err)
 			},
 		),
 		handler.RecoverFunc(func(ctx context.Context, err interface{}) error {
 			// Send the error to the error reporter
 			switch val := err.(type) {
 			case error:
-				errorReporter.Error(val, nil)
+				errorReporter.Error(errors.Cause(val), nil)
+				log.Errorf("gql panic error: %+v", errors.Cause(val))
 			}
 			return fmt.Errorf("Internal server error: %v", err)
 		}),
