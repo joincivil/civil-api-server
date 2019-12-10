@@ -100,6 +100,7 @@ type ServiceDeps struct {
 	Emailer        *email.Emailer
 	UserService    *users.UserService
 	JsonbService   *jsonstore.Service
+	ChannelService *channels.Service
 	TokenGenerator *utils.JwtTokenGenerator
 	Config         ServiceConfig
 }
@@ -115,6 +116,7 @@ func NewService(deps ServiceDeps) *Service {
 		grantLandingProtoHost: deps.Config.GrantLandingProtoHost,
 		parameterizerAddr:     deps.Config.ParamAddr,
 		registryListID:        deps.Config.RegistryListID,
+		channelService:        deps.ChannelService,
 	}
 }
 
