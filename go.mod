@@ -22,6 +22,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
+	github.com/joho/godotenv v1.3.0
 	github.com/joincivil/civil-events-processor v0.0.0-20191118141640-ebf7214a173a
 	github.com/joincivil/go-common v0.0.0-20191121182548-7994d712fce3
 	github.com/kelseyhightower/envconfig v1.3.0
@@ -33,6 +34,7 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5
 	github.com/stripe/stripe-go v61.0.1+incompatible
+	github.com/vektah/gorunpkg v0.0.0-20190126024156-2aeb42363e48 // indirect
 	github.com/vektah/gqlparser v1.1.2
 	github.com/vincent-petithory/dataurl v0.0.0-20160330182126-9a301d65acbb
 	go.uber.org/atomic v1.4.0 // indirect
@@ -40,9 +42,11 @@ require (
 	go.uber.org/fx v1.9.0
 	go.uber.org/goleak v0.10.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
-	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
-	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb // indirect
-	golang.org/x/sys v0.0.0-20191009170203-06d7bd2c5f4f // indirect
+	golang.org/x/crypto v0.0.0-20191119213627-4f8c1d86b1ba // indirect
+	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914 // indirect
+	golang.org/x/sys v0.0.0-20191120130536-6bfc516c8699 // indirect
+	golang.org/x/tools v0.0.0-20191120001058-ad01d5993d97
+	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898 // indirect
 )
 
 replace git.apache.org/thrift.git v0.12.0 => github.com/apache/thrift v0.12.0

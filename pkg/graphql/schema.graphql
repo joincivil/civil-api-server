@@ -165,6 +165,8 @@ type Mutation {
   userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
+  channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
+  channelsClearStripeCustomerID(channelID: String!): Channel
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -177,6 +179,7 @@ type Mutation {
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
+  nrsignupDelete: String!
 
   # Payment Mutations
   paymentsCreateStripePayment(
@@ -467,6 +470,7 @@ type Channel {
   avatarDataUrl: String
   tiny100AvatarDataUrl: String
   tiny72AvatarDataUrl: String
+  StripeCustomerIDRestricted: String
 }
 
 type ChannelMember {
@@ -482,6 +486,11 @@ input ChannelsConnectStripeInput {
 input ChannelsSetHandleInput {
   channelID: String!
   handle: String!
+}
+
+input ChannelsSetStripeCustomerIDInput {
+  channelID: String!
+  stripeCustomerID: String!
 }
 
 input ChannelsSetAvatarInput {

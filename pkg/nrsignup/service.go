@@ -3,6 +3,8 @@ package nrsignup
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/joincivil/civil-api-server/pkg/channels"
+	"go.uber.org/fx"
 	"math/big"
 	"sync"
 
@@ -72,16 +74,48 @@ const (
 func NewNewsroomSignupService(helper *eth.Helper, emailer *email.Emailer, userService *users.UserService,
 	jsonbService *jsonstore.Service, tokenGenerator *utils.JwtTokenGenerator,
 	grantLandingProtoHost string, paramAddr string, registryListID string) (*Service, error) {
+	return NewService(ServiceDeps{
+		EthHelper:      helper,
+		Emailer:        emailer,
+		UserService:    userService,
+		JsonbService:   jsonbService,
+		TokenGenerator: tokenGenerator,
+		Config: ServiceConfig{
+			grantLandingProtoHost, paramAddr, registryListID,
+		},
+	}), nil
+}
+
+// ServiceConfig contains the configuration fields for ServiceDeps
+type ServiceConfig struct {
+	GrantLandingProtoHost string
+	ParamAddr             string
+	RegistryListID        string
+}
+
+// ServiceDeps contains the fields needed to build a new Service
+type ServiceDeps struct {
+	fx.In
+	EthHelper      *eth.Helper
+	Emailer        *email.Emailer
+	UserService    *users.UserService
+	JsonbService   *jsonstore.Service
+	TokenGenerator *utils.JwtTokenGenerator
+	Config         ServiceConfig
+}
+
+// NewService constructs a new Service instance
+func NewService(deps ServiceDeps) *Service {
 	return &Service{
-		client:                helper.Blockchain,
-		emailer:               emailer,
-		userService:           userService,
-		jsonbService:          jsonbService,
-		tokenGenerator:        tokenGenerator,
-		grantLandingProtoHost: grantLandingProtoHost,
-		parameterizerAddr:     paramAddr,
-		registryListID:        registryListID,
-	}, nil
+		client:                deps.EthHelper.Blockchain,
+		emailer:               deps.Emailer,
+		userService:           deps.UserService,
+		jsonbService:          deps.JsonbService,
+		tokenGenerator:        deps.TokenGenerator,
+		grantLandingProtoHost: deps.Config.GrantLandingProtoHost,
+		parameterizerAddr:     deps.Config.ParamAddr,
+		registryListID:        deps.Config.RegistryListID,
+	}
 }
 
 // Service is a struct and methods used for handling newsroom signup functionality
@@ -91,6 +125,7 @@ type Service struct {
 	userService           *users.UserService
 	jsonbService          *jsonstore.Service
 	tokenGenerator        *utils.JwtTokenGenerator
+	channelService        *channels.Service
 	grantLandingProtoHost string
 	alterMutex            sync.Mutex
 	parameterizerAddr     string
@@ -99,22 +134,24 @@ type Service struct {
 
 // SendWelcomeEmail sends a newsroom signup welcome email to the given newsroom owner.
 func (s *Service) SendWelcomeEmail(newsroomOwnerUID string) error {
-	user, err := s.userService.MaybeGetUser(users.UserCriteria{
-		UID: newsroomOwnerUID,
-	})
+	ch, err := s.channelService.GetChannelByReference(channels.TypeUser, newsroomOwnerUID)
 	if err != nil {
 		return err
 	}
-	if user == nil {
-		return fmt.Errorf("No user found: uid: %v", newsroomOwnerUID)
+	if ch == nil {
+		return fmt.Errorf("no user channel found: uid: %v", newsroomOwnerUID)
+	}
+
+	if ch.EmailAddress == "" {
+		return fmt.Errorf("no email set for user: uid: %v", newsroomOwnerUID)
 	}
 
 	tmplData := email.TemplateData{
-		"name": user.Email,
+		"name": ch,
 	}
 	tmplReq := &email.SendTemplateEmailRequest{
-		ToName:       user.Email,
-		ToEmail:      user.Email,
+		ToName:       ch.EmailAddress,
+		ToEmail:      ch.EmailAddress,
 		FromName:     defaultFromEmailName,
 		FromEmail:    defaultFromEmailAddress,
 		TemplateID:   signupWelcomeEmailTemplateID,
@@ -156,8 +193,18 @@ func (s *Service) RequestGrant(newsroomOwnerUID string, requested bool) error {
 		return err
 	}
 	if user == nil {
-		return fmt.Errorf("No user found: uid: %v", newsroomOwnerUID)
+		return fmt.Errorf("no user found: uid: %v", newsroomOwnerUID)
 	}
+
+	ch, err := s.channelService.GetChannelByReference(channels.TypeUser, user.UID)
+	if err != nil {
+		return err
+	}
+	if ch == nil {
+		return fmt.Errorf("no user found: uid: %v", newsroomOwnerUID)
+	}
+
+	userEmail := ch.EmailAddress
 
 	// Set the grant requested flag to true for this user UID
 	err = s.setGrantRequestedFlag(newsroomOwnerUID, requested)
@@ -177,7 +224,7 @@ func (s *Service) RequestGrant(newsroomOwnerUID string, requested bool) error {
 	if err != nil {
 		return err
 	}
-	tmplData["nr_applicant_email"] = user.Email
+	tmplData["nr_applicant_email"] = userEmail
 	tmplData["nr_applicant_address"] = user.EthAddress
 
 	tmplReq := &email.SendTemplateEmailRequest{
@@ -193,25 +240,28 @@ func (s *Service) RequestGrant(newsroomOwnerUID string, requested bool) error {
 
 	// Email to newsroom owner to tell them to wait for a response
 	tmplData = email.TemplateData{
-		"name": user.Email,
+		"name": userEmail,
 	}
 	tmplReq = &email.SendTemplateEmailRequest{
-		ToName:       user.Email,
-		ToEmail:      user.Email,
+		ToName:       userEmail,
+		ToEmail:      userEmail,
 		FromName:     defaultFromEmailName,
 		FromEmail:    defaultFromEmailAddress,
 		TemplateID:   requestGrantUserEmailTemplateID,
 		TemplateData: tmplData,
 		AsmGroupID:   defaultAsmGroupID,
 	}
-	err2 := s.emailer.SendTemplateEmail(tmplReq)
+	if userEmail != "" {
+		err2 := s.emailer.SendTemplateEmail(tmplReq)
+		if err2 != nil {
+			return fmt.Errorf("failed to send grant request user email: err: %v", err2)
+		}
+	}
 
 	if err1 != nil {
-		return fmt.Errorf("Failed to send grant request foundation email: err: %v", err1)
+		return fmt.Errorf("failed to send grant request foundation email: err: %v", err1)
 	}
-	if err2 != nil {
-		return fmt.Errorf("Failed to send grant request user email: err: %v", err2)
-	}
+
 	return nil
 }
 
@@ -225,7 +275,7 @@ func (s *Service) ApproveGrant(newsroomOwnerUID string, approved bool) error {
 		return err
 	}
 	if user == nil {
-		return fmt.Errorf("No user found: uid: %v", newsroomOwnerUID)
+		return fmt.Errorf("no user found: uid: %v", newsroomOwnerUID)
 	}
 
 	// NOTE(PN): Email to newsroom owner will be sent by the foundation via pipedrive.
@@ -262,17 +312,29 @@ func (s *Service) UpdateUserSteps(newsroomOwnerUID string, step *int,
 	}
 
 	if *furthestStep == stepApplyComplete {
-		// Send user the application was complete email
-		err = s.sendApplicationCompleteEmail(newsroomOwnerUID, user.Email)
+
+		ch, err := s.channelService.GetChannelByReference(channels.TypeUser, user.UID)
 		if err != nil {
 			return err
+		}
+		if ch == nil {
+			return fmt.Errorf("no user found: uid: %v", newsroomOwnerUID)
 		}
 
-		// Add the user to the registry alerts list if ID is set
-		err = s.addToRegistryAlertsList(user.Email)
-		if err != nil {
-			return err
+		if ch.EmailAddress != "" {
+			// Send user the application was complete email
+			err = s.sendApplicationCompleteEmail(newsroomOwnerUID, ch.EmailAddress)
+			if err != nil {
+				return err
+			}
+
+			// Add the user to the registry alerts list if ID is set
+			err = s.addToRegistryAlertsList(ch.EmailAddress)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 
 	return nil
@@ -320,6 +382,27 @@ func (s *Service) StartPollNewsroomDeployTx(newsroomOwnerUID string) error {
 // newsroom owner that it has completed.
 func (s *Service) StartPollApplicationTx(newsroomOwnerUID string) error {
 	return nil
+}
+
+// DeleteNewsroomData deletes the nrsignup data for the user
+func (s *Service) DeleteNewsroomData(newsroomOwnerUID string) error {
+	s.alterMutex.Lock()
+	defer s.alterMutex.Unlock()
+
+	// Set both the namespace and ID as the newsroom owner ID
+	jsonbs, err := s.jsonbService.RetrieveJSONb(
+		DefaultJsonbID,
+		jsonstore.DefaultJsonbGraphqlNs,
+		newsroomOwnerUID,
+	)
+	if err != nil {
+		return err
+	}
+	if len(jsonbs) != 1 {
+		return fmt.Errorf("retrieved more than 1 result from the JSONb store")
+	}
+
+	return s.jsonbService.DeleteJSONb(jsonbs[0])
 }
 
 func (s *Service) buildGrantDecisionLink(newsroomOwnerUID string, approved bool) (string, error) {
@@ -432,7 +515,7 @@ func (s *Service) RetrieveUserJSONData(newsroomOwnerUID string) (*SignupUserJSON
 		return nil, err
 	}
 	if len(jsonbs) != 1 {
-		return nil, fmt.Errorf("Retrieved more than 1 result from the JSONb store")
+		return nil, fmt.Errorf("retrieved more than 1 result from the JSONb store")
 	}
 
 	jsonb := jsonbs[0]

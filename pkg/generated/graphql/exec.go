@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -66,6 +67,7 @@ type ResolverRoot interface {
 	PostExternalLink() PostExternalLinkResolver
 	Query() QueryResolver
 	SanitizedPayment() SanitizedPaymentResolver
+	Subscription() SubscriptionResolver
 	User() UserResolver
 	UserChallengeVoteData() UserChallengeVoteDataResolver
 }
@@ -123,19 +125,20 @@ type ComplexityRoot struct {
 	}
 
 	Channel struct {
-		AvatarDataURL          func(childComplexity int) int
-		ChannelType            func(childComplexity int) int
-		CurrentUserIsAdmin     func(childComplexity int) int
-		EmailAddressRestricted func(childComplexity int) int
-		Handle                 func(childComplexity int) int
-		ID                     func(childComplexity int) int
-		IsStripeConnected      func(childComplexity int) int
-		Listing                func(childComplexity int) int
-		Newsroom               func(childComplexity int) int
-		PostsSearch            func(childComplexity int, search posts.SearchInput) int
-		StripeAccountID        func(childComplexity int) int
-		Tiny100AvatarDataURL   func(childComplexity int) int
-		Tiny72AvatarDataURL    func(childComplexity int) int
+		AvatarDataURL              func(childComplexity int) int
+		ChannelType                func(childComplexity int) int
+		CurrentUserIsAdmin         func(childComplexity int) int
+		EmailAddressRestricted     func(childComplexity int) int
+		Handle                     func(childComplexity int) int
+		ID                         func(childComplexity int) int
+		IsStripeConnected          func(childComplexity int) int
+		Listing                    func(childComplexity int) int
+		Newsroom                   func(childComplexity int) int
+		PostsSearch                func(childComplexity int, search posts.SearchInput) int
+		StripeAccountID            func(childComplexity int) int
+		StripeCustomerIDRestricted func(childComplexity int) int
+		Tiny100AvatarDataURL       func(childComplexity int) int
+		Tiny72AvatarDataURL        func(childComplexity int) int
 	}
 
 	ChannelMember struct {
@@ -285,14 +288,17 @@ type ComplexityRoot struct {
 		AuthSignupEmailSend               func(childComplexity int, emailAddress string, addToMailing *bool) int
 		AuthSignupEmailSendForApplication func(childComplexity int, emailAddress string, application auth.ApplicationEnum, addToMailing *bool) int
 		AuthSignupEth                     func(childComplexity int, input users.SignatureInput) int
+		ChannelsClearStripeCustomerID     func(childComplexity int, channelID string) int
 		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
 		ChannelsSetAvatar                 func(childComplexity int, input channels.SetAvatarInput) int
 		ChannelsSetEmail                  func(childComplexity int, input channels.SetEmailInput) int
 		ChannelsSetEmailConfirm           func(childComplexity int, jwt string) int
 		ChannelsSetHandle                 func(childComplexity int, input channels.SetHandleInput) int
+		ChannelsSetStripeCustomerID       func(childComplexity int, input channels.SetStripeCustomerIDInput) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
+		NrsignupDelete                    func(childComplexity int) int
 		NrsignupPollNewsroomDeploy        func(childComplexity int, txHash string) int
 		NrsignupPollTcrApplication        func(childComplexity int, txHash string) int
 		NrsignupRequestGrant              func(childComplexity int, requested bool) int
@@ -622,6 +628,10 @@ type ComplexityRoot struct {
 		UsdEquivalent    func(childComplexity int) int
 	}
 
+	Subscription struct {
+		FastPass func(childComplexity int, newsroomOwnerUID string) int
+	}
+
 	User struct {
 		Channels                    func(childComplexity int) int
 		CivilianWhitelistTxID       func(childComplexity int) int
@@ -693,6 +703,8 @@ type ChannelResolver interface {
 	CurrentUserIsAdmin(ctx context.Context, obj *channels.Channel) (bool, error)
 
 	EmailAddressRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
+
+	StripeCustomerIDRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
 }
 type CharterResolver interface {
 	ContentID(ctx context.Context, obj *model.Charter) (int, error)
@@ -760,6 +772,8 @@ type MutationResolver interface {
 	UserChannelSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
 	ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
 	ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error)
+	ChannelsSetStripeCustomerID(ctx context.Context, input channels.SetStripeCustomerIDInput) (*channels.Channel, error)
+	ChannelsClearStripeCustomerID(ctx context.Context, channelID string) (*channels.Channel, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -770,6 +784,7 @@ type MutationResolver interface {
 	NrsignupPollNewsroomDeploy(ctx context.Context, txHash string) (string, error)
 	NrsignupPollTcrApplication(ctx context.Context, txHash string) (string, error)
 	NrsignupUpdateSteps(ctx context.Context, input NrsignupStepsInput) (string, error)
+	NrsignupDelete(ctx context.Context) (string, error)
 	PaymentsCreateStripePayment(ctx context.Context, postID string, input payments.StripePayment) (*payments.StripePayment, error)
 	PaymentsCreateEtherPayment(ctx context.Context, postID string, input payments.EtherPayment) (*payments.EtherPayment, error)
 	PaymentsCreateTokenPayment(ctx context.Context, postID string, input payments.TokenPayment) (*payments.TokenPayment, error)
@@ -881,6 +896,9 @@ type QueryResolver interface {
 }
 type SanitizedPaymentResolver interface {
 	PayerChannel(ctx context.Context, obj *payments.SanitizedPayment) (*channels.Channel, error)
+}
+type SubscriptionResolver interface {
+	FastPass(ctx context.Context, newsroomOwnerUID string) (<-chan string, error)
 }
 type UserResolver interface {
 	NrStep(ctx context.Context, obj *users.User) (*int, error)
@@ -1232,6 +1250,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.StripeAccountID(childComplexity), true
+
+	case "Channel.StripeCustomerIDRestricted":
+		if e.complexity.Channel.StripeCustomerIDRestricted == nil {
+			break
+		}
+
+		return e.complexity.Channel.StripeCustomerIDRestricted(childComplexity), true
 
 	case "Channel.tiny100AvatarDataUrl":
 		if e.complexity.Channel.Tiny100AvatarDataURL == nil {
@@ -1957,6 +1982,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AuthSignupEth(childComplexity, args["input"].(users.SignatureInput)), true
 
+	case "Mutation.channelsClearStripeCustomerID":
+		if e.complexity.Mutation.ChannelsClearStripeCustomerID == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_channelsClearStripeCustomerID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsClearStripeCustomerID(childComplexity, args["channelID"].(string)), true
+
 	case "Mutation.channelsConnectStripe":
 		if e.complexity.Mutation.ChannelsConnectStripe == nil {
 			break
@@ -2029,6 +2066,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ChannelsSetHandle(childComplexity, args["input"].(channels.SetHandleInput)), true
 
+	case "Mutation.channelsSetStripeCustomerID":
+		if e.complexity.Mutation.ChannelsSetStripeCustomerID == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_channelsSetStripeCustomerID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsSetStripeCustomerID(childComplexity, args["input"].(channels.SetStripeCustomerIDInput)), true
+
 	case "Mutation.jsonbSave":
 		if e.complexity.Mutation.JsonbSave == nil {
 			break
@@ -2052,6 +2101,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.NrsignupApproveGrant(childComplexity, args["approved"].(bool), args["newsroomOwnerUID"].(string)), true
+
+	case "Mutation.nrsignupDelete":
+		if e.complexity.Mutation.NrsignupDelete == nil {
+			break
+		}
+
+		return e.complexity.Mutation.NrsignupDelete(childComplexity), true
 
 	case "Mutation.nrsignupPollNewsroomDeploy":
 		if e.complexity.Mutation.NrsignupPollNewsroomDeploy == nil {
@@ -4080,6 +4136,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SanitizedPayment.UsdEquivalent(childComplexity), true
 
+	case "Subscription.fastPass":
+		if e.complexity.Subscription.FastPass == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_fastPass_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.FastPass(childComplexity, args["newsroomOwnerUID"].(string)), true
+
 	case "User.channels":
 		if e.complexity.User.Channels == nil {
 			break
@@ -4329,7 +4397,36 @@ func (e *executableSchema) Mutation(ctx context.Context, op *ast.OperationDefini
 }
 
 func (e *executableSchema) Subscription(ctx context.Context, op *ast.OperationDefinition) func() *graphql.Response {
-	return graphql.OneShot(graphql.ErrorResponse(ctx, "subscriptions are not supported"))
+	ec := executionContext{graphql.GetRequestContext(ctx), e}
+
+	next := ec._Subscription(ctx, op.SelectionSet)
+	if ec.Errors != nil {
+		return graphql.OneShot(&graphql.Response{Data: []byte("null"), Errors: ec.Errors})
+	}
+
+	var buf bytes.Buffer
+	return func() *graphql.Response {
+		buf := ec.RequestMiddleware(ctx, func(ctx context.Context) []byte {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+			return buf.Bytes()
+		})
+
+		if buf == nil {
+			return nil
+		}
+
+		return &graphql.Response{
+			Data:       buf,
+			Errors:     ec.Errors,
+			Extensions: ec.Extensions,
+		}
+	}
 }
 
 type executionContext struct {
@@ -4519,6 +4616,8 @@ type Mutation {
   userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmail(input: ChannelsSetEmailInput!): Channel
   channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
+  channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
+  channelsClearStripeCustomerID(channelID: String!): Channel
 
   # Newsroom Signup Mutations
   nrsignupSendWelcomeEmail: String!
@@ -4531,6 +4630,7 @@ type Mutation {
   nrsignupPollNewsroomDeploy(txHash: String!): String!
   nrsignupPollTcrApplication(txHash: String!): String!
   nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
+  nrsignupDelete: String!
 
   # Payment Mutations
   paymentsCreateStripePayment(
@@ -4821,6 +4921,7 @@ type Channel {
   avatarDataUrl: String
   tiny100AvatarDataUrl: String
   tiny72AvatarDataUrl: String
+  StripeCustomerIDRestricted: String
 }
 
 type ChannelMember {
@@ -4836,6 +4937,11 @@ input ChannelsConnectStripeInput {
 input ChannelsSetHandleInput {
   channelID: String!
   handle: String!
+}
+
+input ChannelsSetStripeCustomerIDInput {
+  channelID: String!
+  stripeCustomerID: String!
 }
 
 input ChannelsSetAvatarInput {
@@ -5340,6 +5446,10 @@ scalar JsonFieldValue
 scalar RawObject
 scalar Time
 `},
+	&ast.Source{Name: "schema_subscriptions.graphql", Input: `
+type Subscription {
+    fastPass(newsroomOwnerUID: String!): String!
+}`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -5534,6 +5644,20 @@ func (ec *executionContext) field_Mutation_authSignupEth_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_channelsClearStripeCustomerID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_channelsConnectStripe_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -5610,6 +5734,20 @@ func (ec *executionContext) field_Mutation_channelsSetHandle_args(ctx context.Co
 	var arg0 channels.SetHandleInput
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalNChannelsSetHandleInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetHandleInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_channelsSetStripeCustomerID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 channels.SetStripeCustomerIDInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNChannelsSetStripeCustomerIDInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetStripeCustomerIDInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -6959,6 +7097,20 @@ func (ec *executionContext) field_Query_userChallengeData_args(ctx context.Conte
 		}
 	}
 	args["lowercaseAddr"] = arg5
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_fastPass_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["newsroomOwnerUID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["newsroomOwnerUID"] = arg0
 	return args, nil
 }
 
@@ -8657,6 +8809,40 @@ func (ec *executionContext) _Channel_tiny72AvatarDataUrl(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_StripeCustomerIDRestricted(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().StripeCustomerIDRestricted(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ChannelMember_channel(ctx context.Context, field graphql.CollectedField, obj *channels.ChannelMember) (ret graphql.Marshaler) {
@@ -12486,6 +12672,88 @@ func (ec *executionContext) _Mutation_channelsSetEmailConfirm(ctx context.Contex
 	return ec.marshalOChannelSetEmailResponse2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetEmailResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_channelsSetStripeCustomerID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_channelsSetStripeCustomerID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsSetStripeCustomerID(rctx, args["input"].(channels.SetStripeCustomerIDInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_channelsClearStripeCustomerID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_channelsClearStripeCustomerID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsClearStripeCustomerID(rctx, args["channelID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_nrsignupSendWelcomeEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -12902,6 +13170,43 @@ func (ec *executionContext) _Mutation_nrsignupUpdateSteps(ctx context.Context, f
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().NrsignupUpdateSteps(rctx, args["input"].(NrsignupStepsInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_nrsignupDelete(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NrsignupDelete(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -21611,6 +21916,40 @@ func (ec *executionContext) _SanitizedPayment_payerChannel(ctx context.Context, 
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Subscription_fastPass(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Field: field,
+		Args:  nil,
+	})
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_fastPass_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	// FIXME: subscriptions are missing request middleware stack https://github.com/99designs/gqlgen/issues/259
+	//          and Tracer stack
+	rctx := ctx
+	results, err := ec.resolvers.Subscription().FastPass(rctx, args["newsroomOwnerUID"].(string))
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-results
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNString2string(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _User_uid(ctx context.Context, field graphql.CollectedField, obj *users.User) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -23932,6 +24271,30 @@ func (ec *executionContext) unmarshalInputChannelsSetHandleInput(ctx context.Con
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputChannelsSetStripeCustomerIDInput(ctx context.Context, obj interface{}) (channels.SetStripeCustomerIDInput, error) {
+	var it channels.SetStripeCustomerIDInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "channelID":
+			var err error
+			it.ChannelID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "stripeCustomerID":
+			var err error
+			it.StripeCustomerID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCharterInput(ctx context.Context, obj interface{}) (newsroom.Charter, error) {
 	var it newsroom.Charter
 	var asMap = obj.(map[string]interface{})
@@ -25293,6 +25656,17 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Channel_tiny100AvatarDataUrl(ctx, field, obj)
 		case "tiny72AvatarDataUrl":
 			out.Values[i] = ec._Channel_tiny72AvatarDataUrl(ctx, field, obj)
+		case "StripeCustomerIDRestricted":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_StripeCustomerIDRestricted(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -26363,6 +26737,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsSetEmail(ctx, field)
 		case "channelsSetEmailConfirm":
 			out.Values[i] = ec._Mutation_channelsSetEmailConfirm(ctx, field)
+		case "channelsSetStripeCustomerID":
+			out.Values[i] = ec._Mutation_channelsSetStripeCustomerID(ctx, field)
+		case "channelsClearStripeCustomerID":
+			out.Values[i] = ec._Mutation_channelsClearStripeCustomerID(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -26410,6 +26788,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "nrsignupUpdateSteps":
 			out.Values[i] = ec._Mutation_nrsignupUpdateSteps(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "nrsignupDelete":
+			out.Values[i] = ec._Mutation_nrsignupDelete(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -28378,6 +28761,26 @@ func (ec *executionContext) _SanitizedPayment(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, subscriptionImplementors)
+	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "fastPass":
+		return ec._Subscription_fastPass(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
+}
+
 var userImplementors = []string{"User"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *users.User) graphql.Marshaler {
@@ -29021,6 +29424,10 @@ func (ec *executionContext) unmarshalNChannelsSetEmailInput2githubᚗcomᚋjoinc
 
 func (ec *executionContext) unmarshalNChannelsSetHandleInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetHandleInput(ctx context.Context, v interface{}) (channels.SetHandleInput, error) {
 	return ec.unmarshalInputChannelsSetHandleInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNChannelsSetStripeCustomerIDInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetStripeCustomerIDInput(ctx context.Context, v interface{}) (channels.SetStripeCustomerIDInput, error) {
+	return ec.unmarshalInputChannelsSetStripeCustomerIDInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNCharterInput2githubᚗcomᚋjoincivilᚋgoᚑcommonᚋpkgᚋnewsroomᚐCharter(ctx context.Context, v interface{}) (newsroom.Charter, error) {

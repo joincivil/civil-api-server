@@ -2,7 +2,6 @@ package graphql
 
 import (
 	context "context"
-
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
@@ -152,4 +151,33 @@ func (r *queryResolver) NrsignupNewsroom(ctx context.Context) (*nrsignup.SignupU
 	}
 
 	return newsroom, nil
+}
+
+func (r *mutationResolver) NrsignupDelete(ctx context.Context) (string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return "", ErrAccessDenied
+	}
+
+	err := r.nrsignupService.DeleteNewsroomData(token.Sub)
+	if err != nil {
+		return "", err
+	}
+
+	return ResponseOK, nil
+}
+
+func (r *subscriptionResolver) FastPass(ctx context.Context, newsroomOwnerUID string) (<-chan string, error) {
+
+	updates := make(chan string)
+
+	go func() {
+		err := r.newsroomTools.FastPassNewsroom(updates, newsroomOwnerUID)
+		if err != nil {
+			updates <- "closed with error"
+		}
+		close(updates)
+	}()
+
+	return updates, nil
 }

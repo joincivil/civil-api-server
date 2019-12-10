@@ -3,22 +3,13 @@ package graphqlmain
 import (
 	"context"
 	"fmt"
-
-	"github.com/joincivil/civil-api-server/pkg/jsonstore"
-	"github.com/joincivil/civil-api-server/pkg/newsrooms"
-
 	gqlgen "github.com/99designs/gqlgen/graphql"
 	"github.com/vektah/gqlparser/gqlerror"
 
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
-	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
-	"github.com/joincivil/civil-api-server/pkg/payments"
-	"github.com/joincivil/civil-api-server/pkg/posts"
-	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/tokencontroller"
-	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
 	cemail "github.com/joincivil/go-common/pkg/email"
@@ -38,27 +29,17 @@ const (
 
 // GraphqlModule provides the graphql server
 var GraphqlModule = fx.Options(
-	payments.PaymentModule,
-	channels.ChannelModule,
-	posts.PostModule,
-	users.UserModule,
-	jsonstore.JsonbModule,
-	storefront.StorefrontModule,
-	newsrooms.NewsroomModule,
 	fx.Provide(
 		NewRouter,
 		graphql.NewResolver,
 		BuildConfig,
 		NewGorm,
-		NewETHHelper,
 		initDiscourseListingMapPersister,
 		initDiscourseService,
-		initNrsignupService,
 		auth.NewAuthServiceFromConfig,
 		initStorefrontService,
 		initErrorReporter,
 		initIPFS,
-		NewDeployerContractAddresses,
 		tokencontroller.NewService,
 		func(config *utils.GraphQLConfig) *utils.JwtTokenGenerator {
 			return utils.NewJwtTokenGenerator([]byte(config.JwtSecret))

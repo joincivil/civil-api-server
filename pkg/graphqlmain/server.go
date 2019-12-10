@@ -128,7 +128,7 @@ func enableAPIServices(router chi.Router, port string, deps ServerDeps) error {
 	}
 
 	// Newsroom Signup REST endpoints
-	err = nrsignupRouting(router, deps.Config, deps.NewsroomSignupService, deps.JwtGenerator)
+	err = nrsignupRouting(deps)
 	if err != nil {
 		log.Fatalf("Error setting up newsroom signup routing: err: %v", err)
 	}

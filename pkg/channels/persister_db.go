@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
+	"strings"
 )
 
 // DBPersister implements the Persister interface using GORM
@@ -100,8 +101,10 @@ func (p *DBPersister) GetChannel(id string) (*Channel, error) {
 func (p *DBPersister) GetChannelByReference(channelType string, reference string) (*Channel, error) {
 	c := &Channel{}
 
-	stmt := p.db.Where("channel_type = ? AND LOWER(reference) = LOWER(?)", channelType, reference)
-	if stmt.First(c).RecordNotFound() {
+	if p.db.Where(&Channel{
+		ChannelType: channelType,
+		Reference:   strings.ToLower(reference),
+	}).First(c).RecordNotFound() {
 		return nil, ErrorNotFound
 	}
 
@@ -255,6 +258,56 @@ func (p *DBPersister) SetTiny72AvatarDataURL(userID string, channelID string, av
 	}
 
 	return nil
+}
+
+// SetStripeCustomerID updates the stripe customer id for the channel
+func (p *DBPersister) SetStripeCustomerID(userID string, channelID string, stripeCustomerID string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// make sure the user requesting is an admin
+	err = p.requireAdmin(userID, channelID)
+	if err == ErrorUnauthorized {
+		return nil, ErrorUnauthorized
+	} else if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// update the stripe account id
+	err = p.db.Model(ch).Update(Channel{StripeCustomerID: stripeCustomerID}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	return ch, nil
+}
+
+// ClearStripeCustomerID clears the stripe customer id for the channel
+func (p *DBPersister) ClearStripeCustomerID(userID string, channelID string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// make sure the user requesting is an admin
+	err = p.requireAdmin(userID, channelID)
+	if err == ErrorUnauthorized {
+		return nil, ErrorUnauthorized
+	} else if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	// clears the stripe account id
+	err = p.db.Model(ch).Update(Channel{StripeCustomerID: ""}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe customer id")
+	}
+
+	return ch, nil
 }
 
 // SetStripeAccountID updates the stripe account id for the channel

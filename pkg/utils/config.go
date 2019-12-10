@@ -75,6 +75,9 @@ type GraphQLConfig struct {
 
 	RefreshTokenBlacklist []string `split_words:"true" desc:"List of refresh tokens to blacklist"`
 
+	FastPassRescueMultisig common.Address `split_words:"true" desc:"Address to add to FastPassed newsroom multisigs"`
+	TcrApplicationTokens   int64          `split_words:"true" desc:"Number of tokens needed to apply to registry"`
+
 	// Runs the pubsub worker
 	// Should eventually move this to it's own repo and codebase
 	PubSubProjectID      string `split_words:"true" desc:"Sets GPubSub project ID. If not set, will not pub or sub."`

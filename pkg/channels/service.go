@@ -113,11 +113,11 @@ type CreateNewsroomChannelInput struct {
 	ContractAddress string
 }
 
-// CreateNewsroomChannel creates a channel with type "user"
+// CreateNewsroomChannel creates a channel with type "newsroom"
 func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Address, input CreateNewsroomChannelInput) (*Channel, error) {
 
 	channelType := TypeNewsroom
-	reference := input.ContractAddress
+	reference := strings.ToLower(input.ContractAddress)
 
 	// convert contract address string to common.Address
 	newsroomAddress := common.HexToAddress(reference)
@@ -249,6 +249,16 @@ func (s *Service) processAvatar(payload interface{}) interface{} {
 	mTinyBase64Str := base64.StdEncoding.EncodeToString(buff.Bytes())
 	mTinyDataURL := "data:" + inputs.decodedDataURL.ContentType() + ";base64," + mTinyBase64Str
 	return s.persister.SetTiny72AvatarDataURL(inputs.userID, inputs.channelID, mTinyDataURL)
+}
+
+// SetStripeCustomerID sets the stripe customer id on a channel of any type
+func (s *Service) SetStripeCustomerID(userID string, channelID string, stripeCustomerID string) (*Channel, error) {
+	return s.persister.SetStripeCustomerID(userID, channelID, stripeCustomerID)
+}
+
+// ClearStripeCustomerID sets the stripe customer id on a channel of any type
+func (s *Service) ClearStripeCustomerID(userID string, channelID string) (*Channel, error) {
+	return s.persister.ClearStripeCustomerID(userID, channelID)
 }
 
 // SetHandle sets the handle on a channel of any type

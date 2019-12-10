@@ -1,8 +1,7 @@
 package main
 
 // Simple script to generate a JWT token
-// make sure `GRAPHQL_JWT_SECRET` environment variable is set
-// example usage: GRAPHQL_JWT_SECRET=civiliscool ./main someaddress@gmail.com
+// example usage: go run cmd/cli/generatetoken/main.go {jwtsecret} {sub / user id}
 
 import (
 	"fmt"

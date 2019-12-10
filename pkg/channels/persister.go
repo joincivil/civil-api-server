@@ -14,4 +14,6 @@ type Persister interface {
 	SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error)
 	SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error)
 	SetTiny72AvatarDataURL(userID string, channelID string, tiny72AvatarDataURL string) error
+	SetStripeCustomerID(userID string, channelID string, stripeCustomerID string) (*Channel, error)
+	ClearStripeCustomerID(userID string, channelID string) (*Channel, error)
 }
