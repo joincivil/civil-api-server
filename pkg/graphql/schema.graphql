@@ -675,7 +675,7 @@ input PostSearchInput {
 }
 
 input StoryfeedFilterInput {
-	storyfeedAlg: String
+	alg: String
 }
 
 input PostCreateBoostInput {

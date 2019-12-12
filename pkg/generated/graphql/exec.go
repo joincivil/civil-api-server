@@ -5126,7 +5126,7 @@ input PostSearchInput {
 }
 
 input StoryfeedFilterInput {
-	storyfeedAlg: String
+	alg: String
 }
 
 input PostCreateBoostInput {
@@ -25003,9 +25003,9 @@ func (ec *executionContext) unmarshalInputStoryfeedFilterInput(ctx context.Conte
 
 	for k, v := range asMap {
 		switch k {
-		case "storyfeedAlg":
+		case "alg":
 			var err error
-			it.StoryfeedAlg, err = ec.unmarshalOString2string(ctx, v)
+			it.Alg, err = ec.unmarshalOString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -31314,7 +31314,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

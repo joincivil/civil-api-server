@@ -36,7 +36,7 @@ type PostSearchResult struct {
 
 // StoryfeedFilter contains fields used to filter storyfeed query
 type StoryfeedFilter struct {
-	StoryfeedAlg string
+	Alg string
 }
 
 // PostModel contains fields common to all types of Posts

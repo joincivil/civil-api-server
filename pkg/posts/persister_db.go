@@ -241,7 +241,7 @@ func (p *DBPostPersister) SearchPostsRanked(limit int, offset int, filter *Story
 
 	storyfeedViewName := fairThenChronologicalViewName // backwards compatible for queries that don't include filter
 	if filter != nil {
-		storyfeedViewName = filter.StoryfeedAlg
+		storyfeedViewName = filter.Alg
 	}
 
 	stmt := p.db.Raw(fmt.Sprintf("select * from %s limit %d offset %d", storyfeedViewName, limit, offset))
