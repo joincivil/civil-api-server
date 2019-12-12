@@ -26,7 +26,9 @@ var (
 )
 
 const (
-	defaultStoryfeedViewName = "vw_post_feed"
+	chronologicalViewName             = "vw_post_chronological"
+	fairThenChronologicalViewName     = "vw_post_fair_then_chronological"
+	fairWithInterleavedBoostsViewName = "vw_post_fair_with_interleaved_boosts"
 )
 
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
@@ -43,16 +45,39 @@ func NewDBPostPersister(db *gorm.DB) PostPersister {
 
 // CreateViews creates the views if they don't exist
 func (p *DBPostPersister) CreateViews() error {
-	createStoryfeedViewQuery := CreateStoryfeedViewQuery(defaultStoryfeedViewName)
+	createStoryfeedViewQuery := CreateChronologicalStoryfeedViewQuery(chronologicalViewName)
 	db := p.db.Exec(createStoryfeedViewQuery)
 	if db.Error != nil {
-		return fmt.Errorf("Error creating storyfeed view in postgres: %v", db.Error)
+		return fmt.Errorf("Error creating chronological storyfeed view in postgres: %v", db.Error)
+	}
+	createStoryfeedViewQuery = CreateFairThenChronologicalStoryfeedViewQuery(fairThenChronologicalViewName)
+	db = p.db.Exec(createStoryfeedViewQuery)
+	if db.Error != nil {
+		return fmt.Errorf("Error creating fair then chronological storyfeed view in postgres: %v", db.Error)
+	}
+	createStoryfeedViewQuery = CreateFairWithInterleavedBoostsStoryfeedViewQuery(fairWithInterleavedBoostsViewName)
+	db = p.db.Exec(createStoryfeedViewQuery)
+	if db.Error != nil {
+		return fmt.Errorf("Error creating fair with interleaved boosts storyfeed view in postgres: %v", db.Error)
 	}
 	return nil
 }
 
-// CreateStoryfeedViewQuery returns the query to create the storyfeed view
-func CreateStoryfeedViewQuery(viewName string) string {
+// CreateChronologicalStoryfeedViewQuery returns the query to create the storyfeed view
+func CreateChronologicalStoryfeedViewQuery(viewName string) string {
+	queryString := fmt.Sprintf(`
+	CREATE OR REPLACE VIEW %s as (
+		select * 
+		from posts 
+		where post_type = 'externallink'
+		order by created_at desc
+	)
+    `, viewName)
+	return queryString
+}
+
+// CreateFairThenChronologicalStoryfeedViewQuery returns the query to create the storyfeed view
+func CreateFairThenChronologicalStoryfeedViewQuery(viewName string) string {
 	queryString := fmt.Sprintf(`
 	CREATE OR REPLACE VIEW %s as (
 		select *, (case when post_num = 1 then 1 ELSE null end) as rank  FROM
@@ -64,6 +89,40 @@ func CreateStoryfeedViewQuery(viewName string) string {
 				where post_type = 'externallink'
 		) data
 		order by rank, created_at desc
+	)
+    `, viewName)
+	return queryString
+}
+
+// CreateFairWithInterleavedBoostsStoryfeedViewQuery returns the query to create the storyfeed view
+func CreateFairWithInterleavedBoostsStoryfeedViewQuery(viewName string) string {
+	// nolint: gosec
+	queryString := fmt.Sprintf(`
+	CREATE OR REPLACE VIEW %s as (
+		SELECT * FROM (
+			SELECT *, (case when post_num = 1 then 1 ELSE null end) as rank, ROW_NUMBER() OVER (ORDER BY (case when post_num = 1 then 1 ELSE null end), created_at desc) as row_rank FROM
+			(
+				SELECT 
+					*, 
+					count(1) OVER (partition by channel_id order by created_at desc) as post_num
+					FROM posts
+					where post_type = 'externallink'
+			) data1
+			order by rank, created_at desc
+		) data3
+
+		UNION
+
+		SELECT * FROM
+		(
+			SELECT *, 1 as rank, ROW_NUMBER() OVER (ORDER BY created_at) * 5 as row_rank FROM
+			(
+				SELECT *, 1 as post_num FROM posts where post_type = 'boost' and (data ->> 'date_end')::timestamp > now()
+			) data2
+			order by created_at desc
+		) data4
+
+		order by row_rank, rank
 	)
     `, viewName)
 	return queryString
@@ -177,10 +236,15 @@ func (p *DBPostPersister) DeletePost(requestorUserID string, id string) error {
 }
 
 // SearchPostsRanked retrieves most recent externallink post for each channel, followed by all the rest of the posts in reverse chronological order
-func (p *DBPostPersister) SearchPostsRanked(limit int, offset int) (*PostSearchResult, error) {
+func (p *DBPostPersister) SearchPostsRanked(limit int, offset int, filter *StoryfeedFilter) (*PostSearchResult, error) {
 	var dbResults []PostModel
 
-	stmt := p.db.Raw(fmt.Sprintf("select * from %s limit %d offset %d", defaultStoryfeedViewName, limit, offset))
+	storyfeedViewName := fairThenChronologicalViewName // backwards compatible for queries that don't include filter
+	if filter != nil {
+		storyfeedViewName = filter.Alg
+	}
+
+	stmt := p.db.Raw(fmt.Sprintf("select * from %s limit %d offset %d", storyfeedViewName, limit, offset))
 
 	results := stmt.Scan(&dbResults)
 	if results.Error != nil {

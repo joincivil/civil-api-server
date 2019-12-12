@@ -98,7 +98,7 @@ type Query {
   postsGetByReference(reference: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
   postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
-  postsStoryfeed(first: Int, after: String): PostResultCursor
+  postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
@@ -672,6 +672,10 @@ input PostSearchInput {
   beforeCursor: String
   limit: Int
   order: String
+}
+
+input StoryfeedFilterInput {
+	alg: String
 }
 
 input PostCreateBoostInput {

@@ -598,7 +598,7 @@ type ComplexityRoot struct {
 		PostsGetByReference                func(childComplexity int, reference string) int
 		PostsSearch                        func(childComplexity int, search posts.SearchInput) int
 		PostsSearchGroupedByChannel        func(childComplexity int, search posts.SearchInput) int
-		PostsStoryfeed                     func(childComplexity int, first *int, after *string) int
+		PostsStoryfeed                     func(childComplexity int, first *int, after *string, filter *posts.StoryfeedFilter) int
 		StorefrontCvlPrice                 func(childComplexity int) int
 		StorefrontCvlQuoteTokens           func(childComplexity int, tokensToBuy float64) int
 		StorefrontCvlQuoteUsd              func(childComplexity int, usdToSpend float64) int
@@ -883,7 +883,7 @@ type QueryResolver interface {
 	PostsGetByReference(ctx context.Context, reference string) (posts.Post, error)
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
-	PostsStoryfeed(ctx context.Context, first *int, after *string) (*PostResultCursor, error)
+	PostsStoryfeed(ctx context.Context, first *int, after *string, filter *posts.StoryfeedFilter) (*PostResultCursor, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
 	GetChannelTotalProceedsByBoostType(ctx context.Context, channelID string, boostType string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) ([]*model.UserChallengeData, error)
@@ -3947,7 +3947,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.PostsStoryfeed(childComplexity, args["first"].(*int), args["after"].(*string)), true
+		return e.complexity.Query.PostsStoryfeed(childComplexity, args["first"].(*int), args["after"].(*string), args["filter"].(*posts.StoryfeedFilter)), true
 
 	case "Query.storefrontCvlPrice":
 		if e.complexity.Query.StorefrontCvlPrice == nil {
@@ -4549,7 +4549,7 @@ type Query {
   postsGetByReference(reference: String!): Post!
   postsSearch(search: PostSearchInput!): PostSearchResult
   postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
-  postsStoryfeed(first: Int, after: String): PostResultCursor
+  postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
 
   # Payment Queries
   getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
@@ -5123,6 +5123,10 @@ input PostSearchInput {
   beforeCursor: String
   limit: Int
   order: String
+}
+
+input StoryfeedFilterInput {
+	alg: String
 }
 
 input PostCreateBoostInput {
@@ -6825,6 +6829,14 @@ func (ec *executionContext) field_Query_postsStoryfeed_args(ctx context.Context,
 		}
 	}
 	args["after"] = arg1
+	var arg2 *posts.StoryfeedFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		arg2, err = ec.unmarshalOStoryfeedFilterInput2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐStoryfeedFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg2
 	return args, nil
 }
 
@@ -21095,7 +21107,7 @@ func (ec *executionContext) _Query_postsStoryfeed(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().PostsStoryfeed(rctx, args["first"].(*int), args["after"].(*string))
+		return ec.resolvers.Query().PostsStoryfeed(rctx, args["first"].(*int), args["after"].(*string), args["filter"].(*posts.StoryfeedFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -24976,6 +24988,24 @@ func (ec *executionContext) unmarshalInputRosterMemberInput(ctx context.Context,
 		case "signature":
 			var err error
 			it.Signature, err = ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputStoryfeedFilterInput(ctx context.Context, obj interface{}) (posts.StoryfeedFilter, error) {
+	var it posts.StoryfeedFilter
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "alg":
+			var err error
+			it.Alg, err = ec.unmarshalOString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -31284,7 +31314,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -31563,6 +31593,18 @@ func (ec *executionContext) marshalOSanitizedPayment2ᚕᚖgithubᚗcomᚋjoinci
 	}
 	wg.Wait()
 	return ret
+}
+
+func (ec *executionContext) unmarshalOStoryfeedFilterInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐStoryfeedFilter(ctx context.Context, v interface{}) (posts.StoryfeedFilter, error) {
+	return ec.unmarshalInputStoryfeedFilterInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOStoryfeedFilterInput2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐStoryfeedFilter(ctx context.Context, v interface{}) (*posts.StoryfeedFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOStoryfeedFilterInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐStoryfeedFilter(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
