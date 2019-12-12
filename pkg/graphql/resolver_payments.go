@@ -233,7 +233,7 @@ func (r *tokenPaymentResolver) PayerChannel(ctx context.Context, payment *paymen
 }
 
 func (r *etherPaymentResolver) Post(ctx context.Context, payment *payments.EtherPayment) (posts.Post, error) {
-	if payment.OwnerType != "post" {
+	if payment.OwnerType != posts.TypePost {
 		return nil, nil
 	}
 	post, err := r.postService.GetPost(payment.OwnerID)
@@ -244,7 +244,7 @@ func (r *etherPaymentResolver) Post(ctx context.Context, payment *payments.Ether
 }
 
 func (r *stripePaymentResolver) Post(ctx context.Context, payment *payments.StripePayment) (posts.Post, error) {
-	if payment.OwnerType != "post" {
+	if payment.OwnerType != posts.TypePost {
 		return nil, nil
 	}
 	post, err := r.postService.GetPost(payment.OwnerID)
@@ -255,7 +255,7 @@ func (r *stripePaymentResolver) Post(ctx context.Context, payment *payments.Stri
 }
 
 func (r *tokenPaymentResolver) Post(ctx context.Context, payment *payments.TokenPayment) (posts.Post, error) {
-	if payment.OwnerType != "post" {
+	if payment.OwnerType != posts.TypePost {
 		return nil, nil
 	}
 	post, err := r.postService.GetPost(payment.OwnerID)
