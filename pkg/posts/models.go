@@ -12,7 +12,7 @@ const (
 	TypeBoost        = "boost"
 	TypeExternalLink = "externallink"
 	TypeComment      = "comment"
-	TypePost         = "post"
+	TypePost         = "posts"
 )
 
 // Post represents a Civil Post
