@@ -9,6 +9,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
+	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/go-common/pkg/newsroom"
 )
@@ -234,4 +235,20 @@ func (r *channelResolver) StripeCustomerIDRestricted(ctx context.Context, channe
 	}
 
 	return &channel.StripeCustomerID, nil
+}
+
+func (r *channelResolver) PaymentsMadeByChannel(ctx context.Context, channel *channels.Channel) ([]payments.Payment, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channel.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrAccessDenied
+	}
+
+	return r.paymentService.GetPaymentsByPayerChannel(channel.ID)
 }

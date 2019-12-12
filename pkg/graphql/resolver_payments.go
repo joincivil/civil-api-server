@@ -231,3 +231,36 @@ func (r *tokenPaymentResolver) PayerChannel(ctx context.Context, payment *paymen
 	}
 	return r.channelService.GetChannel(payment.PayerChannelID)
 }
+
+func (r *etherPaymentResolver) Post(ctx context.Context, payment *payments.EtherPayment) (posts.Post, error) {
+	if payment.OwnerType != "post" {
+		return nil, nil
+	}
+	post, err := r.postService.GetPost(payment.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
+func (r *stripePaymentResolver) Post(ctx context.Context, payment *payments.StripePayment) (posts.Post, error) {
+	if payment.OwnerType != "post" {
+		return nil, nil
+	}
+	post, err := r.postService.GetPost(payment.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
+}
+
+func (r *tokenPaymentResolver) Post(ctx context.Context, payment *payments.TokenPayment) (posts.Post, error) {
+	if payment.OwnerType != "post" {
+		return nil, nil
+	}
+	post, err := r.postService.GetPost(payment.OwnerID)
+	if err != nil {
+		return nil, err
+	}
+	return post, nil
+}
