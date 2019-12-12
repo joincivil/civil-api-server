@@ -377,6 +377,28 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	return payment, nil
 }
 
+// GetPaymentsByPayerChannel returns payments made by a channel, exposes potentially sensitive info
+// so should only be called after checking user is authorized to view this data
+func (s *Service) GetPaymentsByPayerChannel(channelID string) ([]Payment, error) {
+	var pays []PaymentModel
+	if err := s.db.Where(&PaymentModel{OwnerType: "posts", PayerChannelID: channelID}).Find(&pays).Error; err != nil {
+		log.Errorf("An error occurred: %v\n", err)
+		return nil, err
+	}
+
+	var paymentsSlice []Payment
+	for _, result := range pays {
+		payment, err := ModelToInterface(&result)
+		if err != nil {
+			log.Errorf("An error occurred: %v\n", err)
+			return nil, err
+		}
+		paymentsSlice = append(paymentsSlice, payment)
+	}
+
+	return paymentsSlice, nil
+}
+
 // GetPayments returns the payments associated with a Post
 func (s *Service) GetPayments(postID string) ([]Payment, error) {
 	var pays []PaymentModel

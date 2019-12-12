@@ -471,6 +471,7 @@ type Channel {
   tiny100AvatarDataUrl: String
   tiny72AvatarDataUrl: String
   StripeCustomerIDRestricted: String
+  paymentsMadeByChannel: [Payment!]
 }
 
 type ChannelMember {
@@ -717,6 +718,7 @@ interface Payment {
   usdEquivalent: Float!
   payerChannelID: String
   payerChannel: Channel
+  post: Post
 }
 
 type SanitizedPayment {
@@ -738,6 +740,7 @@ type PaymentStripe implements Payment {
   usdEquivalent: Float!
   payerChannelID: String
   payerChannel: Channel
+  post: Post
 }
 
 type PaymentEther implements Payment {
@@ -754,6 +757,7 @@ type PaymentEther implements Payment {
   fromAddress: String!
   payerChannelID: String
   payerChannel: Channel
+  post: Post
 }
 
 type PaymentToken implements Payment {
@@ -769,6 +773,7 @@ type PaymentToken implements Payment {
   usdEquivalent: Float!
   payerChannelID: String
   payerChannel: Channel
+  post: Post
 }
 
 # Payment inputs
