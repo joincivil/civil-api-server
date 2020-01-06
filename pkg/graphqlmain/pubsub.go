@@ -12,7 +12,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
-	// "github.com/joincivil/civil-events-processor/pkg/helpers"
+	"github.com/joincivil/civil-events-processor/pkg/helpers"
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
 	cerrors "github.com/joincivil/go-common/pkg/errors"
@@ -21,19 +21,13 @@ import (
 
 // PubSubModule initializes and starts EventHandlers
 var PubSubModule = fx.Options(
-	// fx.Provide(
-	// 	buildWorkers,
-	// 	buildKillChannel,
-	// 	buildPubsubConfig,
-	// 	buildCvlTokenTransferEventHandler,
-	// 	helpers.TokenTransferPersister,
-	// ),
-	// fx.Invoke(RunEventsWorkers),
 	fx.Provide(
-		buildMultiSigWorkers,
+		buildWorkers,
 		buildKillChannel,
 		buildPubsubConfig,
+		buildCvlTokenTransferEventHandler,
 		buildMultiSigEventHandler,
+		helpers.TokenTransferPersister,
 	),
 	fx.Invoke(RunEventsWorkers),
 )
@@ -71,15 +65,15 @@ func buildKillChannel(lc fx.Lifecycle) chan struct{} {
 	return quit
 }
 
-// func buildCvlTokenTransferEventHandler(tokenPersister model.TokenTransferPersister,
-// 	userService *users.UserService, config *PubSubConfig) *events.CvlTokenTransferEventHandler {
-// 	return events.NewCvlTokenTransferEventHandler(
-// 		tokenPersister,
-// 		userService,
-// 		config.TokenSaleAddresses,
-// 		config.RegistryListID,
-// 	)
-// }
+func buildCvlTokenTransferEventHandler(tokenPersister model.TokenTransferPersister,
+	userService *users.UserService, config *PubSubConfig) *events.CvlTokenTransferEventHandler {
+	return events.NewCvlTokenTransferEventHandler(
+		tokenPersister,
+		userService,
+		config.TokenSaleAddresses,
+		config.RegistryListID,
+	)
+}
 
 func buildMultiSigEventHandler(listingPersister model.ListingPersister,
 	userService *users.UserService, channelService *channels.Service) *events.MultiSigEventHandler {
@@ -90,45 +84,46 @@ func buildMultiSigEventHandler(listingPersister model.ListingPersister,
 	)
 }
 
-// func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, quit chan struct{}) (*pubsub.Workers, error) {
-
-// 	if config.PubSubProjectID == "" {
-// 		return nil, nil
-// 	}
-
-// 	handlers := []pubsub.EventHandler{transferHandler}
-// 	return pubsub.NewWorkers(&pubsub.WorkersConfig{
-// 		PubSubProjectID:        config.PubSubProjectID,
-// 		PubSubTopicName:        config.PubSubTokenTopicName,
-// 		PubSubSubscriptionName: config.PubSubTokenSubName,
-// 		NumWorkers:             1,
-// 		QuitChan:               quit,
-// 		EventHandlers:          handlers,
-// 	})
-// }
-
-func buildMultiSigWorkers(config *PubSubConfig, multiSigHandler *events.MultiSigEventHandler, quit chan struct{}) (*pubsub.Workers, error) {
+func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, multiSigHandler *events.MultiSigEventHandler, quit chan struct{}) ([]*pubsub.Workers, error) {
 
 	if config.PubSubProjectID == "" {
 		return nil, nil
 	}
 
-	handlers := []pubsub.EventHandler{multiSigHandler}
-	return pubsub.NewWorkers(&pubsub.WorkersConfig{
+	tokenHandlers := []pubsub.EventHandler{transferHandler}
+	tokenWorkers, err := pubsub.NewWorkers(&pubsub.WorkersConfig{
+		PubSubProjectID:        config.PubSubProjectID,
+		PubSubTopicName:        config.PubSubTokenTopicName,
+		PubSubSubscriptionName: config.PubSubTokenSubName,
+		NumWorkers:             1,
+		QuitChan:               quit,
+		EventHandlers:          tokenHandlers,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	multiSigHandlers := []pubsub.EventHandler{multiSigHandler}
+	multiSigWorkers, err := pubsub.NewWorkers(&pubsub.WorkersConfig{
 		PubSubProjectID:        config.PubSubProjectID,
 		PubSubTopicName:        config.PubSubMultiSigTopicName,
 		PubSubSubscriptionName: config.PubSubMultiSigSubName,
 		NumWorkers:             1,
 		QuitChan:               quit,
-		EventHandlers:          handlers,
+		EventHandlers:          multiSigHandlers,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return []*pubsub.Workers{tokenWorkers, multiSigWorkers}, nil
 }
 
 // PubSubDependencies defines the dependencies needed for PubSub
 type PubSubDependencies struct {
 	fx.In
 	Config  *PubSubConfig
-	Workers *pubsub.Workers `optional:"true"`
+	Workers []*pubsub.Workers `optional:"true"`
 	Quit    chan struct{}
 	ErrRep  cerrors.ErrorReporter
 }
@@ -139,16 +134,18 @@ func RunEventsWorkers(deps PubSubDependencies, lc fx.Lifecycle) error {
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			if deps.Workers != nil {
-				log.Info("Starting PubSub")
-				go deps.Workers.Start()
-				// Log and report the errors coming out of the workers
-				go func() {
-					for err := range deps.Workers.Errors {
-						log.Errorf("error from worker: err: %v", err)
-						deps.ErrRep.Error(errors.WithMessage(err, "error from worker"), nil)
-					}
-				}()
+			if deps.Workers != nil && len(deps.Workers) > 0 {
+				for _, worker := range deps.Workers {
+					log.Info("Starting PubSub")
+					go worker.Start()
+					// Log and report the errors coming out of the workers
+					go func() {
+						for err := range worker.Errors {
+							log.Errorf("error from worker: err: %v", err)
+							deps.ErrRep.Error(errors.WithMessage(err, "error from worker"), nil)
+						}
+					}()
+				}
 			}
 			return nil
 		},
