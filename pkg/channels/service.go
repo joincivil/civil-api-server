@@ -114,25 +114,6 @@ type CreateNewsroomChannelInput struct {
 }
 
 // CreateNewsroomChannel creates a channel with type "newsroom"
-func (s *Service) CreateEmptyNewsroomChannel(userID string, input CreateNewsroomChannelInput) (*Channel, error) {
-
-	channelType := TypeNewsroom
-	reference := strings.ToLower(input.ContractAddress)
-
-	// convert contract address string to common.Address
-	newsroomAddress := common.HexToAddress(reference)
-	if (newsroomAddress == common.Address{}) {
-		return nil, ErrorInvalidHandle
-	}
-
-	return s.persister.CreateChannel(CreateChannelInput{
-		CreatorUserID: userID,
-		ChannelType:   channelType,
-		Reference:     reference,
-	})
-}
-
-// CreateNewsroomChannel creates a channel with type "newsroom"
 func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Address, input CreateNewsroomChannelInput) (*Channel, error) {
 
 	channelType := TypeNewsroom

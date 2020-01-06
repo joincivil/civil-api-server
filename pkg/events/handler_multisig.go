@@ -64,7 +64,6 @@ func (t *MultiSigEventHandler) Handle(event []byte) (bool, error) {
 			log.Errorf("Error creating user")
 			return false, err
 		}
-		log.Infof("Created User!")
 	}
 
 	// get listings
@@ -73,7 +72,6 @@ func (t *MultiSigEventHandler) Handle(event []byte) (bool, error) {
 		log.Errorf("Error retrieving listings: %s", err)
 		return false, err
 	}
-	log.Infof("Got Listing(s)")
 
 	for _, listing := range listings {
 		// get channel
@@ -82,7 +80,6 @@ func (t *MultiSigEventHandler) Handle(event []byte) (bool, error) {
 		if p.Action == "added" {
 			if err != nil || channel == nil {
 				// create channel if necessary
-				log.Errorf("No Channel found.")
 				channel, err = t.channelService.CreateNewsroomChannel(
 					user.UID,
 					[]common.Address{common.HexToAddress(strings.ToLower(p.OwnerAddr))},
