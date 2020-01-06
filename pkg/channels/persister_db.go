@@ -86,16 +86,17 @@ func (p *DBPersister) CreateChannelMember(channel *Channel, userID string) (*Cha
 
 // DeleteChannelMember asdf
 func (p *DBPersister) DeleteChannelMember(channel *Channel, userID string) error {
-	member := &ChannelMember{
-		UserID: userID,
+	member, err := p.GetChannelMember(channel.ID, userID)
+	if err != nil {
+		return err
 	}
-	tx := p.db.Begin()
-	tx.Model(channel).Association("Members").Delete(member)
-	tx.Commit()
 
-	if tx.Error != nil {
-		return tx.Error
+	err = p.db.Unscoped().Delete(member).Error
+
+	if err != nil {
+		return err
 	}
+
 	return nil
 }
 
@@ -163,6 +164,20 @@ func (p *DBPersister) GetChannelMembers(channelID string) ([]*ChannelMember, err
 	if err := p.db.Where(&ChannelMember{
 		ChannelID: channelID,
 	}).Preload("Channel").Find(&c).Error; err != nil {
+		return nil, ErrorNotFound
+	}
+
+	return c, nil
+}
+
+// GetChannelMember retrieves the channel member for a channel id and user id
+func (p *DBPersister) GetChannelMember(channelID string, userID string) (*ChannelMember, error) {
+	c := &ChannelMember{}
+
+	if err := p.db.Where(&ChannelMember{
+		ChannelID: channelID,
+		UserID:    userID,
+	}).Preload("Channel").First(c).Error; err != nil {
 		return nil, ErrorNotFound
 	}
 
