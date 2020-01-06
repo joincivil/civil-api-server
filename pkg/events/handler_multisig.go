@@ -79,8 +79,8 @@ func (t *MultiSigEventHandler) Handle(event []byte) (bool, error) {
 
 		if p.Action == "added" {
 			if err != nil || channel == nil {
-				// create channel if necessary
-				channel, err = t.channelService.CreateNewsroomChannel(
+				// create channel with member
+				_, err = t.channelService.CreateNewsroomChannel(
 					user.UID,
 					[]common.Address{common.HexToAddress(strings.ToLower(p.OwnerAddr))},
 					channels.CreateNewsroomChannelInput{

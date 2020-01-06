@@ -71,15 +71,15 @@ func buildKillChannel(lc fx.Lifecycle) chan struct{} {
 	return quit
 }
 
-func buildCvlTokenTransferEventHandler(tokenPersister model.TokenTransferPersister,
-	userService *users.UserService, config *PubSubConfig) *events.CvlTokenTransferEventHandler {
-	return events.NewCvlTokenTransferEventHandler(
-		tokenPersister,
-		userService,
-		config.TokenSaleAddresses,
-		config.RegistryListID,
-	)
-}
+// func buildCvlTokenTransferEventHandler(tokenPersister model.TokenTransferPersister,
+// 	userService *users.UserService, config *PubSubConfig) *events.CvlTokenTransferEventHandler {
+// 	return events.NewCvlTokenTransferEventHandler(
+// 		tokenPersister,
+// 		userService,
+// 		config.TokenSaleAddresses,
+// 		config.RegistryListID,
+// 	)
+// }
 
 func buildMultiSigEventHandler(listingPersister model.ListingPersister,
 	userService *users.UserService, channelService *channels.Service) *events.MultiSigEventHandler {
@@ -90,22 +90,22 @@ func buildMultiSigEventHandler(listingPersister model.ListingPersister,
 	)
 }
 
-func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, quit chan struct{}) (*pubsub.Workers, error) {
+// func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, quit chan struct{}) (*pubsub.Workers, error) {
 
-	if config.PubSubProjectID == "" {
-		return nil, nil
-	}
+// 	if config.PubSubProjectID == "" {
+// 		return nil, nil
+// 	}
 
-	handlers := []pubsub.EventHandler{transferHandler}
-	return pubsub.NewWorkers(&pubsub.WorkersConfig{
-		PubSubProjectID:        config.PubSubProjectID,
-		PubSubTopicName:        config.PubSubTokenTopicName,
-		PubSubSubscriptionName: config.PubSubTokenSubName,
-		NumWorkers:             1,
-		QuitChan:               quit,
-		EventHandlers:          handlers,
-	})
-}
+// 	handlers := []pubsub.EventHandler{transferHandler}
+// 	return pubsub.NewWorkers(&pubsub.WorkersConfig{
+// 		PubSubProjectID:        config.PubSubProjectID,
+// 		PubSubTopicName:        config.PubSubTokenTopicName,
+// 		PubSubSubscriptionName: config.PubSubTokenSubName,
+// 		NumWorkers:             1,
+// 		QuitChan:               quit,
+// 		EventHandlers:          handlers,
+// 	})
+// }
 
 func buildMultiSigWorkers(config *PubSubConfig, multiSigHandler *events.MultiSigEventHandler, quit chan struct{}) (*pubsub.Workers, error) {
 
