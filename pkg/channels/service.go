@@ -114,6 +114,25 @@ type CreateNewsroomChannelInput struct {
 }
 
 // CreateNewsroomChannel creates a channel with type "newsroom"
+func (s *Service) CreateEmptyNewsroomChannel(userID string, input CreateNewsroomChannelInput) (*Channel, error) {
+
+	channelType := TypeNewsroom
+	reference := strings.ToLower(input.ContractAddress)
+
+	// convert contract address string to common.Address
+	newsroomAddress := common.HexToAddress(reference)
+	if (newsroomAddress == common.Address{}) {
+		return nil, ErrorInvalidHandle
+	}
+
+	return s.persister.CreateChannel(CreateChannelInput{
+		CreatorUserID: userID,
+		ChannelType:   channelType,
+		Reference:     reference,
+	})
+}
+
+// CreateNewsroomChannel creates a channel with type "newsroom"
 func (s *Service) CreateNewsroomChannel(userID string, userAddresses []common.Address, input CreateNewsroomChannelInput) (*Channel, error) {
 
 	channelType := TypeNewsroom
@@ -154,16 +173,31 @@ Loop:
 	})
 }
 
+// CreateChannelMember creates a channel member for the channel
+func (s *Service) CreateChannelMember(userID string, channelID string) (*ChannelMember, error) {
+	channel, err := s.GetChannel(channelID)
+	if err != nil {
+		return nil, err
+	}
+	return s.persister.CreateChannelMember(channel, userID)
+}
+
+// DeleteChannelMember deletes a channel member for the channel
+func (s *Service) DeleteChannelMember(userID string, channelID string) error {
+	channel, err := s.GetChannel(channelID)
+	if err != nil {
+		return err
+	}
+	return s.persister.DeleteChannelMember(channel, userID)
+}
+
 // CreateGroupChannel creates a channel with type "group"
 func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, error) {
 	channelType := TypeGroup
 
 	// groups don't reference anything, so generate a new one
 	// TODO(dankins): should this reference a DID on an identity server?
-	id, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
+	id := uuid.NewV4()
 	reference := id.String()
 
 	return s.persister.CreateChannel(CreateChannelInput{

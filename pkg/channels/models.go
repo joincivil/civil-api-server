@@ -99,10 +99,7 @@ type Channel struct {
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted
 func (c *Channel) BeforeCreate() (err error) {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
+	id := uuid.NewV4()
 	c.ID = id.String()
 	return
 }
@@ -121,10 +118,7 @@ type ChannelMember struct {
 
 // BeforeCreate is a GORM hook that sets the ID before it its persisted
 func (c *ChannelMember) BeforeCreate() (err error) {
-	id, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
+	id := uuid.NewV4()
 	c.ID = id.String()
 	return
 }

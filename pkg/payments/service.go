@@ -165,10 +165,8 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, postTyp
 		return EtherPayment{}, err
 	}
 	// generate a new ID
-	id, err := uuid.NewV4()
-	if err != nil {
-		return EtherPayment{}, err
-	}
+	id := uuid.NewV4()
+
 	payment.ID = id.String()
 	payment.PaymentType = "ether"
 	payment.Reference = etherPayment.TransactionID
@@ -338,10 +336,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 
 	// generate a new ID for the payment model
-	id, err := uuid.NewV4()
-	if err != nil {
-		return StripePayment{}, err
-	}
+	id := uuid.NewV4()
 	payment.ID = id.String()
 
 	payment.PaymentType = payment.Type()

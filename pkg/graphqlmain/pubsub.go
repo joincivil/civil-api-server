@@ -7,11 +7,12 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/fx"
 
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/events"
 	"github.com/joincivil/civil-api-server/pkg/users"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
-	"github.com/joincivil/civil-events-processor/pkg/helpers"
+	// "github.com/joincivil/civil-events-processor/pkg/helpers"
 	"github.com/joincivil/civil-events-processor/pkg/model"
 
 	cerrors "github.com/joincivil/go-common/pkg/errors"
@@ -20,14 +21,21 @@ import (
 
 // PubSubModule initializes and starts EventHandlers
 var PubSubModule = fx.Options(
+	// fx.Provide(
+	// 	buildWorkers,
+	// 	buildKillChannel,
+	// 	buildPubsubConfig,
+	// 	buildCvlTokenTransferEventHandler,
+	// 	helpers.TokenTransferPersister,
+	// ),
+	// fx.Invoke(RunEventsWorkers),
 	fx.Provide(
-		buildWorkers,
+		buildMultiSigWorkers,
 		buildKillChannel,
 		buildPubsubConfig,
-		buildCvlTokenTransferEventHandler,
-		helpers.TokenTransferPersister,
+		buildMultiSigEventHandler,
 	),
-	fx.Invoke(RunTokenEventsWorkers),
+	fx.Invoke(RunEventsWorkers),
 )
 
 // QuitChannel is a channel type that is used to quit goroutines and processes
@@ -35,26 +43,30 @@ type QuitChannel chan bool
 
 // PubSubConfig defines the fields needed to start PubSub
 type PubSubConfig struct {
-	PubSubProjectID      string
-	PubSubTokenTopicName string
-	PubSubTokenSubName   string
-	RegistryListID       string
-	TokenSaleAddresses   []common.Address
+	PubSubProjectID         string
+	PubSubTokenTopicName    string
+	PubSubTokenSubName      string
+	PubSubMultiSigTopicName string
+	PubSubMultiSigSubName   string
+	RegistryListID          string
+	TokenSaleAddresses      []common.Address
 }
 
 func buildPubsubConfig(cfg *utils.GraphQLConfig) *PubSubConfig {
 	return &PubSubConfig{
-		PubSubProjectID:      cfg.PubSubProjectID,
-		PubSubTokenTopicName: cfg.PubSubTokenTopicName,
-		PubSubTokenSubName:   cfg.PubSubTokenSubName,
-		RegistryListID:       "6933914",
-		TokenSaleAddresses:   cfg.TokenSaleAddresses,
+		PubSubProjectID:         cfg.PubSubProjectID,
+		PubSubTokenTopicName:    cfg.PubSubTokenTopicName,
+		PubSubTokenSubName:      cfg.PubSubTokenSubName,
+		PubSubMultiSigTopicName: cfg.PubSubMultiSigTopicName,
+		PubSubMultiSigSubName:   cfg.PubSubMultiSigSubName,
+		RegistryListID:          "6933914",
+		TokenSaleAddresses:      cfg.TokenSaleAddresses,
 	}
 }
 
 // BuildKillChannel builds a channel that is closed when the server is shutting down
-func buildKillChannel(lc fx.Lifecycle) QuitChannel {
-	quit := make(chan bool)
+func buildKillChannel(lc fx.Lifecycle) chan struct{} {
+	quit := make(chan struct{})
 
 	return quit
 }
@@ -69,7 +81,16 @@ func buildCvlTokenTransferEventHandler(tokenPersister model.TokenTransferPersist
 	)
 }
 
-func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, quit QuitChannel) (*pubsub.Workers, error) {
+func buildMultiSigEventHandler(listingPersister model.ListingPersister,
+	userService *users.UserService, channelService *channels.Service) *events.MultiSigEventHandler {
+	return events.NewMultiSigEventHandler(
+		listingPersister,
+		userService,
+		channelService,
+	)
+}
+
+func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, quit chan struct{}) (*pubsub.Workers, error) {
 
 	if config.PubSubProjectID == "" {
 		return nil, nil
@@ -86,18 +107,35 @@ func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransfer
 	})
 }
 
+func buildMultiSigWorkers(config *PubSubConfig, multiSigHandler *events.MultiSigEventHandler, quit chan struct{}) (*pubsub.Workers, error) {
+
+	if config.PubSubProjectID == "" {
+		return nil, nil
+	}
+
+	handlers := []pubsub.EventHandler{multiSigHandler}
+	return pubsub.NewWorkers(&pubsub.WorkersConfig{
+		PubSubProjectID:        config.PubSubProjectID,
+		PubSubTopicName:        config.PubSubMultiSigTopicName,
+		PubSubSubscriptionName: config.PubSubMultiSigSubName,
+		NumWorkers:             1,
+		QuitChan:               quit,
+		EventHandlers:          handlers,
+	})
+}
+
 // PubSubDependencies defines the dependencies needed for PubSub
 type PubSubDependencies struct {
 	fx.In
 	Config  *PubSubConfig
 	Workers *pubsub.Workers `optional:"true"`
-	Quit    QuitChannel
+	Quit    chan struct{}
 	ErrRep  cerrors.ErrorReporter
 }
 
-// RunTokenEventsWorkers starts up the CvlToken events pubsub worker(s)
+// RunEventsWorkers starts up the events pubsub worker(s)
 // Setting this up to live on it own one day
-func RunTokenEventsWorkers(deps PubSubDependencies, lc fx.Lifecycle) error {
+func RunEventsWorkers(deps PubSubDependencies, lc fx.Lifecycle) error {
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
@@ -121,6 +159,6 @@ func RunTokenEventsWorkers(deps PubSubDependencies, lc fx.Lifecycle) error {
 		},
 	})
 
-	log.Infof("TokenEventsWorkers started")
+	log.Infof("EventsWorkers started")
 	return nil
 }

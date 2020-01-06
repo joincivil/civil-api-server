@@ -64,14 +64,46 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 		return nil, err
 	}
 
-	id, err := uuid.NewV4()
+	_, err = p.createChannelMemberWithTx(input.CreatorUserID, c, tx)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
+
+	return c, nil
+}
+
+// CreateChannelMember asdf
+func (p *DBPersister) CreateChannelMember(channel *Channel, userID string) (*ChannelMember, error) {
+	tx := p.db.Begin()
+	member, err := p.createChannelMemberWithTx(userID, channel, tx)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	return member, nil
+}
+
+// DeleteChannelMember asdf
+func (p *DBPersister) DeleteChannelMember(channel *Channel, userID string) error {
+	member := &ChannelMember{
+		UserID: userID,
+	}
+	tx := p.db.Begin()
+	tx.Model(channel).Association("Members").Delete(member)
+	tx.Commit()
+
+	if tx.Error != nil {
+		return tx.Error
+	}
+	return nil
+}
+
+func (p *DBPersister) createChannelMemberWithTx(userID string, c *Channel, tx *gorm.DB) (*ChannelMember, error) {
+	id := uuid.NewV4()
 	member := &ChannelMember{
 		ID:     id.String(),
-		UserID: input.CreatorUserID,
+		UserID: userID,
 		Role:   RoleAdmin,
 	}
 
@@ -83,7 +115,7 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 		return nil, tx.Error
 	}
 
-	return c, nil
+	return member, nil
 }
 
 // GetChannel retrieves a Channel with the provided ID
