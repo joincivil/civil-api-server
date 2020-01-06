@@ -73,7 +73,7 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 	return c, nil
 }
 
-// CreateChannelMember asdf
+// CreateChannelMember creates a channel member for the given channel and user id
 func (p *DBPersister) CreateChannelMember(channel *Channel, userID string) (*ChannelMember, error) {
 	tx := p.db.Begin()
 	member, err := p.createChannelMemberWithTx(userID, channel, tx)
@@ -84,7 +84,9 @@ func (p *DBPersister) CreateChannelMember(channel *Channel, userID string) (*Cha
 	return member, nil
 }
 
-// DeleteChannelMember asdf
+// DeleteChannelMember deletes the channel member for the given channel and user id
+// this uses the `Unscoped` Delete function to remove entry from DB, rather than just
+// setting deleted_at
 func (p *DBPersister) DeleteChannelMember(channel *Channel, userID string) error {
 	member, err := p.GetChannelMember(channel.ID, userID)
 	if err != nil {
