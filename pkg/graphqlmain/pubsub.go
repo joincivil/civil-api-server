@@ -139,12 +139,12 @@ func RunEventsWorkers(deps PubSubDependencies, lc fx.Lifecycle) error {
 					log.Info("Starting PubSub")
 					go worker.Start()
 					// Log and report the errors coming out of the workers
-					go func() {
-						for err := range worker.Errors {
+					go func(w *pubsub.Workers) {
+						for err := range w.Errors {
 							log.Errorf("error from worker: err: %v", err)
 							deps.ErrRep.Error(errors.WithMessage(err, "error from worker"), nil)
 						}
-					}()
+					}(worker)
 				}
 			}
 			return nil
