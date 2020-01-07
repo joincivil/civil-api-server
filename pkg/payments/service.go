@@ -115,8 +115,8 @@ func (s *Service) GetChannelTotalProceedsByBoostType(channelID string, boostType
 	sum(amount) FILTER (WHERE p.currency_code = 'ETH')  as ether 
 	from payments p 
 	inner join posts 
-	on p.owner_id::uuid = posts.id and p.owner_type = 'posts' and p.owner_post_type = '?'
-	where posts.channel_id = ? 
+	on p.owner_id::uuid = posts.id and p.owner_type = 'posts' and p.owner_post_type = ?
+	where posts.channel_id = ?
 	group by post_type 
 	order by post_type;`), boostType, channelID).Scan(&result)
 	return &result

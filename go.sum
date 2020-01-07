@@ -255,6 +255,8 @@ github.com/joincivil/civil-events-processor v0.0.0-20200103200951-280131d6c1f1 h
 github.com/joincivil/civil-events-processor v0.0.0-20200103200951-280131d6c1f1/go.mod h1:uSV9Jq4QC+oeb35boEED5zBhtFuU0vki08gZu/qJepg=
 github.com/joincivil/civil-events-processor v0.0.0-20200106190416-8e4af0b9eaa1 h1:ocjk+G4rxuwHEcRBeKIHZ3yQKOZwOUJU0nYSsdjbq6E=
 github.com/joincivil/civil-events-processor v0.0.0-20200106190416-8e4af0b9eaa1/go.mod h1:uSV9Jq4QC+oeb35boEED5zBhtFuU0vki08gZu/qJepg=
+github.com/joincivil/civil-events-processor v0.0.0-20200107163045-ea7e2c5e3515 h1:M1cDzTcBtWr1jEgxu1H0UTLMFbhjmjLRRmSFOifBSNk=
+github.com/joincivil/civil-events-processor v0.0.0-20200107163045-ea7e2c5e3515/go.mod h1:uSV9Jq4QC+oeb35boEED5zBhtFuU0vki08gZu/qJepg=
 github.com/joincivil/go-common v0.0.0-20191115202858-d23287f7bcb4 h1:jsegSa1eGkUPWzbuzf9kJk8U+pw5mpBrT52s9mG/jKo=
 github.com/joincivil/go-common v0.0.0-20191115202858-d23287f7bcb4/go.mod h1:rsFDwXyDKsUrm4pgE10z7AAaAuvFZ4NtN0ghSF3OwL8=
 github.com/joincivil/go-common v0.0.0-20191121182548-7994d712fce3 h1:/87mIuvsTmvEeVFcKRc7H7QftjWajxysS8O4mREVzsI=

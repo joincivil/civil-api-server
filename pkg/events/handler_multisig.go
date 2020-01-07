@@ -77,7 +77,7 @@ func (t *MultiSigEventHandler) Handle(event []byte) (bool, error) {
 		// get channel
 		channel, err := t.channelService.GetChannelByReference("newsroom", strings.ToLower(listing.ContractAddress().String()))
 
-		if p.Action == "added" {
+		if p.Action == processor.MultiSigOwnerAdded {
 			if err != nil || channel == nil {
 				// create channel with member
 				_, err = t.channelService.CreateNewsroomChannel(
@@ -98,7 +98,7 @@ func (t *MultiSigEventHandler) Handle(event []byte) (bool, error) {
 					return false, err
 				}
 			}
-		} else if p.Action == "removed" {
+		} else if p.Action == processor.MultiSigOwnerRemoved {
 			if err != nil || channel == nil {
 				log.Errorf("No channel found when attempting to remove channel member")
 				return false, err
