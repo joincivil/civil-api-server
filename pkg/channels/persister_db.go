@@ -70,6 +70,8 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 		return nil, err
 	}
 
+	tx.Commit()
+
 	return c, nil
 }
 
@@ -81,6 +83,7 @@ func (p *DBPersister) CreateChannelMember(channel *Channel, userID string) (*Cha
 		tx.Rollback()
 		return nil, err
 	}
+	tx.Commit()
 	return member, nil
 }
 
@@ -111,8 +114,6 @@ func (p *DBPersister) createChannelMemberWithTx(userID string, c *Channel, tx *g
 	}
 
 	tx.Model(c).Association("Members").Append(member)
-
-	tx.Commit()
 
 	if tx.Error != nil {
 		return nil, tx.Error
