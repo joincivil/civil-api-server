@@ -46,6 +46,7 @@ func (t *CvlTokenTransferEventHandler) Name() string {
 
 // Handle runs the logic to handle the event as appropriate for the event
 func (t *CvlTokenTransferEventHandler) Handle(event []byte) (bool, error) {
+
 	// Unmarshal into the processor pubsub message
 	p := &processor.PubSubMessage{}
 	err := json.Unmarshal(event, p)

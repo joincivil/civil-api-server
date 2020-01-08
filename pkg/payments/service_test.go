@@ -57,10 +57,7 @@ func TestService(t *testing.T) {
 	channelID := "test"
 	channelAddress, _ := paymentHelper.GetEthereumPaymentAddress("foo")
 	ownerType := "post"
-	ownerID, err := uuid.NewV4()
-	if err != nil {
-		t.Fatalf("error creating uuid, err: %v", err)
-	}
+	ownerID := uuid.NewV4()
 
 	var nonce uint64
 	makeTx := func(status string, to common.Address) *types.Transaction {

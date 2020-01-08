@@ -64,26 +64,62 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 		return nil, err
 	}
 
-	id, err := uuid.NewV4()
+	_, err = p.createChannelMemberWithTx(input.CreatorUserID, c, tx)
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
+
+	tx.Commit()
+
+	return c, nil
+}
+
+// CreateChannelMember creates a channel member for the given channel and user id
+func (p *DBPersister) CreateChannelMember(channel *Channel, userID string) (*ChannelMember, error) {
+	tx := p.db.Begin()
+	member, err := p.createChannelMemberWithTx(userID, channel, tx)
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+	tx.Commit()
+	return member, nil
+}
+
+// DeleteChannelMember deletes the channel member for the given channel and user id
+// this uses the `Unscoped` Delete function to remove entry from DB, rather than just
+// setting deleted_at
+func (p *DBPersister) DeleteChannelMember(channel *Channel, userID string) error {
+	member, err := p.GetChannelMember(channel.ID, userID)
+	if err != nil {
+		return err
+	}
+
+	err = p.db.Unscoped().Delete(member).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *DBPersister) createChannelMemberWithTx(userID string, c *Channel, tx *gorm.DB) (*ChannelMember, error) {
+	id := uuid.NewV4()
 	member := &ChannelMember{
 		ID:     id.String(),
-		UserID: input.CreatorUserID,
+		UserID: userID,
 		Role:   RoleAdmin,
 	}
 
 	tx.Model(c).Association("Members").Append(member)
 
-	tx.Commit()
-
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
 
-	return c, nil
+	return member, nil
 }
 
 // GetChannel retrieves a Channel with the provided ID
@@ -131,6 +167,20 @@ func (p *DBPersister) GetChannelMembers(channelID string) ([]*ChannelMember, err
 	if err := p.db.Where(&ChannelMember{
 		ChannelID: channelID,
 	}).Preload("Channel").Find(&c).Error; err != nil {
+		return nil, ErrorNotFound
+	}
+
+	return c, nil
+}
+
+// GetChannelMember retrieves the channel member for a channel id and user id
+func (p *DBPersister) GetChannelMember(channelID string, userID string) (*ChannelMember, error) {
+	c := &ChannelMember{}
+
+	if err := p.db.Where(&ChannelMember{
+		ChannelID: channelID,
+		UserID:    userID,
+	}).Preload("Channel").First(c).Error; err != nil {
 		return nil, ErrorNotFound
 	}
 

@@ -70,10 +70,7 @@ func (u *User) GenerateUID() error {
 	if u.UID != "" {
 		return errors.New("Already has a UID")
 	}
-	code, err := uuid.NewV4()
-	if err != nil {
-		return err
-	}
+	code := uuid.NewV4()
 	u.UID = code.String()
 	return nil
 }

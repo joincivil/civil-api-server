@@ -369,10 +369,7 @@ func PostInterfaceToBase(post Post) (*PostModel, error) {
 	base := post.GetPostModel()
 
 	if base.ID == "" {
-		id, err := uuid.NewV4()
-		if err != nil {
-			return nil, err
-		}
+		id := uuid.NewV4()
 		base.ID = id.String()
 	}
 

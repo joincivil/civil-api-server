@@ -80,9 +80,11 @@ type GraphQLConfig struct {
 
 	// Runs the pubsub worker
 	// Should eventually move this to it's own repo and codebase
-	PubSubProjectID      string `split_words:"true" desc:"Sets GPubSub project ID. If not set, will not pub or sub."`
-	PubSubTokenTopicName string `split_words:"true" desc:"Sets GPubSub topic name for cvltoken events."`
-	PubSubTokenSubName   string `split_words:"true" desc:"Sets GPubSub subscription name for cvltoken events."`
+	PubSubProjectID         string `split_words:"true" desc:"Sets GPubSub project ID. If not set, will not pub or sub."`
+	PubSubTokenTopicName    string `split_words:"true" desc:"Sets GPubSub topic name for cvltoken events."`
+	PubSubTokenSubName      string `split_words:"true" desc:"Sets GPubSub subscription name for cvltoken events."`
+	PubSubMultiSigTopicName string `split_words:"true" desc:"Sets GPubSub topic name for multi sig events."`
+	PubSubMultiSigSubName   string `split_words:"true" desc:"Sets GPubSub subscription name for multi sig events."`
 
 	StackDriverProjectID string `split_words:"true" desc:"Sets the Stackdriver project ID"`
 	SentryDsn            string `split_words:"true" desc:"Sets the Sentry DSN"`

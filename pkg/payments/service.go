@@ -115,8 +115,8 @@ func (s *Service) GetChannelTotalProceedsByBoostType(channelID string, boostType
 	sum(amount) FILTER (WHERE p.currency_code = 'ETH')  as ether 
 	from payments p 
 	inner join posts 
-	on p.owner_id::uuid = posts.id and p.owner_type = 'posts' and p.owner_post_type = '?'
-	where posts.channel_id = ? 
+	on p.owner_id::uuid = posts.id and p.owner_type = 'posts' and p.owner_post_type = ?
+	where posts.channel_id = ?
 	group by post_type 
 	order by post_type;`), boostType, channelID).Scan(&result)
 	return &result
@@ -165,10 +165,8 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, postTyp
 		return EtherPayment{}, err
 	}
 	// generate a new ID
-	id, err := uuid.NewV4()
-	if err != nil {
-		return EtherPayment{}, err
-	}
+	id := uuid.NewV4()
+
 	payment.ID = id.String()
 	payment.PaymentType = "ether"
 	payment.Reference = etherPayment.TransactionID
@@ -338,10 +336,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 
 	// generate a new ID for the payment model
-	id, err := uuid.NewV4()
-	if err != nil {
-		return StripePayment{}, err
-	}
+	id := uuid.NewV4()
 	payment.ID = id.String()
 
 	payment.PaymentType = payment.Type()
