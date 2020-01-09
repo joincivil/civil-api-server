@@ -431,7 +431,7 @@ func TestCreateChannel(t *testing.T) {
 	})
 }
 
-var handletests = []struct {
+var handleTests = []struct {
 	in  string
 	out bool
 }{
@@ -445,12 +445,13 @@ var handletests = []struct {
 	{"F00-f", true},
 	{"aba-aba-aba", true},
 	{"aba_aba_aba", true},
+	{"aba-aba-aba-aba-aba-aba", false},
 	{"F_1", false},
 	{"F/AA", false},
 	{"hello world", false},
 }
 
-var newsroomHandletests = []struct {
+var newsroomHandleTests = []struct {
 	in  string
 	out bool
 }{
@@ -470,7 +471,7 @@ var newsroomHandletests = []struct {
 }
 
 func TestHandles(t *testing.T) {
-	for _, tt := range handletests {
+	for _, tt := range handleTests {
 		t.Run(tt.in, func(t *testing.T) {
 			s := channels.IsValidHandle(tt.in)
 			if s != tt.out {
@@ -481,7 +482,7 @@ func TestHandles(t *testing.T) {
 }
 
 func TestNewsroomHandles(t *testing.T) {
-	for _, tt := range handletests {
+	for _, tt := range newsroomHandleTests {
 		t.Run(tt.in, func(t *testing.T) {
 			s := channels.IsValidNewsroomHandle(tt.in)
 			if s != tt.out {
