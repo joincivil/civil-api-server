@@ -305,7 +305,7 @@ func (s *Service) SetNewsroomHandleOnAccepted(channelID string, newsroomName str
 	handle := slug.Make(newsroomName)
 	handleLength := len(handle)
 	if handleLength > 24 {
-		handle = string(handle[0:24])
+		handle = handle[0:24]
 	} else if handleLength < 4 {
 		handle = handle + "-news"
 	}
@@ -536,7 +536,7 @@ func NormalizeHandle(handle string) (string, error) {
 
 // IsValidHandle returns whether the provided handle is valid
 func IsValidHandle(handle string) bool {
-	matched, err := regexp.Match(`^([A-Z,a-z,0-9,-]){4,15}$`, []byte(handle))
+	matched, err := regexp.Match(`^([A-Za-z0-9-_]){4,15}$`, []byte(handle))
 	if err != nil {
 		return false
 	}
@@ -546,7 +546,7 @@ func IsValidHandle(handle string) bool {
 
 // IsValidNewsroomHandle returns whether the provided newsroom handle is valid
 func IsValidNewsroomHandle(handle string) bool {
-	matched, err := regexp.Match(`^([A-Z,a-z,0-9,-]){4,25}$`, []byte(handle))
+	matched, err := regexp.Match(`^([A-Za-z0-9-_]){4,25}$`, []byte(handle))
 	if err != nil {
 		return false
 	}
