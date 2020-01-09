@@ -18,6 +18,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.6
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/gosimple/slug v1.9.0
 	github.com/iancoleman/strcase v0.0.0-20180726023541-3605ed457bf7
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/jinzhu/gorm v1.9.8

@@ -2,7 +2,6 @@ package events
 
 import (
 	"encoding/json"
-	log "github.com/golang/glog"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -42,30 +41,22 @@ func (t *GovernanceEventHandler) Name() string {
 // Handle runs the logic to handle the event as appropriate for the event
 func (t *GovernanceEventHandler) Handle(event []byte) (bool, error) {
 
-	log.Infof("Governance handler 1")
 	// Unmarshal into the processor pubsub message
 	p := &processor.PubSubMessage{}
-	log.Infof("Governance handler 1=2")
 	err := json.Unmarshal(event, p)
 	if err != nil {
 		return false, err
 	}
-	log.Infof("Governance handler 3. try get events for p.TxHash: %s", p.TxHash)
 	governanceEvents, err := t.governanceEventPersister.GovernanceEventsByTxHash(common.HexToHash(p.TxHash))
 	if err != nil {
 		return false, err
 	}
 
-	log.Infof("Governance handler 4")
 	for _, g := range governanceEvents {
-		log.Infof("Governance handler 5")
 		if g.GovernanceEventType() == "ApplicationWhitelisted" {
-			log.Infof("Got ApplicationWhitelisted")
 			var listingAddress string
 			for key, val := range g.Metadata() {
-				log.Infof("Here in Metadata. key: %s", key)
 				if key == "ListingAddress" {
-					log.Infof("Found ListingAddress")
 					listingAddress = strings.ToLower(val.(string))
 				}
 			}
@@ -79,7 +70,6 @@ func (t *GovernanceEventHandler) Handle(event []byte) (bool, error) {
 					return false, err
 				}
 				name := listing.Name()
-				log.Infof("Go Set Handle. name: %s", name)
 				_, err = t.channelService.SetNewsroomHandleOnAccepted(channel.ID, name)
 				if err != nil {
 					return false, err

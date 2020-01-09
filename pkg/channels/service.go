@@ -8,6 +8,7 @@ import (
 	"github.com/Jeffail/tunny"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
+	"github.com/gosimple/slug"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/nfnt/resize"
@@ -301,20 +302,20 @@ func (s *Service) SetNewsroomHandleOnAccepted(channelID string, newsroomName str
 	if channel.Handle != nil && *(channel.Handle) != "" {
 		return nil, ErrorHandleAlreadySet
 	}
-	handle := strings.ReplaceAll(newsroomName, " ", "")
-	handleRunes := []rune(handle)
-	handleLength := len(handleRunes)
-	var safeSubstringHandle string
-	if handleLength > 14 {
-		safeSubstringHandle = string(handleRunes[0:14])
-	} else {
-		safeSubstringHandle = string(handleRunes[0 : handleLength-1])
+	handle := slug.Make(newsroomName)
+	handleLength := len(handle)
+	if handleLength > 24 {
+		handle = string(handle[0:24])
+	} else if handleLength < 4 {
+		handle = handle + "-news"
 	}
+	handle = strings.Trim(handle, "-")
 
-	if !IsValidHandle(safeSubstringHandle) {
+	log.Infof("CheckHandle: %s", handle)
+	if !IsValidNewsroomHandle(handle) {
 		return nil, ErrorInvalidHandle
 	}
-	return s.persister.SetNewsroomHandleOnAccepted(channelID, safeSubstringHandle)
+	return s.persister.SetNewsroomHandleOnAccepted(channelID, handle)
 }
 
 // ClearNewsroomHandleOnRemoved clears the handle on a newsroom channel
@@ -536,6 +537,16 @@ func NormalizeHandle(handle string) (string, error) {
 // IsValidHandle returns whether the provided handle is valid
 func IsValidHandle(handle string) bool {
 	matched, err := regexp.Match(`^(\w){4,15}$`, []byte(handle))
+	if err != nil {
+		return false
+	}
+
+	return matched
+}
+
+// IsValidNewsroomHandle returns whether the provided newsroom handle is valid
+func IsValidNewsroomHandle(handle string) bool {
+	matched, err := regexp.Match(`^(\w){4,25}$`, []byte(handle))
 	if err != nil {
 		return false
 	}
