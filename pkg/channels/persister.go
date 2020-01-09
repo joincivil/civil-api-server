@@ -3,6 +3,8 @@ package channels
 // Persister defines the methods needed to persister Channels
 type Persister interface {
 	CreateChannel(input CreateChannelInput) (*Channel, error)
+	CreateChannelMember(channel *Channel, userID string) (*ChannelMember, error)
+	DeleteChannelMember(channel *Channel, userID string) error
 	GetChannel(id string) (*Channel, error)
 	GetChannelByReference(channelType string, reference string) (*Channel, error)
 	GetChannelByHandle(handle string) (*Channel, error)

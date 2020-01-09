@@ -115,8 +115,8 @@ func (s *Service) GetChannelTotalProceedsByBoostType(channelID string, boostType
 	sum(amount) FILTER (WHERE p.currency_code = 'ETH')  as ether 
 	from payments p 
 	inner join posts 
-	on p.owner_id::uuid = posts.id and p.owner_type = 'posts' and p.owner_post_type = '?'
-	where posts.channel_id = ? 
+	on p.owner_id::uuid = posts.id and p.owner_type = 'posts' and p.owner_post_type = ?
+	where posts.channel_id = ?
 	group by post_type 
 	order by post_type;`), boostType, channelID).Scan(&result)
 	return &result
@@ -165,10 +165,8 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, postTyp
 		return EtherPayment{}, err
 	}
 	// generate a new ID
-	id, err := uuid.NewV4()
-	if err != nil {
-		return EtherPayment{}, err
-	}
+	id := uuid.NewV4()
+
 	payment.ID = id.String()
 	payment.PaymentType = "ether"
 	payment.Reference = etherPayment.TransactionID
@@ -338,10 +336,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 
 	// generate a new ID for the payment model
-	id, err := uuid.NewV4()
-	if err != nil {
-		return StripePayment{}, err
-	}
+	id := uuid.NewV4()
 	payment.ID = id.String()
 
 	payment.PaymentType = payment.Type()
@@ -375,6 +370,28 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 
 	return payment, nil
+}
+
+// GetPaymentsByPayerChannel returns payments made by a channel, exposes potentially sensitive info
+// so should only be called after checking user is authorized to view this data
+func (s *Service) GetPaymentsByPayerChannel(channelID string) ([]Payment, error) {
+	var pays []PaymentModel
+	if err := s.db.Where(&PaymentModel{OwnerType: "posts", PayerChannelID: channelID}).Find(&pays).Error; err != nil {
+		log.Errorf("An error occurred: %v\n", err)
+		return nil, err
+	}
+
+	var paymentsSlice []Payment
+	for _, result := range pays {
+		payment, err := ModelToInterface(&result)
+		if err != nil {
+			log.Errorf("An error occurred: %v\n", err)
+			return nil, err
+		}
+		paymentsSlice = append(paymentsSlice, payment)
+	}
+
+	return paymentsSlice, nil
 }
 
 // GetPayments returns the payments associated with a Post

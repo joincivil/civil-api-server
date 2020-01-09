@@ -12,6 +12,7 @@ const (
 	TypeBoost        = "boost"
 	TypeExternalLink = "externallink"
 	TypeComment      = "comment"
+	TypePost         = "posts"
 )
 
 // Post represents a Civil Post
@@ -32,6 +33,11 @@ type Pagination struct {
 type PostSearchResult struct {
 	Posts []Post
 	Pagination
+}
+
+// StoryfeedFilter contains fields used to filter storyfeed query
+type StoryfeedFilter struct {
+	Alg string
 }
 
 // PostModel contains fields common to all types of Posts

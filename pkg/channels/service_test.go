@@ -34,10 +34,7 @@ func randomAddress() common.Address {
 }
 
 func randomUUID() string {
-	u, err := uuid.NewV4()
-	if err != nil {
-		panic("couldnt generate uuid")
-	}
+	u := uuid.NewV4()
 	return u.String()
 }
 

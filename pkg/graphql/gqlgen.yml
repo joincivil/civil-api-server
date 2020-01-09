@@ -121,7 +121,9 @@ models:
   PostComment:
     model: github.com/joincivil/civil-api-server/pkg/posts.Comment
   PostSearchInput:
-    model: github.com/joincivil/civil-api-server/pkg/posts.SearchInput
+    model: github.com/joincivil/civil-api-server/pkg/posts.SearchInput  
+  StoryfeedFilterInput:
+    model: github.com/joincivil/civil-api-server/pkg/posts.StoryfeedFilter
   PostSearchResult:
     model: github.com/joincivil/civil-api-server/pkg/posts.PostSearchResult
   PostCreateBoostInput:

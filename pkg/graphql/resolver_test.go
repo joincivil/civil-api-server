@@ -47,6 +47,10 @@ func (t *testListingPersister) ListingsByAddresses(addresses []common.Address) (
 	return t.Listings, nil
 }
 
+func (t *testListingPersister) ListingsByOwnerAddress(addresses common.Address) ([]*pmodel.Listing, error) {
+	return t.Listings, nil
+}
+
 func (t *testListingPersister) ListingByAddress(address common.Address) (*pmodel.Listing, error) {
 	return t.Listings[0], nil
 }

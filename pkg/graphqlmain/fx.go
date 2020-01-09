@@ -22,6 +22,7 @@ var MainModule = fx.Options(
 	GraphqlModule,
 	EventProcessorModule,
 	PubSubModule,
+	fx.Invoke(RunJsonbPersisterMigrations),
 	fx.Invoke(RunPersisterMigrations),
 	fx.Invoke(RunPostPersisterMigrations),
 	fx.Invoke(RunServer),
