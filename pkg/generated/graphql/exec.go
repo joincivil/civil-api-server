@@ -248,6 +248,7 @@ type ComplexityRoot struct {
 		ApprovalDate         func(childComplexity int) int
 		Challenge            func(childComplexity int) int
 		ChallengeID          func(childComplexity int) int
+		Channel              func(childComplexity int) int
 		Charter              func(childComplexity int) int
 		ContractAddress      func(childComplexity int) int
 		ContributorAddresses func(childComplexity int) int
@@ -610,7 +611,7 @@ type ComplexityRoot struct {
 		TcrChallenge                       func(childComplexity int, id int, lowercaseAddr *bool) int
 		TcrGovernanceEvents                func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
 		TcrGovernanceEventsTxHash          func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		TcrListing                         func(childComplexity int, addr string, lowercaseAddr *bool) int
+		TcrListing                         func(childComplexity int, addr *string, rawHandle *string, lowercaseAddr *bool) int
 		TcrListings                        func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
 		UserChallengeData                  func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) int
 	}
@@ -757,6 +758,7 @@ type ListingResolver interface {
 	DiscourseTopicID(ctx context.Context, obj *model.Listing) (*int, error)
 	Challenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
 	PrevChallenge(ctx context.Context, obj *model.Listing) (*model.Challenge, error)
+	Channel(ctx context.Context, obj *model.Listing) (*channels.Channel, error)
 }
 type MutationResolver interface {
 	AuthSignupEth(ctx context.Context, input users.SignatureInput) (*auth.LoginResponse, error)
@@ -874,7 +876,7 @@ type QueryResolver interface {
 	TcrChallenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
 	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) (*GovernanceEventResultCursor, error)
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error)
-	TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
+	TcrListing(ctx context.Context, addr *string, rawHandle *string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
 	Poll(ctx context.Context, pollID int) (*model.Poll, error)
 	ChallengesStartedByUser(ctx context.Context, addr string) ([]*model.Challenge, error)
@@ -1748,6 +1750,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Listing.ChallengeID(childComplexity), true
+
+	case "Listing.channel":
+		if e.complexity.Listing.Channel == nil {
+			break
+		}
+
+		return e.complexity.Listing.Channel(childComplexity), true
 
 	case "Listing.charter":
 		if e.complexity.Listing.Charter == nil {
@@ -4069,7 +4078,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrListing(childComplexity, args["addr"].(string), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.TcrListing(childComplexity, args["addr"].(*string), args["rawHandle"].(*string), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.tcrListings":
 		if e.complexity.Query.TcrListings == nil {
@@ -4542,7 +4551,7 @@ type Query {
     txHash: String!
     lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
+  tcrListing(addr: String, rawHandle: String, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
     after: String
@@ -4862,6 +4871,7 @@ type Listing {
   discourseTopicID: Int
   challenge: Challenge
   prevChallenge: Challenge
+  channel: Channel
 }
 
 # A type that represents a edge value in a Listing
@@ -7002,22 +7012,30 @@ func (ec *executionContext) field_Query_tcrGovernanceEvents_args(ctx context.Con
 func (ec *executionContext) field_Query_tcrListing_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["addr"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["addr"] = arg0
-	var arg1 *bool
-	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
-		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	var arg1 *string
+	if tmp, ok := rawArgs["rawHandle"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["lowercaseAddr"] = arg1
+	args["rawHandle"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg2
 	return args, nil
 }
 
@@ -11794,6 +11812,40 @@ func (ec *executionContext) _Listing_prevChallenge(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOChallenge2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐChallenge(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Listing_channel(ctx context.Context, field graphql.CollectedField, obj *model.Listing) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Listing",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Listing().Channel(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*channels.Channel)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ListingEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *ListingEdge) (ret graphql.Marshaler) {
@@ -20582,7 +20634,7 @@ func (ec *executionContext) _Query_tcrListing(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrListing(rctx, args["addr"].(string), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().TcrListing(rctx, args["addr"].(*string), args["rawHandle"].(*string), args["lowercaseAddr"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -26794,6 +26846,17 @@ func (ec *executionContext) _Listing(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._Listing_prevChallenge(ctx, field, obj)
 				return res
 			})
+		case "channel":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Listing_channel(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -31535,7 +31598,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

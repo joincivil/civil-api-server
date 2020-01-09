@@ -216,6 +216,22 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 		return nil, errors.Wrap(err, "error setting handle, not an admin")
 	}
 
+	return p.setHandle(ch, handle)
+}
+
+// SetNewsroomHandleOnAccepted updates the handle for the newsroom channel, ensuring that it is unique
+func (p *DBPersister) SetNewsroomHandleOnAccepted(channelID string, handle string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting handle, could not get channel")
+	}
+
+	return p.setHandle(ch, handle)
+}
+
+func (p *DBPersister) setHandle(ch *Channel, handle string) (*Channel, error) {
+
 	normalizedHandle, err := NormalizeHandle(handle)
 	if err != nil {
 		return nil, err
@@ -231,6 +247,23 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 	}
 
 	err = p.db.Model(ch).Update(Channel{Handle: &normalizedHandle, RawHandle: &handle}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting handle")
+	}
+
+	return ch, nil
+}
+
+// ClearNewsroomHandleOnRemoved clears a newsroom's handle
+func (p *DBPersister) ClearNewsroomHandleOnRemoved(channelID string) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting handle, could not get channel")
+	}
+
+	emptyHandle := ""
+	err = p.db.Model(ch).Update(Channel{Handle: &emptyHandle, RawHandle: &emptyHandle}).Error
 	if err != nil {
 		return nil, errors.Wrap(err, "error setting handle")
 	}

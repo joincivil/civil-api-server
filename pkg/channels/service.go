@@ -291,6 +291,38 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 	return s.persister.SetHandle(userID, channelID, handle)
 }
 
+// SetNewsroomHandleOnAccepted sets the handle on a newsroom channel
+// should only be called by governance event handler
+func (s *Service) SetNewsroomHandleOnAccepted(channelID string, newsroomName string) (*Channel, error) {
+	channel, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return nil, err
+	}
+	if channel.Handle != nil && *(channel.Handle) != "" {
+		return nil, ErrorHandleAlreadySet
+	}
+	handle := strings.ReplaceAll(newsroomName, " ", "")
+	handleRunes := []rune(handle)
+	handleLength := len(handleRunes)
+	var safeSubstringHandle string
+	if handleLength > 14 {
+		safeSubstringHandle = string(handleRunes[0:14])
+	} else {
+		safeSubstringHandle = string(handleRunes[0 : handleLength-1])
+	}
+
+	if !IsValidHandle(safeSubstringHandle) {
+		return nil, ErrorInvalidHandle
+	}
+	return s.persister.SetNewsroomHandleOnAccepted(channelID, safeSubstringHandle)
+}
+
+// ClearNewsroomHandleOnRemoved clears the handle on a newsroom channel
+// should only be called by governance event handler
+func (s *Service) ClearNewsroomHandleOnRemoved(channelID string) (*Channel, error) {
+	return s.persister.ClearNewsroomHandleOnRemoved(channelID)
+}
+
 // don't export since should only be called through email confirm flow
 func (s *Service) setEmailAddress(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
 	_, err := s.persister.GetChannel(channelID)

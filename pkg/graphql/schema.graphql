@@ -55,7 +55,7 @@ type Query {
     txHash: String!
     lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
+  tcrListing(addr: String, rawHandle: String, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
     after: String
@@ -375,6 +375,7 @@ type Listing {
   discourseTopicID: Int
   challenge: Challenge
   prevChallenge: Challenge
+  channel: Channel
 }
 
 # A type that represents a edge value in a Listing

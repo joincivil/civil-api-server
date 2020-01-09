@@ -3,9 +3,9 @@ package graphql
 import (
 	context "context"
 	"fmt"
-	"strconv"
-
 	"github.com/pkg/errors"
+	"strconv"
+	"strings"
 
 	gql "github.com/99designs/gqlgen/graphql"
 	"github.com/iancoleman/strcase"
@@ -20,6 +20,7 @@ import (
 	cpersist "github.com/joincivil/go-common/pkg/persistence"
 
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 )
 
@@ -437,6 +438,9 @@ func (r *listingResolver) PrevChallenge(ctx context.Context, obj *model.Listing)
 	}
 	return nextLatestChallenge, nil
 }
+func (r *listingResolver) Channel(ctx context.Context, obj *model.Listing) (*channels.Channel, error) {
+	return r.channelService.GetChannelByReference("newsroom", strings.ToLower(obj.ContractAddress().String()))
+}
 
 type pollResolver struct{ *Resolver }
 
@@ -820,12 +824,24 @@ func (r *queryResolver) listingsEndCursor(modelEdges []*graphql.ListingEdge) *st
 
 func (r *queryResolver) Listing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
-	return r.TcrListing(ctx, addr, lowercaseAddr)
+	return r.TcrListing(ctx, &addr, nil, lowercaseAddr)
 }
 
-func (r *queryResolver) TcrListing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error) {
+func (r *queryResolver) TcrListing(ctx context.Context, addr *string, rawHandle *string, lowercaseAddr *bool) (*model.Listing, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
-	address := common.HexToAddress(addr)
+	var address common.Address
+	if rawHandle != nil {
+		channel, err := r.channelService.GetChannelByHandle(*rawHandle)
+		if err != nil {
+			return nil, err
+		}
+		if channel.ChannelType != "newsroom" {
+			return nil, errors.New("channel associated with handle is not newsroom")
+		}
+		address = common.HexToAddress(channel.Reference)
+	} else {
+		address = common.HexToAddress(*addr)
+	}
 	listing, err := r.listingPersister.ListingByAddress(address)
 	if err != nil {
 		if err == cpersist.ErrPersisterNoResults {
