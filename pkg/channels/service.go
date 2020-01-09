@@ -536,7 +536,7 @@ func NormalizeHandle(handle string) (string, error) {
 
 // IsValidHandle returns whether the provided handle is valid
 func IsValidHandle(handle string) bool {
-	matched, err := regexp.Match(`^(\w){4,15}$`, []byte(handle))
+	matched, err := regexp.Match(`^([A-Z,a-z,0-9,-]){4,15}$`, []byte(handle))
 	if err != nil {
 		return false
 	}
@@ -546,7 +546,7 @@ func IsValidHandle(handle string) bool {
 
 // IsValidNewsroomHandle returns whether the provided newsroom handle is valid
 func IsValidNewsroomHandle(handle string) bool {
-	matched, err := regexp.Match(`^(\w){4,25}$`, []byte(handle))
+	matched, err := regexp.Match(`^([A-Z,a-z,0-9,-]){4,25}$`, []byte(handle))
 	if err != nil {
 		return false
 	}
