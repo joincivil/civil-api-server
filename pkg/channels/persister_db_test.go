@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	user3ID      = randomUUID()
-	user3Address = randomAddress()
+	user3ID = randomUUID()
 )
 
 // This test uses a USER channel instead of a newsroom channel, to avoid having to set up a listing. The `SetNewsroomHandleOnAccepted` and
