@@ -2,9 +2,9 @@ package graphql
 
 import (
 	context "context"
-	"strconv"
-
+	"errors"
 	"github.com/iancoleman/strcase"
+	"strconv"
 
 	model "github.com/joincivil/civil-events-processor/pkg/model"
 	"github.com/joincivil/go-common/pkg/eth"
@@ -53,11 +53,25 @@ func (r *contentRevisionResolver) RevisionDate(ctx context.Context, obj *model.C
 
 // QUERIES
 
-func (r *queryResolver) Articles(ctx context.Context, addr *string, first *int,
+func (r *queryResolver) Articles(ctx context.Context, addr *string, handle *string, first *int,
 	after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 
-	return r.NewsroomArticles(ctx, addr, first, after, contentID, revisionID, lowercaseAddr)
+	var address string
+	if handle != nil {
+		channel, err := r.channelService.GetChannelByHandle(*handle)
+		if err != nil {
+			return nil, err
+		}
+		if channel.ChannelType != "newsroom" {
+			return nil, errors.New("handle does not correspond to newsroom channel")
+		}
+		address = channel.Reference
+	} else {
+		address = *addr
+	}
+
+	return r.NewsroomArticles(ctx, &address, first, after, contentID, revisionID, lowercaseAddr)
 }
 
 func (r *queryResolver) NewsroomArticles(ctx context.Context, addr *string, first *int,
