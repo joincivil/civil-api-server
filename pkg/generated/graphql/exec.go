@@ -578,7 +578,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Articles                           func(childComplexity int, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
+		Articles                           func(childComplexity int, addr *string, handle *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                          func(childComplexity int, id int, lowercaseAddr *bool) int
 		ChallengesStartedByUser            func(childComplexity int, addr string) int
 		ChannelsGetByHandle                func(childComplexity int, handle string) int
@@ -611,7 +611,7 @@ type ComplexityRoot struct {
 		TcrChallenge                       func(childComplexity int, id int, lowercaseAddr *bool) int
 		TcrGovernanceEvents                func(childComplexity int, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) int
 		TcrGovernanceEventsTxHash          func(childComplexity int, txHash string, lowercaseAddr *bool) int
-		TcrListing                         func(childComplexity int, addr *string, rawHandle *string, lowercaseAddr *bool) int
+		TcrListing                         func(childComplexity int, addr *string, handle *string, lowercaseAddr *bool) int
 		TcrListings                        func(childComplexity int, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) int
 		UserChallengeData                  func(childComplexity int, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) int
 	}
@@ -867,7 +867,7 @@ type PostExternalLinkResolver interface {
 	OpenGraphData(ctx context.Context, obj *posts.ExternalLink) (*OpenGraphData, error)
 }
 type QueryResolver interface {
-	Articles(ctx context.Context, addr *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error)
+	Articles(ctx context.Context, addr *string, handle *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error)
 	Challenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
 	GovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) ([]*model.GovernanceEvent, error)
 	GovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error)
@@ -876,7 +876,7 @@ type QueryResolver interface {
 	TcrChallenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
 	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) (*GovernanceEventResultCursor, error)
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error)
-	TcrListing(ctx context.Context, addr *string, rawHandle *string, lowercaseAddr *bool) (*model.Listing, error)
+	TcrListing(ctx context.Context, addr *string, handle *string, lowercaseAddr *bool) (*model.Listing, error)
 	TcrListings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) (*ListingResultCursor, error)
 	Poll(ctx context.Context, pollID int) (*model.Poll, error)
 	ChallengesStartedByUser(ctx context.Context, addr string) ([]*model.Challenge, error)
@@ -3702,7 +3702,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Articles(childComplexity, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.Articles(childComplexity, args["addr"].(*string), args["handle"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.challenge":
 		if e.complexity.Query.Challenge == nil {
@@ -4078,7 +4078,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.TcrListing(childComplexity, args["addr"].(*string), args["rawHandle"].(*string), args["lowercaseAddr"].(*bool)), true
+		return e.complexity.Query.TcrListing(childComplexity, args["addr"].(*string), args["handle"].(*string), args["lowercaseAddr"].(*bool)), true
 
 	case "Query.tcrListings":
 		if e.complexity.Query.TcrListings == nil {
@@ -4507,6 +4507,7 @@ type Query {
   # Just calls the properly named versions
   articles(
     addr: String
+    handle: String
     first: Int
     after: String
     contentID: Int
@@ -4551,7 +4552,7 @@ type Query {
     txHash: String!
     lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  tcrListing(addr: String, rawHandle: String, lowercaseAddr: Boolean = True): Listing
+  tcrListing(addr: String, handle: String, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
     after: String
@@ -6342,46 +6343,54 @@ func (ec *executionContext) field_Query_articles_args(ctx context.Context, rawAr
 		}
 	}
 	args["addr"] = arg0
-	var arg1 *int
+	var arg1 *string
+	if tmp, ok := rawArgs["handle"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["handle"] = arg1
+	var arg2 *int
 	if tmp, ok := rawArgs["first"]; ok {
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg1
-	var arg2 *string
+	args["first"] = arg2
+	var arg3 *string
 	if tmp, ok := rawArgs["after"]; ok {
-		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["after"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["contentID"]; ok {
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["contentID"] = arg3
+	args["after"] = arg3
 	var arg4 *int
-	if tmp, ok := rawArgs["revisionID"]; ok {
+	if tmp, ok := rawArgs["contentID"]; ok {
 		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["revisionID"] = arg4
-	var arg5 *bool
-	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
-		arg5, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	args["contentID"] = arg4
+	var arg5 *int
+	if tmp, ok := rawArgs["revisionID"]; ok {
+		arg5, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["lowercaseAddr"] = arg5
+	args["revisionID"] = arg5
+	var arg6 *bool
+	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
+		arg6, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lowercaseAddr"] = arg6
 	return args, nil
 }
 
@@ -7021,13 +7030,13 @@ func (ec *executionContext) field_Query_tcrListing_args(ctx context.Context, raw
 	}
 	args["addr"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["rawHandle"]; ok {
+	if tmp, ok := rawArgs["handle"]; ok {
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["rawHandle"] = arg1
+	args["handle"] = arg1
 	var arg2 *bool
 	if tmp, ok := rawArgs["lowercaseAddr"]; ok {
 		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
@@ -20250,7 +20259,7 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Articles(rctx, args["addr"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().Articles(rctx, args["addr"].(*string), args["handle"].(*string), args["first"].(*int), args["after"].(*string), args["contentID"].(*int), args["revisionID"].(*int), args["lowercaseAddr"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20634,7 +20643,7 @@ func (ec *executionContext) _Query_tcrListing(ctx context.Context, field graphql
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().TcrListing(rctx, args["addr"].(*string), args["rawHandle"].(*string), args["lowercaseAddr"].(*bool))
+		return ec.resolvers.Query().TcrListing(rctx, args["addr"].(*string), args["handle"].(*string), args["lowercaseAddr"].(*bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

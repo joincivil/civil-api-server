@@ -3,12 +3,11 @@ package graphql
 import (
 	context "context"
 	"fmt"
+	gql "github.com/99designs/gqlgen/graphql"
+	"github.com/iancoleman/strcase"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
-
-	gql "github.com/99designs/gqlgen/graphql"
-	"github.com/iancoleman/strcase"
 
 	"github.com/ethereum/go-ethereum/common"
 
@@ -827,18 +826,18 @@ func (r *queryResolver) Listing(ctx context.Context, addr string, lowercaseAddr 
 	return r.TcrListing(ctx, &addr, nil, lowercaseAddr)
 }
 
-func (r *queryResolver) TcrListing(ctx context.Context, addr *string, rawHandle *string, lowercaseAddr *bool) (*model.Listing, error) {
+func (r *queryResolver) TcrListing(ctx context.Context, addr *string, handle *string, lowercaseAddr *bool) (*model.Listing, error) {
 	r.Resolver.lowercaseAddr = lowercaseAddr
 	var address common.Address
-	if rawHandle != nil {
-		channel, err := r.channelService.GetChannelByHandle(*rawHandle)
+	if handle != nil {
+		channel, err := r.channelService.GetChannelByHandle(*handle)
 		if err != nil {
 			return nil, err
 		}
 		if channel.ChannelType != "newsroom" {
 			return nil, errors.New("channel associated with handle is not newsroom")
 		}
-		address = common.HexToAddress(channel.Reference)
+		address = common.HexToAddress(strings.ToLower(channel.Reference))
 	} else {
 		address = common.HexToAddress(*addr)
 	}
