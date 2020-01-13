@@ -9,6 +9,11 @@ import (
 	"testing"
 )
 
+var (
+	user3ID      = randomUUID()
+	user3Address = randomAddress()
+)
+
 // This test uses a USER channel instead of a newsroom channel, to avoid having to set up a listing. The `SetNewsroomHandleOnAccepted` and
 // `ClearNewsroomHandleOnRemoved` functions should never be called on a user channel or by anything but the governance event handler
 func TestNewsroomHandle(t *testing.T) {
@@ -28,7 +33,7 @@ func TestNewsroomHandle(t *testing.T) {
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{}, generator, emailer, testSignupLoginProtoHost)
 
-	channel, err := svc.CreateUserChannel(user1ID)
+	channel, err := svc.CreateUserChannel(user3ID)
 	if err != nil {
 		t.Fatalf("not expecting error: %v", err)
 	}
@@ -54,11 +59,15 @@ func TestNewsroomHandle(t *testing.T) {
 		t.Fatalf("error setting test-handle")
 	}
 
-	channel, err = persister.ClearNewsroomHandleOnRemoved(channel.ID)
+	_, err = persister.ClearNewsroomHandleOnRemoved(channel.ID)
 	if err != nil {
 		t.Fatalf("error clearing channel handle via ClearNewsroomHandleOnRemoved")
 	}
+	channel, err = svc.GetChannel(channel.ID)
+	if err != nil {
+		t.Fatalf("error getting channel later.")
+	}
 	if channel.Handle != nil {
-		t.Fatalf("error clearing test-handle")
+		t.Fatalf("error clearing test-handle. channel.Handle = %s", *(channel.Handle))
 	}
 }

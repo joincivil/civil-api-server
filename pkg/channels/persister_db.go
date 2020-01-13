@@ -262,9 +262,13 @@ func (p *DBPersister) ClearNewsroomHandleOnRemoved(channelID string) (*Channel, 
 		return nil, errors.Wrap(err, "error setting handle, could not get channel")
 	}
 
-	err = p.db.Model(ch).Update(Channel{Handle: nil, RawHandle: nil}).Error
+	err = p.db.Model(ch).Update("handle", gorm.Expr("NULL")).Error
 	if err != nil {
-		return nil, errors.Wrap(err, "error setting handle")
+		return nil, errors.Wrap(err, "error clearing handle")
+	}
+	err = p.db.Model(ch).Update("raw_handle", gorm.Expr("NULL")).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error clearing raw handle")
 	}
 
 	return ch, nil
