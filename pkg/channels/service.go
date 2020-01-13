@@ -8,6 +8,7 @@ import (
 	"github.com/Jeffail/tunny"
 	"github.com/ethereum/go-ethereum/common"
 	log "github.com/golang/glog"
+	"github.com/gosimple/slug"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/nfnt/resize"
@@ -291,6 +292,38 @@ func (s *Service) SetHandle(userID string, channelID string, handle string) (*Ch
 	return s.persister.SetHandle(userID, channelID, handle)
 }
 
+// SetNewsroomHandleOnAccepted sets the handle on a newsroom channel
+// should only be called by governance event handler
+func (s *Service) SetNewsroomHandleOnAccepted(channelID string, newsroomName string) (*Channel, error) {
+	channel, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return nil, err
+	}
+	if channel.Handle != nil && *(channel.Handle) != "" {
+		return nil, ErrorHandleAlreadySet
+	}
+	handle := slug.Make(newsroomName)
+	handleLength := len(handle)
+	if handleLength > 24 {
+		handle = handle[0:24]
+	} else if handleLength < 4 {
+		handle = handle + "-news"
+	}
+	handle = strings.Trim(handle, "-")
+
+	log.Infof("CheckHandle: %s", handle)
+	if !IsValidNewsroomHandle(handle) {
+		return nil, ErrorInvalidHandle
+	}
+	return s.persister.SetNewsroomHandleOnAccepted(channelID, handle)
+}
+
+// ClearNewsroomHandleOnRemoved clears the handle on a newsroom channel
+// should only be called by governance event handler
+func (s *Service) ClearNewsroomHandleOnRemoved(channelID string) (*Channel, error) {
+	return s.persister.ClearNewsroomHandleOnRemoved(channelID)
+}
+
 // don't export since should only be called through email confirm flow
 func (s *Service) setEmailAddress(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
 	_, err := s.persister.GetChannel(channelID)
@@ -503,7 +536,17 @@ func NormalizeHandle(handle string) (string, error) {
 
 // IsValidHandle returns whether the provided handle is valid
 func IsValidHandle(handle string) bool {
-	matched, err := regexp.Match(`^(\w){4,15}$`, []byte(handle))
+	matched, err := regexp.Match(`^([A-Za-z0-9-_]){4,15}$`, []byte(handle))
+	if err != nil {
+		return false
+	}
+
+	return matched
+}
+
+// IsValidNewsroomHandle returns whether the provided newsroom handle is valid
+func IsValidNewsroomHandle(handle string) bool {
+	matched, err := regexp.Match(`^([A-Za-z0-9-_]){4,25}$`, []byte(handle))
 	if err != nil {
 		return false
 	}
