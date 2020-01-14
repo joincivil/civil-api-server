@@ -110,12 +110,19 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 
 		ref := TypeExternalLink + "+" + htmlInfo.CanonicalURL
 		externalLink.Reference = &ref
+		if htmlInfo.OGInfo != nil {
+			ogJSON, err := htmlInfo.OGInfo.ToJSON()
+			if err != nil {
+				return nil, err
+			}
+			externalLink.OpenGraphData = ogJSON
 
-		ogJSON, err := htmlInfo.OGInfo.ToJSON()
-		if err != nil {
-			return nil, err
+			if htmlInfo.OGInfo.Article != nil && htmlInfo.OGInfo.Article.PublishedTime != nil {
+				time := htmlInfo.OGInfo.Article.PublishedTime
+				externalLink.DatePosted = *time
+			}
 		}
-		externalLink.OpenGraphData = ogJSON
+
 		return &externalLink, nil
 	}
 	return nil, ErrorNotImplemented
