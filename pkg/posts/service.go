@@ -65,7 +65,6 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 }
 
 func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
-
 	base, err := PostInterfaceToBase(post)
 	if err != nil {
 		return nil, err
@@ -115,29 +114,15 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
-		civilPublishedTime := ""
+		didFindCivilPublishedTime := false
 		z := html.NewTokenizer(resp2.Body)
-
-	GetCivilPublishedTime:
-		for {
-			tt := z.Next()
-			switch tt {
-			case html.ErrorToken:
-				break GetCivilPublishedTime
-			case html.StartTagToken, html.SelfClosingTagToken:
-				t := z.Token()
-				if t.Data == "meta" {
-					civilPublishedTime, ok := extractMetaProperty(t, "civil:published_time")
-					if ok {
-						timePublished, err := time.Parse("2006-01-02T15:04:05-0700", civilPublishedTime)
-						if err != nil {
-							return nil, err
-						}
-						externalLink.DatePosted = timePublished
-						break GetCivilPublishedTime
-					}
-				}
-			}
+		timePublished, err := getPublishedTime(z)
+		if err != nil {
+			return nil, err
+		}
+		if timePublished != nil {
+			externalLink.DatePosted = *timePublished
+			didFindCivilPublishedTime = true
 		}
 
 		if htmlInfo.OGInfo != nil {
@@ -147,7 +132,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			}
 			externalLink.OpenGraphData = ogJSON
 
-			if civilPublishedTime == "" && htmlInfo.OGInfo.Article != nil && htmlInfo.OGInfo.Article.PublishedTime != nil {
+			if !didFindCivilPublishedTime && htmlInfo.OGInfo.Article != nil && htmlInfo.OGInfo.Article.PublishedTime != nil {
 				time := htmlInfo.OGInfo.Article.PublishedTime
 				externalLink.DatePosted = *time
 			}
@@ -156,6 +141,28 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 		return &externalLink, nil
 	}
 	return nil, ErrorNotImplemented
+}
+
+func getPublishedTime(z *html.Tokenizer) (*time.Time, error) {
+	for {
+		tt := z.Next()
+		switch tt {
+		case html.ErrorToken:
+			return nil, nil
+		case html.StartTagToken, html.SelfClosingTagToken:
+			t := z.Token()
+			if t.Data == "meta" {
+				civilPublishedTime, ok := extractMetaProperty(t, "civil:published_time")
+				if ok {
+					timePublished, err := time.Parse("2006-01-02T15:04:05-0700", civilPublishedTime)
+					if err != nil {
+						return nil, err
+					}
+					return &timePublished, nil
+				}
+			}
+		}
+	}
 }
 
 func extractMetaProperty(t html.Token, prop string) (content string, ok bool) {
