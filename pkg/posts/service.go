@@ -5,7 +5,9 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
+	"golang.org/x/net/html"
 	"net/http"
+	"time"
 )
 
 // Service provides methods to interact with Posts
@@ -94,12 +96,17 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 		}
 
 		resp, err := http.Get(externalLink.URL)
-
 		if err != nil {
 			return nil, err
 		}
-
 		defer resp.Body.Close() // nolint: errcheck
+
+		// Just get this twice since we need 2 readers. Trying to duplicate readers is complicated and doesn't play nicely with htmlInfo parsing
+		resp2, err := http.Get(externalLink.URL)
+		if err != nil {
+			return nil, err
+		}
+		defer resp2.Body.Close() // nolint: errcheck
 
 		htmlInfo := htmlinfo.NewHTMLInfo()
 
@@ -108,8 +115,31 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
-		ref := TypeExternalLink + "+" + htmlInfo.CanonicalURL
-		externalLink.Reference = &ref
+		civilPublishedTime := ""
+		z := html.NewTokenizer(resp2.Body)
+
+	GetCivilPublishedTime:
+		for {
+			tt := z.Next()
+			switch tt {
+			case html.ErrorToken:
+				break GetCivilPublishedTime
+			case html.StartTagToken, html.SelfClosingTagToken:
+				t := z.Token()
+				if t.Data == "meta" {
+					civilPublishedTime, ok := extractMetaProperty(t, "civil:published_time")
+					if ok {
+						timePublished, err := time.Parse("2006-01-02T15:04:05-0700", civilPublishedTime)
+						if err != nil {
+							return nil, err
+						}
+						externalLink.DatePosted = timePublished
+						break GetCivilPublishedTime
+					}
+				}
+			}
+		}
+
 		if htmlInfo.OGInfo != nil {
 			ogJSON, err := htmlInfo.OGInfo.ToJSON()
 			if err != nil {
@@ -117,7 +147,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			}
 			externalLink.OpenGraphData = ogJSON
 
-			if htmlInfo.OGInfo.Article != nil && htmlInfo.OGInfo.Article.PublishedTime != nil {
+			if civilPublishedTime == "" && htmlInfo.OGInfo.Article != nil && htmlInfo.OGInfo.Article.PublishedTime != nil {
 				time := htmlInfo.OGInfo.Article.PublishedTime
 				externalLink.DatePosted = *time
 			}
@@ -126,4 +156,18 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 		return &externalLink, nil
 	}
 	return nil, ErrorNotImplemented
+}
+
+func extractMetaProperty(t html.Token, prop string) (content string, ok bool) {
+	for _, attr := range t.Attr {
+		if attr.Key == "property" && attr.Val == prop {
+			ok = true
+		}
+
+		if attr.Key == "content" {
+			content = attr.Val
+		}
+	}
+
+	return
 }
