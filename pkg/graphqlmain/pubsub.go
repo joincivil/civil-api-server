@@ -27,7 +27,9 @@ var PubSubModule = fx.Options(
 		buildPubsubConfig,
 		buildCvlTokenTransferEventHandler,
 		buildMultiSigEventHandler,
+		buildGovernanceEventHandler,
 		helpers.TokenTransferPersister,
+		// helpers.GovernanceEventPersister,
 	),
 	fx.Invoke(RunEventsWorkers),
 )
@@ -37,24 +39,28 @@ type QuitChannel chan bool
 
 // PubSubConfig defines the fields needed to start PubSub
 type PubSubConfig struct {
-	PubSubProjectID         string
-	PubSubTokenTopicName    string
-	PubSubTokenSubName      string
-	PubSubMultiSigTopicName string
-	PubSubMultiSigSubName   string
-	RegistryListID          string
-	TokenSaleAddresses      []common.Address
+	PubSubProjectID           string
+	PubSubTokenTopicName      string
+	PubSubTokenSubName        string
+	PubSubMultiSigTopicName   string
+	PubSubMultiSigSubName     string
+	PubSubGovernanceTopicName string
+	PubSubGovernanceSubName   string
+	RegistryListID            string
+	TokenSaleAddresses        []common.Address
 }
 
 func buildPubsubConfig(cfg *utils.GraphQLConfig) *PubSubConfig {
 	return &PubSubConfig{
-		PubSubProjectID:         cfg.PubSubProjectID,
-		PubSubTokenTopicName:    cfg.PubSubTokenTopicName,
-		PubSubTokenSubName:      cfg.PubSubTokenSubName,
-		PubSubMultiSigTopicName: cfg.PubSubMultiSigTopicName,
-		PubSubMultiSigSubName:   cfg.PubSubMultiSigSubName,
-		RegistryListID:          "6933914",
-		TokenSaleAddresses:      cfg.TokenSaleAddresses,
+		PubSubProjectID:           cfg.PubSubProjectID,
+		PubSubTokenTopicName:      cfg.PubSubTokenTopicName,
+		PubSubTokenSubName:        cfg.PubSubTokenSubName,
+		PubSubMultiSigTopicName:   cfg.PubSubMultiSigTopicName,
+		PubSubMultiSigSubName:     cfg.PubSubMultiSigSubName,
+		PubSubGovernanceTopicName: cfg.PubSubGovernanceTopicName,
+		PubSubGovernanceSubName:   cfg.PubSubGovernanceSubName,
+		RegistryListID:            "6933914",
+		TokenSaleAddresses:        cfg.TokenSaleAddresses,
 	}
 }
 
@@ -84,7 +90,19 @@ func buildMultiSigEventHandler(listingPersister model.ListingPersister,
 	)
 }
 
-func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, multiSigHandler *events.MultiSigEventHandler, quit chan struct{}) ([]*pubsub.Workers, error) {
+func buildGovernanceEventHandler(
+	governanceEventPersister model.GovernanceEventPersister,
+	listingPersister model.ListingPersister,
+	channelService *channels.Service,
+) *events.GovernanceEventHandler {
+	return events.NewGovernanceEventHandler(
+		governanceEventPersister,
+		listingPersister,
+		channelService,
+	)
+}
+
+func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransferEventHandler, multiSigHandler *events.MultiSigEventHandler, governanceHandler *events.GovernanceEventHandler, quit chan struct{}) ([]*pubsub.Workers, error) {
 
 	if config.PubSubProjectID == "" {
 		return nil, nil
@@ -116,7 +134,20 @@ func buildWorkers(config *PubSubConfig, transferHandler *events.CvlTokenTransfer
 		return nil, err
 	}
 
-	return []*pubsub.Workers{tokenWorkers, multiSigWorkers}, nil
+	governanceHandlers := []pubsub.EventHandler{governanceHandler}
+	governanceWorkers, err := pubsub.NewWorkers(&pubsub.WorkersConfig{
+		PubSubProjectID:        config.PubSubProjectID,
+		PubSubTopicName:        config.PubSubGovernanceTopicName,
+		PubSubSubscriptionName: config.PubSubGovernanceSubName,
+		NumWorkers:             1,
+		QuitChan:               quit,
+		EventHandlers:          governanceHandlers,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return []*pubsub.Workers{tokenWorkers, multiSigWorkers, governanceWorkers}, nil
 }
 
 // PubSubDependencies defines the dependencies needed for PubSub
