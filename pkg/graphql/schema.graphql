@@ -588,6 +588,7 @@ type PostExternalLink implements Post {
   url: String
   channel: Channel
   openGraphData: OpenGraphData!
+  datePosted: Time
 }
 
 type OpenGraphData {
