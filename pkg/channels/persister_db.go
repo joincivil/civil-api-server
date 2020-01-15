@@ -24,7 +24,12 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 	var normalizedHandle *string
 	var err error
 	if input.Handle != nil {
-		normalized, err := NormalizeHandle(*(input.Handle))
+		var normalized string
+		if input.ChannelType == "newsroom" {
+			normalized, err = NormalizeNewsroomHandle(*(input.Handle))
+		} else {
+			normalized, err = NormalizeHandle(*(input.Handle))
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -216,7 +221,11 @@ func (p *DBPersister) SetHandle(userID string, channelID string, handle string) 
 		return nil, errors.Wrap(err, "error setting handle, not an admin")
 	}
 
-	return p.setHandle(ch, handle)
+	normalizedHandle, err := NormalizeHandle(handle)
+	if err != nil {
+		return nil, err
+	}
+	return p.setHandle(ch, handle, normalizedHandle)
 }
 
 // SetNewsroomHandleOnAccepted updates the handle for the newsroom channel, ensuring that it is unique
@@ -227,16 +236,14 @@ func (p *DBPersister) SetNewsroomHandleOnAccepted(channelID string, handle strin
 		return nil, errors.Wrap(err, "error setting handle, could not get channel")
 	}
 
-	return p.setHandle(ch, handle)
-}
-
-func (p *DBPersister) setHandle(ch *Channel, handle string) (*Channel, error) {
-
-	normalizedHandle, err := NormalizeHandle(handle)
+	normalizedHandle, err := NormalizeNewsroomHandle(handle)
 	if err != nil {
 		return nil, err
 	}
+	return p.setHandle(ch, handle, normalizedHandle)
+}
 
+func (p *DBPersister) setHandle(ch *Channel, handle string, normalizedHandle string) (*Channel, error) {
 	// make sure there is not a channel with this handle
 	ch2, err := p.GetChannelByHandle(normalizedHandle)
 	if err != nil && err != ErrorNotFound {
