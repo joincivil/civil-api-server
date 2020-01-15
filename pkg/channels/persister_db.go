@@ -25,7 +25,7 @@ func (p *DBPersister) CreateChannel(input CreateChannelInput) (*Channel, error) 
 	var err error
 	if input.Handle != nil {
 		var normalized string
-		if input.ChannelType == "newsroom" {
+		if input.ChannelType == TypeNewsroom {
 			normalized, err = NormalizeNewsroomHandle(*(input.Handle))
 		} else {
 			normalized, err = NormalizeHandle(*(input.Handle))
