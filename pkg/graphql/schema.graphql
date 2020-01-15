@@ -521,6 +521,7 @@ interface Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
@@ -535,6 +536,7 @@ type PostBoost implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
@@ -562,6 +564,7 @@ type PostComment implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
@@ -577,6 +580,7 @@ type PostExternalLink implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
