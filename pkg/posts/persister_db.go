@@ -27,8 +27,8 @@ var (
 
 const (
 	chronologicalViewName             = "vw_post_chronological"
-	fairThenChronologicalViewName     = "vw_post_fair_then_chronological"
-	fairWithInterleavedBoostsViewName = "vw_post_fair_with_interleaved_boosts"
+	fairThenChronologicalViewName     = "vw_post_fair_then_chronological_2"
+	fairWithInterleavedBoostsViewName = "vw_post_fair_with_interleaved_boosts_2"
 )
 
 // DBPostPersister implements PostPersister interface using Gorm for database persistence
@@ -82,13 +82,20 @@ func CreateFairThenChronologicalStoryfeedViewQuery(viewName string) string {
 	CREATE OR REPLACE VIEW %s as (
 		select *, (case when post_num = 1 then 1 ELSE null end) as rank  FROM
 		(
-			select 
-				*, 
-				count(1) over (partition by channel_id order by created_at desc) as post_num
-				from posts
-				where post_type = 'externallink'
+			select
+				*,
+				count(1) over (partition by channel_id order by (sort_date) desc) as post_num
+				from
+				(
+				select 
+					*, 
+					case when (data ->> 'date_posted')::timestamp IS NOT null then (data ->> 'date_posted')::timestamp ELSE created_at END as sort_date
+					from posts
+					where post_type = 'externallink'
+				) data2
+				
 		) data
-		order by rank, created_at desc
+		order by rank, sort_date desc
 	)
     `, viewName)
 	return queryString
@@ -100,29 +107,36 @@ func CreateFairWithInterleavedBoostsStoryfeedViewQuery(viewName string) string {
 	queryString := fmt.Sprintf(`
 	CREATE OR REPLACE VIEW %s as (
 		SELECT * FROM (
-			SELECT *, (case when post_num = 1 then 1 ELSE null end) as rank, ROW_NUMBER() OVER (ORDER BY (case when post_num = 1 then 1 ELSE null end), created_at desc) as row_rank FROM
+			select *, (case when post_num = 1 then 1 ELSE null end) as rank, ROW_NUMBER() OVER (ORDER BY (case when post_num = 1 then 1 ELSE null end), sort_date desc) as row_rank  FROM
 			(
-				SELECT 
-					*, 
-					count(1) OVER (partition by channel_id order by created_at desc) as post_num
-					FROM posts
-					where post_type = 'externallink'
-			) data1
-			order by rank, created_at desc
+				select
+					*,
+					count(1) over (partition by channel_id order by (sort_date) desc) as post_num
+					from
+					(
+					select 
+						*, 
+						case when (data ->> 'date_posted')::timestamp IS NOT null then (data ->> 'date_posted')::timestamp ELSE created_at END as sort_date
+						from posts
+						where post_type = 'externallink'
+					) data2
+					
+			) data
+			order by row_rank desc
 		) data3
 
 		UNION
 
 		SELECT * FROM
 		(
-			SELECT *, 1 as rank, ROW_NUMBER() OVER (ORDER BY created_at) * 5 as row_rank FROM
+			SELECT *, 1 as rank, ROW_NUMBER() OVER (ORDER BY sort_date) * 5 as row_rank FROM
 			(
-				SELECT *, 1 as post_num FROM posts where post_type = 'boost' and (data ->> 'date_end')::timestamp > now()
+				SELECT *, created_at as sort_date, 1 as post_num FROM posts where post_type = 'boost' and (data ->> 'date_end')::timestamp > now()
+				
 			) data2
-			order by created_at desc
+			order by sort_date desc
 		) data4
-
-		order by row_rank, rank
+		order by row_rank
 	)
     `, viewName)
 	return queryString

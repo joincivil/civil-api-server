@@ -11,6 +11,7 @@ type Query {
   # Just calls the properly named versions
   articles(
     addr: String
+    handle: String
     first: Int
     after: String
     contentID: Int
@@ -55,7 +56,7 @@ type Query {
     txHash: String!
     lowercaseAddr: Boolean = True
   ): [GovernanceEvent!]!
-  tcrListing(addr: String!, lowercaseAddr: Boolean = True): Listing
+  tcrListing(addr: String, handle: String, lowercaseAddr: Boolean = True): Listing
   tcrListings(
     first: Int
     after: String
@@ -375,6 +376,7 @@ type Listing {
   discourseTopicID: Int
   challenge: Challenge
   prevChallenge: Challenge
+  channel: Channel
 }
 
 # A type that represents a edge value in a Listing
@@ -519,6 +521,7 @@ interface Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
@@ -533,6 +536,7 @@ type PostBoost implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
@@ -560,6 +564,7 @@ type PostComment implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
@@ -575,6 +580,7 @@ type PostExternalLink implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  postType: String!
   children: [Post]
   payments: [Payment!]
   groupedSanitizedPayments: [SanitizedPayment!]
@@ -582,6 +588,7 @@ type PostExternalLink implements Post {
   url: String
   channel: Channel
   openGraphData: OpenGraphData!
+  datePosted: Time
 }
 
 type OpenGraphData {

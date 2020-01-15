@@ -18,6 +18,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.6
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
+	github.com/gosimple/slug v1.9.0
 	github.com/iancoleman/strcase v0.0.0-20180726023541-3605ed457bf7
 	github.com/ipfs/go-ipfs-api v0.0.1
 	github.com/jinzhu/gorm v1.9.8
@@ -41,6 +42,7 @@ require (
 	go.uber.org/fx v1.9.0
 	go.uber.org/goleak v0.10.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
+	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
 	golang.org/x/tools v0.0.0-20191219230827-5e752206af05
 )
 
