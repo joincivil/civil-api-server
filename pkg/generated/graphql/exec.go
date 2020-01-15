@@ -5108,6 +5108,7 @@ type PostExternalLink implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  datePosted: Time
   postType: String!
   children: [Post]
   payments: [Payment!]
@@ -19747,6 +19748,40 @@ func (ec *executionContext) _PostExternalLink_updatedAt(ctx context.Context, fie
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PostExternalLink_datePosted(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostExternalLink",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DatePosted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PostExternalLink_postType(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -28562,6 +28597,8 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "datePosted":
+			out.Values[i] = ec._PostExternalLink_datePosted(ctx, field, obj)
 		case "postType":
 			out.Values[i] = ec._PostExternalLink_postType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

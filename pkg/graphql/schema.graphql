@@ -580,6 +580,7 @@ type PostExternalLink implements Post {
   authorID: String!
   createdAt: Time!
   updatedAt: Time!
+  datePosted: Time
   postType: String!
   children: [Post]
   payments: [Payment!]
