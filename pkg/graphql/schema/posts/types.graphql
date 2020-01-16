@@ -1,0 +1,157 @@
+## Post object schemas
+# post types
+interface Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    channel: Channel
+}
+
+type PostBoost implements Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    currencyCode: String
+    goalAmount: Float
+    title: String!
+    dateEnd: Time!
+    why: String
+    what: String
+    about: String
+    items: [PostBoostItem!]
+    channel: Channel
+}
+
+type PostBoostItem {
+    item: String!
+    cost: Float!
+}
+
+type PostComment implements Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    text: String!
+    channel: Channel
+}
+
+type PostExternalLink implements Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    url: String
+    channel: Channel
+    openGraphData: OpenGraphData!
+    datePosted: Time
+}
+
+type OpenGraphData {
+    type: String!
+    url: String!
+    title: String!
+    description: String!
+    determiner: String!
+    site_name: String!
+    locale: String!
+    locales_alternate: [String!]
+    images: [OpenGraphImage!]
+    audios: [OpenGraphAudio!]
+    videos: [OpenGraphVideo!]
+    article: OpenGraphArticle
+    book: OpenGraphBook
+    profile: OpenGraphProfile
+}
+
+type OpenGraphImage {
+    url: String!
+    secure_url: String
+    type: String
+    width: Int
+    height: Int
+    draft: Boolean
+}
+
+type OpenGraphVideo {
+    url: String!
+    secure_url: String
+    type: String
+    width: Int
+    height: Int
+    draft: Boolean
+}
+
+type OpenGraphAudio {
+    url: String!
+    secure_url: String
+    type: String
+    draft: Boolean
+}
+
+type OpenGraphArticle {
+    published_time: Time
+    modified_time: Time
+    expiration_time: Time
+    section: String
+    tags: [String!]
+    authors: [OpenGraphProfile!]
+}
+
+type OpenGraphProfile {
+    first_name: String
+    last_name: String
+    username: String
+    gender: String
+}
+
+type OpenGraphBook {
+    isbn: String
+    release_date: String
+    tags: [String!]
+    authors: [OpenGraphProfile!]
+}
+
+type PostSearchResult {
+    posts: [Post!]
+    beforeCursor: String
+    afterCursor: String
+}
+
+type ProceedsQueryResult {
+    postType: String
+    totalAmount: String
+    usd: String
+    ethUsdAmount: String
+    ether: String
+}

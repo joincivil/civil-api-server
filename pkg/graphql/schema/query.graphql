@@ -1,0 +1,123 @@
+# The query type, represents all of the entry points into our object graph
+type Query {
+    # TCR / Crawler Queries (Legacy naming)
+    # TODO(PN): Temporary keep these until migrated over to new naming
+    # Just calls the properly named versions
+    articles(
+        addr: String
+        handle: String
+        first: Int
+        after: String
+        contentID: Int
+        revisionID: Int
+        lowercaseAddr: Boolean = True
+    ): [ContentRevision!]!
+    challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
+    governanceEvents(
+        addr: String
+        after: String
+        creationDate: DateRange
+        first: Int
+        lowercaseAddr: Boolean = True
+    ): [GovernanceEvent!]!
+    governanceEventsTxHash(
+        txHash: String!
+        lowercaseAddr: Boolean = True
+    ): [GovernanceEvent!]!
+    listing(addr: String!, lowercaseAddr: Boolean = True): Listing
+    listings(
+        first: Int
+        after: String
+        whitelistedOnly: Boolean
+        rejectedOnly: Boolean
+        activeChallenge: Boolean
+        currentApplication: Boolean
+        lowercaseAddr: Boolean = True
+        sortBy: ListingSort
+        sortDesc: Boolean = False
+    ): [Listing!]!
+
+    # TCR Queries
+    tcrChallenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
+    tcrGovernanceEvents(
+        addr: String
+        after: String
+        creationDate: DateRange
+        first: Int
+        lowercaseAddr: Boolean = True
+    ): GovernanceEventResultCursor
+    tcrGovernanceEventsTxHash(
+        txHash: String!
+        lowercaseAddr: Boolean = True
+    ): [GovernanceEvent!]!
+    tcrListing(addr: String, handle: String, lowercaseAddr: Boolean = True): Listing
+    tcrListings(
+        first: Int
+        after: String
+        whitelistedOnly: Boolean
+        rejectedOnly: Boolean
+        activeChallenge: Boolean
+        currentApplication: Boolean
+        lowercaseAddr: Boolean = True
+        sortBy: ListingSort
+        sortDesc: Boolean = False
+    ): ListingResultCursor
+    poll(pollID: Int!): Poll
+
+    challengesStartedByUser(addr: String!): [Challenge]
+
+    # Parameterizer Queries
+    parameters(paramNames: [String!]): [Parameter]
+    paramProposals(paramName: String!): [ParamProposal]
+
+    # Channel Queries
+    channelsGetByID(id: String!): Channel
+    channelsGetByNewsroomAddress(contractAddress: String!): Channel
+    channelsGetByHandle(handle: String!): Channel
+    channelsGetByUserID(userID: String!): Channel
+    channelsIsHandleAvailable(handle: String!): Boolean!
+
+    # Newsroom Queries
+    newsroomArticles(
+        addr: String
+        first: Int
+        after: String
+        contentID: Int
+        revisionID: Int
+        lowercaseAddr: Boolean = True
+    ): [ContentRevision!]!
+    nrsignupNewsroom: NrsignupNewsroom
+
+    # Post Queries
+    postsGet(id: String!): Post!
+    postsGetByReference(reference: String!): Post!
+    postsSearch(search: PostSearchInput!): PostSearchResult
+    postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
+    postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
+
+    # Payment Queries
+    getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
+    getChannelTotalProceedsByBoostType(channelID: String!, boostType: String!): ProceedsQueryResult
+
+    # UserChallengeData Queries
+    userChallengeData(
+        userAddr: String
+        pollID: Int
+        canUserCollect: Boolean
+        canUserRescue: Boolean
+        canUserReveal: Boolean
+        lowercaseAddr: Boolean = True
+    ): [UserChallengeVoteData!]!
+
+    # User Queries
+    currentUser: User
+
+    # Storefront
+    storefrontEthPrice: Float
+    storefrontCvlPrice: Float
+    storefrontCvlQuoteUsd(usdToSpend: Float!): Float
+    storefrontCvlQuoteTokens(tokensToBuy: Float!): Float
+
+    # JSONb Store Query
+    jsonb(id: String): Jsonb
+}

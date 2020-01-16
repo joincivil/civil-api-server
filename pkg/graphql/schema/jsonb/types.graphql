@@ -1,0 +1,13 @@
+
+type JsonField {
+    key: String!
+    value: JsonFieldValue!
+}
+type Jsonb {
+    id: String!
+    hash: String!
+    createdDate: Time!
+    lastUpdatedDate: Time!
+    rawJson: String!
+    json: [JsonField!]!
+}
