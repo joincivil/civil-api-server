@@ -1,4 +1,0 @@
-
-type Subscription {
-    fastPass(newsroomOwnerUID: String!): String!
-}

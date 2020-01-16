@@ -1,0 +1,209 @@
+
+## TCR object schemas
+
+# NOTE(PN): All date fields are ints in seconds from epoch
+
+# A type that reflects values in model.Appeal
+type Appeal {
+    requester: String!
+    appealFeePaid: String!
+    appealPhaseExpiry: Int!
+    appealGranted: Boolean!
+    appealOpenToChallengeExpiry: Int!
+    statement: String!
+    appealChallengeID: Int!
+    appealChallenge: Challenge
+    appealGrantedStatementURI: String!
+}
+
+# A type that reflects block data in model.BlockData
+type BlockData {
+    blockNumber: Int!
+    txHash: String!
+    txIndex: Int!
+    blockHash: String!
+    index: Int!
+}
+
+# A type that reflects values in model.Challenge
+type Challenge {
+    challengeID: Int!
+    listingAddress: String!
+    statement: String!
+    rewardPool: String!
+    challenger: String!
+    resolved: Boolean!
+    stake: String!
+    totalTokens: String!
+    poll: Poll
+    requestAppealExpiry: Int!
+    appeal: Appeal
+    lastUpdatedDateTs: Int!
+    listing: Listing
+    challengeType: String!
+}
+
+# A type that represents a Charter
+type Charter {
+    uri: String!
+    contentID: Int!
+    revisionID: Int!
+    signature: String!
+    author: String!
+    contentHash: String!
+    timestamp: Int!
+}
+
+# A type that reflects values in model.GovernanceEvent
+type GovernanceEvent {
+    listingAddress: String!
+    metadata: [Metadata!]!
+    governanceEventType: String!
+    creationDate: Int!
+    lastUpdatedDate: Int!
+    eventHash: String!
+    blockData: BlockData!
+    listing: Listing!
+}
+
+# A type that represents an edge value in a GovernanceEvent
+type GovernanceEventEdge {
+    cursor: String!
+    node: GovernanceEvent!
+}
+
+# A type that represents and edge value in a Post
+type PostEdge {
+    cursor: String!
+    post: Post!
+}
+
+# A type that represents return values from GovernanceEvents
+type GovernanceEventResultCursor {
+    edges: [GovernanceEventEdge]!
+    pageInfo: PageInfo!
+}
+
+# A type that represents return values from Posts
+type PostResultCursor {
+    edges: [PostEdge]!
+    pageInfo: PageInfo!
+}
+
+# A type that reflects values in model.Parameter
+type Parameter {
+    paramName: String!
+    value: String!
+}
+
+type ParamProposal {
+    id: String!
+    propID: String!
+    name: String!
+    value: String!
+    deposit: String!
+    appExpiry: String!
+    challengeID: String!
+    proposer: String!
+    accepted: Boolean
+    expired: Boolean
+}
+
+# A type that reflects values in model.Listing
+type Listing {
+    name: String!
+    contractAddress: String!
+    whitelisted: Boolean!
+    lastGovState: String!
+    url: String!
+    charter: Charter
+    ownerAddresses: [String!]!
+    owner: String!
+    contributorAddresses: [String!]!
+    createdDate: Int!
+    applicationDate: Int
+    approvalDate: Int
+    lastUpdatedDate: Int!
+    appExpiry: Int!
+    unstakedDeposit: String!
+    challengeID: Int!
+    discourseTopicID: Int
+    challenge: Challenge
+    prevChallenge: Challenge
+    channel: Channel
+}
+
+# A type that represents a edge value in a Listing
+type ListingEdge {
+    cursor: String!
+    node: Listing!
+}
+
+# A type that represents return values from Listings
+type ListingResultCursor {
+    edges: [ListingEdge]!
+    pageInfo: PageInfo!
+}
+
+# Enum of valid sort values for Listings
+enum ListingSort {
+    DEFAULT
+    NAME
+    CREATED
+    APPLIED
+    WHITELISTED
+}
+
+# A type that reflects values in model.Metadata
+type Metadata {
+    key: String!
+    value: String!
+}
+
+# A type that reflects values in model.Poll
+type Poll {
+    commitEndDate: Int!
+    revealEndDate: Int!
+    voteQuorum: Int!
+    votesFor: String!
+    votesAgainst: String!
+}
+
+# A type that reflects values in model.UserChallengeData
+type UserChallengeVoteData {
+    pollID: Int!
+    pollRevealDate: Int!
+    pollType: String!
+    userAddress: String!
+    userDidCommit: Boolean!
+    userDidReveal: Boolean!
+    didUserCollect: Boolean!
+    didUserRescue: Boolean!
+    didCollectAmount: String!
+    isVoterWinner: Boolean!
+    pollIsPassed: Boolean!
+    salt: Int!
+    choice: Int!
+    numTokens: String!
+    voterReward: String!
+    parentChallengeID: Int!
+    challenge: Challenge
+}
+
+# A type that reflects values in model.ContentRevision
+type ContentRevision {
+    listingAddress: String!
+    payload: [ArticlePayload!]!
+    payloadHash: String!
+    editorAddress: String!
+    contractContentId: Int!
+    contractRevisionId: Int!
+    revisionUri: String!
+    revisionDate: Int!
+}
+
+# A type that reflects values in model.ArticlePayload
+type ArticlePayload {
+    key: String!
+    value: ArticlePayloadValue!
+}

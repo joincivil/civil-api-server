@@ -1,0 +1,36 @@
+
+# Payment inputs
+input PaymentsCreateEtherPaymentInput {
+    reaction: String
+    comment: String
+    transactionID: String!
+    emailAddress: String
+    paymentAddress: String!
+    fromAddress: String!
+    amount: Float!
+    usdAmount: String!
+    payerChannelID: String
+    shouldPublicize: Boolean
+}
+
+# Payment inputs
+input PaymentsCreateTokenPaymentInput {
+    reaction: String
+    comment: String
+    transactionID: String!
+    tokenAddress: String!
+    emailAddress: String
+    payerChannelID: String
+    shouldPublicize: Boolean
+}
+
+input PaymentsCreateStripePaymentInput {
+    reaction: String
+    comment: String
+    currencyCode: String!
+    amount: Float!
+    paymentToken: String!
+    emailAddress: String
+    payerChannelID: String
+    shouldPublicize: Boolean
+}

@@ -1,0 +1,65 @@
+
+
+type Newsroom {
+    newsroomDeployTx: String
+    contractAddress: String
+    multisigAddress: String
+    name: String
+    charter: CharterContent
+}
+
+type NrsignupNewsroom {
+    onboardedTs: Int
+    charter: CharterContent
+    charterLastUpdated: Int
+    grantRequested: Boolean
+    grantApproved: Boolean
+    newsroomDeployTx: String
+    newsroomAddress: String
+    newsroomName: String
+    tcrApplyTx: String
+}
+
+type CharterContent {
+    name: String
+    logoUrl: String
+    newsroomUrl: String
+    tagline: String
+    roster: [RosterMember]
+    signatures: [ConstitutionSignature]
+    mission: CharterMission
+    socialUrls: CharterSocialUrls
+}
+
+type RosterMember {
+    name: String
+    role: String
+    bio: String
+    ethAddress: String
+    socialUrls: CharterSocialUrls
+    avatarUrl: String
+    signature: String
+}
+
+type CharterSocialUrls {
+    twitter: String
+    facebook: String
+    instagram: String
+    linkedIn: String
+    youTube: String
+    email: String
+}
+
+type ConstitutionSignature {
+    signer: String
+    signature: String
+    message: String
+}
+
+type CharterMission {
+    purpose: String
+    structure: String
+    revenue: String
+    encumbrances: String
+    miscellaneous: String
+}

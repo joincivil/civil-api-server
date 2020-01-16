@@ -1,0 +1,5 @@
+
+input JsonbInput {
+    id: String!
+    jsonStr: String!
+}
