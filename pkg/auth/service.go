@@ -43,7 +43,6 @@ const (
 	civilMediaEmail = "support@civil.co"
 
 	defaultAsmGroupID = 8328 // Civil Registry Alerts
-
 )
 
 // ApplicationEmailTemplateMap represents a mapping of the ApplicationEnum to it's email
@@ -136,7 +135,7 @@ func NewAuthService(userService *users.UserService, tokenGenerator *utils.JwtTok
 func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error) {
 
 	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
-		ExpectedPrefix: "Sign up with Civil",
+		ExpectedPrefix: "Authenticate to " + s.signupLoginProtoHost,
 		GracePeriod:    defaultGracePeriod,
 		InputAddress:   input.Signer,
 		InputChallenge: input.Message,
@@ -230,7 +229,7 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 // LoginEth creates a new user for the address in the Ethereum signature
 func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) {
 	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
-		ExpectedPrefix: "Log in to Civil",
+		ExpectedPrefix: "Authenticate to " + s.signupLoginProtoHost,
 		GracePeriod:    defaultGracePeriod,
 		InputAddress:   input.Signer,
 		InputChallenge: input.Message,
