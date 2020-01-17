@@ -114,12 +114,15 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
-		if htmlInfo.CanonicalURL == "" {
-			return nil, ErrorNoCanonicalURLFound
+		if htmlInfo.CanonicalURL != "" {
+			ref := TypeExternalLink + "+" + htmlInfo.CanonicalURL
+			externalLink.Reference = &ref
+		} else if htmlInfo.OGInfo.URL != "" {
+			ref := TypeExternalLink + "+" + htmlInfo.OGInfo.URL
+			externalLink.Reference = &ref
+		} else {
+			return nil, ErrorNoReferenceURLFound
 		}
-
-		ref := TypeExternalLink + "+" + htmlInfo.CanonicalURL
-		externalLink.Reference = &ref
 
 		didFindCivilPublishedTime := false
 		z := html.NewTokenizer(resp2.Body)
