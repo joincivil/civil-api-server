@@ -7,6 +7,7 @@ import (
 	"github.com/joincivil/civil-events-processor/pkg/utils"
 	"golang.org/x/net/html"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -64,6 +65,23 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 	return nil, nil
 }
 
+// GetPostByReferenceSafe returns a post associated with the provided reference
+// cleans reference before checking to avoid "http://" vs "https://" issue
+func (s *Service) GetPostByReferenceSafe(reference string) (Post, error) {
+	cleanReference := strings.Replace(reference, TypeExternalLink+"+http://", TypeExternalLink+"+", 1)
+	cleanReference = strings.Replace(cleanReference, TypeExternalLink+"+https://", TypeExternalLink+"+", 1)
+
+	post, err := s.GetPostByReference(cleanReference)
+
+	// TODO: remove this once existing posts are updated
+	// backwards compatibility
+	if post == nil || err != nil {
+		post, err = s.GetPostByReference(reference)
+	}
+
+	return post, err
+}
+
 func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 	base, err := PostInterfaceToBase(post)
 	if err != nil {
@@ -114,16 +132,20 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
+		var refURL string
 		if htmlInfo.CanonicalURL != "" {
-			ref := TypeExternalLink + "+" + htmlInfo.CanonicalURL
-			externalLink.Reference = &ref
+			refURL = htmlInfo.CanonicalURL
 		} else if htmlInfo.OGInfo.URL != "" {
-			ref := TypeExternalLink + "+" + htmlInfo.OGInfo.URL
-			externalLink.Reference = &ref
+			refURL = htmlInfo.OGInfo.URL
 		} else {
 			return nil, ErrorNoReferenceURLFound
 		}
 
+		refURL = strings.Replace(refURL, "https://", "", 1)
+		refURL = strings.Replace(refURL, "http://", "", 1)
+
+		ref := TypeExternalLink + "+" + refURL
+		externalLink.Reference = &ref
 		didFindCivilPublishedTime := false
 		z := html.NewTokenizer(resp2.Body)
 		timePublished, err := getPublishedTime(z)
