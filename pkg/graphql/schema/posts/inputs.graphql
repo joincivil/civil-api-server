@@ -1,0 +1,41 @@
+# input objects
+input PostSearchInput {
+    postType: String
+    channelID: String
+    authorID: String
+    createdAfter: Time
+    afterCursor: String
+    beforeCursor: String
+    limit: Int
+    order: String
+}
+
+input StoryfeedFilterInput {
+    alg: String
+}
+
+input PostCreateBoostInput {
+    channelID: String!
+    title: String!
+    dateEnd: Time!
+    goalAmount: Float!
+    currencyCode: String!
+    why: String!
+    what: String!
+    about: String!
+    items: [PostCreateBoostItemInput!]
+}
+
+input PostCreateBoostItemInput {
+    item: String
+    cost: Float
+}
+
+input PostCreateExternalLinkInput {
+    url: String!
+    channelID: String!
+}
+
+input PostCreateCommentInput {
+    text: String!
+}

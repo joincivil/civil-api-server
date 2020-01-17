@@ -1,0 +1,31 @@
+
+input ChannelsConnectStripeInput {
+    channelID: String!
+    oauthCode: String!
+}
+
+input ChannelsSetHandleInput {
+    channelID: String!
+    handle: String!
+}
+
+input ChannelsSetStripeCustomerIDInput {
+    channelID: String!
+    stripeCustomerID: String!
+}
+
+input ChannelsSetAvatarInput {
+    channelID: String!
+    avatarDataURL: String!
+}
+
+input UserChannelSetHandleInput {
+    userID: String!
+    handle: String!
+}
+
+input ChannelsSetEmailInput {
+    channelID: String!
+    emailAddress: String!
+    addToMailing: Boolean!
+}

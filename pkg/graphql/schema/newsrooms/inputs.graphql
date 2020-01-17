@@ -1,0 +1,44 @@
+
+input CharterInput {
+    name: String
+    logoUrl: String
+    newsroomUrl: String
+    tagline: String
+    roster: [RosterMemberInput]
+    signatures: [ConstitutionSignatureInput]
+    mission: CharterMissionInput
+    socialUrls: CharterSocialUrlsInput
+}
+
+input RosterMemberInput {
+    name: String
+    role: String
+    bio: String
+    ethAddress: String
+    socialUrls: CharterSocialUrlsInput
+    avatarUrl: String
+    signature: String
+}
+input CharterSocialUrlsInput {
+    twitter: String
+    facebook: String
+    instagram: String
+    linkedIn: String
+    youTube: String
+    email: String
+}
+
+
+input ConstitutionSignatureInput {
+    signer: String
+    signature: String
+    message: String
+}
+
+input CharterMissionInput {
+    purpose: String
+    structure: String
+    revenue: String
+    encumbrances: String
+    miscellaneous: String
+}

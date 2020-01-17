@@ -1,0 +1,70 @@
+# Payment types
+interface Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    usdEquivalent: Float!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}
+
+type SanitizedPayment {
+    usdEquivalent: Float!
+    payerChannelID: String
+    mostRecentUpdate: Time!
+    payerChannel: Channel
+}
+
+type PaymentStripe implements Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    usdEquivalent: Float!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}
+
+type PaymentEther implements Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    transactionID: String!
+    usdEquivalent: Float!
+    fromAddress: String!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}
+
+type PaymentToken implements Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    transactionID: String!
+    usdEquivalent: Float!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}

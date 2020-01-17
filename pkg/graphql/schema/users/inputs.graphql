@@ -1,0 +1,24 @@
+
+input UserSignatureInput {
+    message: String!
+    messageHash: String!
+    signature: String!
+    signer: String!
+    r: String!
+    s: String!
+    v: String!
+}
+
+input UserUpdateInput {
+    quizPayload: RawObject
+    quizStatus: String
+    nrStep: Int
+    nrFurthestStep: Int
+    nrLastSeen: Int
+}
+
+input NrsignupStepsInput {
+    step: Int
+    furthestStep: Int
+    lastSeen: Int
+}
