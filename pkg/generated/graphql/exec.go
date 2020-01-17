@@ -550,10 +550,9 @@ type ComplexityRoot struct {
 		ChannelID                func(childComplexity int) int
 		Children                 func(childComplexity int) int
 		CreatedAt                func(childComplexity int) int
-		DatePosted               func(childComplexity int) int
 		GroupedSanitizedPayments func(childComplexity int) int
 		ID                       func(childComplexity int) int
-		IsDatePostedAccurate     func(childComplexity int) int
+		MetaTagDatePosted        func(childComplexity int) int
 		OpenGraphData            func(childComplexity int) int
 		ParentID                 func(childComplexity int) int
 		Payments                 func(childComplexity int) int
@@ -870,6 +869,7 @@ type PostExternalLinkResolver interface {
 
 	Channel(ctx context.Context, obj *posts.ExternalLink) (*channels.Channel, error)
 	OpenGraphData(ctx context.Context, obj *posts.ExternalLink) (*OpenGraphData, error)
+	MetaTagDatePosted(ctx context.Context, obj *posts.ExternalLink) (*time.Time, error)
 }
 type QueryResolver interface {
 	Articles(ctx context.Context, addr *string, handle *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) ([]*model.ContentRevision, error)
@@ -3580,13 +3580,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostExternalLink.CreatedAt(childComplexity), true
 
-	case "PostExternalLink.datePosted":
-		if e.complexity.PostExternalLink.DatePosted == nil {
-			break
-		}
-
-		return e.complexity.PostExternalLink.DatePosted(childComplexity), true
-
 	case "PostExternalLink.groupedSanitizedPayments":
 		if e.complexity.PostExternalLink.GroupedSanitizedPayments == nil {
 			break
@@ -3601,12 +3594,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostExternalLink.ID(childComplexity), true
 
-	case "PostExternalLink.isDatePostedAccurate":
-		if e.complexity.PostExternalLink.IsDatePostedAccurate == nil {
+	case "PostExternalLink.metaTagDatePosted":
+		if e.complexity.PostExternalLink.MetaTagDatePosted == nil {
 			break
 		}
 
-		return e.complexity.PostExternalLink.IsDatePostedAccurate(childComplexity), true
+		return e.complexity.PostExternalLink.MetaTagDatePosted(childComplexity), true
 
 	case "PostExternalLink.openGraphData":
 		if e.complexity.PostExternalLink.OpenGraphData == nil {
@@ -5124,8 +5117,7 @@ type PostExternalLink implements Post {
   url: String
   channel: Channel
   openGraphData: OpenGraphData!
-  datePosted: Time
-  isDatePostedAccurate: Boolean
+  metaTagDatePosted: Time
 }
 
 type OpenGraphData {
@@ -20044,7 +20036,7 @@ func (ec *executionContext) _PostExternalLink_openGraphData(ctx context.Context,
 	return ec.marshalNOpenGraphData2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphData(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostExternalLink_datePosted(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
+func (ec *executionContext) _PostExternalLink_metaTagDatePosted(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -20057,13 +20049,13 @@ func (ec *executionContext) _PostExternalLink_datePosted(ctx context.Context, fi
 		Object:   "PostExternalLink",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DatePosted, nil
+		return ec.resolvers.PostExternalLink().MetaTagDatePosted(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20072,44 +20064,10 @@ func (ec *executionContext) _PostExternalLink_datePosted(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*time.Time)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PostExternalLink_isDatePostedAccurate(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PostExternalLink",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsDatePostedAccurate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostResultCursor_edges(ctx context.Context, field graphql.CollectedField, obj *PostResultCursor) (ret graphql.Marshaler) {
@@ -28684,10 +28642,17 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 				}
 				return res
 			})
-		case "datePosted":
-			out.Values[i] = ec._PostExternalLink_datePosted(ctx, field, obj)
-		case "isDatePostedAccurate":
-			out.Values[i] = ec._PostExternalLink_isDatePostedAccurate(ctx, field, obj)
+		case "metaTagDatePosted":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._PostExternalLink_metaTagDatePosted(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
 	"github.com/joincivil/civil-api-server/pkg/payments"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-events-processor/pkg/utils"
+	"time"
 )
 
 // PostBoost is the resolver for the PostBoost type
@@ -340,6 +342,15 @@ func (r *postExternalLinkResolver) OpenGraphData(ctx context.Context, link *post
 		return nil, err
 	}
 	return &ogdata, nil
+}
+
+// MetaTagDatePosted returns date posted of an external link if that date is accurate (from OG/civil-meta-tag data)
+func (r *postExternalLinkResolver) MetaTagDatePosted(ctx context.Context, link *posts.ExternalLink) (*time.Time, error) {
+	log.Infof("check custom")
+	if link.IsDatePostedAccurate {
+		return &link.DatePosted, nil
+	}
+	return nil, nil
 }
 
 type postCommentResolver struct {
