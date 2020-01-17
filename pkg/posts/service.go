@@ -153,7 +153,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 		if timePublished != nil {
-			externalLink.DatePosted = *timePublished
+			externalLink.PublishedTime = timePublished
 			didFindCivilPublishedTime = true
 		}
 
@@ -166,7 +166,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 
 			if !didFindCivilPublishedTime && htmlInfo.OGInfo.Article != nil && htmlInfo.OGInfo.Article.PublishedTime != nil {
 				time := htmlInfo.OGInfo.Article.PublishedTime
-				externalLink.DatePosted = *time
+				externalLink.PublishedTime = time
 			}
 		}
 

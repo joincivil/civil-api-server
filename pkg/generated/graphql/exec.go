@@ -550,7 +550,6 @@ type ComplexityRoot struct {
 		ChannelID                func(childComplexity int) int
 		Children                 func(childComplexity int) int
 		CreatedAt                func(childComplexity int) int
-		DatePosted               func(childComplexity int) int
 		GroupedSanitizedPayments func(childComplexity int) int
 		ID                       func(childComplexity int) int
 		OpenGraphData            func(childComplexity int) int
@@ -558,6 +557,7 @@ type ComplexityRoot struct {
 		Payments                 func(childComplexity int) int
 		PaymentsTotal            func(childComplexity int, currencyCode string) int
 		PostType                 func(childComplexity int) int
+		PublishedTime            func(childComplexity int) int
 		URL                      func(childComplexity int) int
 		UpdatedAt                func(childComplexity int) int
 	}
@@ -3579,13 +3579,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostExternalLink.CreatedAt(childComplexity), true
 
-	case "PostExternalLink.datePosted":
-		if e.complexity.PostExternalLink.DatePosted == nil {
-			break
-		}
-
-		return e.complexity.PostExternalLink.DatePosted(childComplexity), true
-
 	case "PostExternalLink.groupedSanitizedPayments":
 		if e.complexity.PostExternalLink.GroupedSanitizedPayments == nil {
 			break
@@ -3639,6 +3632,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostExternalLink.PostType(childComplexity), true
+
+	case "PostExternalLink.publishedTime":
+		if e.complexity.PostExternalLink.PublishedTime == nil {
+			break
+		}
+
+		return e.complexity.PostExternalLink.PublishedTime(childComplexity), true
 
 	case "PostExternalLink.url":
 		if e.complexity.PostExternalLink.URL == nil {
@@ -5116,7 +5116,7 @@ type PostExternalLink implements Post {
   url: String
   channel: Channel
   openGraphData: OpenGraphData!
-  datePosted: Time
+  publishedTime: Time
 }
 
 type OpenGraphData {
@@ -20035,7 +20035,7 @@ func (ec *executionContext) _PostExternalLink_openGraphData(ctx context.Context,
 	return ec.marshalNOpenGraphData2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐOpenGraphData(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostExternalLink_datePosted(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
+func (ec *executionContext) _PostExternalLink_publishedTime(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -20054,7 +20054,7 @@ func (ec *executionContext) _PostExternalLink_datePosted(ctx context.Context, fi
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.DatePosted, nil
+		return obj.PublishedTime, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20063,10 +20063,10 @@ func (ec *executionContext) _PostExternalLink_datePosted(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(time.Time)
+	res := resTmp.(*time.Time)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOTime2timeᚐTime(ctx, field.Selections, res)
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostResultCursor_edges(ctx context.Context, field graphql.CollectedField, obj *PostResultCursor) (ret graphql.Marshaler) {
@@ -28641,8 +28641,8 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 				}
 				return res
 			})
-		case "datePosted":
-			out.Values[i] = ec._PostExternalLink_datePosted(ctx, field, obj)
+		case "publishedTime":
+			out.Values[i] = ec._PostExternalLink_publishedTime(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
