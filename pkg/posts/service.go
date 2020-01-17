@@ -153,6 +153,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 		}
 		if timePublished != nil {
 			externalLink.DatePosted = *timePublished
+			externalLink.IsDatePostedAccurate = true
 			didFindCivilPublishedTime = true
 		}
 
@@ -166,6 +167,11 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			if !didFindCivilPublishedTime && htmlInfo.OGInfo.Article != nil && htmlInfo.OGInfo.Article.PublishedTime != nil {
 				time := htmlInfo.OGInfo.Article.PublishedTime
 				externalLink.DatePosted = *time
+				externalLink.IsDatePostedAccurate = true
+			} else {
+				time := time.Now()
+				externalLink.DatePosted = time
+				externalLink.IsDatePostedAccurate = false
 			}
 		}
 

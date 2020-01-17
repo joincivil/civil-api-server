@@ -91,7 +91,7 @@ func CreateFairThenChronologicalStoryfeedViewQuery(viewName string) string {
 				(
 				select 
 					*, 
-					case when (data ->> 'date_posted')::timestamp IS NOT null then (data ->> 'date_posted')::timestamp ELSE created_at END as sort_date
+					case when (data ->> 'date_posted')::timestamp IS NOT null AND (data ->> 'is_date_posted_accurate')::boolean = true then (data ->> 'date_posted')::timestamp ELSE created_at END as sort_date
 					from posts
 					where post_type = 'externallink'
 				) data2
@@ -118,7 +118,7 @@ func CreateFairWithInterleavedBoostsStoryfeedViewQuery(viewName string) string {
 					(
 					select 
 						*, 
-						case when (data ->> 'date_posted')::timestamp IS NOT null then (data ->> 'date_posted')::timestamp ELSE created_at END as sort_date
+						case when (data ->> 'date_posted')::timestamp IS NOT null AND (data ->> 'is_date_posted_accurate')::boolean = true then (data ->> 'date_posted')::timestamp ELSE created_at END as sort_date
 						from posts
 						where post_type = 'externallink'
 					) data2

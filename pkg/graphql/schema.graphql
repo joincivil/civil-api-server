@@ -589,6 +589,7 @@ type PostExternalLink implements Post {
   channel: Channel
   openGraphData: OpenGraphData!
   datePosted: Time
+  isDatePostedAccurate: Boolean
 }
 
 type OpenGraphData {
