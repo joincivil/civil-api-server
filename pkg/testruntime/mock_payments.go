@@ -30,3 +30,8 @@ func (p *MockPaymentHelper) GetEthereumPaymentAddress(channelID string) (common.
 func (p *MockPaymentHelper) GetStripePaymentAccount(channelID string) (string, error) {
 	return "stripe" + channelID, nil
 }
+
+// GetStripeApplyPayDomains returns a mock list of enabled apply pay domains
+func (p *MockPaymentHelper) GetStripeApplyPayDomains(channelID string) ([]string, error) {
+	return []string{}, nil
+}

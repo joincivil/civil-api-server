@@ -42,8 +42,11 @@ require (
 	go.uber.org/fx v1.9.0
 	go.uber.org/goleak v0.10.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
-	golang.org/x/tools v0.0.0-20191219230827-5e752206af05
+	golang.org/x/crypto v0.0.0-20200115085410-6d4e4cb37c7d // indirect
+	golang.org/x/mod v0.2.0 // indirect
+	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
+	golang.org/x/sys v0.0.0-20200116001909-b77594299b42 // indirect
+	golang.org/x/tools v0.0.0-20200116181651-872a348c3885
 )
 
 replace git.apache.org/thrift.git v0.12.0 => github.com/apache/thrift v0.12.0

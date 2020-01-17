@@ -3,7 +3,6 @@ package channels
 import (
 	"bytes"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"github.com/Jeffail/tunny"
 	"github.com/ethereum/go-ethereum/common"
@@ -12,6 +11,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	"github.com/joincivil/go-common/pkg/email"
 	"github.com/nfnt/resize"
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/vincent-petithory/dataurl"
 	"image"
@@ -58,6 +58,9 @@ type NewsroomHelper interface {
 // StripeConnector defines the functions needed to connect an account to Stripe
 type StripeConnector interface {
 	ConnectAccount(code string) (string, error)
+	GetApplyPayDomains(stripeAccountID string) ([]string, error)
+	IsEnabled(stripeAccountID string) (bool, error)
+	EnableApplePay(stripeAccountID string) ([]string, error)
 }
 
 // NewServiceFromConfig creates a new channels.Service using the main graphql config
@@ -463,8 +466,53 @@ func (s *Service) ConnectStripe(userID string, input ConnectStripeInput) (*Chann
 		return nil, ErrorStripeIssue
 	}
 
-	return s.persister.SetStripeAccountID(userID, input.ChannelID, acct)
+	ch, err := s.persister.SetStripeAccountID(userID, input.ChannelID, acct)
+	if err != nil {
+		log.Errorf("error setting stripe account id: %v", err)
+		return nil, err
+	}
 
+	_, err = s.stripeConnector.EnableApplePay(acct)
+	if err != nil {
+		log.Errorf("error enabling apple pay: %v", err)
+		return nil, ErrorStripeIssue
+	}
+
+	return ch, nil
+}
+
+// EnableStripeApplyPay activates Apple Pay on the configured domains
+func (s *Service) EnableStripeApplyPay(channelID string) ([]string, error) {
+	stripeAccountID, err := s.GetStripePaymentAccount(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error enabling Apple Pay")
+	}
+
+	enabledDomains, err := s.stripeConnector.EnableApplePay(stripeAccountID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error enabling Apple Pay")
+	}
+
+	return enabledDomains, nil
+}
+
+// GetStripeApplyPayDomains returns the domains that are enabled for Apple Pay on the channel's Stripe account
+func (s *Service) GetStripeApplyPayDomains(channelID string) ([]string, error) {
+	stripeAccountID, err := s.GetStripePaymentAccount(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error getting enabled Apple Pay domains")
+	}
+
+	return s.stripeConnector.GetApplyPayDomains(stripeAccountID)
+}
+
+// StripeApplyPayEnabled returns if Apple Pay is enabled on the channel's domain
+func (s *Service) StripeApplyPayEnabled(channelID string) (bool, error) {
+	stripeAccountID, err := s.GetStripePaymentAccount(channelID)
+	if err != nil {
+		return false, errors.Wrap(err, "error getting enabled Apple Pay domains")
+	}
+	return s.stripeConnector.IsEnabled(stripeAccountID)
 }
 
 // GetStripePaymentAccount returns the stripe account associated with the channel
