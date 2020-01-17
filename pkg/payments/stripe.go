@@ -12,6 +12,7 @@ import (
 	"github.com/joincivil/civil-api-server/pkg/utils"
 
 	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/applepaydomain"
 	"github.com/stripe/stripe-go/charge"
 )
 
@@ -19,7 +20,8 @@ const stripeOAuthURI = "https://connect.stripe.com/oauth/token"
 
 // StripeService provides methods to interact with the Stripe payment provider
 type StripeService struct {
-	apiKey string
+	apiKey          string
+	applePayDomains []string
 }
 
 // CreateChargeRequest contains the data needed to create a charge
@@ -37,16 +39,18 @@ type CreateChargeResponse struct {
 }
 
 // NewStripeService constructs an instance of the stripe Service
-func NewStripeService(apiKey string) *StripeService {
+func NewStripeService(apiKey string, applePayDomains []string) *StripeService {
 	return &StripeService{
-		apiKey: apiKey,
+		apiKey:          apiKey,
+		applePayDomains: applePayDomains,
 	}
 }
 
 // NewStripeServiceFromConfig constructs an instance of the stripe Service
 func NewStripeServiceFromConfig(config *utils.GraphQLConfig) *StripeService {
 	return &StripeService{
-		apiKey: config.StripeAPIKey,
+		apiKey:          config.StripeAPIKey,
+		applePayDomains: config.StripeApplePayDomains,
 	}
 }
 
@@ -132,4 +136,86 @@ func (s *StripeService) ConnectAccount(code string) (string, error) {
 	}
 
 	return data.StripeUserID, nil
+}
+
+// GetApplyPayDomains returns the list of domains that have Apple Pay enabled
+func (s *StripeService) GetApplyPayDomains(stripeAccountID string) ([]string, error) {
+	stripe.Key = s.apiKey
+	domains := applepaydomain.List(&stripe.ApplePayDomainListParams{
+		ListParams: stripe.ListParams{
+			StripeAccount: &stripeAccountID,
+		},
+	})
+
+	var rtn []string
+	for domains.Next() {
+		domain := domains.ApplePayDomain()
+		rtn = append(rtn, domain.DomainName)
+	}
+
+	return rtn, nil
+}
+
+// IsApplePayEnabled returns true if the account's Apple Pay enabled domains include the civil's domains
+func (s *StripeService) IsApplePayEnabled(stripeAccountID string) (bool, error) {
+
+	domains, err := s.GetApplyPayDomains(stripeAccountID)
+	if err != nil {
+		return false, errors.Wrap(err, "error getting apple pay domains")
+	}
+
+	return IsSubset(s.applePayDomains, domains), nil
+}
+
+// EnableApplePay adds configured domains to the connected stripe account's list of Apple Pay domains
+func (s *StripeService) EnableApplePay(stripeAccountID string) ([]string, error) {
+	var addedDomains []string
+
+	domains, err := s.GetApplyPayDomains(stripeAccountID)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not enable Apple Pay")
+	}
+
+	domainsToEnable := SetDifference(s.applePayDomains, domains)
+
+	for _, domain := range domainsToEnable {
+		newDomain := &stripe.ApplePayDomainParams{
+			Params:     stripe.Params{StripeAccount: &stripeAccountID},
+			DomainName: &domain,
+		}
+		_, err := applepaydomain.New(newDomain)
+
+		if err != nil {
+			return nil, err
+		}
+
+		addedDomains = append(addedDomains, domain)
+	}
+
+	return addedDomains, nil
+}
+
+// SetDifference returns items in groupA that are not in groupB
+func SetDifference(groupA []string, groupB []string) []string {
+	var difference []string
+	for _, groupAItem := range groupA {
+		var included = false
+		for _, groupBItem := range groupB {
+			if groupBItem == groupAItem {
+				included = true
+				break
+			}
+		}
+
+		if !included {
+			difference = append(difference, groupAItem)
+		}
+	}
+
+	return difference
+}
+
+// IsSubset returns true if all items in groupA are included in groupB
+func IsSubset(groupA []string, groupB []string) bool {
+	return len(SetDifference(groupA, groupB)) == 0
 }

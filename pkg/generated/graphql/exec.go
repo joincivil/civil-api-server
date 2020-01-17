@@ -137,6 +137,7 @@ type ComplexityRoot struct {
 		PaymentsMadeByChannel      func(childComplexity int) int
 		PostsSearch                func(childComplexity int, search posts.SearchInput) int
 		StripeAccountID            func(childComplexity int) int
+		StripeApplePayEnabled      func(childComplexity int) int
 		StripeCustomerIDRestricted func(childComplexity int) int
 		Tiny100AvatarDataURL       func(childComplexity int) int
 		Tiny72AvatarDataURL        func(childComplexity int) int
@@ -293,6 +294,7 @@ type ComplexityRoot struct {
 		ChannelsClearStripeCustomerID     func(childComplexity int, channelID string) int
 		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
+		ChannelsEnableApplePay            func(childComplexity int, channelID string) int
 		ChannelsSetAvatar                 func(childComplexity int, input channels.SetAvatarInput) int
 		ChannelsSetEmail                  func(childComplexity int, input channels.SetEmailInput) int
 		ChannelsSetEmailConfirm           func(childComplexity int, jwt string) int
@@ -714,6 +716,7 @@ type ChannelResolver interface {
 	EmailAddressRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
 
 	StripeCustomerIDRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
+	StripeApplePayEnabled(ctx context.Context, obj *channels.Channel) (bool, error)
 	PaymentsMadeByChannel(ctx context.Context, obj *channels.Channel) ([]payments.Payment, error)
 }
 type CharterResolver interface {
@@ -785,6 +788,7 @@ type MutationResolver interface {
 	ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error)
 	ChannelsSetStripeCustomerID(ctx context.Context, input channels.SetStripeCustomerIDInput) (*channels.Channel, error)
 	ChannelsClearStripeCustomerID(ctx context.Context, channelID string) (*channels.Channel, error)
+	ChannelsEnableApplePay(ctx context.Context, channelID string) ([]string, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -1271,6 +1275,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.StripeAccountID(childComplexity), true
+
+	case "Channel.stripeApplePayEnabled":
+		if e.complexity.Channel.StripeApplePayEnabled == nil {
+			break
+		}
+
+		return e.complexity.Channel.StripeApplePayEnabled(childComplexity), true
 
 	case "Channel.StripeCustomerIDRestricted":
 		if e.complexity.Channel.StripeCustomerIDRestricted == nil {
@@ -2045,6 +2056,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ChannelsCreateNewsroomChannel(childComplexity, args["newsroomContractAddress"].(string)), true
+
+	case "Mutation.channelsEnableApplePay":
+		if e.complexity.Mutation.ChannelsEnableApplePay == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_channelsEnableApplePay_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsEnableApplePay(childComplexity, args["channelID"].(string)), true
 
 	case "Mutation.channelsSetAvatar":
 		if e.complexity.Mutation.ChannelsSetAvatar == nil {
@@ -4573,6 +4596,7 @@ type Channel {
     tiny100AvatarDataUrl: String
     tiny72AvatarDataUrl: String
     StripeCustomerIDRestricted: String
+    stripeApplePayEnabled: Boolean!
     paymentsMadeByChannel: [Payment!]
 }
 
@@ -4646,7 +4670,7 @@ type Jsonb {
     channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
     channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
     channelsClearStripeCustomerID(channelID: String!): Channel
-    # channelsEnableApplePay(channelID: String!): Channel
+    channelsEnableApplePay(channelID: String!): [String!]
 
     # Newsroom Signup Mutations
     nrsignupSendWelcomeEmail: String!
@@ -5769,6 +5793,20 @@ func (ec *executionContext) field_Mutation_channelsCreateNewsroomChannel_args(ct
 		}
 	}
 	args["newsroomContractAddress"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_channelsEnableApplePay_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg0
 	return args, nil
 }
 
@@ -8953,6 +8991,43 @@ func (ec *executionContext) _Channel_StripeCustomerIDRestricted(ctx context.Cont
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_stripeApplePayEnabled(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().StripeApplePayEnabled(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Channel_paymentsMadeByChannel(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
@@ -12930,6 +13005,47 @@ func (ec *executionContext) _Mutation_channelsClearStripeCustomerID(ctx context.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_channelsEnableApplePay(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_channelsEnableApplePay_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsEnableApplePay(rctx, args["channelID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_nrsignupSendWelcomeEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -26110,6 +26226,20 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._Channel_StripeCustomerIDRestricted(ctx, field, obj)
 				return res
 			})
+		case "stripeApplePayEnabled":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_stripeApplePayEnabled(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "paymentsMadeByChannel":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -27206,6 +27336,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsSetStripeCustomerID(ctx, field)
 		case "channelsClearStripeCustomerID":
 			out.Values[i] = ec._Mutation_channelsClearStripeCustomerID(ctx, field)
+		case "channelsEnableApplePay":
+			out.Values[i] = ec._Mutation_channelsEnableApplePay(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -31799,7 +31931,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
