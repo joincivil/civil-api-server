@@ -73,6 +73,7 @@ func (s *Service) GetPostByReferenceSafe(reference string) (Post, error) {
 
 	post, err := s.GetPostByReference(cleanReference)
 
+	// TODO: remove this once existing posts are updated
 	// backwards compatibility
 	if post == nil || err != nil {
 		post, err = s.GetPostByReference(reference)
