@@ -152,6 +152,22 @@ func (r *mutationResolver) ChannelsSetEmailConfirm(ctx context.Context, jwt stri
 	return r.channelService.SetEmailConfirm(jwt)
 }
 
+func (r *mutationResolver) ChannelsEnableApplePay(ctx context.Context, channelID string) ([]string, error) {
+	token := auth.ForContext(ctx)
+	if token == nil {
+		return nil, ErrAccessDenied
+	}
+	isAdmin, err := r.channelService.IsChannelAdmin(token.Sub, channelID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, ErrAccessDenied
+	}
+
+	return r.channelService.EnableStripeApplePay(channelID)
+}
+
 // Channel is the resolver for the Channel type
 func (r *Resolver) Channel() graphql.ChannelResolver {
 	return &channelResolver{Resolver: r}
@@ -194,6 +210,10 @@ func (r *channelResolver) IsStripeConnected(ctx context.Context, channel *channe
 	}
 
 	return ch.StripeAccountID != "", err
+}
+
+func (r *channelResolver) StripeApplePayEnabled(ctx context.Context, channel *channels.Channel) (bool, error) {
+	return r.channelService.StripeApplyPayEnabled(channel.ID)
 }
 
 func (r *channelResolver) CurrentUserIsAdmin(ctx context.Context, channel *channels.Channel) (bool, error) {

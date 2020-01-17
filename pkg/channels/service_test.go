@@ -92,6 +92,18 @@ func (s MockStripeConnector) ConnectAccount(code string) (string, error) {
 	return stripeAccountID, nil
 }
 
+func (s MockStripeConnector) EnableApplePay(stripeAccountID string) ([]string, error) {
+	return []string{}, nil
+}
+
+func (s MockStripeConnector) GetApplyPayDomains(stripeAccountID string) ([]string, error) {
+	return []string{}, nil
+}
+
+func (s MockStripeConnector) IsApplePayEnabled(stripeAccountID string) (bool, error) {
+	return false, nil
+}
+
 func getSendGridKeyFromEnvVar() string {
 	return os.Getenv(sendGridKeyEnvVar)
 }

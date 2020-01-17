@@ -58,7 +58,8 @@ type GraphQLConfig struct {
 
 	VersionNumber string `split_words:"true" desc:"Sets the version to use for crawler related Postgres tables"`
 
-	StripeAPIKey string `envconfig:"stripe_api_key" split_words:"true" desc:"API key for stripe"`
+	StripeAPIKey          string   `envconfig:"stripe_api_key" split_words:"true" desc:"API key for stripe"`
+	StripeApplePayDomains []string `split_words:"true" desc:"Domains to enable Apple Pay on" default:"" `
 
 	TokenFoundryUser     string `split_words:"true" desc:"TokenFoundry User"`
 	TokenFoundryPassword string `split_words:"true" desc:"TokenFoundry Password"`
