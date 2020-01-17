@@ -112,11 +112,11 @@ func (b Comment) GetType() string {
 
 // ExternalLink is a type of Post that links to another web page
 type ExternalLink struct {
-	PostModel            `json:"-"`
-	URL                  string    `json:"url"`
-	OpenGraphData        []byte    `json:"open_graph_data"`
-	DatePosted           time.Time `json:"date_posted"`
-	IsDatePostedAccurate bool      `json:"is_date_posted_accurate"`
+	PostModel     `json:"-"`
+	URL           string     `json:"url"`
+	OpenGraphData []byte     `json:"open_graph_data"`
+	DatePosted    time.Time  `json:"date_posted"` // DEPRECATED
+	PublishedTime *time.Time `json:"published_time"`
 }
 
 // GetType returns the post type "Boost"
