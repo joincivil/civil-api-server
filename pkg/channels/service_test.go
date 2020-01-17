@@ -464,6 +464,7 @@ var newsroomHandleTests = []struct {
 	{"F00_f", true},
 	{"F00-f", true},
 	{"aba-aba-aba-aba-aba-aba", true},
+	{"aba-aba-aba-aba-aba-abaaba-aba-aba-aba-aba-aba", false},
 	{"aba_aba_aba", true},
 	{"F_1", false},
 	{"F/AA", false},
