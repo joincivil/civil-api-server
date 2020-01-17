@@ -23,6 +23,8 @@ var (
 	ErrorBadURLSubmitted = errors.New("bad URL Submitted")
 	// ErrorBadBoostEndDate is thrown when bad URL is submitted (such as external link that doesn't match newsroom URL)
 	ErrorBadBoostEndDate = errors.New("bad End Date submitting for Boost")
+	// ErrorNoCanonicalURLFound is thrown when no canonical URL is found for a submitted external link
+	ErrorNoCanonicalURLFound = errors.New("no canonical URL found on submitted page")
 )
 
 const (

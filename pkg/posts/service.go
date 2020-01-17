@@ -114,6 +114,13 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
+		if htmlInfo.CanonicalURL == "" {
+			return nil, ErrorNoCanonicalURLFound
+		}
+
+		ref := TypeExternalLink + "+" + htmlInfo.CanonicalURL
+		externalLink.Reference = &ref
+
 		didFindCivilPublishedTime := false
 		z := html.NewTokenizer(resp2.Body)
 		timePublished, err := getPublishedTime(z)
