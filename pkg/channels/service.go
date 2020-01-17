@@ -526,7 +526,7 @@ func (s *Service) ChannelEmailAddress(channelID string) (string, error) {
 	return channel.EmailAddress, nil
 }
 
-// NormalizeHandle takes a string handle and removes
+// NormalizeHandle takes a string handle and returns lower case version
 func NormalizeHandle(handle string) (string, error) {
 	if !IsValidHandle(handle) {
 		return "", ErrorInvalidHandle
@@ -542,6 +542,14 @@ func IsValidHandle(handle string) bool {
 	}
 
 	return matched
+}
+
+// NormalizeNewsroomHandle takes a string handle and returns lower case version
+func NormalizeNewsroomHandle(handle string) (string, error) {
+	if !IsValidNewsroomHandle(handle) {
+		return "", ErrorInvalidHandle
+	}
+	return strings.ToLower(handle), nil
 }
 
 // IsValidNewsroomHandle returns whether the provided newsroom handle is valid
