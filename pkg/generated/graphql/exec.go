@@ -137,6 +137,7 @@ type ComplexityRoot struct {
 		PaymentsMadeByChannel      func(childComplexity int) int
 		PostsSearch                func(childComplexity int, search posts.SearchInput) int
 		StripeAccountID            func(childComplexity int) int
+		StripeApplePayEnabled      func(childComplexity int) int
 		StripeCustomerIDRestricted func(childComplexity int) int
 		Tiny100AvatarDataURL       func(childComplexity int) int
 		Tiny72AvatarDataURL        func(childComplexity int) int
@@ -293,6 +294,7 @@ type ComplexityRoot struct {
 		ChannelsClearStripeCustomerID     func(childComplexity int, channelID string) int
 		ChannelsConnectStripe             func(childComplexity int, input channels.ConnectStripeInput) int
 		ChannelsCreateNewsroomChannel     func(childComplexity int, newsroomContractAddress string) int
+		ChannelsEnableApplePay            func(childComplexity int, channelID string) int
 		ChannelsSetAvatar                 func(childComplexity int, input channels.SetAvatarInput) int
 		ChannelsSetEmail                  func(childComplexity int, input channels.SetEmailInput) int
 		ChannelsSetEmailConfirm           func(childComplexity int, jwt string) int
@@ -714,6 +716,7 @@ type ChannelResolver interface {
 	EmailAddressRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
 
 	StripeCustomerIDRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
+	StripeApplePayEnabled(ctx context.Context, obj *channels.Channel) (bool, error)
 	PaymentsMadeByChannel(ctx context.Context, obj *channels.Channel) ([]payments.Payment, error)
 }
 type CharterResolver interface {
@@ -785,6 +788,7 @@ type MutationResolver interface {
 	ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error)
 	ChannelsSetStripeCustomerID(ctx context.Context, input channels.SetStripeCustomerIDInput) (*channels.Channel, error)
 	ChannelsClearStripeCustomerID(ctx context.Context, channelID string) (*channels.Channel, error)
+	ChannelsEnableApplePay(ctx context.Context, channelID string) ([]string, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
 	NrsignupSaveCharter(ctx context.Context, charterData newsroom.Charter) (string, error)
 	NrsignupRequestGrant(ctx context.Context, requested bool) (string, error)
@@ -1271,6 +1275,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.StripeAccountID(childComplexity), true
+
+	case "Channel.stripeApplePayEnabled":
+		if e.complexity.Channel.StripeApplePayEnabled == nil {
+			break
+		}
+
+		return e.complexity.Channel.StripeApplePayEnabled(childComplexity), true
 
 	case "Channel.StripeCustomerIDRestricted":
 		if e.complexity.Channel.StripeCustomerIDRestricted == nil {
@@ -2045,6 +2056,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ChannelsCreateNewsroomChannel(childComplexity, args["newsroomContractAddress"].(string)), true
+
+	case "Mutation.channelsEnableApplePay":
+		if e.complexity.Mutation.ChannelsEnableApplePay == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_channelsEnableApplePay_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ChannelsEnableApplePay(childComplexity, args["channelID"].(string)), true
 
 	case "Mutation.channelsSetAvatar":
 		if e.complexity.Mutation.ChannelsSetAvatar == nil {
@@ -4526,235 +4549,747 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `schema {
-  query: Query
+	&ast.Source{Name: "schema/channels/inputs.graphql", Input: `
+input ChannelsConnectStripeInput {
+    channelID: String!
+    oauthCode: String!
 }
 
-# NOTE(PN): All date fields are ints in seconds from epoch
+input ChannelsSetHandleInput {
+    channelID: String!
+    handle: String!
+}
 
-# The query type, represents all of the entry points into our object graph
-type Query {
-  # TCR / Crawler Queries (Legacy naming)
-  # TODO(PN): Temporary keep these until migrated over to new naming
-  # Just calls the properly named versions
-  articles(
-    addr: String
+input ChannelsSetStripeCustomerIDInput {
+    channelID: String!
+    stripeCustomerID: String!
+}
+
+input ChannelsSetAvatarInput {
+    channelID: String!
+    avatarDataURL: String!
+}
+
+input UserChannelSetHandleInput {
+    userID: String!
+    handle: String!
+}
+
+input ChannelsSetEmailInput {
+    channelID: String!
+    emailAddress: String!
+    addToMailing: Boolean!
+}`},
+	&ast.Source{Name: "schema/channels/types.graphql", Input: `
+type Channel {
+    id: String!
+    channelType: String!
+    newsroom: Newsroom
+    listing: Listing
+    postsSearch(search: PostSearchInput!): PostSearchResult
+    isStripeConnected: Boolean!
+    stripeAccountID: String
+    currentUserIsAdmin: Boolean!
     handle: String
-    first: Int
-    after: String
-    contentID: Int
-    revisionID: Int
-    lowercaseAddr: Boolean = True
-  ): [ContentRevision!]!
-  challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
-  governanceEvents(
-    addr: String
-    after: String
-    creationDate: DateRange
-    first: Int
-    lowercaseAddr: Boolean = True
-  ): [GovernanceEvent!]!
-  governanceEventsTxHash(
-    txHash: String!
-    lowercaseAddr: Boolean = True
-  ): [GovernanceEvent!]!
-  listing(addr: String!, lowercaseAddr: Boolean = True): Listing
-  listings(
-    first: Int
-    after: String
-    whitelistedOnly: Boolean
-    rejectedOnly: Boolean
-    activeChallenge: Boolean
-    currentApplication: Boolean
-    lowercaseAddr: Boolean = True
-    sortBy: ListingSort
-    sortDesc: Boolean = False
-  ): [Listing!]!
-
-  # TCR Queries
-  tcrChallenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
-  tcrGovernanceEvents(
-    addr: String
-    after: String
-    creationDate: DateRange
-    first: Int
-    lowercaseAddr: Boolean = True
-  ): GovernanceEventResultCursor
-  tcrGovernanceEventsTxHash(
-    txHash: String!
-    lowercaseAddr: Boolean = True
-  ): [GovernanceEvent!]!
-  tcrListing(addr: String, handle: String, lowercaseAddr: Boolean = True): Listing
-  tcrListings(
-    first: Int
-    after: String
-    whitelistedOnly: Boolean
-    rejectedOnly: Boolean
-    activeChallenge: Boolean
-    currentApplication: Boolean
-    lowercaseAddr: Boolean = True
-    sortBy: ListingSort
-    sortDesc: Boolean = False
-  ): ListingResultCursor
-  poll(pollID: Int!): Poll
-
-  challengesStartedByUser(addr: String!): [Challenge]
-
-  # Parameterizer Queries
-  parameters(paramNames: [String!]): [Parameter]
-  paramProposals(paramName: String!): [ParamProposal]
-
-  # Channel Queries
-  channelsGetByID(id: String!): Channel
-  channelsGetByNewsroomAddress(contractAddress: String!): Channel
-  channelsGetByHandle(handle: String!): Channel
-  channelsGetByUserID(userID: String!): Channel
-  channelsIsHandleAvailable(handle: String!): Boolean!
-
-  # Newsroom Queries
-  newsroomArticles(
-    addr: String
-    first: Int
-    after: String
-    contentID: Int
-    revisionID: Int
-    lowercaseAddr: Boolean = True
-  ): [ContentRevision!]!
-  nrsignupNewsroom: NrsignupNewsroom
-
-  # Post Queries
-  postsGet(id: String!): Post!
-  postsGetByReference(reference: String!): Post!
-  postsSearch(search: PostSearchInput!): PostSearchResult
-  postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
-  postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
-
-  # Payment Queries
-  getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
-  getChannelTotalProceedsByBoostType(channelID: String!, boostType: String!): ProceedsQueryResult
-
-  # UserChallengeData Queries
-  userChallengeData(
-    userAddr: String
-    pollID: Int
-    canUserCollect: Boolean
-    canUserRescue: Boolean
-    canUserReveal: Boolean
-    lowercaseAddr: Boolean = True
-  ): [UserChallengeVoteData!]!
-
-  # User Queries
-  currentUser: User
-
-  # Storefront
-  storefrontEthPrice: Float
-  storefrontCvlPrice: Float
-  storefrontCvlQuoteUsd(usdToSpend: Float!): Float
-  storefrontCvlQuoteTokens(tokensToBuy: Float!): Float
-
-  # JSONb Store Query
-  jsonb(id: String): Jsonb
+    EmailAddressRestricted: String
+    avatarDataUrl: String
+    tiny100AvatarDataUrl: String
+    tiny72AvatarDataUrl: String
+    StripeCustomerIDRestricted: String
+    stripeApplePayEnabled: Boolean!
+    paymentsMadeByChannel: [Payment!]
 }
 
-type Mutation {
-  # Auth Mutations
-  authSignupEth(input: UserSignatureInput!): AuthLoginResponse
-  authSignupEmailSend(
-    emailAddress: String!
-    addToMailing: Boolean = False
-  ): String
-  authSignupEmailSendForApplication(
-    emailAddress: String!
-    application: AuthApplicationEnum!
-    addToMailing: Boolean = False
-  ): String
-  authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
-  authLoginEth(input: UserSignatureInput!): AuthLoginResponse
-  authLoginEmailSend(
-    emailAddress: String!
-    addToMailing: Boolean = False
-  ): String
-  authLoginEmailSendForApplication(
-    emailAddress: String!
-    application: AuthApplicationEnum!
-    addToMailing: Boolean = False
-  ): String
-  authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
-  authRefresh(token: String!): AuthLoginResponse
-
-  # JSONb Store Mutations
-  jsonbSave(input: JsonbInput!): Jsonb!
-
-  # Channels Mutations
-  channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
-  channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
-  channelsSetHandle(input: ChannelsSetHandleInput!): Channel
-  channelsSetAvatar(input: ChannelsSetAvatarInput!): Channel
-  userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
-  userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
-  channelsSetEmail(input: ChannelsSetEmailInput!): Channel
-  channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
-  channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
-  channelsClearStripeCustomerID(channelID: String!): Channel
-
-  # Newsroom Signup Mutations
-  nrsignupSendWelcomeEmail: String!
-  nrsignupSaveCharter(charterData: CharterInput!): String!
-  nrsignupRequestGrant(requested: Boolean!): String!
-  nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
-  nrsignupSaveTxHash(txHash: String!): String!
-  nrsignupSaveAddress(address: String!): String!
-  nrsignupSaveNewsroomApplyTxHash(txHash: String!): String!
-  nrsignupPollNewsroomDeploy(txHash: String!): String!
-  nrsignupPollTcrApplication(txHash: String!): String!
-  nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
-  nrsignupDelete: String!
-
-  # Payment Mutations
-  paymentsCreateStripePayment(
-    postID: String!
-    input: PaymentsCreateStripePaymentInput!
-  ): PaymentStripe!
-  paymentsCreateEtherPayment(
-    postID: String!
-    input: PaymentsCreateEtherPaymentInput!
-  ): PaymentEther!
-  paymentsCreateTokenPayment(
-    postID: String!
-    input: PaymentsCreateTokenPaymentInput!
-  ): PaymentToken!
-
-  # Post Mutations
-  postsCreateBoost(input: PostCreateBoostInput!): PostBoost
-  postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
-
-  postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
-  postsCreateExternalLinkEmbedded(input: PostCreateExternalLinkInput!): PostExternalLink
-  postsUpdateExternalLink(
-    postID: String!
-    input: PostCreateExternalLinkInput!
-  ): PostExternalLink
-
-  postsCreateComment(input: PostCreateCommentInput!): PostComment
-  postsUpdateComment(
-    postID: String!
-    input: PostCreateCommentInput!
-  ): PostComment
-
-  # Storefront Mutations
-  storefrontAirswapTxHash(txHash: String!): String!
-  storefrontAirswapCancelled: String!
-
-  # Listing Mutations
-  tcrListingSaveTopicID(addr: String!, topicID: Int!): String!
-
-  # User Mutations
-  userSetEthAddress(input: UserSignatureInput!): String
-  userUpdate(uid: String, input: UserUpdateInput): User
-
-  skipUserChannelEmailPrompt(hasSeen: Boolean): User
-  skipUserChannelAvatarPrompt(hasSeen: Boolean): User
+type ChannelMember {
+    channel: Channel
+    role: String
 }
+
+type ChannelSetEmailResponse {
+    ChannelID: String
+    UserID: String
+}
+`},
+	&ast.Source{Name: "schema/jsonb/inputs.graphql", Input: `
+input JsonbInput {
+    id: String!
+    jsonStr: String!
+}
+`},
+	&ast.Source{Name: "schema/jsonb/types.graphql", Input: `
+type JsonField {
+    key: String!
+    value: JsonFieldValue!
+}
+type Jsonb {
+    id: String!
+    hash: String!
+    createdDate: Time!
+    lastUpdatedDate: Time!
+    rawJson: String!
+    json: [JsonField!]!
+}
+`},
+	&ast.Source{Name: "schema/mutation.graphql", Input: `type Mutation {
+    # Auth Mutations
+    authSignupEth(input: UserSignatureInput!): AuthLoginResponse
+    authSignupEmailSend(
+        emailAddress: String!
+        addToMailing: Boolean = False
+    ): String
+    authSignupEmailSendForApplication(
+        emailAddress: String!
+        application: AuthApplicationEnum!
+        addToMailing: Boolean = False
+    ): String
+    authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
+    authLoginEth(input: UserSignatureInput!): AuthLoginResponse
+    authLoginEmailSend(
+        emailAddress: String!
+        addToMailing: Boolean = False
+    ): String
+    authLoginEmailSendForApplication(
+        emailAddress: String!
+        application: AuthApplicationEnum!
+        addToMailing: Boolean = False
+    ): String
+    authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+    authRefresh(token: String!): AuthLoginResponse
+
+    # JSONb Store Mutations
+    jsonbSave(input: JsonbInput!): Jsonb!
+
+    # Channels Mutations
+    channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
+    channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
+    channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+    channelsSetAvatar(input: ChannelsSetAvatarInput!): Channel
+    userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
+    userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
+    channelsSetEmail(input: ChannelsSetEmailInput!): Channel
+    channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
+    channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
+    channelsClearStripeCustomerID(channelID: String!): Channel
+    channelsEnableApplePay(channelID: String!): [String!]
+
+    # Newsroom Signup Mutations
+    nrsignupSendWelcomeEmail: String!
+    nrsignupSaveCharter(charterData: CharterInput!): String!
+    nrsignupRequestGrant(requested: Boolean!): String!
+    nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
+    nrsignupSaveTxHash(txHash: String!): String!
+    nrsignupSaveAddress(address: String!): String!
+    nrsignupSaveNewsroomApplyTxHash(txHash: String!): String!
+    nrsignupPollNewsroomDeploy(txHash: String!): String!
+    nrsignupPollTcrApplication(txHash: String!): String!
+    nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
+    nrsignupDelete: String!
+
+    # Payment Mutations
+    paymentsCreateStripePayment(
+        postID: String!
+        input: PaymentsCreateStripePaymentInput!
+    ): PaymentStripe!
+    paymentsCreateEtherPayment(
+        postID: String!
+        input: PaymentsCreateEtherPaymentInput!
+    ): PaymentEther!
+    paymentsCreateTokenPayment(
+        postID: String!
+        input: PaymentsCreateTokenPaymentInput!
+    ): PaymentToken!
+
+    # Post Mutations
+    postsCreateBoost(input: PostCreateBoostInput!): PostBoost
+    postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
+
+    postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+    postsCreateExternalLinkEmbedded(input: PostCreateExternalLinkInput!): PostExternalLink
+    postsUpdateExternalLink(
+        postID: String!
+        input: PostCreateExternalLinkInput!
+    ): PostExternalLink
+
+    postsCreateComment(input: PostCreateCommentInput!): PostComment
+    postsUpdateComment(
+        postID: String!
+        input: PostCreateCommentInput!
+    ): PostComment
+
+    # Storefront Mutations
+    storefrontAirswapTxHash(txHash: String!): String!
+    storefrontAirswapCancelled: String!
+
+    # Listing Mutations
+    tcrListingSaveTopicID(addr: String!, topicID: Int!): String!
+
+    # User Mutations
+    userSetEthAddress(input: UserSignatureInput!): String
+    userUpdate(uid: String, input: UserUpdateInput): User
+
+    skipUserChannelEmailPrompt(hasSeen: Boolean): User
+    skipUserChannelAvatarPrompt(hasSeen: Boolean): User
+}`},
+	&ast.Source{Name: "schema/newsrooms/inputs.graphql", Input: `
+input CharterInput {
+    name: String
+    logoUrl: String
+    newsroomUrl: String
+    tagline: String
+    roster: [RosterMemberInput]
+    signatures: [ConstitutionSignatureInput]
+    mission: CharterMissionInput
+    socialUrls: CharterSocialUrlsInput
+}
+
+input RosterMemberInput {
+    name: String
+    role: String
+    bio: String
+    ethAddress: String
+    socialUrls: CharterSocialUrlsInput
+    avatarUrl: String
+    signature: String
+}
+input CharterSocialUrlsInput {
+    twitter: String
+    facebook: String
+    instagram: String
+    linkedIn: String
+    youTube: String
+    email: String
+}
+
+
+input ConstitutionSignatureInput {
+    signer: String
+    signature: String
+    message: String
+}
+
+input CharterMissionInput {
+    purpose: String
+    structure: String
+    revenue: String
+    encumbrances: String
+    miscellaneous: String
+}
+`},
+	&ast.Source{Name: "schema/newsrooms/types.graphql", Input: `
+
+type Newsroom {
+    newsroomDeployTx: String
+    contractAddress: String
+    multisigAddress: String
+    name: String
+    charter: CharterContent
+}
+
+type NrsignupNewsroom {
+    onboardedTs: Int
+    charter: CharterContent
+    charterLastUpdated: Int
+    grantRequested: Boolean
+    grantApproved: Boolean
+    newsroomDeployTx: String
+    newsroomAddress: String
+    newsroomName: String
+    tcrApplyTx: String
+}
+
+type CharterContent {
+    name: String
+    logoUrl: String
+    newsroomUrl: String
+    tagline: String
+    roster: [RosterMember]
+    signatures: [ConstitutionSignature]
+    mission: CharterMission
+    socialUrls: CharterSocialUrls
+}
+
+type RosterMember {
+    name: String
+    role: String
+    bio: String
+    ethAddress: String
+    socialUrls: CharterSocialUrls
+    avatarUrl: String
+    signature: String
+}
+
+type CharterSocialUrls {
+    twitter: String
+    facebook: String
+    instagram: String
+    linkedIn: String
+    youTube: String
+    email: String
+}
+
+type ConstitutionSignature {
+    signer: String
+    signature: String
+    message: String
+}
+
+type CharterMission {
+    purpose: String
+    structure: String
+    revenue: String
+    encumbrances: String
+    miscellaneous: String
+}`},
+	&ast.Source{Name: "schema/payments/inputs.graphql", Input: `
+# Payment inputs
+input PaymentsCreateEtherPaymentInput {
+    reaction: String
+    comment: String
+    transactionID: String!
+    emailAddress: String
+    paymentAddress: String!
+    fromAddress: String!
+    amount: Float!
+    usdAmount: String!
+    payerChannelID: String
+    shouldPublicize: Boolean
+}
+
+# Payment inputs
+input PaymentsCreateTokenPaymentInput {
+    reaction: String
+    comment: String
+    transactionID: String!
+    tokenAddress: String!
+    emailAddress: String
+    payerChannelID: String
+    shouldPublicize: Boolean
+}
+
+input PaymentsCreateStripePaymentInput {
+    reaction: String
+    comment: String
+    currencyCode: String!
+    amount: Float!
+    paymentToken: String!
+    emailAddress: String
+    payerChannelID: String
+    shouldPublicize: Boolean
+}
+`},
+	&ast.Source{Name: "schema/payments/types.graphql", Input: `# Payment types
+interface Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    usdEquivalent: Float!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}
+
+type SanitizedPayment {
+    usdEquivalent: Float!
+    payerChannelID: String
+    mostRecentUpdate: Time!
+    payerChannel: Channel
+}
+
+type PaymentStripe implements Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    usdEquivalent: Float!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}
+
+type PaymentEther implements Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    transactionID: String!
+    usdEquivalent: Float!
+    fromAddress: String!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}
+
+type PaymentToken implements Payment {
+    status: String
+    reaction: String
+    comment: String
+    currencyCode: String
+    exchangeRate: Float!
+    amount: Float!
+    createdAt: Time!
+    updatedAt: Time!
+    transactionID: String!
+    usdEquivalent: Float!
+    payerChannelID: String
+    payerChannel: Channel
+    post: Post
+}`},
+	&ast.Source{Name: "schema/posts/inputs.graphql", Input: `# input objects
+input PostSearchInput {
+    postType: String
+    channelID: String
+    authorID: String
+    createdAfter: Time
+    afterCursor: String
+    beforeCursor: String
+    limit: Int
+    order: String
+}
+
+input StoryfeedFilterInput {
+    alg: String
+}
+
+input PostCreateBoostInput {
+    channelID: String!
+    title: String!
+    dateEnd: Time!
+    goalAmount: Float!
+    currencyCode: String!
+    why: String!
+    what: String!
+    about: String!
+    items: [PostCreateBoostItemInput!]
+}
+
+input PostCreateBoostItemInput {
+    item: String
+    cost: Float
+}
+
+input PostCreateExternalLinkInput {
+    url: String!
+    channelID: String!
+}
+
+input PostCreateCommentInput {
+    text: String!
+}`},
+	&ast.Source{Name: "schema/posts/types.graphql", Input: `## Post object schemas
+# post types
+interface Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    channel: Channel
+}
+
+type PostBoost implements Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    currencyCode: String
+    goalAmount: Float
+    title: String!
+    dateEnd: Time!
+    why: String
+    what: String
+    about: String
+    items: [PostBoostItem!]
+    channel: Channel
+}
+
+type PostBoostItem {
+    item: String!
+    cost: Float!
+}
+
+type PostComment implements Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    text: String!
+    channel: Channel
+}
+
+type PostExternalLink implements Post {
+    id: String!
+    channelID: String!
+    parentID: String
+    authorID: String!
+    createdAt: Time!
+    updatedAt: Time!
+    postType: String!
+    children: [Post]
+    payments: [Payment!]
+    groupedSanitizedPayments: [SanitizedPayment!]
+    paymentsTotal(currencyCode: String!): Float!
+    url: String
+    channel: Channel
+    openGraphData: OpenGraphData!
+    publishedTime: Time
+}
+
+type OpenGraphData {
+    type: String!
+    url: String!
+    title: String!
+    description: String!
+    determiner: String!
+    site_name: String!
+    locale: String!
+    locales_alternate: [String!]
+    images: [OpenGraphImage!]
+    audios: [OpenGraphAudio!]
+    videos: [OpenGraphVideo!]
+    article: OpenGraphArticle
+    book: OpenGraphBook
+    profile: OpenGraphProfile
+}
+
+type OpenGraphImage {
+    url: String!
+    secure_url: String
+    type: String
+    width: Int
+    height: Int
+    draft: Boolean
+}
+
+type OpenGraphVideo {
+    url: String!
+    secure_url: String
+    type: String
+    width: Int
+    height: Int
+    draft: Boolean
+}
+
+type OpenGraphAudio {
+    url: String!
+    secure_url: String
+    type: String
+    draft: Boolean
+}
+
+type OpenGraphArticle {
+    published_time: Time
+    modified_time: Time
+    expiration_time: Time
+    section: String
+    tags: [String!]
+    authors: [OpenGraphProfile!]
+}
+
+type OpenGraphProfile {
+    first_name: String
+    last_name: String
+    username: String
+    gender: String
+}
+
+type OpenGraphBook {
+    isbn: String
+    release_date: String
+    tags: [String!]
+    authors: [OpenGraphProfile!]
+}
+
+type PostSearchResult {
+    posts: [Post!]
+    beforeCursor: String
+    afterCursor: String
+}
+
+type ProceedsQueryResult {
+    postType: String
+    totalAmount: String
+    usd: String
+    ethUsdAmount: String
+    ether: String
+}`},
+	&ast.Source{Name: "schema/query.graphql", Input: `# The query type, represents all of the entry points into our object graph
+type Query {
+    # TCR / Crawler Queries (Legacy naming)
+    # TODO(PN): Temporary keep these until migrated over to new naming
+    # Just calls the properly named versions
+    articles(
+        addr: String
+        handle: String
+        first: Int
+        after: String
+        contentID: Int
+        revisionID: Int
+        lowercaseAddr: Boolean = True
+    ): [ContentRevision!]!
+    challenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
+    governanceEvents(
+        addr: String
+        after: String
+        creationDate: DateRange
+        first: Int
+        lowercaseAddr: Boolean = True
+    ): [GovernanceEvent!]!
+    governanceEventsTxHash(
+        txHash: String!
+        lowercaseAddr: Boolean = True
+    ): [GovernanceEvent!]!
+    listing(addr: String!, lowercaseAddr: Boolean = True): Listing
+    listings(
+        first: Int
+        after: String
+        whitelistedOnly: Boolean
+        rejectedOnly: Boolean
+        activeChallenge: Boolean
+        currentApplication: Boolean
+        lowercaseAddr: Boolean = True
+        sortBy: ListingSort
+        sortDesc: Boolean = False
+    ): [Listing!]!
+
+    # TCR Queries
+    tcrChallenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
+    tcrGovernanceEvents(
+        addr: String
+        after: String
+        creationDate: DateRange
+        first: Int
+        lowercaseAddr: Boolean = True
+    ): GovernanceEventResultCursor
+    tcrGovernanceEventsTxHash(
+        txHash: String!
+        lowercaseAddr: Boolean = True
+    ): [GovernanceEvent!]!
+    tcrListing(addr: String, handle: String, lowercaseAddr: Boolean = True): Listing
+    tcrListings(
+        first: Int
+        after: String
+        whitelistedOnly: Boolean
+        rejectedOnly: Boolean
+        activeChallenge: Boolean
+        currentApplication: Boolean
+        lowercaseAddr: Boolean = True
+        sortBy: ListingSort
+        sortDesc: Boolean = False
+    ): ListingResultCursor
+    poll(pollID: Int!): Poll
+
+    challengesStartedByUser(addr: String!): [Challenge]
+
+    # Parameterizer Queries
+    parameters(paramNames: [String!]): [Parameter]
+    paramProposals(paramName: String!): [ParamProposal]
+
+    # Channel Queries
+    channelsGetByID(id: String!): Channel
+    channelsGetByNewsroomAddress(contractAddress: String!): Channel
+    channelsGetByHandle(handle: String!): Channel
+    channelsGetByUserID(userID: String!): Channel
+    channelsIsHandleAvailable(handle: String!): Boolean!
+
+    # Newsroom Queries
+    newsroomArticles(
+        addr: String
+        first: Int
+        after: String
+        contentID: Int
+        revisionID: Int
+        lowercaseAddr: Boolean = True
+    ): [ContentRevision!]!
+    nrsignupNewsroom: NrsignupNewsroom
+
+    # Post Queries
+    postsGet(id: String!): Post!
+    postsGetByReference(reference: String!): Post!
+    postsSearch(search: PostSearchInput!): PostSearchResult
+    postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
+    postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
+
+    # Payment Queries
+    getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
+    getChannelTotalProceedsByBoostType(channelID: String!, boostType: String!): ProceedsQueryResult
+
+    # UserChallengeData Queries
+    userChallengeData(
+        userAddr: String
+        pollID: Int
+        canUserCollect: Boolean
+        canUserRescue: Boolean
+        canUserReveal: Boolean
+        lowercaseAddr: Boolean = True
+    ): [UserChallengeVoteData!]!
+
+    # User Queries
+    currentUser: User
+
+    # Storefront
+    storefrontEthPrice: Float
+    storefrontCvlPrice: Float
+    storefrontCvlQuoteUsd(usdToSpend: Float!): Float
+    storefrontCvlQuoteTokens(tokensToBuy: Float!): Float
+
+    # JSONb Store Query
+    jsonb(id: String): Jsonb
+}`},
+	&ast.Source{Name: "schema/schema.graphql", Input: `schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+## Common object schemas
+input DateRange {
+  gt: Int
+  lt: Int
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+}
+
+## Scalars
+scalar ArticlePayloadValue
+scalar JsonFieldValue
+scalar RawObject
+scalar Time
 
 # Enum of valid values for application types for auth
 enum AuthApplicationEnum {
@@ -4770,779 +5305,261 @@ type AuthLoginResponse {
   uid: String
 }
 
-type ChannelSetEmailResponse {
-  ChannelID: String
-  UserID: String
-}
+## JSONb Store object schemas
 
+`},
+	&ast.Source{Name: "schema/subscription.graphql", Input: `type Subscription {
+fastPass(newsroomOwnerUID: String!): String!
+}`},
+	&ast.Source{Name: "schema/tcr/types.graphql", Input: `
 ## TCR object schemas
+
+# NOTE(PN): All date fields are ints in seconds from epoch
 
 # A type that reflects values in model.Appeal
 type Appeal {
-  requester: String!
-  appealFeePaid: String!
-  appealPhaseExpiry: Int!
-  appealGranted: Boolean!
-  appealOpenToChallengeExpiry: Int!
-  statement: String!
-  appealChallengeID: Int!
-  appealChallenge: Challenge
-  appealGrantedStatementURI: String!
+    requester: String!
+    appealFeePaid: String!
+    appealPhaseExpiry: Int!
+    appealGranted: Boolean!
+    appealOpenToChallengeExpiry: Int!
+    statement: String!
+    appealChallengeID: Int!
+    appealChallenge: Challenge
+    appealGrantedStatementURI: String!
 }
 
 # A type that reflects block data in model.BlockData
 type BlockData {
-  blockNumber: Int!
-  txHash: String!
-  txIndex: Int!
-  blockHash: String!
-  index: Int!
+    blockNumber: Int!
+    txHash: String!
+    txIndex: Int!
+    blockHash: String!
+    index: Int!
 }
 
 # A type that reflects values in model.Challenge
 type Challenge {
-  challengeID: Int!
-  listingAddress: String!
-  statement: String!
-  rewardPool: String!
-  challenger: String!
-  resolved: Boolean!
-  stake: String!
-  totalTokens: String!
-  poll: Poll
-  requestAppealExpiry: Int!
-  appeal: Appeal
-  lastUpdatedDateTs: Int!
-  listing: Listing
-  challengeType: String!
+    challengeID: Int!
+    listingAddress: String!
+    statement: String!
+    rewardPool: String!
+    challenger: String!
+    resolved: Boolean!
+    stake: String!
+    totalTokens: String!
+    poll: Poll
+    requestAppealExpiry: Int!
+    appeal: Appeal
+    lastUpdatedDateTs: Int!
+    listing: Listing
+    challengeType: String!
 }
 
 # A type that represents a Charter
 type Charter {
-  uri: String!
-  contentID: Int!
-  revisionID: Int!
-  signature: String!
-  author: String!
-  contentHash: String!
-  timestamp: Int!
+    uri: String!
+    contentID: Int!
+    revisionID: Int!
+    signature: String!
+    author: String!
+    contentHash: String!
+    timestamp: Int!
 }
 
 # A type that reflects values in model.GovernanceEvent
 type GovernanceEvent {
-  listingAddress: String!
-  metadata: [Metadata!]!
-  governanceEventType: String!
-  creationDate: Int!
-  lastUpdatedDate: Int!
-  eventHash: String!
-  blockData: BlockData!
-  listing: Listing!
+    listingAddress: String!
+    metadata: [Metadata!]!
+    governanceEventType: String!
+    creationDate: Int!
+    lastUpdatedDate: Int!
+    eventHash: String!
+    blockData: BlockData!
+    listing: Listing!
 }
 
 # A type that represents an edge value in a GovernanceEvent
 type GovernanceEventEdge {
-  cursor: String!
-  node: GovernanceEvent!
+    cursor: String!
+    node: GovernanceEvent!
 }
 
 # A type that represents and edge value in a Post
 type PostEdge {
-  cursor: String!
-  post: Post!
+    cursor: String!
+    post: Post!
 }
 
 # A type that represents return values from GovernanceEvents
 type GovernanceEventResultCursor {
-  edges: [GovernanceEventEdge]!
-  pageInfo: PageInfo!
+    edges: [GovernanceEventEdge]!
+    pageInfo: PageInfo!
 }
 
 # A type that represents return values from Posts
 type PostResultCursor {
-  edges: [PostEdge]!
-  pageInfo: PageInfo!
+    edges: [PostEdge]!
+    pageInfo: PageInfo!
 }
 
 # A type that reflects values in model.Parameter
 type Parameter {
-  paramName: String!
-  value: String!
+    paramName: String!
+    value: String!
 }
 
 type ParamProposal {
-  id: String!
-  propID: String!
-  name: String!
-  value: String!
-  deposit: String!
-  appExpiry: String!
-  challengeID: String!
-  proposer: String!
-  accepted: Boolean
-  expired: Boolean
+    id: String!
+    propID: String!
+    name: String!
+    value: String!
+    deposit: String!
+    appExpiry: String!
+    challengeID: String!
+    proposer: String!
+    accepted: Boolean
+    expired: Boolean
 }
 
 # A type that reflects values in model.Listing
 type Listing {
-  name: String!
-  contractAddress: String!
-  whitelisted: Boolean!
-  lastGovState: String!
-  url: String!
-  charter: Charter
-  ownerAddresses: [String!]!
-  owner: String!
-  contributorAddresses: [String!]!
-  createdDate: Int!
-  applicationDate: Int
-  approvalDate: Int
-  lastUpdatedDate: Int!
-  appExpiry: Int!
-  unstakedDeposit: String!
-  challengeID: Int!
-  discourseTopicID: Int
-  challenge: Challenge
-  prevChallenge: Challenge
-  channel: Channel
+    name: String!
+    contractAddress: String!
+    whitelisted: Boolean!
+    lastGovState: String!
+    url: String!
+    charter: Charter
+    ownerAddresses: [String!]!
+    owner: String!
+    contributorAddresses: [String!]!
+    createdDate: Int!
+    applicationDate: Int
+    approvalDate: Int
+    lastUpdatedDate: Int!
+    appExpiry: Int!
+    unstakedDeposit: String!
+    challengeID: Int!
+    discourseTopicID: Int
+    challenge: Challenge
+    prevChallenge: Challenge
+    channel: Channel
 }
 
 # A type that represents a edge value in a Listing
 type ListingEdge {
-  cursor: String!
-  node: Listing!
+    cursor: String!
+    node: Listing!
 }
 
 # A type that represents return values from Listings
 type ListingResultCursor {
-  edges: [ListingEdge]!
-  pageInfo: PageInfo!
+    edges: [ListingEdge]!
+    pageInfo: PageInfo!
 }
 
 # Enum of valid sort values for Listings
 enum ListingSort {
-  DEFAULT
-  NAME
-  CREATED
-  APPLIED
-  WHITELISTED
+    DEFAULT
+    NAME
+    CREATED
+    APPLIED
+    WHITELISTED
 }
 
 # A type that reflects values in model.Metadata
 type Metadata {
-  key: String!
-  value: String!
+    key: String!
+    value: String!
 }
 
 # A type that reflects values in model.Poll
 type Poll {
-  commitEndDate: Int!
-  revealEndDate: Int!
-  voteQuorum: Int!
-  votesFor: String!
-  votesAgainst: String!
+    commitEndDate: Int!
+    revealEndDate: Int!
+    voteQuorum: Int!
+    votesFor: String!
+    votesAgainst: String!
 }
 
 # A type that reflects values in model.UserChallengeData
 type UserChallengeVoteData {
-  pollID: Int!
-  pollRevealDate: Int!
-  pollType: String!
-  userAddress: String!
-  userDidCommit: Boolean!
-  userDidReveal: Boolean!
-  didUserCollect: Boolean!
-  didUserRescue: Boolean!
-  didCollectAmount: String!
-  isVoterWinner: Boolean!
-  pollIsPassed: Boolean!
-  salt: Int!
-  choice: Int!
-  numTokens: String!
-  voterReward: String!
-  parentChallengeID: Int!
-  challenge: Challenge
-}
-
-## Newsroom object schemas
-
-# A type that reflects values in model.ArticlePayload
-type ArticlePayload {
-  key: String!
-  value: ArticlePayloadValue!
+    pollID: Int!
+    pollRevealDate: Int!
+    pollType: String!
+    userAddress: String!
+    userDidCommit: Boolean!
+    userDidReveal: Boolean!
+    didUserCollect: Boolean!
+    didUserRescue: Boolean!
+    didCollectAmount: String!
+    isVoterWinner: Boolean!
+    pollIsPassed: Boolean!
+    salt: Int!
+    choice: Int!
+    numTokens: String!
+    voterReward: String!
+    parentChallengeID: Int!
+    challenge: Challenge
 }
 
 # A type that reflects values in model.ContentRevision
 type ContentRevision {
-  listingAddress: String!
-  payload: [ArticlePayload!]!
-  payloadHash: String!
-  editorAddress: String!
-  contractContentId: Int!
-  contractRevisionId: Int!
-  revisionUri: String!
-  revisionDate: Int!
+    listingAddress: String!
+    payload: [ArticlePayload!]!
+    payloadHash: String!
+    editorAddress: String!
+    contractContentId: Int!
+    contractRevisionId: Int!
+    revisionUri: String!
+    revisionDate: Int!
 }
 
-## Channel object schemas
-
-type Channel {
-  id: String!
-  channelType: String!
-  newsroom: Newsroom
-  listing: Listing
-  postsSearch(search: PostSearchInput!): PostSearchResult
-  isStripeConnected: Boolean!
-  stripeAccountID: String
-  currentUserIsAdmin: Boolean!
-  handle: String
-  EmailAddressRestricted: String
-  avatarDataUrl: String
-  tiny100AvatarDataUrl: String
-  tiny72AvatarDataUrl: String
-  StripeCustomerIDRestricted: String
-  paymentsMadeByChannel: [Payment!]
-}
-
-type ChannelMember {
-  channel: Channel
-  role: String
-}
-
-input ChannelsConnectStripeInput {
-  channelID: String!
-  oauthCode: String!
-}
-
-input ChannelsSetHandleInput {
-  channelID: String!
-  handle: String!
-}
-
-input ChannelsSetStripeCustomerIDInput {
-  channelID: String!
-  stripeCustomerID: String!
-}
-
-input ChannelsSetAvatarInput {
-  channelID: String!
-  avatarDataURL: String!
-}
-
-input UserChannelSetHandleInput {
-  userID: String!
-  handle: String!
-}
-
-input ChannelsSetEmailInput {
-  channelID: String!
-  emailAddress: String!
-  addToMailing: Boolean!
-}
-
-## Post object schemas
-# post types
-interface Post {
-  id: String!
-  channelID: String!
-  parentID: String
-  authorID: String!
-  createdAt: Time!
-  updatedAt: Time!
-  postType: String!
-  children: [Post]
-  payments: [Payment!]
-  groupedSanitizedPayments: [SanitizedPayment!]
-  paymentsTotal(currencyCode: String!): Float!
-  channel: Channel
-}
-
-type PostBoost implements Post {
-  id: String!
-  channelID: String!
-  parentID: String
-  authorID: String!
-  createdAt: Time!
-  updatedAt: Time!
-  postType: String!
-  children: [Post]
-  payments: [Payment!]
-  groupedSanitizedPayments: [SanitizedPayment!]
-  paymentsTotal(currencyCode: String!): Float!
-  currencyCode: String
-  goalAmount: Float
-  title: String!
-  dateEnd: Time!
-  why: String
-  what: String
-  about: String
-  items: [PostBoostItem!]
-  channel: Channel
-}
-
-type PostBoostItem {
-  item: String!
-  cost: Float!
-}
-
-type PostComment implements Post {
-  id: String!
-  channelID: String!
-  parentID: String
-  authorID: String!
-  createdAt: Time!
-  updatedAt: Time!
-  postType: String!
-  children: [Post]
-  payments: [Payment!]
-  groupedSanitizedPayments: [SanitizedPayment!]
-  paymentsTotal(currencyCode: String!): Float!
-  text: String!
-  channel: Channel
-}
-
-type PostExternalLink implements Post {
-  id: String!
-  channelID: String!
-  parentID: String
-  authorID: String!
-  createdAt: Time!
-  updatedAt: Time!
-  postType: String!
-  children: [Post]
-  payments: [Payment!]
-  groupedSanitizedPayments: [SanitizedPayment!]
-  paymentsTotal(currencyCode: String!): Float!
-  url: String
-  channel: Channel
-  openGraphData: OpenGraphData!
-  publishedTime: Time
-}
-
-type OpenGraphData {
-  type: String!
-  url: String!
-  title: String!
-  description: String!
-  determiner: String!
-  site_name: String!
-  locale: String!
-  locales_alternate: [String!]
-  images: [OpenGraphImage!]
-  audios: [OpenGraphAudio!]
-  videos: [OpenGraphVideo!]
-  article: OpenGraphArticle
-  book: OpenGraphBook
-  profile: OpenGraphProfile
-}
-
-type OpenGraphImage {
-  url: String!
-  secure_url: String
-  type: String
-  width: Int
-  height: Int
-  draft: Boolean
-}
-
-type OpenGraphVideo {
-  url: String!
-  secure_url: String
-  type: String
-  width: Int
-  height: Int
-  draft: Boolean
-}
-
-type OpenGraphAudio {
-  url: String!
-  secure_url: String
-  type: String
-  draft: Boolean
-}
-
-type OpenGraphArticle {
-  published_time: Time
-  modified_time: Time
-  expiration_time: Time
-  section: String
-  tags: [String!]
-  authors: [OpenGraphProfile!]
-}
-
-type OpenGraphProfile {
-  first_name: String
-  last_name: String
-  username: String
-  gender: String
-}
-
-type OpenGraphBook {
-  isbn: String
-  release_date: String
-  tags: [String!]
-  authors: [OpenGraphProfile!]
-}
-
-type PostSearchResult {
-  posts: [Post!]
-  beforeCursor: String
-  afterCursor: String
-}
-
-type ProceedsQueryResult {
-  postType: String
-  totalAmount: String
-  usd: String
-  ethUsdAmount: String
-  ether: String
-}
-
-# input objects
-input PostSearchInput {
-  postType: String
-  channelID: String
-  authorID: String
-  createdAfter: Time
-  afterCursor: String
-  beforeCursor: String
-  limit: Int
-  order: String
-}
-
-input StoryfeedFilterInput {
-	alg: String
-}
-
-input PostCreateBoostInput {
-  channelID: String!
-  title: String!
-  dateEnd: Time!
-  goalAmount: Float!
-  currencyCode: String!
-  why: String!
-  what: String!
-  about: String!
-  items: [PostCreateBoostItemInput!]
-}
-
-input PostCreateBoostItemInput {
-  item: String
-  cost: Float
-}
-
-input PostCreateExternalLinkInput {
-  url: String!
-  channelID: String!
-}
-
-input PostCreateCommentInput {
-  text: String!
-}
-
-# Payment types
-interface Payment {
-  status: String
-  reaction: String
-  comment: String
-  currencyCode: String
-  exchangeRate: Float!
-  amount: Float!
-  createdAt: Time!
-  updatedAt: Time!
-  usdEquivalent: Float!
-  payerChannelID: String
-  payerChannel: Channel
-  post: Post
-}
-
-type SanitizedPayment {
-  usdEquivalent: Float!
-  payerChannelID: String
-  mostRecentUpdate: Time!
-  payerChannel: Channel
-}
-
-type PaymentStripe implements Payment {
-  status: String
-  reaction: String
-  comment: String
-  currencyCode: String
-  exchangeRate: Float!
-  amount: Float!
-  createdAt: Time!
-  updatedAt: Time!
-  usdEquivalent: Float!
-  payerChannelID: String
-  payerChannel: Channel
-  post: Post
-}
-
-type PaymentEther implements Payment {
-  status: String
-  reaction: String
-  comment: String
-  currencyCode: String
-  exchangeRate: Float!
-  amount: Float!
-  createdAt: Time!
-  updatedAt: Time!
-  transactionID: String!
-  usdEquivalent: Float!
-  fromAddress: String!
-  payerChannelID: String
-  payerChannel: Channel
-  post: Post
-}
-
-type PaymentToken implements Payment {
-  status: String
-  reaction: String
-  comment: String
-  currencyCode: String
-  exchangeRate: Float!
-  amount: Float!
-  createdAt: Time!
-  updatedAt: Time!
-  transactionID: String!
-  usdEquivalent: Float!
-  payerChannelID: String
-  payerChannel: Channel
-  post: Post
-}
-
-# Payment inputs
-input PaymentsCreateStripePaymentInput {
-  reaction: String
-  comment: String
-  currencyCode: String!
-  amount: Float!
-  paymentToken: String!
-  emailAddress: String
-  payerChannelID: String
-  shouldPublicize: Boolean
-}
-
-# Payment inputs
-input PaymentsCreateEtherPaymentInput {
-  reaction: String
-  comment: String
-  transactionID: String!
-  emailAddress: String
-  paymentAddress: String!
-  fromAddress: String!
-  amount: Float!
-  usdAmount: String!
-  payerChannelID: String
-  shouldPublicize: Boolean
-}
-
-# Payment inputs
-input PaymentsCreateTokenPaymentInput {
-  reaction: String
-  comment: String
-  transactionID: String!
-  tokenAddress: String!
-  emailAddress: String
-  payerChannelID: String
-  shouldPublicize: Boolean
-}
-
-## User object schemas
-
-# A type that reflects values in users.User
-type User {
-  uid: String
-  email: String
-  ethAddress: String
-  quizPayload: RawObject
-  quizStatus: String
-  civilianWhitelistTxID: String
-  nrStep: Int
-  nrFurthestStep: Int
-  nrLastSeen: Int
-  channels: [ChannelMember]
-  userChannel: Channel
-  userChannelEmailPromptSeen: Boolean
-  userChannelAvatarPromptSeen: Boolean
-}
-
+# A type that reflects values in model.ArticlePayload
+type ArticlePayload {
+    key: String!
+    value: ArticlePayloadValue!
+}`},
+	&ast.Source{Name: "schema/users/inputs.graphql", Input: `
 input UserSignatureInput {
-  message: String!
-  messageHash: String!
-  signature: String!
-  signer: String!
-  r: String!
-  s: String!
-  v: String!
+    message: String!
+    messageHash: String!
+    signature: String!
+    signer: String!
+    r: String!
+    s: String!
+    v: String!
 }
 
 input UserUpdateInput {
-  quizPayload: RawObject
-  quizStatus: String
-  nrStep: Int
-  nrFurthestStep: Int
-  nrLastSeen: Int
+    quizPayload: RawObject
+    quizStatus: String
+    nrStep: Int
+    nrFurthestStep: Int
+    nrLastSeen: Int
 }
 
 input NrsignupStepsInput {
-  step: Int
-  furthestStep: Int
-  lastSeen: Int
-}
-
-type Newsroom {
-  newsroomDeployTx: String
-  contractAddress: String
-  multisigAddress: String
-  name: String
-  charter: CharterContent
-}
-
-type NrsignupNewsroom {
-  onboardedTs: Int
-  charter: CharterContent
-  charterLastUpdated: Int
-  grantRequested: Boolean
-  grantApproved: Boolean
-  newsroomDeployTx: String
-  newsroomAddress: String
-  newsroomName: String
-  tcrApplyTx: String
-}
-
-input CharterInput {
-  name: String
-  logoUrl: String
-  newsroomUrl: String
-  tagline: String
-  roster: [RosterMemberInput]
-  signatures: [ConstitutionSignatureInput]
-  mission: CharterMissionInput
-  socialUrls: CharterSocialUrlsInput
-}
-
-type CharterContent {
-  name: String
-  logoUrl: String
-  newsroomUrl: String
-  tagline: String
-  roster: [RosterMember]
-  signatures: [ConstitutionSignature]
-  mission: CharterMission
-  socialUrls: CharterSocialUrls
-}
-
-input RosterMemberInput {
-  name: String
-  role: String
-  bio: String
-  ethAddress: String
-  socialUrls: CharterSocialUrlsInput
-  avatarUrl: String
-  signature: String
-}
-
-type RosterMember {
-  name: String
-  role: String
-  bio: String
-  ethAddress: String
-  socialUrls: CharterSocialUrls
-  avatarUrl: String
-  signature: String
-}
-
-input CharterSocialUrlsInput {
-  twitter: String
-  facebook: String
-  instagram: String
-  linkedIn: String
-  youTube: String
-  email: String
-}
-
-type CharterSocialUrls {
-  twitter: String
-  facebook: String
-  instagram: String
-  linkedIn: String
-  youTube: String
-  email: String
-}
-
-input ConstitutionSignatureInput {
-  signer: String
-  signature: String
-  message: String
-}
-
-type ConstitutionSignature {
-  signer: String
-  signature: String
-  message: String
-}
-
-input CharterMissionInput {
-  purpose: String
-  structure: String
-  revenue: String
-  encumbrances: String
-  miscellaneous: String
-}
-
-type CharterMission {
-  purpose: String
-  structure: String
-  revenue: String
-  encumbrances: String
-  miscellaneous: String
-}
-
-## JSONb Store object schemas
-
-type JsonField {
-  key: String!
-  value: JsonFieldValue!
-}
-
-input JsonbInput {
-  id: String!
-  jsonStr: String!
-}
-
-type Jsonb {
-  id: String!
-  hash: String!
-  createdDate: Time!
-  lastUpdatedDate: Time!
-  rawJson: String!
-  json: [JsonField!]!
-}
-
-## Common object schemas
-
-input DateRange {
-  gt: Int
-  lt: Int
-}
-
-type PageInfo {
-  endCursor: String
-  hasNextPage: Boolean!
-}
-
-## Scalars
-
-scalar ArticlePayloadValue
-scalar JsonFieldValue
-scalar RawObject
-scalar Time
-`},
-	&ast.Source{Name: "schema_subscriptions.graphql", Input: `
-type Subscription {
-    fastPass(newsroomOwnerUID: String!): String!
+    step: Int
+    furthestStep: Int
+    lastSeen: Int
 }`},
+	&ast.Source{Name: "schema/users/types.graphql", Input: `type User {
+    uid: String
+    email: String
+    ethAddress: String
+    quizPayload: RawObject
+    quizStatus: String
+    civilianWhitelistTxID: String
+    nrStep: Int
+    nrFurthestStep: Int
+    nrLastSeen: Int
+    channels: [ChannelMember]
+    userChannel: Channel
+    userChannelEmailPromptSeen: Boolean
+    userChannelAvatarPromptSeen: Boolean
+}
+`},
 )
 
 // endregion ************************** generated!.gotpl **************************
@@ -5776,6 +5793,20 @@ func (ec *executionContext) field_Mutation_channelsCreateNewsroomChannel_args(ct
 		}
 	}
 	args["newsroomContractAddress"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_channelsEnableApplePay_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg0
 	return args, nil
 }
 
@@ -8960,6 +8991,43 @@ func (ec *executionContext) _Channel_StripeCustomerIDRestricted(ctx context.Cont
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_stripeApplePayEnabled(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().StripeApplePayEnabled(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Channel_paymentsMadeByChannel(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
@@ -12937,6 +13005,47 @@ func (ec *executionContext) _Mutation_channelsClearStripeCustomerID(ctx context.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_channelsEnableApplePay(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_channelsEnableApplePay_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChannelsEnableApplePay(rctx, args["channelID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_nrsignupSendWelcomeEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -26117,6 +26226,20 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._Channel_StripeCustomerIDRestricted(ctx, field, obj)
 				return res
 			})
+		case "stripeApplePayEnabled":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_stripeApplePayEnabled(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "paymentsMadeByChannel":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -27213,6 +27336,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsSetStripeCustomerID(ctx, field)
 		case "channelsClearStripeCustomerID":
 			out.Values[i] = ec._Mutation_channelsClearStripeCustomerID(ctx, field)
+		case "channelsEnableApplePay":
+			out.Values[i] = ec._Mutation_channelsEnableApplePay(ctx, field)
 		case "nrsignupSendWelcomeEmail":
 			out.Values[i] = ec._Mutation_nrsignupSendWelcomeEmail(ctx, field)
 			if out.Values[i] == graphql.Null {

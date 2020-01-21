@@ -1,0 +1,39 @@
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+## Common object schemas
+input DateRange {
+  gt: Int
+  lt: Int
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+}
+
+## Scalars
+scalar ArticlePayloadValue
+scalar JsonFieldValue
+scalar RawObject
+scalar Time
+
+# Enum of valid values for application types for auth
+enum AuthApplicationEnum {
+  DEFAULT
+  NEWSROOM
+  STOREFRONT
+}
+
+## Auth object schemas
+type AuthLoginResponse {
+  token: String
+  refreshToken: String
+  uid: String
+}
+
+## JSONb Store object schemas
+

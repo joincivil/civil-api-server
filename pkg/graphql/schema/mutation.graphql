@@ -1,0 +1,100 @@
+type Mutation {
+    # Auth Mutations
+    authSignupEth(input: UserSignatureInput!): AuthLoginResponse
+    authSignupEmailSend(
+        emailAddress: String!
+        addToMailing: Boolean = False
+    ): String
+    authSignupEmailSendForApplication(
+        emailAddress: String!
+        application: AuthApplicationEnum!
+        addToMailing: Boolean = False
+    ): String
+    authSignupEmailConfirm(signupJWT: String!): AuthLoginResponse
+    authLoginEth(input: UserSignatureInput!): AuthLoginResponse
+    authLoginEmailSend(
+        emailAddress: String!
+        addToMailing: Boolean = False
+    ): String
+    authLoginEmailSendForApplication(
+        emailAddress: String!
+        application: AuthApplicationEnum!
+        addToMailing: Boolean = False
+    ): String
+    authLoginEmailConfirm(loginJWT: String!): AuthLoginResponse
+    authRefresh(token: String!): AuthLoginResponse
+
+    # JSONb Store Mutations
+    jsonbSave(input: JsonbInput!): Jsonb!
+
+    # Channels Mutations
+    channelsCreateNewsroomChannel(newsroomContractAddress: String!): Channel
+    channelsConnectStripe(input: ChannelsConnectStripeInput!): Channel
+    channelsSetHandle(input: ChannelsSetHandleInput!): Channel
+    channelsSetAvatar(input: ChannelsSetAvatarInput!): Channel
+    userChannelSetHandle(input: UserChannelSetHandleInput!): Channel
+    userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
+    channelsSetEmail(input: ChannelsSetEmailInput!): Channel
+    channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
+    channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
+    channelsClearStripeCustomerID(channelID: String!): Channel
+    channelsEnableApplePay(channelID: String!): [String!]
+
+    # Newsroom Signup Mutations
+    nrsignupSendWelcomeEmail: String!
+    nrsignupSaveCharter(charterData: CharterInput!): String!
+    nrsignupRequestGrant(requested: Boolean!): String!
+    nrsignupApproveGrant(approved: Boolean!, newsroomOwnerUID: String!): String!
+    nrsignupSaveTxHash(txHash: String!): String!
+    nrsignupSaveAddress(address: String!): String!
+    nrsignupSaveNewsroomApplyTxHash(txHash: String!): String!
+    nrsignupPollNewsroomDeploy(txHash: String!): String!
+    nrsignupPollTcrApplication(txHash: String!): String!
+    nrsignupUpdateSteps(input: NrsignupStepsInput!): String!
+    nrsignupDelete: String!
+
+    # Payment Mutations
+    paymentsCreateStripePayment(
+        postID: String!
+        input: PaymentsCreateStripePaymentInput!
+    ): PaymentStripe!
+    paymentsCreateEtherPayment(
+        postID: String!
+        input: PaymentsCreateEtherPaymentInput!
+    ): PaymentEther!
+    paymentsCreateTokenPayment(
+        postID: String!
+        input: PaymentsCreateTokenPaymentInput!
+    ): PaymentToken!
+
+    # Post Mutations
+    postsCreateBoost(input: PostCreateBoostInput!): PostBoost
+    postsUpdateBoost(postID: String!, input: PostCreateBoostInput!): PostBoost
+
+    postsCreateExternalLink(input: PostCreateExternalLinkInput!): PostExternalLink
+    postsCreateExternalLinkEmbedded(input: PostCreateExternalLinkInput!): PostExternalLink
+    postsUpdateExternalLink(
+        postID: String!
+        input: PostCreateExternalLinkInput!
+    ): PostExternalLink
+
+    postsCreateComment(input: PostCreateCommentInput!): PostComment
+    postsUpdateComment(
+        postID: String!
+        input: PostCreateCommentInput!
+    ): PostComment
+
+    # Storefront Mutations
+    storefrontAirswapTxHash(txHash: String!): String!
+    storefrontAirswapCancelled: String!
+
+    # Listing Mutations
+    tcrListingSaveTopicID(addr: String!, topicID: Int!): String!
+
+    # User Mutations
+    userSetEthAddress(input: UserSignatureInput!): String
+    userUpdate(uid: String, input: UserUpdateInput): User
+
+    skipUserChannelEmailPrompt(hasSeen: Boolean): User
+    skipUserChannelAvatarPrompt(hasSeen: Boolean): User
+}

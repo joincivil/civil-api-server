@@ -1,0 +1,15 @@
+type User {
+    uid: String
+    email: String
+    ethAddress: String
+    quizPayload: RawObject
+    quizStatus: String
+    civilianWhitelistTxID: String
+    nrStep: Int
+    nrFurthestStep: Int
+    nrLastSeen: Int
+    channels: [ChannelMember]
+    userChannel: Channel
+    userChannelEmailPromptSeen: Boolean
+    userChannelAvatarPromptSeen: Boolean
+}

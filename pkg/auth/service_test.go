@@ -310,7 +310,7 @@ func TestSignupEth(t *testing.T) {
 		t.Fatalf("was not expecting an error %v", err)
 	}
 
-	msg := "Sign up with Civil @ " + time.Now().Format(time.RFC3339)
+	msg := "Authenticate to http://localhost:8080 @ " + time.Now().Format(time.RFC3339)
 	ethMsg := eth.AsEthereumSignature(msg)
 	hash := crypto.Keccak256Hash([]byte(ethMsg))
 
@@ -340,7 +340,7 @@ func TestLoginEth(t *testing.T) {
 		t.Fatalf("was not expecting an error %v", err)
 	}
 
-	msg := "Log in to Civil @ " + time.Now().Format(time.RFC3339)
+	msg := "Authenticate to http://localhost:8080 @ " + time.Now().Format(time.RFC3339)
 	ethMsg := eth.AsEthereumSignature(msg)
 	hash := crypto.Keccak256Hash([]byte(ethMsg))
 

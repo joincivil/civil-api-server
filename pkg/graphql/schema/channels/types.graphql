@@ -1,0 +1,29 @@
+
+type Channel {
+    id: String!
+    channelType: String!
+    newsroom: Newsroom
+    listing: Listing
+    postsSearch(search: PostSearchInput!): PostSearchResult
+    isStripeConnected: Boolean!
+    stripeAccountID: String
+    currentUserIsAdmin: Boolean!
+    handle: String
+    EmailAddressRestricted: String
+    avatarDataUrl: String
+    tiny100AvatarDataUrl: String
+    tiny72AvatarDataUrl: String
+    StripeCustomerIDRestricted: String
+    stripeApplePayEnabled: Boolean!
+    paymentsMadeByChannel: [Payment!]
+}
+
+type ChannelMember {
+    channel: Channel
+    role: String
+}
+
+type ChannelSetEmailResponse {
+    ChannelID: String
+    UserID: String
+}
