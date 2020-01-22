@@ -686,6 +686,14 @@ func (r *queryResolver) ParamProposals(ctx context.Context, paramName string) ([
 	return proposals, nil
 }
 
+func (r *queryResolver) AllListingAddresses(ctx context.Context) ([]string, error) {
+	return r.listingPersister.AllListingAddresses()
+}
+
+func (r *queryResolver) AllMultiSigAddresses(ctx context.Context) ([]string, error) {
+	return r.multiSigPersister.AllMultiSigAddresses()
+}
+
 func (r *queryResolver) Listings(ctx context.Context, first *int, after *string,
 	whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool,
 	currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType,

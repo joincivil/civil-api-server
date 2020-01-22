@@ -36,6 +36,8 @@ type Query {
         sortBy: ListingSort
         sortDesc: Boolean = False
     ): [Listing!]!
+    allListingAddresses: [String!]
+    allMultiSigAddresses: [String!]
 
     # TCR Queries
     tcrChallenge(id: Int!, lowercaseAddr: Boolean = True): Challenge

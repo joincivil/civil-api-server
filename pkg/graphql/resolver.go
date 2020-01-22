@@ -49,6 +49,7 @@ type ResolverConfig struct {
 	fx.In
 	AuthService                  *auth.Service
 	ListingPersister             pmodel.ListingPersister
+	MultiSigPersister            pmodel.MultiSigPersister
 	ParameterPersister           pmodel.ParameterPersister
 	ParamProposalPersister       pmodel.ParamProposalPersister
 	GovEventPersister            pmodel.GovernanceEventPersister
@@ -78,6 +79,7 @@ func NewResolver(config ResolverConfig) *Resolver {
 	return &Resolver{
 		authService:                  config.AuthService,
 		listingPersister:             config.ListingPersister,
+		multiSigPersister:            config.MultiSigPersister,
 		parameterPersister:           config.ParameterPersister,
 		paramProposalPersister:       config.ParamProposalPersister,
 		revisionPersister:            config.RevisionPersister,
@@ -107,6 +109,7 @@ func NewResolver(config ResolverConfig) *Resolver {
 type Resolver struct {
 	authService                  *auth.Service
 	listingPersister             pmodel.ListingPersister
+	multiSigPersister            pmodel.MultiSigPersister
 	parameterPersister           pmodel.ParameterPersister
 	paramProposalPersister       pmodel.ParamProposalPersister
 	revisionPersister            pmodel.ContentRevisionPersister
