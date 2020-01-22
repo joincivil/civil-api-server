@@ -12,6 +12,7 @@ input PostSearchInput {
 
 input StoryfeedFilterInput {
     alg: String
+    channelID: String
 }
 
 input PostCreateBoostInput {
