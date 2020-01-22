@@ -4961,6 +4961,7 @@ input PostSearchInput {
 
 input StoryfeedFilterInput {
     alg: String
+    channelID: String
 }
 
 input PostCreateBoostInput {
@@ -25535,6 +25536,12 @@ func (ec *executionContext) unmarshalInputStoryfeedFilterInput(ctx context.Conte
 		case "alg":
 			var err error
 			it.Alg, err = ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "channelID":
+			var err error
+			it.ChannelID, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
