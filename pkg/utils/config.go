@@ -139,6 +139,11 @@ func (c *GraphQLConfig) PoolConnLifetimeSecs() *int {
 	return c.PersisterPostgresConnLife
 }
 
+// DataVersion returns the data version
+func (c *GraphQLConfig) DataVersion() string {
+	return c.VersionNumber
+}
+
 // OutputUsage prints the usage string to os.Stdout
 func (c *GraphQLConfig) OutputUsage() {
 	cconfig.OutputUsage(c, "graphql", envVarPrefixGraphQL)
