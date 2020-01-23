@@ -1,6 +1,7 @@
 package posts
 
 import (
+	"errors"
 	"github.com/dyatlov/go-htmlinfo/htmlinfo"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
@@ -26,6 +27,12 @@ func NewService(persister PostPersister, channelSer *channels.Service, newsroomS
 		newsroomService: newsroomSer,
 	}
 }
+
+// errors
+var (
+	ErrBadParentID       = errors.New("bad parentId")
+	ErrBadParentPostType = errors.New("Bad parentPostType")
+)
 
 // CreateExternalLinkEmbedded creates a new Post, with business logic ensuring posts are correct, and follow certain rules
 func (s *Service) CreateExternalLinkEmbedded(post Post) (Post, error) {
@@ -62,26 +69,37 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 
 		return s.PostPersister.CreatePost(authorID, *externalLink)
 	} else if postType == TypeComment {
-		parentID := post.ParentID
-		parentPost, err := s.GetPost(parentID)
+		parentID := base.ParentID
+		if parentID == nil {
+			return nil, ErrBadParentID
+		}
+		parentPost, err := s.GetPost(*parentID)
 		if err != nil {
 			return nil, err
 		}
-		parentPostType := parentPost.PostType
+		parentPostType := base.PostType
 		if parentPostType == TypeExternalLink || parentPostType == TypeBoost {
-			if post.Comment.CommentType == "announcement" {
-				parentPostChannelID := parentPost.ChannelID
-				isAdmin, err := s.channelService(authorID, parentPostChannelID)
+			comment := post.(Comment)
+			if comment.CommentType == "announcement" {
+				parentPostBase, err := PostInterfaceToBase(parentPost)
+				if err != nil {
+					return nil, err
+				}
+				parentPostChannelID := parentPostBase.ChannelID
+				isAdmin, err := s.channelService.IsChannelAdmin(authorID, parentPostChannelID)
 				if !isAdmin || err != nil {
 					return nil, err
 				}
 			}
 			return s.PostPersister.CreatePost(authorID, post)
-		} else {
-			return nil, errors.New("Bad parentPostType")
 		}
+		return nil, ErrBadParentPostType
 	}
 	return nil, nil
+}
+
+func (s *Service) GetChildrenOfPost(postID string) ([]Post, error) {
+	return s.PostPersister.GetChildrenOfPost(postID)
 }
 
 // GetPostByReferenceSafe returns a post associated with the provided reference
