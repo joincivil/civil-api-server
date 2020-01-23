@@ -253,6 +253,21 @@ func (p *DBPostPersister) GetPost(id string) (Post, error) {
 	return BaseToPostInterface(postModel)
 }
 
+// GetChildrenOfPost returns the children of the post
+func (p *DBPostPersister) GetChildrenOfPost(id string) ([]Post, error) {
+	if id == "" {
+		return nil, ErrorNotFound
+	}
+	postModel := &PostModel{ParentID: id}
+	p.db.First(postModel)
+
+	if (postModel.CreatedAt == time.Time{}) {
+		return nil, ErrorNotFound
+	}
+
+	return []Post{BaseToPostInterface(postModel)}
+}
+
 // GetPostByReference retrieves a Post by the reference
 func (p *DBPostPersister) GetPostByReference(reference string) (Post, error) {
 	if reference == "" {

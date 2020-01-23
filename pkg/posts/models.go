@@ -104,6 +104,7 @@ func (b Boost) GetType() string {
 type Comment struct {
 	PostModel `json:"-"`
 	Text      string `json:"text"`
+	CommentType string `json:"comment_type"`
 }
 
 // GetType returns the post type "Boost"

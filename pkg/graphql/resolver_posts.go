@@ -270,8 +270,8 @@ type postBoostResolver struct {
 }
 
 // Children returns children post of a Boost post
-func (r *postBoostResolver) Children(context.Context, *posts.Boost) ([]posts.Post, error) {
-	return nil, ErrNotImplemented
+func (r *postBoostResolver) Children(ctx context.Context, post *posts.Boost) ([]posts.Post, error) {
+	return r.postService.GetChildrenOfPost(post.ID)
 }
 
 // Channel returns children post of a Boost post
@@ -303,9 +303,9 @@ type postExternalLinkResolver struct {
 	*postResolver
 }
 
-// Children returns children post of an ExternalLink post
-func (r *postExternalLinkResolver) Children(context.Context, *posts.ExternalLink) ([]posts.Post, error) {
-	return nil, ErrNotImplemented
+// Children returns children post of a ExternalLink post
+func (r *postExternalLinkResolver) Children(ctx context.Context, post *posts.ExternalLink) ([]posts.Post, error) {
+	return r.postService.GetChildrenOfPost(post.ID)
 }
 
 // Channel returns children post of a ExternalLink post

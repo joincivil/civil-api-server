@@ -61,6 +61,25 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 		}
 
 		return s.PostPersister.CreatePost(authorID, *externalLink)
+	} else if postType == TypeComment {
+		parentID := post.ParentID
+		parentPost, err := s.GetPost(parentID)
+		if err != nil {
+			return nil, err
+		}
+		parentPostType := parentPost.PostType
+		if parentPostType == TypeExternalLink || parentPostType == TypeBoost {
+			if post.Comment.CommentType == "announcement" {
+				parentPostChannelID := parentPost.ChannelID
+				isAdmin, err := s.channelService(authorID, parentPostChannelID)
+				if !isAdmin || err != nil {
+					return nil, err
+				}
+			}
+			return s.PostPersister.CreatePost(authorID, post)
+		} else {
+			return nil, errors.New("Bad parentPostType")
+		}
 	}
 	return nil, nil
 }

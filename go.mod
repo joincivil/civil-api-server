@@ -50,11 +50,11 @@ require (
 	go.uber.org/fx v1.9.0
 	go.uber.org/goleak v0.10.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
-	golang.org/x/crypto v0.0.0-20200115085410-6d4e4cb37c7d // indirect
+	golang.org/x/crypto v0.0.0-20200117160349-530e935923ad // indirect
 	golang.org/x/mod v0.2.0 // indirect
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
-	golang.org/x/sys v0.0.0-20200116001909-b77594299b42 // indirect
-	golang.org/x/tools v0.0.0-20200116181651-872a348c3885
+	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
+	golang.org/x/tools v0.0.0-20200123162537-45e69182d161
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 )
 
