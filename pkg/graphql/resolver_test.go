@@ -22,6 +22,14 @@ type testListingPersister struct {
 	Listings []*pmodel.Listing
 }
 
+func (t *testListingPersister) AllListingAddresses() ([]string, error) {
+	addrs := make([]string, 0, len(t.Listings))
+	for _, l := range t.Listings {
+		addrs = append(addrs, l.ContractAddress().String())
+	}
+	return addrs, nil
+}
+
 func (t *testListingPersister) ListingsByCriteria(criteria *pmodel.ListingCriteria) ([]*pmodel.Listing, error) {
 	offset := 0
 	if criteria.Offset != 0 {
@@ -249,6 +257,7 @@ func initResolver(t *testing.T) (*graphql.Resolver, common.Address) {
 		AppealPersister:    nil,
 		PollPersister:      nil,
 		UserService:        nil,
+		MultiSigPersister:  nil,
 	})
 	return resolver, govEventAddr
 }

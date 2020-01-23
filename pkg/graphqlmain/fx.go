@@ -39,6 +39,7 @@ var EventProcessorModule = fx.Options(
 		helpers.GovernanceEventPersisterFromSqlx,
 		helpers.ChallengePersisterFromSqlx,
 		helpers.ListingPersisterFromSqlx,
+		helpers.MultiSigPersisterFromSqlx,
 		helpers.ParameterPersisterFromSqlx,
 		helpers.ParameterizerPersisterFromSqlx,
 		helpers.AppealPersisterFromSqlx,
