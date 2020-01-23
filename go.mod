@@ -28,7 +28,7 @@ require (
 	github.com/jinzhu/gorm v1.9.8
 	github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0
 	github.com/joho/godotenv v1.3.0
-	github.com/joincivil/civil-events-processor v0.0.0-20200122233241-ee670540a3ef
+	github.com/joincivil/civil-events-processor v0.0.0-20200123001702-fbd48410a75c
 	github.com/joincivil/go-common v0.0.0-20200107002045-7da72c934006
 	github.com/karalabe/hid v1.0.0 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
