@@ -56,6 +56,8 @@ type PostComment implements Post {
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
     text: String!
+    commentType: String!
+    badges: [String]
     channel: Channel
 }
 

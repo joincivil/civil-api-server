@@ -527,9 +527,11 @@ type ComplexityRoot struct {
 
 	PostComment struct {
 		AuthorID                 func(childComplexity int) int
+		Badges                   func(childComplexity int) int
 		Channel                  func(childComplexity int) int
 		ChannelID                func(childComplexity int) int
 		Children                 func(childComplexity int) int
+		CommentType              func(childComplexity int) int
 		CreatedAt                func(childComplexity int) int
 		GroupedSanitizedPayments func(childComplexity int) int
 		ID                       func(childComplexity int) int
@@ -3468,6 +3470,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.AuthorID(childComplexity), true
 
+	case "PostComment.badges":
+		if e.complexity.PostComment.Badges == nil {
+			break
+		}
+
+		return e.complexity.PostComment.Badges(childComplexity), true
+
 	case "PostComment.channel":
 		if e.complexity.PostComment.Channel == nil {
 			break
@@ -3488,6 +3497,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostComment.Children(childComplexity), true
+
+	case "PostComment.commentType":
+		if e.complexity.PostComment.CommentType == nil {
+			break
+		}
+
+		return e.complexity.PostComment.CommentType(childComplexity), true
 
 	case "PostComment.createdAt":
 		if e.complexity.PostComment.CreatedAt == nil {
@@ -5067,6 +5083,8 @@ type PostComment implements Post {
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
     text: String!
+    commentType: String!
+    badges: [String]
     channel: Channel
 }
 
@@ -19552,6 +19570,77 @@ func (ec *executionContext) _PostComment_text(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PostComment_commentType(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostComment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CommentType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PostComment_badges(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PostComment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Badges, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PostComment_channel(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -28704,6 +28793,13 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "commentType":
+			out.Values[i] = ec._PostComment_commentType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "badges":
+			out.Values[i] = ec._PostComment_badges(ctx, field, obj)
 		case "channel":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -32393,7 +32489,7 @@ func (ec *executionContext) unmarshalOString2ᚕstring(ctx context.Context, v in
 	var err error
 	res := make([]string, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOString2string(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -32407,7 +32503,7 @@ func (ec *executionContext) marshalOString2ᚕstring(ctx context.Context, sel as
 	}
 	ret := make(graphql.Array, len(v))
 	for i := range v {
-		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+		ret[i] = ec.marshalOString2string(ctx, sel, v[i])
 	}
 
 	return ret
