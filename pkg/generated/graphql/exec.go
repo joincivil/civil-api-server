@@ -584,6 +584,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		AllListingAddresses                func(childComplexity int) int
+		AllMultiSigAddresses               func(childComplexity int) int
 		Articles                           func(childComplexity int, addr *string, handle *string, first *int, after *string, contentID *int, revisionID *int, lowercaseAddr *bool) int
 		Challenge                          func(childComplexity int, id int, lowercaseAddr *bool) int
 		ChallengesStartedByUser            func(childComplexity int, addr string) int
@@ -881,6 +883,8 @@ type QueryResolver interface {
 	GovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error)
 	Listing(ctx context.Context, addr string, lowercaseAddr *bool) (*model.Listing, error)
 	Listings(ctx context.Context, first *int, after *string, whitelistedOnly *bool, rejectedOnly *bool, activeChallenge *bool, currentApplication *bool, lowercaseAddr *bool, sortBy *model.SortByType, sortDesc *bool) ([]*model.Listing, error)
+	AllListingAddresses(ctx context.Context) ([]string, error)
+	AllMultiSigAddresses(ctx context.Context) ([]string, error)
 	TcrChallenge(ctx context.Context, id int, lowercaseAddr *bool) (*model.Challenge, error)
 	TcrGovernanceEvents(ctx context.Context, addr *string, after *string, creationDate *DateRange, first *int, lowercaseAddr *bool) (*GovernanceEventResultCursor, error)
 	TcrGovernanceEventsTxHash(ctx context.Context, txHash string, lowercaseAddr *bool) ([]*model.GovernanceEvent, error)
@@ -3747,6 +3751,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProceedsQueryResult.Usd(childComplexity), true
 
+	case "Query.allListingAddresses":
+		if e.complexity.Query.AllListingAddresses == nil {
+			break
+		}
+
+		return e.complexity.Query.AllListingAddresses(childComplexity), true
+
+	case "Query.allMultiSigAddresses":
+		if e.complexity.Query.AllMultiSigAddresses == nil {
+			break
+		}
+
+		return e.complexity.Query.AllMultiSigAddresses(childComplexity), true
+
 	case "Query.articles":
 		if e.complexity.Query.Articles == nil {
 			break
@@ -4961,6 +4979,7 @@ input PostSearchInput {
 
 input StoryfeedFilterInput {
     alg: String
+    channelID: String
 }
 
 input PostCreateBoostInput {
@@ -5183,6 +5202,8 @@ type Query {
         sortBy: ListingSort
         sortDesc: Boolean = False
     ): [Listing!]!
+    allListingAddresses: [String!]
+    allMultiSigAddresses: [String!]
 
     # TCR Queries
     tcrChallenge(id: Int!, lowercaseAddr: Boolean = True): Challenge
@@ -20782,6 +20803,74 @@ func (ec *executionContext) _Query_listings(ctx context.Context, field graphql.C
 	return ec.marshalNListing2ᚕᚖgithubᚗcomᚋjoincivilᚋcivilᚑeventsᚑprocessorᚋpkgᚋmodelᚐListing(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_allListingAddresses(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AllListingAddresses(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_allMultiSigAddresses(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AllMultiSigAddresses(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_tcrChallenge(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -25538,6 +25627,12 @@ func (ec *executionContext) unmarshalInputStoryfeedFilterInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
+		case "channelID":
+			var err error
+			it.ChannelID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -28964,6 +29059,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "allListingAddresses":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_allListingAddresses(ctx, field)
+				return res
+			})
+		case "allMultiSigAddresses":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_allMultiSigAddresses(ctx, field)
+				return res
+			})
 		case "tcrChallenge":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -31931,7 +32048,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
