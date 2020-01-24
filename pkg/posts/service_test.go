@@ -188,9 +188,6 @@ func TestPosts(t *testing.T) {
 		t.Fatalf("not expecting error creating valid announcement comment: %v", err)
 	}
 
-	t.Logf("postID: %s", post.GetID())
-	t.Logf("commentPost: %s", commentPost.GetID())
-
 	children, err := postService.GetChildrenOfPost(post.GetID())
 	if err != nil {
 		t.Fatalf("not expecting error getting children: %v", err)
@@ -200,13 +197,11 @@ func TestPosts(t *testing.T) {
 		t.Fatalf("not expecting children to be nil")
 	}
 
-	t.Logf("children: %v", children)
 	for _, p := range children {
 		if p == nil {
 			t.Fatalf("not expecting child to be nil")
 		}
 		childID := p.GetID()
-		t.Logf("p.ID: %s", p.GetID())
 		if childID != commentPost.GetID() {
 			t.Fatalf("childID not equal to created comment")
 		}
