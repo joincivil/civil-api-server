@@ -30,8 +30,9 @@ func NewService(persister PostPersister, channelSer *channels.Service, newsroomS
 
 // errors
 var (
-	ErrBadParentID       = errors.New("bad parentId")
-	ErrBadParentPostType = errors.New("Bad parentPostType")
+	ErrBadParentID       = errors.New("bad parent ID")
+	ErrBadParentPostType = errors.New("bad parent post type")
+	ErrBadCommentType    = errors.New("bad comment type")
 )
 
 // CreateExternalLinkEmbedded creates a new Post, with business logic ensuring posts are correct, and follow certain rules
@@ -77,27 +78,46 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 		if err != nil {
 			return nil, err
 		}
-		parentPostType := base.PostType
+		parentPostType := parentPost.GetType()
+
+		// for now, don't allow comments on comments (aka "nested comments")
 		if parentPostType == TypeExternalLink || parentPostType == TypeBoost {
 			comment := post.(Comment)
-			if comment.CommentType == "announcement" {
+
+			// announcements and prompts can only be created by admins of the original post's channel
+			if comment.CommentType == TypeCommentAnnouncement || comment.CommentType == TypeCommentPrompt {
 				parentPostBase, err := PostInterfaceToBase(parentPost)
 				if err != nil {
 					return nil, err
 				}
 				parentPostChannelID := parentPostBase.ChannelID
-				isAdmin, err := s.channelService.IsChannelAdmin(authorID, parentPostChannelID)
-				if !isAdmin || err != nil {
-					return nil, err
+				isAdmin, _ := s.channelService.IsChannelAdmin(authorID, parentPostChannelID)
+				if !isAdmin {
+					return nil, ErrorNotAuthorized
 				}
+			} else if comment.CommentType != TypeCommentDefault {
+				return nil, ErrBadCommentType
 			}
-			return s.PostPersister.CreatePost(authorID, post)
+
+			userChannel, err := s.channelService.GetChannelByReference("user", authorID)
+			if err != nil {
+				return nil, err
+			}
+
+			comment.ChannelID = userChannel.ID
+
+			// TODO: calculate a post's badges
+			badges := []string{}
+			comment.Badges = badges
+
+			return s.PostPersister.CreatePost(authorID, comment)
 		}
 		return nil, ErrBadParentPostType
 	}
 	return nil, nil
 }
 
+// GetChildrenOfPost returns all the posts that have given post as parent
 func (s *Service) GetChildrenOfPost(postID string) ([]Post, error) {
 	return s.PostPersister.GetChildrenOfPost(postID)
 }
@@ -136,7 +156,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
-		newsroom, err := s.newsroomService.GetNewsroomByAddress(channel.Reference)
+		newsroom, err := (s.newsroomService).GetNewsroomByAddress(channel.Reference)
 		if err != nil {
 			return nil, err
 		}
