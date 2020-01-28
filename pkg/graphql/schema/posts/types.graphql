@@ -9,6 +9,7 @@ interface Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    numChildren: Int!
     comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
@@ -25,6 +26,7 @@ type PostBoost implements Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    numChildren: Int!
     comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
@@ -54,6 +56,7 @@ type PostComment implements Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    numChildren: Int!
     comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
@@ -73,6 +76,7 @@ type PostExternalLink implements Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    numChildren: Int!
     comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]

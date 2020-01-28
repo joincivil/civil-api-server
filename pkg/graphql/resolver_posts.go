@@ -274,6 +274,21 @@ func (r *postBoostResolver) Children(ctx context.Context, post *posts.Boost) ([]
 	return r.postService.GetChildrenOfPost(post.ID)
 }
 
+// NumChildren returns the number of children post of a Boost post
+func (r *postBoostResolver) NumChildren(ctx context.Context, post *posts.Boost) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
+// NumChildren returns the number of children post of a Boost post
+func (r *postExternalLinkResolver) NumChildren(ctx context.Context, post *posts.ExternalLink) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
+// NumChildren returns the number of children post of a Boost post
+func (r *postCommentResolver) NumChildren(ctx context.Context, post *posts.Comment) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
 // Children returns children post of a Boost post
 func (r *postBoostResolver) Comments(ctx context.Context, post *posts.Boost, first *int, after *string) (*graphql.PostResultCursor, error) {
 	return comments(ctx, r.postService, post.ID, first, after)

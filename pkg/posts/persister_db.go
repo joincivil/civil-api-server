@@ -253,6 +253,20 @@ func (p *DBPostPersister) GetPost(id string) (Post, error) {
 	return BaseToPostInterface(postModel)
 }
 
+// GetNumChildrenOfPost returns the number of children of the post
+func (p *DBPostPersister) GetNumChildrenOfPost(id string) (int, error) {
+	if id == "" {
+		return 0, ErrorNotFound
+	}
+	var postModels []PostModel
+
+	if err := p.db.Where(&PostModel{ParentID: &id}).Find(&postModels).Error; err != nil {
+		return 0, ErrorNotFound
+	}
+
+	return len(postModels), nil
+}
+
 // GetChildrenOfPost returns the children of the post
 func (p *DBPostPersister) GetChildrenOfPost(id string) ([]Post, error) {
 	if id == "" {

@@ -4,6 +4,7 @@ package posts
 type PostPersister interface {
 	GetPost(id string) (Post, error)
 	GetChildrenOfPost(id string) ([]Post, error)
+	GetNumChildrenOfPost(id string) (int, error)
 	GetPostByReference(id string) (Post, error)
 	CreatePost(authorID string, post Post) (Post, error)
 	EditPost(requestorUserID string, postID string, patch Post) (Post, error)
