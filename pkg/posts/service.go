@@ -122,11 +122,6 @@ func (s *Service) GetChildrenOfPost(postID string) ([]Post, error) {
 	return s.PostPersister.GetChildrenOfPost(postID)
 }
 
-// GetChildrenOfPost returns all the posts that have given post as parent
-func (s *Service) GetPostComments(postID string, count int, offset int) ([]Post, error) {
-	return s.PostPersister.GetChildrenOfPost(postID)
-}
-
 // GetPostByReferenceSafe returns a post associated with the provided reference
 // cleans reference before checking to avoid "http://" vs "https://" issue
 func (s *Service) GetPostByReferenceSafe(reference string) (Post, error) {

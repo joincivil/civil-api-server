@@ -478,7 +478,7 @@ func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, e
 }
 
 func (p *DBPostPersister) getRawCommentsQuery(parentID string, limit int, offset int) *gorm.DB {
-	return p.db.Raw(fmt.Sprintf("select * from posts where parent_id = %s limit %d offset %d", parentID, limit, offset))
+	return p.db.Raw(fmt.Sprintf("select * from posts where parent_id = '%s' limit %d offset %d", parentID, limit, offset))
 }
 
 // SearchComments retrieves most recent comments for the given parent post id
