@@ -57,10 +57,10 @@ func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *s
 	cursor := defaultPaginationCursor
 	var offset int
 	var err error
-	count := r.criteriaCount(first)
+	count := criteriaCount(first)
 	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		offset, cursor, err = paginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
@@ -71,10 +71,10 @@ func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *s
 		return nil, err
 	}
 
-	posts, hasNextPage := r.postsReturnPosts(results.Posts, count)
+	posts, hasNextPage := postsReturnPosts(results.Posts, count)
 
-	edges := r.postsBuildEdges(posts, cursor)
-	endCursor := r.postsEndCursor(edges)
+	edges := postsBuildEdges(posts, cursor)
+	endCursor := postsEndCursor(edges)
 
 	return &graphql.PostResultCursor{
 		Edges: edges,
@@ -85,7 +85,7 @@ func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *s
 	}, err
 }
 
-func (r *queryResolver) postsReturnPosts(allPosts []posts.Post,
+func postsReturnPosts(allPosts []posts.Post,
 	count int) ([]posts.Post, bool) {
 	allPostsLen := len(allPosts)
 
@@ -104,7 +104,7 @@ func (r *queryResolver) postsReturnPosts(allPosts []posts.Post,
 	return posts, hasNextPage
 }
 
-func (r *queryResolver) postsBuildEdges(posts []posts.Post,
+func postsBuildEdges(posts []posts.Post,
 	cursor *paginationCursor) []*graphql.PostEdge {
 
 	edges := make([]*graphql.PostEdge, len(posts))
@@ -125,7 +125,7 @@ func (r *queryResolver) postsBuildEdges(posts []posts.Post,
 	return edges
 }
 
-func (r *queryResolver) postsEndCursor(edges []*graphql.PostEdge) *string {
+func postsEndCursor(edges []*graphql.PostEdge) *string {
 	var endCursor *string
 	if len(edges) > 0 {
 		endCursor = &(edges[len(edges)-1]).Cursor
@@ -272,6 +272,53 @@ type postBoostResolver struct {
 // Children returns children post of a Boost post
 func (r *postBoostResolver) Children(ctx context.Context, post *posts.Boost) ([]posts.Post, error) {
 	return r.postService.GetChildrenOfPost(post.ID)
+}
+
+// Children returns children post of a Boost post
+func (r *postBoostResolver) Comments(ctx context.Context, post *posts.Boost, first *int, after *string) (*graphql.PostResultCursor, error) {
+	return comments(ctx, r.postService, post.ID, first, after)
+}
+
+// Children returns children post of a Boost post
+func (r *postExternalLinkResolver) Comments(ctx context.Context, post *posts.ExternalLink, first *int, after *string) (*graphql.PostResultCursor, error) {
+	return comments(ctx, r.postService, post.ID, first, after)
+}
+
+// Children returns children post of a Boost post
+func (r *postCommentResolver) Comments(ctx context.Context, post *posts.Comment, first *int, after *string) (*graphql.PostResultCursor, error) {
+	return comments(ctx, r.postService, post.ID, first, after)
+}
+
+func comments(ctx context.Context, postService *posts.Service, postID string, first *int, after *string) (*graphql.PostResultCursor, error) {
+	cursor := defaultPaginationCursor
+	var offset int
+	var err error
+	count := criteriaCount(first)
+	// Figure out the pagination index start point if given
+	if after != nil && *after != "" {
+		offset, cursor, err = paginationOffsetFromCursor(cursor, after)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	results, err := postService.SearchComments(postID, count, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	posts, hasNextPage := postsReturnPosts(results.Posts, count)
+
+	edges := postsBuildEdges(posts, cursor)
+	endCursor := postsEndCursor(edges)
+
+	return &graphql.PostResultCursor{
+		Edges: edges,
+		PageInfo: &graphql.PageInfo{
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+	}, err
 }
 
 // Channel returns children post of a Boost post

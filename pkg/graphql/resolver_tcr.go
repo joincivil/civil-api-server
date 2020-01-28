@@ -546,13 +546,13 @@ func (r *queryResolver) TcrGovernanceEvents(ctx context.Context, addr *string, a
 
 	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		criteria.Offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		criteria.Offset, cursor, err = paginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	criteria.Count = r.criteriaCount(first)
+	criteria.Count = criteriaCount(first)
 
 	if addr != nil && *addr != "" {
 		criteria.ListingAddress = eth.NormalizeEthAddress(*addr)
@@ -725,13 +725,13 @@ func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *stri
 
 	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		criteria.Offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		criteria.Offset, cursor, err = paginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	criteria.Count = r.criteriaCount(first)
+	criteria.Count = criteriaCount(first)
 
 	if whitelistedOnly != nil {
 		criteria.WhitelistedOnly = *whitelistedOnly
@@ -897,7 +897,7 @@ func (r *queryResolver) ChallengesStartedByUser(ctx context.Context, addr string
 	return r.challengePersister.ChallengesByChallengerAddress(common.HexToAddress(addr))
 }
 
-func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,
+func paginationOffsetFromCursor(cursor *paginationCursor,
 	after *string) (int, *paginationCursor, error) {
 	afterCursor, err := decodeToPaginationCursor(*after)
 	if err != nil {
@@ -917,7 +917,7 @@ func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,
 	return startOffset, cursor, nil
 }
 
-func (r *queryResolver) criteriaCount(first *int) int {
+func criteriaCount(first *int) int {
 	// Default count value
 	criteriaCount := defaultCriteriaCount
 	if first != nil {

@@ -11,5 +11,6 @@ type PostPersister interface {
 	SearchPosts(search *SearchInput) (*PostSearchResult, error)
 	SearchPostsMostRecentPerChannel(search *SearchInput) (*PostSearchResult, error)
 	SearchPostsRanked(limit int, offset int, filter *StoryfeedFilter) (*PostSearchResult, error)
+	SearchComments(parentID string, limit int, offset int) (*PostSearchResult, error)
 	CreateViews() error
 }

@@ -9,6 +9,7 @@ interface Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
@@ -24,6 +25,7 @@ type PostBoost implements Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
@@ -52,6 +54,7 @@ type PostComment implements Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
@@ -70,6 +73,7 @@ type PostExternalLink implements Post {
     updatedAt: Time!
     postType: String!
     children: [Post]
+    comments(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
@@ -156,4 +160,16 @@ type ProceedsQueryResult {
     usd: String
     ethUsdAmount: String
     ether: String
+}
+
+# A type that represents and edge value in a Post
+type PostEdge {
+    cursor: String!
+    post: Post!
+}
+
+# A type that represents return values from Posts
+type PostResultCursor {
+    edges: [PostEdge]!
+    pageInfo: PageInfo!
 }
