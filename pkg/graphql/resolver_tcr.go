@@ -546,13 +546,13 @@ func (r *queryResolver) TcrGovernanceEvents(ctx context.Context, addr *string, a
 
 	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		criteria.Offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		criteria.Offset, cursor, err = paginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	criteria.Count = r.criteriaCount(first)
+	criteria.Count = criteriaCount(first)
 
 	if addr != nil && *addr != "" {
 		criteria.ListingAddress = eth.NormalizeEthAddress(*addr)
@@ -725,13 +725,13 @@ func (r *queryResolver) TcrListings(ctx context.Context, first *int, after *stri
 
 	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		criteria.Offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		criteria.Offset, cursor, err = paginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	criteria.Count = r.criteriaCount(first)
+	criteria.Count = criteriaCount(first)
 
 	if whitelistedOnly != nil {
 		criteria.WhitelistedOnly = *whitelistedOnly
@@ -895,40 +895,6 @@ func (r *queryResolver) UserChallengeData(ctx context.Context, addr *string, pol
 
 func (r *queryResolver) ChallengesStartedByUser(ctx context.Context, addr string) ([]*model.Challenge, error) {
 	return r.challengePersister.ChallengesByChallengerAddress(common.HexToAddress(addr))
-}
-
-func (r *queryResolver) paginationOffsetFromCursor(cursor *paginationCursor,
-	after *string) (int, *paginationCursor, error) {
-	afterCursor, err := decodeToPaginationCursor(*after)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	startOffset := 0
-
-	if afterCursor.typeName == cursorTypeOffset {
-		cursorIntValue := afterCursor.ValueInt()
-		// Increment the offset and get the next item
-		startOffset = cursorIntValue + 1
-		afterCursor.ValueFromInt(cursorIntValue + 1)
-		cursor = afterCursor
-	}
-
-	return startOffset, cursor, nil
-}
-
-func (r *queryResolver) criteriaCount(first *int) int {
-	// Default count value
-	criteriaCount := defaultCriteriaCount
-	if first != nil {
-		criteriaCount = *first
-	}
-
-	// Add 1 to all of these to see if there are additional items
-	// If we see items beyond what we truly requested, then that warrants
-	// another query by the caller.
-	criteriaCount++
-	return criteriaCount
 }
 
 func (r *mutationResolver) TcrListingSaveTopicID(ctx context.Context, addr string,

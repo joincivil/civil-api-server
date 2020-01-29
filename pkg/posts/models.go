@@ -9,10 +9,13 @@ import (
 
 // TYPES
 const (
-	TypeBoost        = "boost"
-	TypeExternalLink = "externallink"
-	TypeComment      = "comment"
-	TypePost         = "posts"
+	TypeBoost               = "boost"
+	TypeExternalLink        = "externallink"
+	TypeComment             = "comment"
+	TypePost                = "posts"
+	TypeCommentAnnouncement = "comment_announcement"
+	TypeCommentPrompt       = "comment_prompt"
+	TypeCommentDefault      = "comment_default"
 )
 
 // Post represents a Civil Post
@@ -102,8 +105,9 @@ func (b Boost) GetType() string {
 
 // Comment is a type of Post that contains just type
 type Comment struct {
-	PostModel `json:"-"`
-	Text      string `json:"text"`
+	PostModel   `json:"-"`
+	Text        string `json:"text"`
+	CommentType string `json:"comment_type"`
 }
 
 // GetType returns the post type "Boost"

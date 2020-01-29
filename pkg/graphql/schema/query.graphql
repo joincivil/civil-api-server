@@ -96,6 +96,7 @@ type Query {
     postsSearch(search: PostSearchInput!): PostSearchResult
     postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
     postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
+    postsGetChildren(id: String!, first: Int, after: String): PostResultCursor
 
     # Payment Queries
     getChannelTotalProceeds(channelID: String!): ProceedsQueryResult

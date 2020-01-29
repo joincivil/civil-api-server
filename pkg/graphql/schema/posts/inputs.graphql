@@ -38,5 +38,7 @@ input PostCreateExternalLinkInput {
 }
 
 input PostCreateCommentInput {
+    parentID: String!
+    commentType: String!
     text: String!
 }
