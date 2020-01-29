@@ -115,7 +115,9 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 // GetPostByReferenceSafe returns a post associated with the provided reference
 // cleans reference before checking to avoid "http://" vs "https://" issue
 func (s *Service) GetPostByReferenceSafe(reference string) (Post, error) {
-	cleanReference := strings.Replace(reference, TypeExternalLink+"+http://", TypeExternalLink+"+", 1)
+	cleanReference := strings.Replace(reference, TypeExternalLink+"+http://www.", TypeExternalLink+"+", 1)
+	cleanReference = strings.Replace(cleanReference, TypeExternalLink+"+https://www.", TypeExternalLink+"+", 1)
+	cleanReference = strings.Replace(cleanReference, TypeExternalLink+"+http://", TypeExternalLink+"+", 1)
 	cleanReference = strings.Replace(cleanReference, TypeExternalLink+"+https://", TypeExternalLink+"+", 1)
 
 	post, err := s.GetPostByReference(cleanReference)
@@ -188,6 +190,8 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, ErrorNoReferenceURLFound
 		}
 
+		refURL = strings.Replace(refURL, "https://www.", "", 1)
+		refURL = strings.Replace(refURL, "http://www.", "", 1)
 		refURL = strings.Replace(refURL, "https://", "", 1)
 		refURL = strings.Replace(refURL, "http://", "", 1)
 
