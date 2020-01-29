@@ -253,6 +253,47 @@ func (p *DBPostPersister) GetPost(id string) (Post, error) {
 	return BaseToPostInterface(postModel)
 }
 
+// GetNumChildrenOfPost returns the number of children of the post
+func (p *DBPostPersister) GetNumChildrenOfPost(id string) (int, error) {
+	if id == "" {
+		return 0, ErrorNotFound
+	}
+	var postModels []PostModel
+
+	if err := p.db.Where(&PostModel{ParentID: &id}).Find(&postModels).Error; err != nil {
+		return 0, ErrorNotFound
+	}
+
+	return len(postModels), nil
+}
+
+// GetChildrenOfPost returns the children of the post
+func (p *DBPostPersister) GetChildrenOfPost(id string) ([]Post, error) {
+	if id == "" {
+		return nil, ErrorNotFound
+	}
+	var postModels []PostModel
+
+	if err := p.db.Where(&PostModel{ParentID: &id}).Find(&postModels).Error; err != nil {
+		return nil, ErrorNotFound
+	}
+
+	posts := make([]Post, len(postModels))
+
+	for i, postModel := range postModels {
+		if (postModel.CreatedAt == time.Time{}) {
+			return nil, ErrorNotFound
+		}
+		base, err := BaseToPostInterface(&postModel)
+		if err != nil {
+			return nil, err
+		}
+		posts[i] = base
+	}
+
+	return posts, nil
+}
+
 // GetPostByReference retrieves a Post by the reference
 func (p *DBPostPersister) GetPostByReference(reference string) (Post, error) {
 	if reference == "" {
@@ -448,7 +489,40 @@ func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, e
 	response := &PostSearchResult{Posts: posts, Pagination: Pagination{AfterCursor: cursors.AfterCursor, BeforeCursor: cursors.BeforeCursor}}
 
 	return response, nil
+}
 
+func (p *DBPostPersister) getRawChildrenQuery(parentID string, limit int, offset int) *gorm.DB {
+	return p.db.Raw(fmt.Sprintf("select * from posts where parent_id = '%s' order by created_at limit %d offset %d", parentID, limit, offset))
+}
+
+// SearchChildren retrieves most recent children for the given parent post id
+func (p *DBPostPersister) SearchChildren(parentID string, limit int, offset int) (*PostSearchResult, error) {
+	var dbResults []PostModel
+
+	stmt := p.getRawChildrenQuery(parentID, limit, offset)
+	if stmt == nil {
+		return nil, ErrorBadFilterProvided
+	}
+
+	results := stmt.Scan(&dbResults)
+	if results.Error != nil {
+		log.Errorf("An error occurred: %v\n", results.Error)
+		return nil, results.Error
+	}
+
+	var posts []Post
+	for _, result := range dbResults {
+		post, err := BaseToPostInterface(&result)
+		if err != nil {
+			log.Errorf("An error occurred: %v\n", err)
+			return nil, err
+		}
+		posts = append(posts, post)
+	}
+
+	response := &PostSearchResult{Posts: posts}
+
+	return response, nil
 }
 
 // initModelPaginatorFrom builds a new paginator

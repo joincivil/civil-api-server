@@ -1,6 +1,7 @@
 package posts
 
 import (
+	"errors"
 	"github.com/dyatlov/go-htmlinfo/htmlinfo"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/newsrooms"
@@ -26,6 +27,13 @@ func NewService(persister PostPersister, channelSer *channels.Service, newsroomS
 		newsroomService: newsroomSer,
 	}
 }
+
+// errors
+var (
+	ErrBadParentID       = errors.New("bad parent ID")
+	ErrBadParentPostType = errors.New("bad parent post type")
+	ErrBadCommentType    = errors.New("bad comment type")
+)
 
 // CreateExternalLinkEmbedded creates a new Post, with business logic ensuring posts are correct, and follow certain rules
 func (s *Service) CreateExternalLinkEmbedded(post Post) (Post, error) {
@@ -61,6 +69,45 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 		}
 
 		return s.PostPersister.CreatePost(authorID, *externalLink)
+	} else if postType == TypeComment {
+		parentID := base.ParentID
+		if parentID == nil {
+			return nil, ErrBadParentID
+		}
+		parentPost, err := s.GetPost(*parentID)
+		if err != nil {
+			return nil, err
+		}
+		parentPostType := parentPost.GetType()
+
+		if parentPostType == TypeExternalLink || parentPostType == TypeBoost || parentPostType == TypeComment {
+			comment := post.(Comment)
+
+			// announcements and prompts can only be created by admins of the original post's channel
+			if comment.CommentType == TypeCommentAnnouncement || comment.CommentType == TypeCommentPrompt {
+				parentPostBase, err := PostInterfaceToBase(parentPost)
+				if err != nil {
+					return nil, err
+				}
+				parentPostChannelID := parentPostBase.ChannelID
+				isAdmin, _ := s.channelService.IsChannelAdmin(authorID, parentPostChannelID)
+				if !isAdmin {
+					return nil, ErrorNotAuthorized
+				}
+			} else if comment.CommentType != TypeCommentDefault {
+				return nil, ErrBadCommentType
+			}
+
+			userChannel, err := s.channelService.GetChannelByReference("user", authorID)
+			if err != nil {
+				return nil, err
+			}
+
+			comment.ChannelID = userChannel.ID
+
+			return s.PostPersister.CreatePost(authorID, comment)
+		}
+		return nil, ErrBadParentPostType
 	}
 	return nil, nil
 }
@@ -68,7 +115,9 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 // GetPostByReferenceSafe returns a post associated with the provided reference
 // cleans reference before checking to avoid "http://" vs "https://" issue
 func (s *Service) GetPostByReferenceSafe(reference string) (Post, error) {
-	cleanReference := strings.Replace(reference, TypeExternalLink+"+http://", TypeExternalLink+"+", 1)
+	cleanReference := strings.Replace(reference, TypeExternalLink+"+http://www.", TypeExternalLink+"+", 1)
+	cleanReference = strings.Replace(cleanReference, TypeExternalLink+"+https://www.", TypeExternalLink+"+", 1)
+	cleanReference = strings.Replace(cleanReference, TypeExternalLink+"+http://", TypeExternalLink+"+", 1)
 	cleanReference = strings.Replace(cleanReference, TypeExternalLink+"+https://", TypeExternalLink+"+", 1)
 
 	post, err := s.GetPostByReference(cleanReference)
@@ -99,7 +148,7 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, err
 		}
 
-		newsroom, err := s.newsroomService.GetNewsroomByAddress(channel.Reference)
+		newsroom, err := (s.newsroomService).GetNewsroomByAddress(channel.Reference)
 		if err != nil {
 			return nil, err
 		}
@@ -141,6 +190,8 @@ func (s *Service) getExternalLink(post Post) (*ExternalLink, error) {
 			return nil, ErrorNoReferenceURLFound
 		}
 
+		refURL = strings.Replace(refURL, "https://www.", "", 1)
+		refURL = strings.Replace(refURL, "http://www.", "", 1)
 		refURL = strings.Replace(refURL, "https://", "", 1)
 		refURL = strings.Replace(refURL, "http://", "", 1)
 

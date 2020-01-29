@@ -33,6 +33,9 @@ func (r *Resolver) PostComment() graphql.PostCommentResolver {
 func (r *queryResolver) PostsGet(ctx context.Context, id string) (posts.Post, error) {
 	return r.postService.GetPost(id)
 }
+func (r *queryResolver) PostsGetChildren(ctx context.Context, id string, first *int, after *string) (*graphql.PostResultCursor, error) {
+	return children(ctx, r.postService, id, first, after)
+}
 
 func (r *queryResolver) PostsGetByReference(ctx context.Context, reference string) (posts.Post, error) {
 	return r.postService.GetPostByReferenceSafe(reference)
@@ -57,10 +60,10 @@ func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *s
 	cursor := defaultPaginationCursor
 	var offset int
 	var err error
-	count := r.criteriaCount(first)
+	count := criteriaCount(first)
 	// Figure out the pagination index start point if given
 	if after != nil && *after != "" {
-		offset, cursor, err = r.paginationOffsetFromCursor(cursor, after)
+		offset, cursor, err = paginationOffsetFromCursor(cursor, after)
 		if err != nil {
 			return nil, err
 		}
@@ -71,10 +74,10 @@ func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *s
 		return nil, err
 	}
 
-	posts, hasNextPage := r.postsReturnPosts(results.Posts, count)
+	posts, hasNextPage := postsReturnPosts(results.Posts, count)
 
-	edges := r.postsBuildEdges(posts, cursor)
-	endCursor := r.postsEndCursor(edges)
+	edges := postsBuildEdges(posts, cursor)
+	endCursor := postsEndCursor(edges)
 
 	return &graphql.PostResultCursor{
 		Edges: edges,
@@ -85,7 +88,7 @@ func (r *queryResolver) PostsStoryfeed(ctx context.Context, first *int, after *s
 	}, err
 }
 
-func (r *queryResolver) postsReturnPosts(allPosts []posts.Post,
+func postsReturnPosts(allPosts []posts.Post,
 	count int) ([]posts.Post, bool) {
 	allPostsLen := len(allPosts)
 
@@ -104,7 +107,7 @@ func (r *queryResolver) postsReturnPosts(allPosts []posts.Post,
 	return posts, hasNextPage
 }
 
-func (r *queryResolver) postsBuildEdges(posts []posts.Post,
+func postsBuildEdges(posts []posts.Post,
 	cursor *paginationCursor) []*graphql.PostEdge {
 
 	edges := make([]*graphql.PostEdge, len(posts))
@@ -125,7 +128,7 @@ func (r *queryResolver) postsBuildEdges(posts []posts.Post,
 	return edges
 }
 
-func (r *queryResolver) postsEndCursor(edges []*graphql.PostEdge) *string {
+func postsEndCursor(edges []*graphql.PostEdge) *string {
 	var endCursor *string
 	if len(edges) > 0 {
 		endCursor = &(edges[len(edges)-1]).Cursor
@@ -264,14 +267,55 @@ func (r *postResolver) getChannel(ctx context.Context, post posts.Post) (*channe
 	return r.channelService.GetChannel(post.GetChannelID())
 }
 
+func children(ctx context.Context, postService *posts.Service, postID string, first *int, after *string) (*graphql.PostResultCursor, error) {
+	cursor := defaultPaginationCursor
+	var offset int
+	var err error
+	count := criteriaCount(first)
+	// Figure out the pagination index start point if given
+	if after != nil && *after != "" {
+		offset, cursor, err = paginationOffsetFromCursor(cursor, after)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	results, err := postService.SearchChildren(postID, count, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	posts, hasNextPage := postsReturnPosts(results.Posts, count)
+
+	edges := postsBuildEdges(posts, cursor)
+	endCursor := postsEndCursor(edges)
+
+	return &graphql.PostResultCursor{
+		Edges: edges,
+		PageInfo: &graphql.PageInfo{
+			EndCursor:   endCursor,
+			HasNextPage: hasNextPage,
+		},
+	}, err
+}
+
 type postBoostResolver struct {
 	*Resolver
 	*postResolver
 }
 
+// NumChildren returns the number of children post of a Boost post
+func (r *postBoostResolver) NumChildren(ctx context.Context, post *posts.Boost) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
 // Children returns children post of a Boost post
-func (r *postBoostResolver) Children(context.Context, *posts.Boost) ([]posts.Post, error) {
-	return nil, ErrNotImplemented
+func (r *postBoostResolver) Children(ctx context.Context, post *posts.Boost, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
+	return children(ctx, r.postService, post.ID, first, after)
 }
 
 // Channel returns children post of a Boost post
@@ -303,14 +347,23 @@ type postExternalLinkResolver struct {
 	*postResolver
 }
 
-// Children returns children post of an ExternalLink post
-func (r *postExternalLinkResolver) Children(context.Context, *posts.ExternalLink) ([]posts.Post, error) {
-	return nil, ErrNotImplemented
-}
-
 // Channel returns children post of a ExternalLink post
 func (r *postExternalLinkResolver) Channel(ctx context.Context, post *posts.ExternalLink) (*channels.Channel, error) {
 	return r.getChannel(ctx, post)
+}
+
+// NumChildren returns the number of children post of a ExternalLink post
+func (r *postExternalLinkResolver) NumChildren(ctx context.Context, post *posts.ExternalLink) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
+// Children returns children post of an ExternalLink post
+func (r *postExternalLinkResolver) Children(ctx context.Context, post *posts.ExternalLink, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
+	return children(ctx, r.postService, post.ID, first, after)
 }
 
 // Payments returns payments associated with this Post
@@ -352,9 +405,18 @@ func (r *postCommentResolver) Channel(ctx context.Context, post *posts.Comment) 
 	return r.getChannel(ctx, post)
 }
 
-// Children returns children post of an Comment post
-func (r *postCommentResolver) Children(context.Context, *posts.Comment) ([]posts.Post, error) {
-	return nil, ErrNotImplemented
+// NumChildren returns the number of children post of a Comment post
+func (r *postCommentResolver) NumChildren(ctx context.Context, post *posts.Comment) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
+// Children returns children post of a Comment post
+func (r *postCommentResolver) Children(ctx context.Context, post *posts.Comment, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
+	return children(ctx, r.postService, post.ID, first, after)
 }
 
 // Payments returns payments associated with this Post
@@ -385,6 +447,9 @@ type sanitizedPaymentResolver struct{ *Resolver }
 
 // PayerChannel gets the channel associated with a sanitized payment
 func (r *sanitizedPaymentResolver) PayerChannel(ctx context.Context, payment *payments.SanitizedPayment) (*channels.Channel, error) {
+	if payment.PayerChannelID == "" {
+		return nil, nil
+	}
 	return r.channelService.GetChannel(payment.PayerChannelID)
 }
 

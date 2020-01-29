@@ -67,3 +67,37 @@ func (c *paginationCursor) Encode() string {
 	)
 	return base64.StdEncoding.EncodeToString([]byte(baseStr))
 }
+
+func paginationOffsetFromCursor(cursor *paginationCursor,
+	after *string) (int, *paginationCursor, error) {
+	afterCursor, err := decodeToPaginationCursor(*after)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	startOffset := 0
+
+	if afterCursor.typeName == cursorTypeOffset {
+		cursorIntValue := afterCursor.ValueInt()
+		// Increment the offset and get the next item
+		startOffset = cursorIntValue + 1
+		afterCursor.ValueFromInt(cursorIntValue + 1)
+		cursor = afterCursor
+	}
+
+	return startOffset, cursor, nil
+}
+
+func criteriaCount(first *int) int {
+	// Default count value
+	criteriaCount := defaultCriteriaCount
+	if first != nil {
+		criteriaCount = *first
+	}
+
+	// Add 1 to all of these to see if there are additional items
+	// If we see items beyond what we truly requested, then that warrants
+	// another query by the caller.
+	criteriaCount++
+	return criteriaCount
+}

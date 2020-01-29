@@ -72,21 +72,9 @@ type GovernanceEventEdge {
     node: GovernanceEvent!
 }
 
-# A type that represents and edge value in a Post
-type PostEdge {
-    cursor: String!
-    post: Post!
-}
-
 # A type that represents return values from GovernanceEvents
 type GovernanceEventResultCursor {
     edges: [GovernanceEventEdge]!
-    pageInfo: PageInfo!
-}
-
-# A type that represents return values from Posts
-type PostResultCursor {
-    edges: [PostEdge]!
     pageInfo: PageInfo!
 }
 
