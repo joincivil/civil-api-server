@@ -267,33 +267,6 @@ func (p *DBPostPersister) GetNumChildrenOfPost(id string) (int, error) {
 	return len(postModels), nil
 }
 
-// GetChildrenOfPost returns the children of the post
-func (p *DBPostPersister) GetChildrenOfPost(id string) ([]Post, error) {
-	if id == "" {
-		return nil, ErrorNotFound
-	}
-	var postModels []PostModel
-
-	if err := p.db.Where(&PostModel{ParentID: &id}).Find(&postModels).Error; err != nil {
-		return nil, ErrorNotFound
-	}
-
-	posts := make([]Post, len(postModels))
-
-	for i, postModel := range postModels {
-		if (postModel.CreatedAt == time.Time{}) {
-			return nil, ErrorNotFound
-		}
-		base, err := BaseToPostInterface(&postModel)
-		if err != nil {
-			return nil, err
-		}
-		posts[i] = base
-	}
-
-	return posts, nil
-}
-
 // GetPostByReference retrieves a Post by the reference
 func (p *DBPostPersister) GetPostByReference(reference string) (Post, error) {
 	if reference == "" {
@@ -491,15 +464,15 @@ func (p *DBPostPersister) SearchPosts(search *SearchInput) (*PostSearchResult, e
 	return response, nil
 }
 
-func (p *DBPostPersister) getRawCommentsQuery(parentID string, limit int, offset int) *gorm.DB {
-	return p.db.Raw(fmt.Sprintf("select * from posts where parent_id = '%s' limit %d offset %d", parentID, limit, offset))
+func (p *DBPostPersister) getRawChildrenQuery(parentID string, limit int, offset int) *gorm.DB {
+	return p.db.Raw(fmt.Sprintf("select * from posts where parent_id = '%s' order by created_at limit %d offset %d", parentID, limit, offset))
 }
 
-// SearchComments retrieves most recent comments for the given parent post id
-func (p *DBPostPersister) SearchComments(parentID string, limit int, offset int) (*PostSearchResult, error) {
+// SearchChildren retrieves most recent children for the given parent post id
+func (p *DBPostPersister) SearchChildren(parentID string, limit int, offset int) (*PostSearchResult, error) {
 	var dbResults []PostModel
 
-	stmt := p.getRawCommentsQuery(parentID, limit, offset)
+	stmt := p.getRawChildrenQuery(parentID, limit, offset)
 	if stmt == nil {
 		return nil, ErrorBadFilterProvided
 	}

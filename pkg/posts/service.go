@@ -80,8 +80,7 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 		}
 		parentPostType := parentPost.GetType()
 
-		// for now, don't allow comments on comments (aka "nested comments")
-		if parentPostType == TypeExternalLink || parentPostType == TypeBoost {
+		if parentPostType == TypeExternalLink || parentPostType == TypeBoost || parentPostType == TypeComment {
 			comment := post.(Comment)
 
 			// announcements and prompts can only be created by admins of the original post's channel
@@ -106,20 +105,11 @@ func (s *Service) CreatePost(authorID string, post Post) (Post, error) {
 
 			comment.ChannelID = userChannel.ID
 
-			// TODO: calculate a post's badges
-			badges := []string{}
-			comment.Badges = badges
-
 			return s.PostPersister.CreatePost(authorID, comment)
 		}
 		return nil, ErrBadParentPostType
 	}
 	return nil, nil
-}
-
-// GetChildrenOfPost returns all the posts that have given post as parent
-func (s *Service) GetChildrenOfPost(postID string) ([]Post, error) {
-	return s.PostPersister.GetChildrenOfPost(postID)
 }
 
 // GetPostByReferenceSafe returns a post associated with the provided reference

@@ -33,8 +33,8 @@ func (r *Resolver) PostComment() graphql.PostCommentResolver {
 func (r *queryResolver) PostsGet(ctx context.Context, id string) (posts.Post, error) {
 	return r.postService.GetPost(id)
 }
-func (r *queryResolver) PostsGetComments(ctx context.Context, id string, first *int, after *string) (*graphql.PostResultCursor, error) {
-	return comments(ctx, r.postService, id, first, after)
+func (r *queryResolver) PostsGetChildren(ctx context.Context, id string, first *int, after *string) (*graphql.PostResultCursor, error) {
+	return children(ctx, r.postService, id, first, after)
 }
 
 func (r *queryResolver) PostsGetByReference(ctx context.Context, reference string) (posts.Post, error) {
@@ -267,59 +267,7 @@ func (r *postResolver) getChannel(ctx context.Context, post posts.Post) (*channe
 	return r.channelService.GetChannel(post.GetChannelID())
 }
 
-type postBoostResolver struct {
-	*Resolver
-	*postResolver
-}
-
-// Children returns children post of a Boost post
-func (r *postBoostResolver) Children(ctx context.Context, post *posts.Boost) ([]posts.Post, error) {
-	return r.postService.GetChildrenOfPost(post.ID)
-}
-
-// NumChildren returns the number of children post of a Boost post
-func (r *postBoostResolver) NumChildren(ctx context.Context, post *posts.Boost) (int, error) {
-	return r.postService.GetNumChildrenOfPost(post.ID)
-}
-
-// NumChildren returns the number of children post of a Boost post
-func (r *postExternalLinkResolver) NumChildren(ctx context.Context, post *posts.ExternalLink) (int, error) {
-	return r.postService.GetNumChildrenOfPost(post.ID)
-}
-
-// NumChildren returns the number of children post of a Boost post
-func (r *postCommentResolver) NumChildren(ctx context.Context, post *posts.Comment) (int, error) {
-	return r.postService.GetNumChildrenOfPost(post.ID)
-}
-
-// Children returns children post of a Boost post
-func (r *postBoostResolver) Comments(ctx context.Context, post *posts.Boost, first *int, after *string) (*graphql.PostResultCursor, error) {
-	if first == nil {
-		three := 3
-		first = &three
-	}
-	return comments(ctx, r.postService, post.ID, first, after)
-}
-
-// Children returns children post of a Boost post
-func (r *postExternalLinkResolver) Comments(ctx context.Context, post *posts.ExternalLink, first *int, after *string) (*graphql.PostResultCursor, error) {
-	if first == nil {
-		three := 3
-		first = &three
-	}
-	return comments(ctx, r.postService, post.ID, first, after)
-}
-
-// Children returns children post of a Boost post
-func (r *postCommentResolver) Comments(ctx context.Context, post *posts.Comment, first *int, after *string) (*graphql.PostResultCursor, error) {
-	if first == nil {
-		three := 3
-		first = &three
-	}
-	return comments(ctx, r.postService, post.ID, first, after)
-}
-
-func comments(ctx context.Context, postService *posts.Service, postID string, first *int, after *string) (*graphql.PostResultCursor, error) {
+func children(ctx context.Context, postService *posts.Service, postID string, first *int, after *string) (*graphql.PostResultCursor, error) {
 	cursor := defaultPaginationCursor
 	var offset int
 	var err error
@@ -332,7 +280,7 @@ func comments(ctx context.Context, postService *posts.Service, postID string, fi
 		}
 	}
 
-	results, err := postService.SearchComments(postID, count, offset)
+	results, err := postService.SearchChildren(postID, count, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -349,6 +297,25 @@ func comments(ctx context.Context, postService *posts.Service, postID string, fi
 			HasNextPage: hasNextPage,
 		},
 	}, err
+}
+
+type postBoostResolver struct {
+	*Resolver
+	*postResolver
+}
+
+// NumChildren returns the number of children post of a Boost post
+func (r *postBoostResolver) NumChildren(ctx context.Context, post *posts.Boost) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
+// Children returns children post of a Boost post
+func (r *postBoostResolver) Children(ctx context.Context, post *posts.Boost, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
+	return children(ctx, r.postService, post.ID, first, after)
 }
 
 // Channel returns children post of a Boost post
@@ -380,14 +347,23 @@ type postExternalLinkResolver struct {
 	*postResolver
 }
 
-// Children returns children post of a ExternalLink post
-func (r *postExternalLinkResolver) Children(ctx context.Context, post *posts.ExternalLink) ([]posts.Post, error) {
-	return r.postService.GetChildrenOfPost(post.ID)
-}
-
 // Channel returns children post of a ExternalLink post
 func (r *postExternalLinkResolver) Channel(ctx context.Context, post *posts.ExternalLink) (*channels.Channel, error) {
 	return r.getChannel(ctx, post)
+}
+
+// NumChildren returns the number of children post of a ExternalLink post
+func (r *postExternalLinkResolver) NumChildren(ctx context.Context, post *posts.ExternalLink) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
+// Children returns children post of an ExternalLink post
+func (r *postExternalLinkResolver) Children(ctx context.Context, post *posts.ExternalLink, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
+	return children(ctx, r.postService, post.ID, first, after)
 }
 
 // Payments returns payments associated with this Post
@@ -429,9 +405,18 @@ func (r *postCommentResolver) Channel(ctx context.Context, post *posts.Comment) 
 	return r.getChannel(ctx, post)
 }
 
-// Children returns children post of an Comment post
-func (r *postCommentResolver) Children(context.Context, *posts.Comment) ([]posts.Post, error) {
-	return nil, ErrNotImplemented
+// NumChildren returns the number of children post of a Comment post
+func (r *postCommentResolver) NumChildren(ctx context.Context, post *posts.Comment) (int, error) {
+	return r.postService.GetNumChildrenOfPost(post.ID)
+}
+
+// Children returns children post of a Comment post
+func (r *postCommentResolver) Children(ctx context.Context, post *posts.Comment, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
+	return children(ctx, r.postService, post.ID, first, after)
 }
 
 // Payments returns payments associated with this Post

@@ -502,8 +502,7 @@ type ComplexityRoot struct {
 		AuthorID                 func(childComplexity int) int
 		Channel                  func(childComplexity int) int
 		ChannelID                func(childComplexity int) int
-		Children                 func(childComplexity int) int
-		Comments                 func(childComplexity int, first *int, after *string) int
+		Children                 func(childComplexity int, first *int, after *string) int
 		CreatedAt                func(childComplexity int) int
 		CurrencyCode             func(childComplexity int) int
 		DateEnd                  func(childComplexity int) int
@@ -529,12 +528,10 @@ type ComplexityRoot struct {
 
 	PostComment struct {
 		AuthorID                 func(childComplexity int) int
-		Badges                   func(childComplexity int) int
 		Channel                  func(childComplexity int) int
 		ChannelID                func(childComplexity int) int
-		Children                 func(childComplexity int) int
+		Children                 func(childComplexity int, first *int, after *string) int
 		CommentType              func(childComplexity int) int
-		Comments                 func(childComplexity int, first *int, after *string) int
 		CreatedAt                func(childComplexity int) int
 		GroupedSanitizedPayments func(childComplexity int) int
 		ID                       func(childComplexity int) int
@@ -556,8 +553,7 @@ type ComplexityRoot struct {
 		AuthorID                 func(childComplexity int) int
 		Channel                  func(childComplexity int) int
 		ChannelID                func(childComplexity int) int
-		Children                 func(childComplexity int) int
-		Comments                 func(childComplexity int, first *int, after *string) int
+		Children                 func(childComplexity int, first *int, after *string) int
 		CreatedAt                func(childComplexity int) int
 		GroupedSanitizedPayments func(childComplexity int) int
 		ID                       func(childComplexity int) int
@@ -617,7 +613,7 @@ type ComplexityRoot struct {
 		Poll                               func(childComplexity int, pollID int) int
 		PostsGet                           func(childComplexity int, id string) int
 		PostsGetByReference                func(childComplexity int, reference string) int
-		PostsGetComments                   func(childComplexity int, id string, first *int, after *string) int
+		PostsGetChildren                   func(childComplexity int, id string, first *int, after *string) int
 		PostsSearch                        func(childComplexity int, search posts.SearchInput) int
 		PostsSearchGroupedByChannel        func(childComplexity int, search posts.SearchInput) int
 		PostsStoryfeed                     func(childComplexity int, first *int, after *string, filter *posts.StoryfeedFilter) int
@@ -861,9 +857,8 @@ type PollResolver interface {
 	VotesAgainst(ctx context.Context, obj *model.Poll) (string, error)
 }
 type PostBoostResolver interface {
-	Children(ctx context.Context, obj *posts.Boost) ([]posts.Post, error)
 	NumChildren(ctx context.Context, obj *posts.Boost) (int, error)
-	Comments(ctx context.Context, obj *posts.Boost, first *int, after *string) (*PostResultCursor, error)
+	Children(ctx context.Context, obj *posts.Boost, first *int, after *string) (*PostResultCursor, error)
 	Payments(ctx context.Context, obj *posts.Boost) ([]payments.Payment, error)
 	GroupedSanitizedPayments(ctx context.Context, obj *posts.Boost) ([]*payments.SanitizedPayment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Boost, currencyCode string) (float64, error)
@@ -871,9 +866,8 @@ type PostBoostResolver interface {
 	Channel(ctx context.Context, obj *posts.Boost) (*channels.Channel, error)
 }
 type PostCommentResolver interface {
-	Children(ctx context.Context, obj *posts.Comment) ([]posts.Post, error)
 	NumChildren(ctx context.Context, obj *posts.Comment) (int, error)
-	Comments(ctx context.Context, obj *posts.Comment, first *int, after *string) (*PostResultCursor, error)
+	Children(ctx context.Context, obj *posts.Comment, first *int, after *string) (*PostResultCursor, error)
 	Payments(ctx context.Context, obj *posts.Comment) ([]payments.Payment, error)
 	GroupedSanitizedPayments(ctx context.Context, obj *posts.Comment) ([]*payments.SanitizedPayment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.Comment, currencyCode string) (float64, error)
@@ -881,9 +875,8 @@ type PostCommentResolver interface {
 	Channel(ctx context.Context, obj *posts.Comment) (*channels.Channel, error)
 }
 type PostExternalLinkResolver interface {
-	Children(ctx context.Context, obj *posts.ExternalLink) ([]posts.Post, error)
 	NumChildren(ctx context.Context, obj *posts.ExternalLink) (int, error)
-	Comments(ctx context.Context, obj *posts.ExternalLink, first *int, after *string) (*PostResultCursor, error)
+	Children(ctx context.Context, obj *posts.ExternalLink, first *int, after *string) (*PostResultCursor, error)
 	Payments(ctx context.Context, obj *posts.ExternalLink) ([]payments.Payment, error)
 	GroupedSanitizedPayments(ctx context.Context, obj *posts.ExternalLink) ([]*payments.SanitizedPayment, error)
 	PaymentsTotal(ctx context.Context, obj *posts.ExternalLink, currencyCode string) (float64, error)
@@ -921,7 +914,7 @@ type QueryResolver interface {
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsStoryfeed(ctx context.Context, first *int, after *string, filter *posts.StoryfeedFilter) (*PostResultCursor, error)
-	PostsGetComments(ctx context.Context, id string, first *int, after *string) (*PostResultCursor, error)
+	PostsGetChildren(ctx context.Context, id string, first *int, after *string) (*PostResultCursor, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
 	GetChannelTotalProceedsByBoostType(ctx context.Context, channelID string, boostType string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) ([]*model.UserChallengeData, error)
@@ -3351,19 +3344,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.PostBoost.Children(childComplexity), true
-
-	case "PostBoost.comments":
-		if e.complexity.PostBoost.Comments == nil {
-			break
-		}
-
-		args, err := ec.field_PostBoost_comments_args(context.TODO(), rawArgs)
+		args, err := ec.field_PostBoost_children_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PostBoost.Comments(childComplexity, args["first"].(*int), args["after"].(*string)), true
+		return e.complexity.PostBoost.Children(childComplexity, args["first"].(*int), args["after"].(*string)), true
 
 	case "PostBoost.createdAt":
 		if e.complexity.PostBoost.CreatedAt == nil {
@@ -3503,13 +3489,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PostComment.AuthorID(childComplexity), true
 
-	case "PostComment.badges":
-		if e.complexity.PostComment.Badges == nil {
-			break
-		}
-
-		return e.complexity.PostComment.Badges(childComplexity), true
-
 	case "PostComment.channel":
 		if e.complexity.PostComment.Channel == nil {
 			break
@@ -3529,7 +3508,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.PostComment.Children(childComplexity), true
+		args, err := ec.field_PostComment_children_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.PostComment.Children(childComplexity, args["first"].(*int), args["after"].(*string)), true
 
 	case "PostComment.commentType":
 		if e.complexity.PostComment.CommentType == nil {
@@ -3537,18 +3521,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PostComment.CommentType(childComplexity), true
-
-	case "PostComment.comments":
-		if e.complexity.PostComment.Comments == nil {
-			break
-		}
-
-		args, err := ec.field_PostComment_comments_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.PostComment.Comments(childComplexity, args["first"].(*int), args["after"].(*string)), true
 
 	case "PostComment.createdAt":
 		if e.complexity.PostComment.CreatedAt == nil {
@@ -3665,19 +3637,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.PostExternalLink.Children(childComplexity), true
-
-	case "PostExternalLink.comments":
-		if e.complexity.PostExternalLink.Comments == nil {
-			break
-		}
-
-		args, err := ec.field_PostExternalLink_comments_args(context.TODO(), rawArgs)
+		args, err := ec.field_PostExternalLink_children_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.PostExternalLink.Comments(childComplexity, args["first"].(*int), args["after"].(*string)), true
+		return e.complexity.PostExternalLink.Children(childComplexity, args["first"].(*int), args["after"].(*string)), true
 
 	case "PostExternalLink.createdAt":
 		if e.complexity.PostExternalLink.CreatedAt == nil {
@@ -4118,17 +4083,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PostsGetByReference(childComplexity, args["reference"].(string)), true
 
-	case "Query.postsGetComments":
-		if e.complexity.Query.PostsGetComments == nil {
+	case "Query.postsGetChildren":
+		if e.complexity.Query.PostsGetChildren == nil {
 			break
 		}
 
-		args, err := ec.field_Query_postsGetComments_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_postsGetChildren_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.PostsGetComments(childComplexity, args["id"].(string), args["first"].(*int), args["after"].(*string)), true
+		return e.complexity.Query.PostsGetChildren(childComplexity, args["id"].(string), args["first"].(*int), args["after"].(*string)), true
 
 	case "Query.postsSearch":
 		if e.complexity.Query.PostsSearch == nil {
@@ -5118,9 +5083,8 @@ interface Post {
     createdAt: Time!
     updatedAt: Time!
     postType: String!
-    children: [Post]
     numChildren: Int!
-    comments(first: Int, after: String): PostResultCursor
+    children(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
@@ -5135,9 +5099,8 @@ type PostBoost implements Post {
     createdAt: Time!
     updatedAt: Time!
     postType: String!
-    children: [Post]
     numChildren: Int!
-    comments(first: Int, after: String): PostResultCursor
+    children(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
@@ -5165,15 +5128,13 @@ type PostComment implements Post {
     createdAt: Time!
     updatedAt: Time!
     postType: String!
-    children: [Post]
     numChildren: Int!
-    comments(first: Int, after: String): PostResultCursor
+    children(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
     text: String!
     commentType: String!
-    badges: [String]
     channel: Channel
 }
 
@@ -5185,9 +5146,8 @@ type PostExternalLink implements Post {
     createdAt: Time!
     updatedAt: Time!
     postType: String!
-    children: [Post]
     numChildren: Int!
-    comments(first: Int, after: String): PostResultCursor
+    children(first: Int, after: String): PostResultCursor
     payments: [Payment!]
     groupedSanitizedPayments: [SanitizedPayment!]
     paymentsTotal(currencyCode: String!): Float!
@@ -5386,7 +5346,7 @@ type Query {
     postsSearch(search: PostSearchInput!): PostSearchResult
     postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
     postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
-    postsGetComments(id: String!, first: Int, after: String): PostResultCursor
+    postsGetChildren(id: String!, first: Int, after: String): PostResultCursor
 
     # Payment Queries
     getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
@@ -6478,7 +6438,7 @@ func (ec *executionContext) field_Mutation_userUpdate_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_PostBoost_comments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_PostBoost_children_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -6514,7 +6474,7 @@ func (ec *executionContext) field_PostBoost_paymentsTotal_args(ctx context.Conte
 	return args, nil
 }
 
-func (ec *executionContext) field_PostComment_comments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_PostComment_children_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -6550,7 +6510,7 @@ func (ec *executionContext) field_PostComment_paymentsTotal_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_PostExternalLink_comments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_PostExternalLink_children_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *int
@@ -7096,7 +7056,7 @@ func (ec *executionContext) field_Query_postsGetByReference_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_postsGetComments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_postsGetChildren_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -18788,40 +18748,6 @@ func (ec *executionContext) _PostBoost_postType(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostBoost_children(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PostBoost",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PostBoost().Children(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]posts.Post)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PostBoost_numChildren(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -18859,7 +18785,7 @@ func (ec *executionContext) _PostBoost_numChildren(ctx context.Context, field gr
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostBoost_comments(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) (ret graphql.Marshaler) {
+func (ec *executionContext) _PostBoost_children(ctx context.Context, field graphql.CollectedField, obj *posts.Boost) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -18876,7 +18802,7 @@ func (ec *executionContext) _PostBoost_comments(ctx context.Context, field graph
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PostBoost_comments_args(ctx, rawArgs)
+	args, err := ec.field_PostBoost_children_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -18885,7 +18811,7 @@ func (ec *executionContext) _PostBoost_comments(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PostBoost().Comments(rctx, obj, args["first"].(*int), args["after"].(*string))
+		return ec.resolvers.PostBoost().Children(rctx, obj, args["first"].(*int), args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19654,40 +19580,6 @@ func (ec *executionContext) _PostComment_postType(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostComment_children(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PostComment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PostComment().Children(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]posts.Post)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PostComment_numChildren(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -19725,7 +19617,7 @@ func (ec *executionContext) _PostComment_numChildren(ctx context.Context, field 
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostComment_comments(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _PostComment_children(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -19742,7 +19634,7 @@ func (ec *executionContext) _PostComment_comments(ctx context.Context, field gra
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PostComment_comments_args(ctx, rawArgs)
+	args, err := ec.field_PostComment_children_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -19751,7 +19643,7 @@ func (ec *executionContext) _PostComment_comments(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PostComment().Comments(rctx, obj, args["first"].(*int), args["after"].(*string))
+		return ec.resolvers.PostComment().Children(rctx, obj, args["first"].(*int), args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -19950,40 +19842,6 @@ func (ec *executionContext) _PostComment_commentType(ctx context.Context, field 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PostComment_badges(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PostComment",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Badges, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOString2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PostComment_channel(ctx context.Context, field graphql.CollectedField, obj *posts.Comment) (ret graphql.Marshaler) {
@@ -20350,40 +20208,6 @@ func (ec *executionContext) _PostExternalLink_postType(ctx context.Context, fiel
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostExternalLink_children(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "PostExternalLink",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PostExternalLink().Children(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]posts.Post)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _PostExternalLink_numChildren(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -20421,7 +20245,7 @@ func (ec *executionContext) _PostExternalLink_numChildren(ctx context.Context, f
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _PostExternalLink_comments(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
+func (ec *executionContext) _PostExternalLink_children(ctx context.Context, field graphql.CollectedField, obj *posts.ExternalLink) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -20438,7 +20262,7 @@ func (ec *executionContext) _PostExternalLink_comments(ctx context.Context, fiel
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_PostExternalLink_comments_args(ctx, rawArgs)
+	args, err := ec.field_PostExternalLink_children_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -20447,7 +20271,7 @@ func (ec *executionContext) _PostExternalLink_comments(ctx context.Context, fiel
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PostExternalLink().Comments(rctx, obj, args["first"].(*int), args["after"].(*string))
+		return ec.resolvers.PostExternalLink().Children(rctx, obj, args["first"].(*int), args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22254,7 +22078,7 @@ func (ec *executionContext) _Query_postsStoryfeed(ctx context.Context, field gra
 	return ec.marshalOPostResultCursor2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostResultCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_postsGetComments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_postsGetChildren(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -22271,7 +22095,7 @@ func (ec *executionContext) _Query_postsGetComments(ctx context.Context, field g
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_postsGetComments_args(ctx, rawArgs)
+	args, err := ec.field_Query_postsGetChildren_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -22280,7 +22104,7 @@ func (ec *executionContext) _Query_postsGetComments(ctx context.Context, field g
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().PostsGetComments(rctx, args["id"].(string), args["first"].(*int), args["after"].(*string))
+		return ec.resolvers.Query().PostsGetChildren(rctx, args["id"].(string), args["first"].(*int), args["after"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29039,17 +28863,6 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "children":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PostBoost_children(ctx, field, obj)
-				return res
-			})
 		case "numChildren":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -29064,7 +28877,7 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 				}
 				return res
 			})
-		case "comments":
+		case "children":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -29072,7 +28885,7 @@ func (ec *executionContext) _PostBoost(ctx context.Context, sel ast.SelectionSet
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PostBoost_comments(ctx, field, obj)
+				res = ec._PostBoost_children(ctx, field, obj)
 				return res
 			})
 		case "payments":
@@ -29230,17 +29043,6 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "children":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PostComment_children(ctx, field, obj)
-				return res
-			})
 		case "numChildren":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -29255,7 +29057,7 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 				}
 				return res
 			})
-		case "comments":
+		case "children":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -29263,7 +29065,7 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PostComment_comments(ctx, field, obj)
+				res = ec._PostComment_children(ctx, field, obj)
 				return res
 			})
 		case "payments":
@@ -29312,8 +29114,6 @@ func (ec *executionContext) _PostComment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "badges":
-			out.Values[i] = ec._PostComment_badges(ctx, field, obj)
 		case "channel":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -29411,17 +29211,6 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "children":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PostExternalLink_children(ctx, field, obj)
-				return res
-			})
 		case "numChildren":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -29436,7 +29225,7 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 				}
 				return res
 			})
-		case "comments":
+		case "children":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -29444,7 +29233,7 @@ func (ec *executionContext) _PostExternalLink(ctx context.Context, sel ast.Selec
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._PostExternalLink_comments(ctx, field, obj)
+				res = ec._PostExternalLink_children(ctx, field, obj)
 				return res
 			})
 		case "payments":
@@ -29976,7 +29765,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_postsStoryfeed(ctx, field)
 				return res
 			})
-		case "postsGetComments":
+		case "postsGetChildren":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -29984,7 +29773,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_postsGetComments(ctx, field)
+				res = ec._Query_postsGetChildren(ctx, field)
 				return res
 			})
 		case "getChannelTotalProceeds":
@@ -32726,7 +32515,7 @@ func (ec *executionContext) marshalOPost2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑa
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
