@@ -129,6 +129,9 @@ func (p *DBPersister) createChannelMemberWithTx(userID string, c *Channel, tx *g
 
 // GetChannel retrieves a Channel with the provided ID
 func (p *DBPersister) GetChannel(id string) (*Channel, error) {
+	if id == "" {
+		return nil, nil
+	}
 	c := &Channel{}
 
 	if p.db.Where(&Channel{ID: id}).Preload("Members").First(c).RecordNotFound() {
