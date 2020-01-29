@@ -447,6 +447,9 @@ type sanitizedPaymentResolver struct{ *Resolver }
 
 // PayerChannel gets the channel associated with a sanitized payment
 func (r *sanitizedPaymentResolver) PayerChannel(ctx context.Context, payment *payments.SanitizedPayment) (*channels.Channel, error) {
+	if payment.PayerChannelID == "" {
+		return nil, nil
+	}
 	return r.channelService.GetChannel(payment.PayerChannelID)
 }
 
