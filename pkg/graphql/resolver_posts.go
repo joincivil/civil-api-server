@@ -33,6 +33,9 @@ func (r *Resolver) PostComment() graphql.PostCommentResolver {
 func (r *queryResolver) PostsGet(ctx context.Context, id string) (posts.Post, error) {
 	return r.postService.GetPost(id)
 }
+func (r *queryResolver) PostsGetComments(ctx context.Context, id string, first *int, after *string) (*graphql.PostResultCursor, error) {
+	return comments(ctx, r.postService, id, first, after)
+}
 
 func (r *queryResolver) PostsGetByReference(ctx context.Context, reference string) (posts.Post, error) {
 	return r.postService.GetPostByReferenceSafe(reference)
@@ -291,16 +294,28 @@ func (r *postCommentResolver) NumChildren(ctx context.Context, post *posts.Comme
 
 // Children returns children post of a Boost post
 func (r *postBoostResolver) Comments(ctx context.Context, post *posts.Boost, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
 	return comments(ctx, r.postService, post.ID, first, after)
 }
 
 // Children returns children post of a Boost post
 func (r *postExternalLinkResolver) Comments(ctx context.Context, post *posts.ExternalLink, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
 	return comments(ctx, r.postService, post.ID, first, after)
 }
 
 // Children returns children post of a Boost post
 func (r *postCommentResolver) Comments(ctx context.Context, post *posts.Comment, first *int, after *string) (*graphql.PostResultCursor, error) {
+	if first == nil {
+		three := 3
+		first = &three
+	}
 	return comments(ctx, r.postService, post.ID, first, after)
 }
 

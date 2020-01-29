@@ -617,6 +617,7 @@ type ComplexityRoot struct {
 		Poll                               func(childComplexity int, pollID int) int
 		PostsGet                           func(childComplexity int, id string) int
 		PostsGetByReference                func(childComplexity int, reference string) int
+		PostsGetComments                   func(childComplexity int, id string, first *int, after *string) int
 		PostsSearch                        func(childComplexity int, search posts.SearchInput) int
 		PostsSearchGroupedByChannel        func(childComplexity int, search posts.SearchInput) int
 		PostsStoryfeed                     func(childComplexity int, first *int, after *string, filter *posts.StoryfeedFilter) int
@@ -920,6 +921,7 @@ type QueryResolver interface {
 	PostsSearch(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsSearchGroupedByChannel(ctx context.Context, search posts.SearchInput) (*posts.PostSearchResult, error)
 	PostsStoryfeed(ctx context.Context, first *int, after *string, filter *posts.StoryfeedFilter) (*PostResultCursor, error)
+	PostsGetComments(ctx context.Context, id string, first *int, after *string) (*PostResultCursor, error)
 	GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error)
 	GetChannelTotalProceedsByBoostType(ctx context.Context, channelID string, boostType string) (*payments.ProceedsQueryResult, error)
 	UserChallengeData(ctx context.Context, userAddr *string, pollID *int, canUserCollect *bool, canUserRescue *bool, canUserReveal *bool, lowercaseAddr *bool) ([]*model.UserChallengeData, error)
@@ -4116,6 +4118,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.PostsGetByReference(childComplexity, args["reference"].(string)), true
 
+	case "Query.postsGetComments":
+		if e.complexity.Query.PostsGetComments == nil {
+			break
+		}
+
+		args, err := ec.field_Query_postsGetComments_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.PostsGetComments(childComplexity, args["id"].(string), args["first"].(*int), args["after"].(*string)), true
+
 	case "Query.postsSearch":
 		if e.complexity.Query.PostsSearch == nil {
 			break
@@ -5372,6 +5386,7 @@ type Query {
     postsSearch(search: PostSearchInput!): PostSearchResult
     postsSearchGroupedByChannel(search: PostSearchInput!): PostSearchResult
     postsStoryfeed(first: Int, after: String, filter: StoryfeedFilterInput): PostResultCursor
+    postsGetComments(id: String!, first: Int, after: String): PostResultCursor
 
     # Payment Queries
     getChannelTotalProceeds(channelID: String!): ProceedsQueryResult
@@ -7078,6 +7093,36 @@ func (ec *executionContext) field_Query_postsGetByReference_args(ctx context.Con
 		}
 	}
 	args["reference"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_postsGetComments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["after"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -22209,6 +22254,47 @@ func (ec *executionContext) _Query_postsStoryfeed(ctx context.Context, field gra
 	return ec.marshalOPostResultCursor2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostResultCursor(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_postsGetComments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_postsGetComments_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().PostsGetComments(rctx, args["id"].(string), args["first"].(*int), args["after"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*PostResultCursor)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOPostResultCursor2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋgeneratedᚋgraphqlᚐPostResultCursor(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_getChannelTotalProceeds(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -29888,6 +29974,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_postsStoryfeed(ctx, field)
+				return res
+			})
+		case "postsGetComments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_postsGetComments(ctx, field)
 				return res
 			})
 		case "getChannelTotalProceeds":
