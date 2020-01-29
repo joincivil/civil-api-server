@@ -267,6 +267,33 @@ func (p *DBPostPersister) GetNumChildrenOfPost(id string) (int, error) {
 	return len(postModels), nil
 }
 
+// GetChildrenOfPost returns the children of the post
+func (p *DBPostPersister) GetChildrenOfPost(id string) ([]Post, error) {
+	if id == "" {
+		return nil, ErrorNotFound
+	}
+	var postModels []PostModel
+
+	if err := p.db.Where(&PostModel{ParentID: &id}).Find(&postModels).Error; err != nil {
+		return nil, ErrorNotFound
+	}
+
+	posts := make([]Post, len(postModels))
+
+	for i, postModel := range postModels {
+		if (postModel.CreatedAt == time.Time{}) {
+			return nil, ErrorNotFound
+		}
+		base, err := BaseToPostInterface(&postModel)
+		if err != nil {
+			return nil, err
+		}
+		posts[i] = base
+	}
+
+	return posts, nil
+}
+
 // GetPostByReference retrieves a Post by the reference
 func (p *DBPostPersister) GetPostByReference(reference string) (Post, error) {
 	if reference == "" {
