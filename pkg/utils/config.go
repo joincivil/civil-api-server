@@ -25,7 +25,8 @@ type GraphQLConfig struct {
 	GqlPort int  `required:"true" desc:"Sets the GraphQL service port"`
 	Debug   bool `default:"false" desc:"If true, enables the GraphQL playground"`
 
-	JwtSecret string `split_words:"true" desc:"Secret used to encode JWT tokens"`
+	JwtSecret   string   `split_words:"true" desc:"Secret used to encode JWT tokens"`
+	AuthDomains []string `split_works:"true" required:"true" desc:"Domains that are allowed to authenticate"`
 
 	AuthEmailSignupTemplates map[string]string `split_words:"true" required:"false" desc:"<appname>:<template id>,..."`
 	AuthEmailLoginTemplates  map[string]string `split_words:"true" required:"false" desc:"<appname>:<template id>,..."`
