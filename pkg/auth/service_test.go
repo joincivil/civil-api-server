@@ -263,7 +263,7 @@ func TestSignupEmailSendNoEmailer(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err != nil {
 		t.Errorf("Should have not failed to create a new auth service: err: %v", err)
 	}
@@ -288,7 +288,7 @@ func TestSignupEmailSendNoProtoHost(t *testing.T) {
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, "", []string{})
+		defaultLoginTemplateIDs, "", []string{}, []string{})
 	if err != nil {
 		t.Errorf("Should have not failed to create a new auth service: err: %v", err)
 	}
@@ -368,7 +368,7 @@ func TestLoginEth(t *testing.T) {
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox("", useSandbox)
 	svc, err := auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err != nil {
 		t.Errorf("Should have not failed to create a new auth service: err: %v", err)
 	}
@@ -438,7 +438,7 @@ func TestConfigTemplateIDs(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost, []string{})
+		loginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err != nil {
 		t.Errorf("Should not have failed to create a new auth service: err: %v", err)
 	}
@@ -463,7 +463,7 @@ func TestBadConfigTemplateIDsAppName(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost, []string{})
+		loginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err == nil {
 		t.Errorf("Should have failed to create a new auth service: err: %v", err)
 	}
@@ -487,7 +487,7 @@ func TestBadConfigTemplateIDsAppNameCase(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost, []string{})
+		loginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err == nil {
 		t.Errorf("Should have failed to create a new auth service: err: %v", err)
 	}
@@ -511,7 +511,7 @@ func TestBadConfigTemplateIDs(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil, signupTemplateIDs,
-		loginTemplateIDs, testSignupLoginProtoHost, []string{})
+		loginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err == nil {
 		t.Errorf("Should have failed to create a new auth service: err: %v", err)
 	}
@@ -533,7 +533,7 @@ func TestConfigTemplateIDsNotAll(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	_, err := auth.NewAuthService(userService, generator, nil,
-		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{})
+		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err != nil {
 		t.Errorf("Should not have failed to create a new auth service: err: %v", err)
 	}
@@ -553,7 +553,7 @@ func TestSignupTemplateIDFromApplication(t *testing.T) {
 	userService := users.NewUserService(persister, &testutils.ControllerUpdaterSpy{}, &testutils.MockChannelHelper{})
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	service, err := auth.NewAuthService(userService, generator, nil,
-		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{})
+		signupTemplateIDs, loginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 	if err != nil {
 		t.Errorf("Should not have failed to create a new auth service: err: %v", err)
 	}
@@ -599,7 +599,7 @@ func buildService(sendGridKey string) (*auth.Service, error) {
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 }
 
 func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
@@ -620,6 +620,36 @@ func buildServiceWithExistingUser(sendGridKey string) (*auth.Service, error) {
 	generator := utils.NewJwtTokenGenerator([]byte("secret"))
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	return auth.NewAuthService(userService, generator, emailer, defaultSignupTemplateIDs,
-		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{})
+		defaultLoginTemplateIDs, testSignupLoginProtoHost, []string{}, []string{testSignupLoginProtoHost})
 
+}
+
+func TestCheckAuthDomain(t *testing.T) {
+	var domains = []string{"http://localhost:3000", "https://staging.civil.app"}
+	var domaintests = []struct {
+		input   string
+		domains []string
+		result  string
+	}{
+		{"Authenticate to http://localhost:3000", domains, "http://localhost:3000"},
+		{"Authenticate to https://staging.civil.app", domains, "https://staging.civil.app"},
+		{"Authenticate to https://foo.bar", domains, ""},
+	}
+
+	for _, tt := range domaintests {
+		domain, err := auth.CheckAuthDomain(tt.input, tt.domains)
+		if tt.result == "" && err != nil {
+			if domain != "" {
+				t.Errorf("expecting an error but got a result: %v", domain)
+			}
+			if err.Error() != "cannot authenticate to domain" {
+				t.Errorf("expecting auth failure: %v", domain)
+			}
+		} else if err != nil {
+			t.Errorf("error: %v", err)
+		} else if domain != tt.result {
+			t.Errorf("expecting: %v but got: %v", tt.result, domain)
+		}
+
+	}
 }
