@@ -235,8 +235,13 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 
 // LoginEth creates a new user for the address in the Ethereum signature
 func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) {
-	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
-		ExpectedPrefix: "Authenticate to " + s.signupLoginProtoHost,
+	authDomain, err := CheckAuthDomain(input.Message, s.authDomains)
+	if err != nil {
+		return nil, err
+	}
+
+	err = eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
+		ExpectedPrefix: "Authenticate to " + authDomain,
 		GracePeriod:    defaultGracePeriod,
 		InputAddress:   input.Signer,
 		InputChallenge: input.Message,
