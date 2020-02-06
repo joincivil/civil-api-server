@@ -139,3 +139,14 @@ type SanitizedPayment struct {
 	MostRecentUpdate time.Time
 	PayerChannelID   string
 }
+
+type CreateStripePaymentIntentInput struct {
+    CurrencyCode string
+    Amount       float64
+}
+
+type StripePaymentIntent struct {
+    Status       string
+    ClientSecret string
+    ID           string
+}

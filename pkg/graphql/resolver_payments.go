@@ -160,6 +160,10 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 	return nil, ErrNotImplemented
 }
 
+func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context, input *payments.CreateStripePaymentIntentInput) (*payments.StripePaymentIntent, error) {
+	return &payments.StripePaymentIntent{}, nil
+}
+
 func (r *queryResolver) GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error) {
 	err := r.validateUserIsChannelAdmin(ctx, channelID)
 	if err != nil {

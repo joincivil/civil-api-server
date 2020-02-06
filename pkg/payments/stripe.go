@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"math"
 
 	"github.com/pkg/errors"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/applepaydomain"
 	"github.com/stripe/stripe-go/charge"
+	"github.com/stripe/stripe-go/paymentintent"
 )
 
 const stripeOAuthURI = "https://connect.stripe.com/oauth/token"
@@ -218,4 +220,24 @@ func SetDifference(groupA []string, groupB []string) []string {
 // IsSubset returns true if all items in groupA are included in groupB
 func IsSubset(groupA []string, groupB []string) bool {
 	return len(SetDifference(groupA, groupB)) == 0
+}
+
+func (s *StripeService) CreateStripePaymentIntent(input CreateStripePaymentIntentInput) (StripePaymentIntent, error) {
+	stripe.Key = s.apiKey
+
+	params := &stripe.PaymentIntentParams{
+		Amount:   stripe.Int64(int64(math.Floor(input.Amount * 100))),
+		Currency: stripe.String(string(stripe.CurrencyUSD)), // @TODO get from input?
+		PaymentMethodTypes: []*string{
+		    stripe.String("card"),
+		},
+	}
+	// @TODO handle errors
+	pi, _ := paymentintent.New(params)
+
+	return StripePaymentIntent{
+		ID: pi.ID,
+		ClientSecret: pi.ClientSecret,
+		Status: string(pi.Status),
+	}, nil
 }

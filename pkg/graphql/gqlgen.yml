@@ -105,8 +105,12 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
   PaymentsCreateEtherPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
+  PaymentsCreateStripePaymentIntentInput:
+    model: github.com/joincivil/civil-api-server/pkg/payments.CreateStripePaymentIntentInput
   PaymentsCreateTokenPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  PaymentsStripePaymentIntent:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePaymentIntent
   ProceedsQueryResult:
     model: github.com/joincivil/civil-api-server/pkg/payments.ProceedsQueryResult
   Post:
@@ -120,7 +124,7 @@ models:
   PostComment:
     model: github.com/joincivil/civil-api-server/pkg/posts.Comment
   PostSearchInput:
-    model: github.com/joincivil/civil-api-server/pkg/posts.SearchInput  
+    model: github.com/joincivil/civil-api-server/pkg/posts.SearchInput
   StoryfeedFilterInput:
     model: github.com/joincivil/civil-api-server/pkg/posts.StoryfeedFilter
   PostSearchResult:

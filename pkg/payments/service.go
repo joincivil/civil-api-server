@@ -39,6 +39,7 @@ const (
 // StripeCharger defines the functions needed to create a charge with Stripe
 type StripeCharger interface {
 	CreateCharge(request *CreateChargeRequest) (CreateChargeResponse, error)
+	CreateStripePaymentIntent(input CreateStripePaymentIntentInput) (StripePaymentIntent, error)
 }
 
 // EthereumValidator defines the functions needed to create an Ethereum payment
@@ -370,6 +371,10 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 
 	return payment, nil
+}
+
+func (s *Service) CreateStripePaymentIntent(input CreateStripePaymentIntentInput) (StripePaymentIntent, error) {
+	return s.stripe.CreateStripePaymentIntent(input)
 }
 
 // GetPaymentsByPayerChannel returns payments made by a channel, exposes potentially sensitive info

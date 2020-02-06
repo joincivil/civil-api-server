@@ -34,3 +34,18 @@ input PaymentsCreateStripePaymentInput {
     payerChannelID: String
     shouldPublicize: Boolean
 }
+
+input PaymentsCreateStripePaymentIntentInput {
+    currencyCode: String!
+    amount: Float!
+}
+
+type PaymentsStripePaymentIntent {
+    status: String!
+    clientSecret: String!
+    id: String!
+}
+
+extend type Mutation {
+    paymentsCreateStripePaymentIntent(input: PaymentsCreateStripePaymentIntentInput): PaymentsStripePaymentIntent!
+}
