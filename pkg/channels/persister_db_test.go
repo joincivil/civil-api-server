@@ -70,3 +70,35 @@ func TestNewsroomHandle(t *testing.T) {
 		t.Fatalf("error clearing test-handle. channel.Handle = %s", *(channel.Handle))
 	}
 }
+
+func TestGetChannelEmptyID(t *testing.T) {
+	db, err := testutils.GetTestDBConnection()
+	if err != nil {
+		t.Fatalf("error getting DB: %v", err)
+	}
+	err = testruntime.RunMigrations(db)
+	if err != nil {
+		t.Fatalf("error cleaning DB: %v", err)
+	}
+
+	persister := channels.NewDBPersister(db)
+	generator := utils.NewJwtTokenGenerator([]byte("secret"))
+
+	sendGridKey := getSendGridKeyFromEnvVar()
+	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
+	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{}, generator, emailer, testSignupLoginProtoHost)
+
+	channel, err := svc.CreateUserChannel(user3ID)
+	if err != nil {
+		t.Fatalf("not expecting error: %v", err)
+	}
+
+	if channel.ID == "" {
+		t.Fatal("channel does not have an ID")
+	}
+
+	channel, err = svc.GetChannel("")
+	if channel != nil {
+		t.Fatalf("should have failed to get channel on empty channelID.")
+	}
+}
