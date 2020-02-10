@@ -11,6 +11,7 @@ import (
 
 var (
 	user3ID = randomUUID()
+	user4ID = randomUUID()
 )
 
 // This test uses a USER channel instead of a newsroom channel, to avoid having to set up a listing. The `SetNewsroomHandleOnAccepted` and
@@ -88,7 +89,7 @@ func TestGetChannelEmptyID(t *testing.T) {
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{}, generator, emailer, testSignupLoginProtoHost)
 
-	channel, err := svc.CreateUserChannel(user3ID)
+	channel, err := svc.CreateUserChannel(user4ID)
 	if err != nil {
 		t.Fatalf("not expecting error: %v", err)
 	}
@@ -97,7 +98,7 @@ func TestGetChannelEmptyID(t *testing.T) {
 		t.Fatal("channel does not have an ID")
 	}
 
-	channel, err = svc.GetChannel("")
+	channel, _ = svc.GetChannel("")
 	if channel != nil {
 		t.Fatalf("should have failed to get channel on empty channelID.")
 	}
