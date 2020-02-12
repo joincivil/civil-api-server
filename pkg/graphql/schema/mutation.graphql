@@ -36,7 +36,6 @@ type Mutation {
     userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
     channelsSetEmail(input: ChannelsSetEmailInput!): Channel
     channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
-    channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
     channelsClearStripeCustomerID(channelID: String!): Channel
     channelsEnableApplePay(channelID: String!): [String!]
 

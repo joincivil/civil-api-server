@@ -25,25 +25,27 @@ type Payment interface {
 
 // PaymentModel defines the GORM model for a payment
 type PaymentModel struct {
-	ID              string    `gorm:"type:uuid;primary_key"`
-	CreatedAt       time.Time `gorm:"not null"`
-	UpdatedAt       time.Time `gorm:"not null"`
-	DeletedAt       *time.Time
-	PaymentType     string  `gorm:"not null;unique_index:payments_idx_type_reference"`
-	Reference       string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
-	Status          string  `gorm:"not null"`
-	CurrencyCode    string  `gorm:"not null"`
-	Amount          float64 `gorm:"not null"`
-	ExchangeRate    float64 `gorm:"not null"`
-	Comment         string
-	Reaction        string
-	Data            postgres.Jsonb
-	OwnerID         string `gorm:"not null"`
-	OwnerType       string `gorm:"not null"`
-	OwnerPostType   string
-	EmailAddress    string
-	PayerChannelID  string
-	ShouldPublicize bool
+	ID                string    `gorm:"type:uuid;primary_key"`
+	CreatedAt         time.Time `gorm:"not null"`
+	UpdatedAt         time.Time `gorm:"not null"`
+	DeletedAt         *time.Time
+	PaymentType       string  `gorm:"not null;unique_index:payments_idx_type_reference"`
+	Reference         string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Status            string  `gorm:"not null"`
+	CurrencyCode      string  `gorm:"not null"`
+	Amount            float64 `gorm:"not null"`
+	ExchangeRate      float64 `gorm:"not null"`
+	Comment           string
+	Reaction          string
+	Data              postgres.Jsonb
+	OwnerID           string `gorm:"not null"`
+	OwnerType         string `gorm:"not null"`
+	OwnerPostType     string
+	EmailAddress      string
+	PayerChannelID    string
+	ShouldPublicize   bool
+	ShouldSaveCard    bool
+	SavedCardSourceID string
 }
 
 // TableName returns the gorm table name for Base
@@ -138,4 +140,17 @@ type SanitizedPayment struct {
 	UsdEquivalent    float64
 	MostRecentUpdate time.Time
 	PayerChannelID   string
+}
+
+// StripeCustomerInfo contains a list of stripe payment sources
+type StripeCustomerInfo struct {
+	Sources []StripeSource
+}
+
+// StripeSource contains info about a stripe payment source
+type StripeSource struct {
+	ID          string
+	Last4Digits string
+	ExpMonth    string
+	ExpYear     string
 }

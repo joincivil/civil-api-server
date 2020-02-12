@@ -68,3 +68,14 @@ type PaymentToken implements Payment {
     payerChannel: Channel
     post: Post
 }
+
+type StripeCustomerInfo {
+    sources: [StripeSource!]
+}
+
+type StripeSource {
+    id: String
+    last4Digits: String
+    expMonth: String
+    expYear: String
+}

@@ -94,7 +94,11 @@ models:
   Payment:
     model: github.com/joincivil/civil-api-server/pkg/payments.Payment
   SanitizedPayment:
-    model: github.com/joincivil/civil-api-server/pkg/payments.SanitizedPayment
+    model: github.com/joincivil/civil-api-server/pkg/payments.SanitizedPayment  
+  StripeCustomerInfo:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripeCustomerInfo  
+  StripeSource:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripeSource
   PaymentStripe:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
   PaymentEther:

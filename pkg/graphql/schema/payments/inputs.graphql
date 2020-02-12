@@ -33,4 +33,6 @@ input PaymentsCreateStripePaymentInput {
     emailAddress: String
     payerChannelID: String
     shouldPublicize: Boolean
+    shouldSaveCard: Boolean
+    savedCardSourceID: String
 }

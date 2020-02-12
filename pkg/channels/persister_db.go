@@ -354,18 +354,10 @@ func (p *DBPersister) SetTiny72AvatarDataURL(userID string, channelID string, av
 }
 
 // SetStripeCustomerID updates the stripe customer id for the channel
-func (p *DBPersister) SetStripeCustomerID(userID string, channelID string, stripeCustomerID string) (*Channel, error) {
+func (p *DBPersister) SetStripeCustomerID(channelID string, stripeCustomerID string) (*Channel, error) {
 	// get channel
 	ch, err := p.GetChannel(channelID)
 	if err != nil {
-		return nil, errors.Wrap(err, "error setting stripe customer id")
-	}
-
-	// make sure the user requesting is an admin
-	err = p.requireAdmin(userID, channelID)
-	if err == ErrorUnauthorized {
-		return nil, ErrorUnauthorized
-	} else if err != nil {
 		return nil, errors.Wrap(err, "error setting stripe customer id")
 	}
 

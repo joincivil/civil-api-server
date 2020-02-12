@@ -16,6 +16,7 @@ type Channel {
     StripeCustomerIDRestricted: String
     stripeApplePayEnabled: Boolean!
     paymentsMadeByChannel: [Payment!]
+    stripeCustomerInfo: StripeCustomerInfo
 }
 
 type ChannelMember {
