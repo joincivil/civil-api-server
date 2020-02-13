@@ -44,8 +44,8 @@ type PaymentModel struct {
 	EmailAddress      string
 	PayerChannelID    string
 	ShouldPublicize   bool
-	ShouldSaveCard    bool
-	SavedCardSourceID string
+	ShouldSaveCard    bool   `gorm:"-"`
+	SavedCardSourceID string `gorm:"-"`
 }
 
 // TableName returns the gorm table name for Base
