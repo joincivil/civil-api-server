@@ -13,7 +13,9 @@ import (
 
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/applepaydomain"
+	"github.com/stripe/stripe-go/card"
 	"github.com/stripe/stripe-go/charge"
+	"github.com/stripe/stripe-go/customer"
 )
 
 const stripeOAuthURI = "https://connect.stripe.com/oauth/token"
@@ -27,7 +29,9 @@ type StripeService struct {
 // CreateChargeRequest contains the data needed to create a charge
 type CreateChargeRequest struct {
 	Amount        int64
-	SourceToken   string
+	SourceToken   *string
+	CustomerID    *string
+	SourceID      *string
 	StripeAccount string
 	Metadata      map[string]string
 }
@@ -36,6 +40,28 @@ type CreateChargeRequest struct {
 type CreateChargeResponse struct {
 	ID                 string
 	StripeResponseJSON []byte
+}
+
+// CreateCustomerRequest contains the data needed to create a customer
+type CreateCustomerRequest struct {
+	Email       string
+	SourceToken string
+}
+
+// CreateCustomerResponse contains the result of creating a customer
+type CreateCustomerResponse struct {
+	ID string
+}
+
+// AddCustomerCardRequest contains the data needed to add a new card to a customer
+type AddCustomerCardRequest struct {
+	CustomerID  string
+	SourceToken string
+}
+
+// AddCustomerCardResponse contains the result of adding a new card to a customer
+type AddCustomerCardResponse struct {
+	ID string
 }
 
 // NewStripeService constructs an instance of the stripe Service
@@ -54,19 +80,97 @@ func NewStripeServiceFromConfig(config *utils.GraphQLConfig) *StripeService {
 	}
 }
 
-// CreateCharge sends a payment to a connected account
-func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateChargeResponse, error) {
-
+// GetCustomerInfo returns customer info such as payment sources for display on client
+func (s *StripeService) GetCustomerInfo(customerID string) (StripeCustomerInfo, error) {
 	stripe.Key = s.apiKey
 
-	params := &stripe.ChargeParams{
-		Amount:   stripe.Int64(request.Amount),
-		Currency: stripe.String(string(stripe.CurrencyUSD)),
-	}
-	err := params.SetSource(request.SourceToken)
+	cus, err := customer.Get(customerID, nil)
 	if err != nil {
-		log.Errorf("error creating stripe charge: %v", err)
-		return CreateChargeResponse{}, err
+		return StripeCustomerInfo{}, err
+	}
+
+	sources := make([]StripeSource, cus.Sources.TotalCount)
+
+	for _, s := range cus.Sources.Data {
+		source := StripeSource{
+			ID:          s.ID,
+			Last4Digits: s.Card.Last4,
+			ExpMonth:    string(s.Card.ExpMonth),
+			ExpYear:     string(s.Card.ExpYear),
+		}
+		sources = append(sources, source)
+	}
+
+	return StripeCustomerInfo{Sources: sources}, nil
+}
+
+// AddCustomerCard adds a card to a stripe customer
+func (s *StripeService) AddCustomerCard(request *AddCustomerCardRequest) (AddCustomerCardResponse, error) {
+	stripe.Key = s.apiKey
+
+	params := &stripe.CardParams{
+		Customer: stripe.String(request.CustomerID),
+		Token:    stripe.String(request.SourceToken),
+	}
+	c, err := card.New(params)
+	if err != nil {
+		return AddCustomerCardResponse{}, err
+	}
+
+	return AddCustomerCardResponse{ID: c.ID}, nil
+}
+
+// CreateCustomer creates a stripe customer
+func (s *StripeService) CreateCustomer(request *CreateCustomerRequest) (CreateCustomerResponse, error) {
+	stripe.Key = s.apiKey
+
+	// Create a Customer:
+	customerParams := &stripe.CustomerParams{
+		Email: stripe.String(request.Email),
+	}
+	err := customerParams.SetSource(request.SourceToken)
+	if err != nil {
+		log.Errorf("error creating stripe customer: %v", err)
+		return CreateCustomerResponse{}, err
+	}
+	cus, err := customer.New(customerParams)
+	if err != nil {
+		log.Errorf("error creating stripe customer: %v", err)
+		return CreateCustomerResponse{}, err
+	}
+
+	return CreateCustomerResponse{ID: cus.ID}, nil
+}
+
+// CreateCharge sends a payment to a connected account
+func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateChargeResponse, error) {
+	stripe.Key = s.apiKey
+
+	var params *stripe.ChargeParams
+	if request.CustomerID != nil {
+		params = &stripe.ChargeParams{
+			Amount:   stripe.Int64(request.Amount),
+			Currency: stripe.String(string(stripe.CurrencyUSD)),
+			Customer: request.CustomerID,
+		}
+		if request.SourceID != nil {
+			err := params.SetSource(*(request.SourceID))
+			if err != nil {
+				log.Errorf("error creating stripe charge: %v", err)
+				return CreateChargeResponse{}, err
+			}
+		}
+	} else {
+		params = &stripe.ChargeParams{
+			Amount:   stripe.Int64(request.Amount),
+			Currency: stripe.String(string(stripe.CurrencyUSD)),
+		}
+
+		err := params.SetSource(*(request.SourceToken))
+		if err != nil {
+			log.Errorf("error creating stripe charge: %v", err)
+			return CreateChargeResponse{}, err
+		}
 	}
 
 	for k, v := range request.Metadata {
@@ -76,7 +180,6 @@ func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateCharge
 	params.SetStripeAccount(request.StripeAccount)
 
 	ch, err := charge.New(params)
-
 	if err != nil {
 		log.Errorf("error creating stripe charge: %v", err)
 		return CreateChargeResponse{}, err

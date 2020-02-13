@@ -271,8 +271,8 @@ func (s *Service) processAvatar(payload interface{}) interface{} {
 }
 
 // SetStripeCustomerID sets the stripe customer id on a channel of any type
-func (s *Service) SetStripeCustomerID(userID string, channelID string, stripeCustomerID string) (*Channel, error) {
-	return s.persister.SetStripeCustomerID(userID, channelID, stripeCustomerID)
+func (s *Service) SetStripeCustomerID(channelID string, stripeCustomerID string) (*Channel, error) {
+	return s.persister.SetStripeCustomerID(channelID, stripeCustomerID)
 }
 
 // ClearStripeCustomerID sets the stripe customer id on a channel of any type
@@ -523,6 +523,16 @@ func (s *Service) GetStripePaymentAccount(channelID string) (string, error) {
 	}
 
 	return ch.StripeAccountID, nil
+}
+
+// GetStripeCustomerID returns the stripe customer id associated with the channel
+func (s *Service) GetStripeCustomerID(channelID string) (string, error) {
+	ch, err := s.persister.GetChannel(channelID)
+	if err != nil {
+		return "", err
+	}
+
+	return ch.StripeCustomerID, nil
 }
 
 // GetEthereumPaymentAddress returns the Ethereum account associated with the channel

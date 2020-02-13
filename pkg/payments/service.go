@@ -7,6 +7,7 @@ import (
 	"math"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 
 	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
@@ -38,7 +39,10 @@ const (
 
 // StripeCharger defines the functions needed to create a charge with Stripe
 type StripeCharger interface {
+	CreateCustomer(request *CreateCustomerRequest) (CreateCustomerResponse, error)
+	AddCustomerCard(request *AddCustomerCardRequest) (AddCustomerCardResponse, error)
 	CreateCharge(request *CreateChargeRequest) (CreateChargeResponse, error)
+	GetCustomerInfo(customerID string) (StripeCustomerInfo, error)
 }
 
 // EthereumValidator defines the functions needed to create an Ethereum payment
@@ -50,6 +54,8 @@ type EthereumValidator interface {
 type ChannelHelper interface {
 	GetEthereumPaymentAddress(channelID string) (common.Address, error)
 	GetStripePaymentAccount(channelID string) (string, error)
+	GetStripeCustomerID(channelID string) (string, error)
+	SetStripeCustomerID(channelID string, stripeCustomerID string) (*channels.Channel, error)
 }
 
 // Service provides methods to interact with Posts
@@ -316,6 +322,61 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 	return nil
 }
 
+// GetStripeCustomerInfo returns stripe customer info for display on client
+func (s *Service) GetStripeCustomerInfo(channelID string) (StripeCustomerInfo, error) {
+	customerID, err := s.channel.GetStripeCustomerID(channelID)
+	if err != nil {
+		return StripeCustomerInfo{}, err
+	}
+	if customerID == "" {
+		return StripeCustomerInfo{}, nil
+	}
+
+	return s.stripe.GetCustomerInfo(customerID)
+}
+
+func (s *Service) saveCardAndCharge(payment StripePayment, stripeAccount string, ownerType string, ownerID string) (CreateChargeResponse, error) {
+	customerID, err := s.channel.GetStripeCustomerID(payment.PayerChannelID)
+	if err != nil {
+		return CreateChargeResponse{}, err
+	}
+
+	var sourceID *string
+	if customerID != "" {
+		// customer already exists, add card to them
+		card, err := s.stripe.AddCustomerCard(&AddCustomerCardRequest{
+			CustomerID:  customerID,
+			SourceToken: payment.PaymentToken,
+		})
+		if err != nil {
+			return CreateChargeResponse{}, err
+		}
+		sourceID = &(card.ID)
+	} else {
+		// no customer associated with channel, create one
+		customer, err := s.stripe.CreateCustomer(&CreateCustomerRequest{
+			Email:       payment.EmailAddress,
+			SourceToken: payment.PaymentToken,
+		})
+		if err != nil {
+			return CreateChargeResponse{}, err
+		}
+		customerID = customer.ID
+
+		_, err = s.channel.SetStripeCustomerID(payment.PayerChannelID, customerID)
+		if err != nil {
+			return CreateChargeResponse{}, err
+		}
+	}
+	return s.stripe.CreateCharge(&CreateChargeRequest{
+		Amount:        int64(math.Floor(payment.Amount * 100)),
+		CustomerID:    &customerID,
+		SourceID:      sourceID,
+		StripeAccount: stripeAccount,
+		Metadata:      map[string]string{ownerType: ownerID},
+	})
+}
+
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
 func (s *Service) CreateStripePayment(channelID string, ownerType string, postType string, ownerID string, payment StripePayment, tmplData email.TemplateData) (StripePayment, error) {
 
@@ -324,15 +385,38 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 		return StripePayment{}, err
 	}
 
-	// generate a stripe charge
-	res, err := s.stripe.CreateCharge(&CreateChargeRequest{
-		Amount:        int64(math.Floor(payment.Amount * 100)),
-		SourceToken:   payment.PaymentToken,
-		StripeAccount: stripeAccount,
-		Metadata:      map[string]string{ownerType: ownerID},
-	})
-	if err != nil {
-		return StripePayment{}, err
+	var res CreateChargeResponse
+	if payment.SavedCardSourceID != "" && payment.PayerChannelID != "" {
+		customerID, err := s.channel.GetStripeCustomerID(payment.PayerChannelID)
+		if err != nil {
+			return StripePayment{}, err
+		}
+		res, err = s.stripe.CreateCharge(&CreateChargeRequest{
+			Amount:        int64(math.Floor(payment.Amount * 100)),
+			CustomerID:    &customerID,
+			SourceID:      &(payment.SavedCardSourceID),
+			StripeAccount: stripeAccount,
+			Metadata:      map[string]string{ownerType: ownerID},
+		})
+		if err != nil {
+			return StripePayment{}, err
+		}
+	} else if payment.ShouldSaveCard && payment.PayerChannelID != "" && payment.EmailAddress != "" {
+		res, err = s.saveCardAndCharge(payment, stripeAccount, ownerType, ownerID)
+		if err != nil {
+			return StripePayment{}, err
+		}
+	} else {
+		// generate a stripe charge
+		res, err = s.stripe.CreateCharge(&CreateChargeRequest{
+			Amount:        int64(math.Floor(payment.Amount * 100)),
+			SourceToken:   &(payment.PaymentToken),
+			StripeAccount: stripeAccount,
+			Metadata:      map[string]string{ownerType: ownerID},
+		})
+		if err != nil {
+			return StripePayment{}, err
+		}
 	}
 
 	// generate a new ID for the payment model
