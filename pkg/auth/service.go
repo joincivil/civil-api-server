@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -86,6 +87,7 @@ type Service struct {
 	loginEmailTemplateIDs  ApplicationEmailTemplateMap
 	signupLoginProtoHost   string
 	refreshBlacklist       []string
+	authDomains            []string
 }
 
 // NewAuthServiceFromConfig creates a new auth.Service using the main graphql config
@@ -95,14 +97,14 @@ func NewAuthServiceFromConfig(userService *users.UserService, tokenGenerator *ut
 	loginTemplateIDs := config.AuthEmailLoginTemplates
 	signupLoginProtoHost := config.SignupLoginProtoHost
 	refreshBlacklist := config.RefreshTokenBlacklist
-	return NewAuthService(userService, tokenGenerator, emailer, signupTemplateIDs, loginTemplateIDs, signupLoginProtoHost, refreshBlacklist)
+	return NewAuthService(userService, tokenGenerator, emailer, signupTemplateIDs, loginTemplateIDs, signupLoginProtoHost, refreshBlacklist, config.AuthDomains)
 }
 
 // NewAuthService creates a new AuthService instance
 func NewAuthService(userService *users.UserService, tokenGenerator *utils.JwtTokenGenerator,
 	emailer *email.Emailer, signupTemplateIDs map[string]string,
 	loginTemplateIDs map[string]string, signupLoginProtoHost string,
-	refreshBlacklist []string) (*Service, error) {
+	refreshBlacklist []string, authDomains []string) (*Service, error) {
 
 	var signupIDs ApplicationEmailTemplateMap
 	if signupTemplateIDs != nil {
@@ -128,14 +130,19 @@ func NewAuthService(userService *users.UserService, tokenGenerator *utils.JwtTok
 		loginEmailTemplateIDs:  loginIDs,
 		signupLoginProtoHost:   signupLoginProtoHost,
 		refreshBlacklist:       refreshBlacklist,
+		authDomains:            authDomains,
 	}, nil
 }
 
 // SignupEth validates the Signature input then creates a User for that address
 func (s *Service) SignupEth(input *users.SignatureInput) (*LoginResponse, error) {
+	authDomain, err := CheckAuthDomain(input.Message, s.authDomains)
+	if err != nil {
+		return nil, err
+	}
 
-	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
-		ExpectedPrefix: "Authenticate to " + s.signupLoginProtoHost,
+	err = eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
+		ExpectedPrefix: "Authenticate to " + authDomain,
 		GracePeriod:    defaultGracePeriod,
 		InputAddress:   input.Signer,
 		InputChallenge: input.Message,
@@ -228,8 +235,13 @@ func (s *Service) SignupEmailConfirm(signupJWT string) (*LoginResponse, error) {
 
 // LoginEth creates a new user for the address in the Ethereum signature
 func (s *Service) LoginEth(input *users.SignatureInput) (*LoginResponse, error) {
-	err := eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
-		ExpectedPrefix: "Authenticate to " + s.signupLoginProtoHost,
+	authDomain, err := CheckAuthDomain(input.Message, s.authDomains)
+	if err != nil {
+		return nil, err
+	}
+
+	err = eth.VerifyEthChallengeAndSignature(eth.ChallengeRequest{
+		ExpectedPrefix: "Authenticate to " + authDomain,
 		GracePeriod:    defaultGracePeriod,
 		InputAddress:   input.Signer,
 		InputChallenge: input.Message,
@@ -475,4 +487,23 @@ func (s *Service) subData(sub string) (email string, ref string) {
 	}
 
 	return "", ""
+}
+
+// CheckAuthDomain takes a signature message in the form of `Authenticate to {domain} @ {timestamp` and returns whether the domain is in the list of provided auth domains
+func CheckAuthDomain(inputMessage string, authDomains []string) (string, error) {
+	var matchedDomain string
+	var match = false
+	for _, ad := range authDomains {
+		match = strings.HasPrefix(inputMessage, "Authenticate to "+ad)
+		if match {
+			matchedDomain = ad
+			break
+		}
+	}
+
+	if !match {
+		return "", errors.New("cannot authenticate to domain")
+	}
+
+	return matchedDomain, nil
 }
