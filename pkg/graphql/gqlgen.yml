@@ -111,6 +111,8 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
   PaymentsCreateTokenPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  PaymentsStripePaymentIntent:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePaymentIntent
   ProceedsQueryResult:
     model: github.com/joincivil/civil-api-server/pkg/payments.ProceedsQueryResult
   Post:

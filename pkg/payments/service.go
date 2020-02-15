@@ -14,6 +14,7 @@ import (
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joincivil/go-common/pkg/email"
 	uuid "github.com/satori/go.uuid"
+	"time"
 )
 
 const (
@@ -43,6 +44,7 @@ type StripeCharger interface {
 	AddCustomerCard(request *AddCustomerCardRequest) (AddCustomerCardResponse, error)
 	CreateCharge(request *CreateChargeRequest) (CreateChargeResponse, error)
 	GetCustomerInfo(customerID string) (StripeCustomerInfo, error)
+	CreateStripePaymentIntent(request CreatePaymentIntentRequest) (StripePaymentIntent, error)
 }
 
 // EthereumValidator defines the functions needed to create an Ethereum payment
@@ -355,8 +357,9 @@ func (s *Service) saveCardAndCharge(payment StripePayment, stripeAccount string,
 	} else {
 		// no customer associated with channel, create one
 		customer, err := s.stripe.CreateCustomer(&CreateCustomerRequest{
-			Email:       payment.EmailAddress,
-			SourceToken: payment.PaymentToken,
+			Email:         payment.EmailAddress,
+			SourceToken:   payment.PaymentToken,
+			StripeAccount: stripeAccount,
 		})
 		if err != nil {
 			return CreateChargeResponse{}, err
@@ -456,6 +459,104 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	return payment, nil
 }
 
+// ConfirmStripePaymentIntent sets the status of a stripe payment after payment_intent.succeeded webhook event received
+func (s *Service) ConfirmStripePaymentIntent(paymentIntentID string, amount float64, postType string, tmplData email.TemplateData) error {
+	var payment PaymentModel
+	if err := s.db.Where("reference = ?", paymentIntentID).First(&payment).Error; err != nil {
+		log.Errorf("Error getting payment: %v\n", err)
+		return err
+	}
+
+	// create a payment model to hold the updated fields
+	update := &PaymentModel{}
+	update.Status = "complete"
+	update.Amount = amount
+
+	if err := s.db.Model(&payment).Update(update).Error; err != nil {
+		log.Errorf("Error updating payment: %v\n", err)
+		return err
+	}
+
+	// only send payment receipt if email is given
+	if payment.EmailAddress != "" {
+		if postType == postTypeBoost {
+			err := s.sendBoostStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+			if err != nil {
+				return err
+			}
+		} else if postType == postTypeExternalLink {
+			err := s.sendExternalLinkStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
+			if err != nil {
+				return err
+			}
+		} else {
+			log.Errorf("Error when sending Stripe payment complete email. OwnerPostType unknown.")
+			return errors.New("error when sending Stripe payment successful email")
+		}
+	}
+	return nil
+}
+
+// FailStripePaymentIntent sets the status of a stripe payment after payment_intent.payment_failed webhook event received
+func (s *Service) FailStripePaymentIntent(paymentIntentID string) (bool, error) {
+	var payment PaymentModel
+	if err := s.db.Where("reference = ?", paymentIntentID).First(&payment).Error; err != nil {
+		log.Errorf("Error getting payment: %v\n", err)
+		return false, err
+	}
+
+	// create a payment model to hold the updated fields
+	update := &PaymentModel{}
+	update.Status = "failed"
+
+	if err := s.db.Model(&payment).Update(update).Error; err != nil {
+		log.Errorf("Error updating payment: %v\n", err)
+		return false, err
+	}
+
+	return true, nil
+}
+
+// CreateStripePaymentIntent creates a stripe payment intent and "unconfirmed" payment in DB and returns payment intent
+func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, postType string, ownerID string, payment StripePayment) (StripePaymentIntent, error) {
+	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
+	if err != nil {
+		return StripePaymentIntent{}, err
+	}
+	paymentIntent, err := s.stripe.CreateStripePaymentIntent(
+		CreatePaymentIntentRequest{
+			Amount:        int64(math.Floor(payment.Amount * 100)),
+			StripeAccount: stripeAccount,
+			Metadata:      map[string]string{ownerType: ownerID},
+		})
+	if err != nil {
+		return StripePaymentIntent{}, nil
+	}
+
+	// generate a new ID for the payment model
+	id := uuid.NewV4()
+	payment.ID = id.String()
+
+	payment.PaymentType = payment.Type()
+
+	payment.Status = "pending"
+	payment.OwnerID = ownerID
+	payment.OwnerType = ownerType
+	payment.OwnerPostType = postType
+	payment.Reference = paymentIntent.ID
+	payment.Amount = 0
+
+	// TODO(dankins): this should be set when we support currencies other than USD
+	payment.ExchangeRate = 1
+
+	if err = s.db.Create(&payment).Error; err != nil {
+		log.Errorf("An error occurred: %v\n", err)
+		return StripePaymentIntent{}, err
+	}
+
+	return paymentIntent, nil
+}
+
 // GetPaymentsByPayerChannel returns payments made by a channel, exposes potentially sensitive info
 // so should only be called after checking user is authorized to view this data
 func (s *Service) GetPaymentsByPayerChannel(channelID string) ([]Payment, error) {
@@ -514,7 +615,7 @@ func (s *Service) GetGroupedSanitizedPayments(postID string) ([]*SanitizedPaymen
 				SELECT SUM(amount * exchange_rate) as usd_equivalent,
 					max(created_at) as most_recent_update,  
 					payer_channel_id
-				FROM payments WHERE owner_id = '%s' AND should_publicize = true GROUP BY payer_channel_id
+				FROM payments WHERE owner_id = '%s' AND status = 'complete' AND should_publicize = true GROUP BY payer_channel_id
 			) publicized_group
 
 			UNION
@@ -523,7 +624,7 @@ func (s *Service) GetGroupedSanitizedPayments(postID string) ([]*SanitizedPaymen
 				SELECT (amount * exchange_rate) as usd_equivalent,
 					created_at as most_recent_update, 
 					'' as payer_channel_id
-				FROM payments WHERE owner_id = '%s' AND should_publicize = false
+				FROM payments WHERE owner_id = '%s' AND status = 'complete' AND should_publicize = false
 			) unpublicized_ungroup
 
 		) data 
@@ -562,6 +663,18 @@ func (s *Service) GetPayment(paymentID string) (Payment, error) {
 	}
 
 	return payment, nil
+}
+
+// GetPaymentByReference returns the payment with the given reference
+func (s *Service) GetPaymentByReference(reference string) (Payment, error) {
+	paymentModel := &PaymentModel{}
+	s.db.Where("reference = ?", reference).First(paymentModel)
+
+	if (paymentModel.CreatedAt == time.Time{}) {
+		return nil, errors.New("Payment Not Found")
+	}
+
+	return ModelToInterface(paymentModel)
 }
 
 // TotalPayments returns the USD equivalent of all payments associated with the post

@@ -29,10 +29,16 @@ input PaymentsCreateStripePaymentInput {
     comment: String
     currencyCode: String!
     amount: Float!
-    paymentToken: String!
+    paymentToken: String
     emailAddress: String
     payerChannelID: String
     shouldPublicize: Boolean
     shouldSaveCard: Boolean
     savedCardSourceID: String
+}
+
+type PaymentsStripePaymentIntent {
+    status: String!
+    clientSecret: String!
+    id: String!
 }
