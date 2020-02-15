@@ -10,8 +10,12 @@ import (
 	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/airswap"
 	"github.com/joincivil/civil-api-server/pkg/auth"
+	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/graphql"
+	"github.com/joincivil/civil-api-server/pkg/newsrooms"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"github.com/joincivil/civil-api-server/pkg/payments"
+	"github.com/joincivil/civil-api-server/pkg/posts"
 	"github.com/joincivil/civil-api-server/pkg/storefront"
 	"github.com/joincivil/civil-api-server/pkg/utils"
 	cerrors "github.com/joincivil/go-common/pkg/errors"
@@ -39,6 +43,10 @@ type ServerDeps struct {
 	JwtGenerator          *utils.JwtTokenGenerator
 	NewsroomSignupService *nrsignup.Service
 	StorefrontService     *storefront.Service
+	PaymentService        *payments.Service
+	PostService           *posts.Service
+	ChannelService        *channels.Service
+	NewsroomService       newsrooms.Service
 	Router                chi.Router
 }
 
@@ -137,6 +145,11 @@ func enableAPIServices(router chi.Router, port string, deps ServerDeps) error {
 		port,
 		invoicingVersion,
 	)
+
+	err = webhookRouting(deps)
+	if err != nil {
+		log.Fatalf("Error setting up webhook routing: err: %v", err)
+	}
 
 	// airswap REST endpoints
 	airswap.EnableAirswapRouting(router, deps.StorefrontService)

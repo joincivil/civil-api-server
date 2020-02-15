@@ -21,6 +21,7 @@ const (
 // Payment is a transfer of value from one party to the other
 type Payment interface {
 	Type() string
+	GetPaymentModel() *PaymentModel
 }
 
 // PaymentModel defines the GORM model for a payment
@@ -46,6 +47,7 @@ type PaymentModel struct {
 	ShouldPublicize   bool
 	ShouldSaveCard    bool   `gorm:"-"`
 	SavedCardSourceID string `gorm:"-"`
+	PaymentIntentID   string `gorm:unique_index:payments_idx_payment_intent_id`
 }
 
 // TableName returns the gorm table name for Base
@@ -57,6 +59,15 @@ func (PaymentModel) TableName() string {
 func (p PaymentModel) USDEquivalent() float64 {
 	return p.Amount * p.ExchangeRate
 }
+
+// GetPaymentModel returns itself to implement interface
+func (p PaymentModel) GetPaymentModel() *PaymentModel {
+	return &p
+}
+
+// func InterfaceToBase(payment Payment) (*PaymentModel, error) {
+// 	base := payment.
+// }
 
 // ModelToInterface accepts a payment model struct and returns the payment interface
 func ModelToInterface(model *PaymentModel) (Payment, error) {
@@ -153,4 +164,11 @@ type StripeSource struct {
 	Last4Digits string
 	ExpMonth    string
 	ExpYear     string
+}
+
+// StripePaymentIntent contains info about a stripe payment intent
+type StripePaymentIntent struct {
+	Status       string
+	ClientSecret string
+	ID           string
 }

@@ -93,6 +93,30 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	return &p, err
 }
 
+func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePaymentIntent, error) {
+	post, err := r.postService.GetPost(postID)
+	if err != nil {
+		return nil, errors.New("could not find post")
+	}
+
+	if payment.PayerChannelID != "" {
+		err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if payment.PayerChannelID == "" {
+		payment.ShouldPublicize = false
+	}
+
+	channelID := post.GetChannelID()
+	paymentIntent, err := r.paymentService.CreateStripePaymentIntent(channelID, "posts", post.GetType(), postID, payment)
+	if err != nil {
+		return nil, err
+	}
+	return &paymentIntent, nil
+}
+
 func (r *mutationResolver) PaymentsCreateTokenPayment(ctx context.Context, postID string, payment payments.TokenPayment) (*payments.TokenPayment, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {

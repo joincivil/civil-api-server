@@ -16,6 +16,8 @@ import (
 	"github.com/stripe/stripe-go/card"
 	"github.com/stripe/stripe-go/charge"
 	"github.com/stripe/stripe-go/customer"
+	"github.com/stripe/stripe-go/paymentintent"
+	"github.com/stripe/stripe-go/token"
 )
 
 const stripeOAuthURI = "https://connect.stripe.com/oauth/token"
@@ -44,8 +46,9 @@ type CreateChargeResponse struct {
 
 // CreateCustomerRequest contains the data needed to create a customer
 type CreateCustomerRequest struct {
-	Email       string
-	SourceToken string
+	Email         string
+	SourceToken   string
+	StripeAccount string
 }
 
 // CreateCustomerResponse contains the result of creating a customer
@@ -62,6 +65,15 @@ type AddCustomerCardRequest struct {
 // AddCustomerCardResponse contains the result of adding a new card to a customer
 type AddCustomerCardResponse struct {
 	ID string
+}
+
+// CreatePaymentIntentRequest contains the data needed to create a payment request
+type CreatePaymentIntentRequest struct {
+	Amount        int64
+	CustomerID    *string
+	SourceID      *string
+	StripeAccount string
+	Metadata      map[string]string
 }
 
 // NewStripeService constructs an instance of the stripe Service
@@ -139,6 +151,25 @@ func (s *StripeService) CreateCustomer(request *CreateCustomerRequest) (CreateCu
 		return CreateCustomerResponse{}, err
 	}
 
+	tokenParams := &stripe.TokenParams{
+		Customer: stripe.String(cus.ID),
+	}
+	tokenParams.SetStripeAccount(request.StripeAccount)
+	token, err := token.New(tokenParams)
+	if err != nil {
+		log.Errorf("error creating token: %v", err)
+		return CreateCustomerResponse{}, err
+	}
+
+	params := &stripe.CustomerParams{}
+	params.SetStripeAccount(request.StripeAccount)
+	params.SetSource(token.ID)
+	_, err = customer.New(params)
+	if err != nil {
+		log.Errorf("error creating connected customer: %v", err)
+		return CreateCustomerResponse{}, err
+	}
+
 	return CreateCustomerResponse{ID: cus.ID}, nil
 }
 
@@ -200,6 +231,31 @@ func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateCharge
 		ID:                 ch.ID,
 	}, nil
 
+}
+
+// CreateStripePaymentIntent creates a payment intent to be completed on the client
+func (s *StripeService) CreateStripePaymentIntent(request CreatePaymentIntentRequest) (StripePaymentIntent, error) {
+	stripe.Key = s.apiKey
+
+	params := &stripe.PaymentIntentParams{
+		Amount:   stripe.Int64(request.Amount),
+		Currency: stripe.String(string(stripe.CurrencyUSD)), // @TODO get from input?
+		PaymentMethodTypes: []*string{
+			stripe.String("card"),
+		},
+	}
+	params.SetStripeAccount(request.StripeAccount)
+	for k, v := range request.Metadata {
+		params.AddMetadata(k, v)
+	}
+	// @TODO handle errors
+	pi, _ := paymentintent.New(params)
+
+	return StripePaymentIntent{
+		ID:           pi.ID,
+		ClientSecret: pi.ClientSecret,
+		Status:       string(pi.Status),
+	}, nil
 }
 
 // https://stripe.com/docs/connect/standard-accounts?origin_team=T9L4Z5JAU#token-request
