@@ -13,11 +13,10 @@ import (
 
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/applepaydomain"
-	"github.com/stripe/stripe-go/card"
 	"github.com/stripe/stripe-go/charge"
 	"github.com/stripe/stripe-go/customer"
 	"github.com/stripe/stripe-go/paymentintent"
-	"github.com/stripe/stripe-go/token"
+	"github.com/stripe/stripe-go/paymentmethod"
 )
 
 const stripeOAuthURI = "https://connect.stripe.com/oauth/token"
@@ -46,9 +45,8 @@ type CreateChargeResponse struct {
 
 // CreateCustomerRequest contains the data needed to create a customer
 type CreateCustomerRequest struct {
-	Email         string
-	SourceToken   string
-	StripeAccount string
+	Email           string
+	PaymentMethodID string
 }
 
 // CreateCustomerResponse contains the result of creating a customer
@@ -58,8 +56,20 @@ type CreateCustomerResponse struct {
 
 // AddCustomerCardRequest contains the data needed to add a new card to a customer
 type AddCustomerCardRequest struct {
-	CustomerID  string
-	SourceToken string
+	CustomerID      string
+	PaymentMethodID string
+}
+
+// CloneCustomerPaymentMethodRequest contains the data needed to clone a customer's payment method to a new account
+type CloneCustomerPaymentMethodRequest struct {
+	CustomerID      string
+	PaymentMethodID string
+	StripeAccountID string
+}
+
+type CloneCustomerPaymentMethodResponse struct {
+	CustomerID      string
+	PaymentMethodID string
 }
 
 // AddCustomerCardResponse contains the result of adding a new card to a customer
@@ -69,11 +79,12 @@ type AddCustomerCardResponse struct {
 
 // CreatePaymentIntentRequest contains the data needed to create a payment request
 type CreatePaymentIntentRequest struct {
-	Amount        int64
-	CustomerID    *string
-	SourceID      *string
-	StripeAccount string
-	Metadata      map[string]string
+	Amount          int64
+	CustomerID      *string
+	PaymentMethodID *string
+	SourceID        *string
+	StripeAccount   string
+	Metadata        map[string]string
 }
 
 // NewStripeService constructs an instance of the stripe Service
@@ -96,19 +107,19 @@ func NewStripeServiceFromConfig(config *utils.GraphQLConfig) *StripeService {
 func (s *StripeService) GetCustomerInfo(customerID string) (StripeCustomerInfo, error) {
 	stripe.Key = s.apiKey
 
-	cus, err := customer.Get(customerID, nil)
-	if err != nil {
-		return StripeCustomerInfo{}, err
+	params := &stripe.PaymentMethodListParams{
+		Customer: stripe.String(customerID),
+		Type:     stripe.String("card"),
 	}
-
-	sources := make([]StripeSource, cus.Sources.TotalCount)
-
-	for _, s := range cus.Sources.Data {
+	sources := make([]StripeSource, 0)
+	i := paymentmethod.List(params)
+	for i.Next() {
+		paymentMethod := i.PaymentMethod()
 		source := StripeSource{
-			ID:          s.ID,
-			Last4Digits: s.Card.Last4,
-			ExpMonth:    string(s.Card.ExpMonth),
-			ExpYear:     string(s.Card.ExpYear),
+			ID:          paymentMethod.ID,
+			Last4Digits: paymentMethod.Card.Last4,
+			ExpMonth:    string(paymentMethod.Card.ExpMonth),
+			ExpYear:     string(paymentMethod.Card.ExpYear),
 		}
 		sources = append(sources, source)
 	}
@@ -116,61 +127,43 @@ func (s *StripeService) GetCustomerInfo(customerID string) (StripeCustomerInfo, 
 	return StripeCustomerInfo{Sources: sources}, nil
 }
 
+// // CreateCustomer creates a stripe customer
+// func (s *StripeService) AddPaymentMethod(request *CreateCustomerRequest) (CreateCustomerResponse, error) {
+// 	stripe.Key = s.apiKey
+
+// }
+
 // AddCustomerCard adds a card to a stripe customer
 func (s *StripeService) AddCustomerCard(request *AddCustomerCardRequest) (AddCustomerCardResponse, error) {
 	stripe.Key = s.apiKey
 
-	params := &stripe.CardParams{
+	params := &stripe.PaymentMethodAttachParams{
 		Customer: stripe.String(request.CustomerID),
-		Token:    stripe.String(request.SourceToken),
 	}
-	c, err := card.New(params)
+	_, err := paymentmethod.Attach(request.PaymentMethodID, params)
 	if err != nil {
+		log.Error("error adding payment method to customer")
 		return AddCustomerCardResponse{}, err
 	}
 
-	return AddCustomerCardResponse{ID: c.ID}, nil
+	return AddCustomerCardResponse{ID: request.CustomerID}, nil
 }
 
 // CreateCustomer creates a stripe customer
 func (s *StripeService) CreateCustomer(request *CreateCustomerRequest) (CreateCustomerResponse, error) {
 	stripe.Key = s.apiKey
 
-	// Create a Customer:
 	customerParams := &stripe.CustomerParams{
-		Email: stripe.String(request.Email),
+		PaymentMethod: stripe.String(request.PaymentMethodID),
+		Email:         stripe.String(request.Email),
 	}
-	err := customerParams.SetSource(request.SourceToken)
-	if err != nil {
-		log.Errorf("error creating stripe customer: %v", err)
-		return CreateCustomerResponse{}, err
-	}
-	cus, err := customer.New(customerParams)
-	if err != nil {
-		log.Errorf("error creating stripe customer: %v", err)
-		return CreateCustomerResponse{}, err
-	}
-
-	tokenParams := &stripe.TokenParams{
-		Customer: stripe.String(cus.ID),
-	}
-	tokenParams.SetStripeAccount(request.StripeAccount)
-	token, err := token.New(tokenParams)
-	if err != nil {
-		log.Errorf("error creating token: %v", err)
-		return CreateCustomerResponse{}, err
-	}
-
-	params := &stripe.CustomerParams{}
-	params.SetStripeAccount(request.StripeAccount)
-	params.SetSource(token.ID)
-	_, err = customer.New(params)
+	c, err := customer.New(customerParams)
 	if err != nil {
 		log.Errorf("error creating connected customer: %v", err)
 		return CreateCustomerResponse{}, err
 	}
 
-	return CreateCustomerResponse{ID: cus.ID}, nil
+	return CreateCustomerResponse{ID: c.ID}, nil
 }
 
 // CreateCharge sends a payment to a connected account
@@ -233,9 +226,43 @@ func (s *StripeService) CreateCharge(request *CreateChargeRequest) (CreateCharge
 
 }
 
+// CloneCustomerPaymentMethod clones a payment method to a connected account
+func (s *StripeService) CloneCustomerPaymentMethod(request CloneCustomerPaymentMethodRequest) (CloneCustomerPaymentMethodResponse, error) {
+	stripe.Key = s.apiKey
+
+	params := &stripe.PaymentMethodParams{
+		Customer:      stripe.String(request.CustomerID),
+		PaymentMethod: stripe.String(request.PaymentMethodID),
+	}
+	params.SetStripeAccount(request.StripeAccountID)
+	pm, err := paymentmethod.New(params)
+	if err != nil {
+		log.Errorf("error cloning payment method: %v", err)
+		return CloneCustomerPaymentMethodResponse{}, err
+	}
+	log.Infof("StripeAccountID: %s", request.StripeAccountID)
+	log.Infof("pm.ID: %s", pm.ID)
+	log.Infof("original pm ID: %s", request.PaymentMethodID)
+	log.Infof("original customer ID: %s", request.CustomerID)
+	log.Infof("pm: %v", pm)
+
+	return CloneCustomerPaymentMethodResponse{
+		CustomerID:      request.CustomerID,
+		PaymentMethodID: pm.ID,
+	}, nil
+}
+
 // CreateStripePaymentIntent creates a payment intent to be completed on the client
 func (s *StripeService) CreateStripePaymentIntent(request CreatePaymentIntentRequest) (StripePaymentIntent, error) {
 	stripe.Key = s.apiKey
+	// customerID := ""
+	// if request.CustomerID != nil {
+	// 	customerID = *(request.CustomerID)
+	// }
+	// paymentMethodID := ""
+	// if request.PaymentMethodID != nil {
+	// 	paymentMethodID = *(request.PaymentMethodID)
+	// }
 
 	params := &stripe.PaymentIntentParams{
 		Amount:   stripe.Int64(request.Amount),
@@ -243,6 +270,8 @@ func (s *StripeService) CreateStripePaymentIntent(request CreatePaymentIntentReq
 		PaymentMethodTypes: []*string{
 			stripe.String("card"),
 		},
+		// Customer:      stripe.String(customerID),
+		// PaymentMethod: stripe.String(paymentMethodID),
 	}
 	params.SetStripeAccount(request.StripeAccount)
 	for k, v := range request.Metadata {

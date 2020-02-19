@@ -35,10 +35,22 @@ input PaymentsCreateStripePaymentInput {
     shouldPublicize: Boolean
     shouldSaveCard: Boolean
     savedCardSourceID: String
+    paymentMethodID: String
 }
 
 type PaymentsStripePaymentIntent {
     status: String!
     clientSecret: String!
     id: String!
+}
+
+input PaymentsCreateStripePaymentMethodInput {
+  paymentMethodID: String!
+  emailAddress: String!
+  payerChannelID: String!
+}
+
+type PaymentsStripePaymentMethod {
+    paymentMethodID: String!
+    customerID: String!
 }

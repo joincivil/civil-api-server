@@ -36,6 +36,11 @@ func (p *MockPaymentHelper) SetStripeCustomerID(channelID string, stripeCustomer
 	return nil, nil
 }
 
+// CreateStripePaymentIntent is a mock to create a payment intent
+func (p *MockPaymentHelper) CreateStripePaymentIntent(request payments.CreatePaymentIntentRequest) (payments.StripePaymentIntent, error) {
+	return payments.StripePaymentIntent{}, nil
+}
+
 // GetEthereumPaymentAddress returns a mock eth account for the channel address
 func (p *MockPaymentHelper) GetEthereumPaymentAddress(channelID string) (common.Address, error) {
 
