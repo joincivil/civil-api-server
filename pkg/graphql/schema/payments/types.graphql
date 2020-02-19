@@ -33,6 +33,8 @@ type PaymentStripe implements Payment {
     usdEquivalent: Float!
     payerChannelID: String
     payerChannel: Channel
+    paymentMethodID: String
+    customerID: String
     post: Post
 }
 

@@ -66,6 +66,11 @@ type Mutation {
         input: PaymentsCreateTokenPaymentInput!
     ): PaymentToken!
     paymentsCreateStripePaymentIntent(postID: String!, input: PaymentsCreateStripePaymentInput!): PaymentsStripePaymentIntent!
+    paymentsCreateStripePaymentMethod(input: PaymentsCreateStripePaymentMethodInput!): PaymentsStripePaymentMethod!
+    paymentsCloneCustomerPaymentMethod(        
+        postID: String!
+        input: PaymentsCreateStripePaymentInput!
+    ): PaymentStripe!
 
     # Post Mutations
     postsCreateBoost(input: PostCreateBoostInput!): PostBoost

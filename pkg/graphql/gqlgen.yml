@@ -107,6 +107,10 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
   PaymentsCreateStripePaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
+  PaymentsCreateStripePaymentMethodInput:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePaymentMethod
+  PaymentsStripePaymentMethod:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePaymentMethod
   PaymentsCreateEtherPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
   PaymentsCreateTokenPaymentInput:

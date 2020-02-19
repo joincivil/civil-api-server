@@ -93,6 +93,24 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	return &p, err
 }
 
+// nolint: dupl
+func (r *mutationResolver) PaymentsCloneCustomerPaymentMethod(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePayment, error) {
+
+	post, err := r.postService.GetPost(postID)
+	if err != nil {
+		return &payments.StripePayment{}, errors.New("could not find post")
+	}
+
+	err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
+	if err != nil {
+		return &payments.StripePayment{}, err
+	}
+
+	postChannelID := post.GetChannelID()
+	p, err := r.paymentService.CloneCustomerPaymentMethod(payment.PayerChannelID, postChannelID, payment)
+	return &p, err
+}
+
 func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePaymentIntent, error) {
 	post, err := r.postService.GetPost(postID)
 	if err != nil {
@@ -115,6 +133,22 @@ func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context
 		return nil, err
 	}
 	return &paymentIntent, nil
+}
+
+func (r *mutationResolver) PaymentsCreateStripePaymentMethod(ctx context.Context, payment payments.StripePaymentMethod) (*payments.StripePaymentMethod, error) {
+
+	if payment.PayerChannelID != "" {
+		err := r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	paymentMethod, err := r.paymentService.SavePaymentMethod(payment.PayerChannelID, payment.PaymentMethodID, payment.EmailAddress)
+	if err != nil {
+		return nil, err
+	}
+	return paymentMethod, nil
 }
 
 func (r *mutationResolver) PaymentsCreateTokenPayment(ctx context.Context, postID string, payment payments.TokenPayment) (*payments.TokenPayment, error) {

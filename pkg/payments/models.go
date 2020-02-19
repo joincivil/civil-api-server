@@ -45,9 +45,11 @@ type PaymentModel struct {
 	EmailAddress      string
 	PayerChannelID    string
 	ShouldPublicize   bool
-	ShouldSaveCard    bool   `gorm:"-"`
+	ShouldSaveCard    bool
 	SavedCardSourceID string `gorm:"-"`
-	PaymentIntentID   string `gorm:unique_index:payments_idx_payment_intent_id`
+	PaymentMethodID   string
+	CustomerID        string
+	PaymentIntentID   string `gorm:"index:idx_payment_intent_id"`
 }
 
 // TableName returns the gorm table name for Base
@@ -64,10 +66,6 @@ func (p PaymentModel) USDEquivalent() float64 {
 func (p PaymentModel) GetPaymentModel() *PaymentModel {
 	return &p
 }
-
-// func InterfaceToBase(payment Payment) (*PaymentModel, error) {
-// 	base := payment.
-// }
 
 // ModelToInterface accepts a payment model struct and returns the payment interface
 func ModelToInterface(model *PaymentModel) (Payment, error) {
@@ -171,4 +169,12 @@ type StripePaymentIntent struct {
 	Status       string
 	ClientSecret string
 	ID           string
+}
+
+// StripePaymentMethod something
+type StripePaymentMethod struct {
+	PayerChannelID  string
+	PaymentMethodID string
+	CustomerID      string
+	EmailAddress    string
 }
