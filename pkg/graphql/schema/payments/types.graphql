@@ -81,3 +81,14 @@ type StripeSource {
     expMonth: String
     expYear: String
 }
+
+type PaymentsStripePaymentIntent {
+  status: String!
+  clientSecret: String!
+  id: String!
+}
+
+type PaymentsStripePaymentMethod {
+  paymentMethodID: String!
+  customerID: String!
+}

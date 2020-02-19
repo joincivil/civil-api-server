@@ -40,9 +40,9 @@ const (
 
 // StripeCharger defines the functions needed to create a charge with Stripe
 type StripeCharger interface {
-	CreateCustomer(request *CreateCustomerRequest) (CreateCustomerResponse, error)
-	AddCustomerCard(request *AddCustomerCardRequest) (AddCustomerCardResponse, error)
-	CreateCharge(request *CreateChargeRequest) (CreateChargeResponse, error)
+	CreateCustomer(request CreateCustomerRequest) (CreateCustomerResponse, error)
+	AddCustomerCard(request AddCustomerCardRequest) (AddCustomerCardResponse, error)
+	CreateCharge(request CreateChargeRequest) (CreateChargeResponse, error)
 	GetCustomerInfo(customerID string) (StripeCustomerInfo, error)
 	CreateStripePaymentIntent(request CreatePaymentIntentRequest) (StripePaymentIntent, error)
 	CloneCustomerPaymentMethod(request CloneCustomerPaymentMethodRequest) (CloneCustomerPaymentMethodResponse, error)
@@ -343,7 +343,7 @@ func (s *Service) SavePaymentMethod(channelID string, paymentMethodID string, em
 	stripeCustomerID, err := s.channel.GetStripeCustomerID(channelID)
 
 	if err != nil || stripeCustomerID == "" {
-		res, err := s.stripe.CreateCustomer(&CreateCustomerRequest{
+		res, err := s.stripe.CreateCustomer(CreateCustomerRequest{
 			PaymentMethodID: paymentMethodID,
 			Email:           emailAddress,
 		})
@@ -360,20 +360,19 @@ func (s *Service) SavePaymentMethod(channelID string, paymentMethodID string, em
 			PaymentMethodID: paymentMethodID,
 			CustomerID:      res.ID,
 		}, nil
-	} else {
-		_, err = s.stripe.AddCustomerCard(&AddCustomerCardRequest{
-			CustomerID:      stripeCustomerID,
-			PaymentMethodID: paymentMethodID,
-		})
-		if err != nil {
-			log.Errorf("Error Adding Card to Stripe Customer")
-			return nil, errors.New("error adding card to stripe customer")
-		}
-		return &StripePaymentMethod{
-			PaymentMethodID: paymentMethodID,
-			CustomerID:      stripeCustomerID,
-		}, nil
 	}
+	_, err = s.stripe.AddCustomerCard(AddCustomerCardRequest{
+		CustomerID:      stripeCustomerID,
+		PaymentMethodID: paymentMethodID,
+	})
+	if err != nil {
+		log.Errorf("Error Adding Card to Stripe Customer")
+		return nil, errors.New("error adding card to stripe customer")
+	}
+	return &StripePaymentMethod{
+		PaymentMethodID: paymentMethodID,
+		CustomerID:      stripeCustomerID,
+	}, nil
 }
 
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
@@ -385,7 +384,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 
 	// generate a stripe charge
-	res, err := s.stripe.CreateCharge(&CreateChargeRequest{
+	res, err := s.stripe.CreateCharge(CreateChargeRequest{
 		Amount:        int64(math.Floor(payment.Amount * 100)),
 		SourceToken:   &(payment.PaymentToken),
 		StripeAccount: stripeAccount,
@@ -445,7 +444,6 @@ func (s *Service) CloneCustomerPaymentMethod(payerChannelID string, postChannelI
 		return StripePayment{}, err
 	}
 
-	// generate a stripe charge
 	res, err := s.stripe.CloneCustomerPaymentMethod(CloneCustomerPaymentMethodRequest{
 		PaymentMethodID: payment.PaymentMethodID,
 		CustomerID:      customerID,
@@ -494,30 +492,6 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntentID string, paymentMeth
 		} else {
 			log.Errorf("Error when sending Stripe payment complete email. OwnerPostType unknown.")
 			return errors.New("error when sending Stripe payment successful email")
-		}
-	}
-
-	if payment.ShouldSaveCard && payment.PayerChannelID != "" {
-		stripeCustomerID, err := s.channel.GetStripeCustomerID(payment.PayerChannelID)
-
-		if err != nil || stripeCustomerID == "" {
-			_, err := s.stripe.CreateCustomer(&CreateCustomerRequest{
-				PaymentMethodID: paymentMethodID,
-				Email:           payment.EmailAddress,
-			})
-			if err != nil {
-				log.Errorf("Error Creating Stripe Customer")
-				return errors.New("error creating stripe customer")
-			}
-		} else {
-			_, err := s.stripe.AddCustomerCard(&AddCustomerCardRequest{
-				CustomerID:      stripeCustomerID,
-				PaymentMethodID: paymentMethodID,
-			})
-			if err != nil {
-				log.Errorf("Error Adding Card to Stripe Customer")
-				return errors.New("error adding card to stripe customer")
-			}
 		}
 	}
 

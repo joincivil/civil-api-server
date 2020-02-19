@@ -21,35 +21,32 @@ const (
 // Payment is a transfer of value from one party to the other
 type Payment interface {
 	Type() string
-	GetPaymentModel() *PaymentModel
 }
 
 // PaymentModel defines the GORM model for a payment
 type PaymentModel struct {
-	ID                string    `gorm:"type:uuid;primary_key"`
-	CreatedAt         time.Time `gorm:"not null"`
-	UpdatedAt         time.Time `gorm:"not null"`
-	DeletedAt         *time.Time
-	PaymentType       string  `gorm:"not null;unique_index:payments_idx_type_reference"`
-	Reference         string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
-	Status            string  `gorm:"not null"`
-	CurrencyCode      string  `gorm:"not null"`
-	Amount            float64 `gorm:"not null"`
-	ExchangeRate      float64 `gorm:"not null"`
-	Comment           string
-	Reaction          string
-	Data              postgres.Jsonb
-	OwnerID           string `gorm:"not null"`
-	OwnerType         string `gorm:"not null"`
-	OwnerPostType     string
-	EmailAddress      string
-	PayerChannelID    string
-	ShouldPublicize   bool
-	ShouldSaveCard    bool
-	SavedCardSourceID string `gorm:"-"`
-	PaymentMethodID   string
-	CustomerID        string
-	PaymentIntentID   string `gorm:"index:idx_payment_intent_id"`
+	ID              string    `gorm:"type:uuid;primary_key"`
+	CreatedAt       time.Time `gorm:"not null"`
+	UpdatedAt       time.Time `gorm:"not null"`
+	DeletedAt       *time.Time
+	PaymentType     string  `gorm:"not null;unique_index:payments_idx_type_reference"`
+	Reference       string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Status          string  `gorm:"not null"`
+	CurrencyCode    string  `gorm:"not null"`
+	Amount          float64 `gorm:"not null"`
+	ExchangeRate    float64 `gorm:"not null"`
+	Comment         string
+	Reaction        string
+	Data            postgres.Jsonb
+	OwnerID         string `gorm:"not null"`
+	OwnerType       string `gorm:"not null"`
+	OwnerPostType   string
+	EmailAddress    string
+	PayerChannelID  string
+	ShouldPublicize bool
+	PaymentMethodID string
+	CustomerID      string
+	PaymentIntentID string `gorm:"index:idx_payment_intent_id"`
 }
 
 // TableName returns the gorm table name for Base
@@ -60,11 +57,6 @@ func (PaymentModel) TableName() string {
 // USDEquivalent returns the gorm table name for Base
 func (p PaymentModel) USDEquivalent() float64 {
 	return p.Amount * p.ExchangeRate
-}
-
-// GetPaymentModel returns itself to implement interface
-func (p PaymentModel) GetPaymentModel() *PaymentModel {
-	return &p
 }
 
 // ModelToInterface accepts a payment model struct and returns the payment interface

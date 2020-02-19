@@ -5109,26 +5109,13 @@ input PaymentsCreateStripePaymentInput {
     emailAddress: String
     payerChannelID: String
     shouldPublicize: Boolean
-    shouldSaveCard: Boolean
-    savedCardSourceID: String
     paymentMethodID: String
-}
-
-type PaymentsStripePaymentIntent {
-    status: String!
-    clientSecret: String!
-    id: String!
 }
 
 input PaymentsCreateStripePaymentMethodInput {
   paymentMethodID: String!
   emailAddress: String!
   payerChannelID: String!
-}
-
-type PaymentsStripePaymentMethod {
-    paymentMethodID: String!
-    customerID: String!
 }
 `},
 	&ast.Source{Name: "schema/payments/types.graphql", Input: `# Payment types
@@ -5213,7 +5200,19 @@ type StripeSource {
     last4Digits: String
     expMonth: String
     expYear: String
-}`},
+}
+
+type PaymentsStripePaymentIntent {
+  status: String!
+  clientSecret: String!
+  id: String!
+}
+
+type PaymentsStripePaymentMethod {
+  paymentMethodID: String!
+  customerID: String!
+}
+`},
 	&ast.Source{Name: "schema/posts/inputs.graphql", Input: `# input objects
 input PostSearchInput {
     postType: String
@@ -26462,18 +26461,6 @@ func (ec *executionContext) unmarshalInputPaymentsCreateStripePaymentInput(ctx c
 		case "shouldPublicize":
 			var err error
 			it.ShouldPublicize, err = ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "shouldSaveCard":
-			var err error
-			it.ShouldSaveCard, err = ec.unmarshalOBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "savedCardSourceID":
-			var err error
-			it.SavedCardSourceID, err = ec.unmarshalOString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

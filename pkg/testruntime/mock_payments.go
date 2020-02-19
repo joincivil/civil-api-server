@@ -17,17 +17,17 @@ func NewMockPaymentHelper(txs *MockTransactionReader) *MockPaymentHelper {
 }
 
 // CreateCharge is a mock to create a stripe charge
-func (p *MockPaymentHelper) CreateCharge(request *payments.CreateChargeRequest) (payments.CreateChargeResponse, error) {
+func (p *MockPaymentHelper) CreateCharge(request payments.CreateChargeRequest) (payments.CreateChargeResponse, error) {
 	return payments.CreateChargeResponse{}, nil
 }
 
 // CreateCustomer is a mock to create a stripe customer
-func (p *MockPaymentHelper) CreateCustomer(request *payments.CreateCustomerRequest) (payments.CreateCustomerResponse, error) {
+func (p *MockPaymentHelper) CreateCustomer(request payments.CreateCustomerRequest) (payments.CreateCustomerResponse, error) {
 	return payments.CreateCustomerResponse{}, nil
 }
 
 // AddCustomerCard is a mock to add a card to a stripe customer
-func (p *MockPaymentHelper) AddCustomerCard(request *payments.AddCustomerCardRequest) (payments.AddCustomerCardResponse, error) {
+func (p *MockPaymentHelper) AddCustomerCard(request payments.AddCustomerCardRequest) (payments.AddCustomerCardResponse, error) {
 	return payments.AddCustomerCardResponse{}, nil
 }
 
@@ -39,6 +39,11 @@ func (p *MockPaymentHelper) SetStripeCustomerID(channelID string, stripeCustomer
 // CreateStripePaymentIntent is a mock to create a payment intent
 func (p *MockPaymentHelper) CreateStripePaymentIntent(request payments.CreatePaymentIntentRequest) (payments.StripePaymentIntent, error) {
 	return payments.StripePaymentIntent{}, nil
+}
+
+// CloneCustomerPaymentMethod is a mock to clone payment methods
+func (p *MockPaymentHelper) CloneCustomerPaymentMethod(request payments.CloneCustomerPaymentMethodRequest) (payments.CloneCustomerPaymentMethodResponse, error) {
+	return payments.CloneCustomerPaymentMethodResponse{}, nil
 }
 
 // GetEthereumPaymentAddress returns a mock eth account for the channel address
