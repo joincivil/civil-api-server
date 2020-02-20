@@ -146,7 +146,7 @@ func enableAPIServices(router chi.Router, port string, deps ServerDeps) error {
 		invoicingVersion,
 	)
 
-	err = webhookRouting(deps)
+	err = deps.PaymentService.WebhookRouting(router, deps.Config.StripeWebhookSigningSecret)
 	if err != nil {
 		log.Fatalf("Error setting up webhook routing: err: %v", err)
 	}

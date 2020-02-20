@@ -467,7 +467,7 @@ func (s *Service) ClonePaymentMethod(payerChannelID string, postChannelID string
 }
 
 // ConfirmStripePaymentIntent sets the status of a stripe payment after payment_intent.succeeded webhook event received
-func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent, amount float64, postType string, tmplData email.TemplateData) error {
+func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent) error {
 	var payment PaymentModel
 	if err := s.db.Where("reference = ?", paymentIntent.ID).First(&payment).Error; err != nil {
 		log.Errorf("Error getting payment: %v\n", err)
@@ -480,24 +480,30 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent,
 		return err
 	}
 
+	amount := (float64(paymentIntent.Amount) / 100.0)
 	// create a payment model to hold the updated fields
 	update := &PaymentModel{}
 	update.Status = paymentComplete
-	update.Amount = (float64(paymentIntent.Amount) / 100.0)
+	update.Amount = amount
 	update.Data = postgres.Jsonb{RawMessage: json.RawMessage(data)}
 	if err := s.db.Model(&payment).Update(update).Error; err != nil {
 		log.Errorf("Error updating payment: %v\n", err)
 		return err
 	}
 
+	tmplData, err := s.getStripePaymentEmailTemplateData(paymentIntent.Metadata, amount, payment.OwnerPostType)
+	if err != nil {
+		log.Errorf("Error getting email template data for payment intent: %v\n", err)
+	}
+
 	// only send payment receipt if email is given
 	if payment.EmailAddress != "" {
-		if postType == postTypeBoost {
+		if payment.OwnerPostType == postTypeBoost {
 			err := s.sendBoostStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
 			if err != nil {
 				return err
 			}
-		} else if postType == postTypeExternalLink {
+		} else if payment.OwnerPostType == postTypeExternalLink {
 			err := s.sendExternalLinkStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
 			if err != nil {
 				return err
@@ -509,6 +515,23 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent,
 	}
 
 	return nil
+}
+
+func (s *Service) getStripePaymentEmailTemplateData(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
+	if postType == postTypeBoost {
+		return (email.TemplateData{
+			"newsroom_name":      metadata["newsroomName"],
+			"boost_short_desc":   metadata["title"],
+			"payment_amount_usd": amount,
+			"boost_id":           metadata["posts"],
+		}), nil
+	} else if postType == postTypeExternalLink {
+		return (email.TemplateData{
+			"newsroom_name":      metadata["newsroomName"],
+			"payment_amount_usd": amount,
+		}), nil
+	}
+	return nil, errors.New("NOT IMPLEMENTED")
 }
 
 // FailStripePaymentIntent sets the status of a stripe payment after payment_intent.payment_failed webhook event received
@@ -532,7 +555,7 @@ func (s *Service) FailStripePaymentIntent(paymentIntentID string) (bool, error) 
 }
 
 // CreateStripePaymentIntent creates a stripe payment intent and "unconfirmed" payment in DB and returns payment intent
-func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, postType string, ownerID string, payment StripePayment) (StripePaymentIntent, error) {
+func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, postType string, ownerID string, newsroomName string, boostTitle string, payment StripePayment) (StripePaymentIntent, error) {
 	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
 	if err != nil {
 		return StripePaymentIntent{}, err
@@ -541,7 +564,7 @@ func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, 
 		CreatePaymentIntentRequest{
 			Amount:          int64(math.Floor(payment.Amount * 100)),
 			StripeAccount:   stripeAccount,
-			Metadata:        map[string]string{ownerType: ownerID},
+			Metadata:        map[string]string{ownerType: ownerID, "newsroomName": newsroomName, "title": boostTitle},
 			PaymentMethodID: &(payment.PaymentMethodID),
 			CustomerID:      &(payment.CustomerID),
 		})

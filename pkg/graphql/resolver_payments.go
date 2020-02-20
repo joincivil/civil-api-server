@@ -130,7 +130,15 @@ func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context
 	}
 
 	channelID := post.GetChannelID()
-	paymentIntent, err := r.paymentService.CreateStripePaymentIntent(channelID, "posts", post.GetType(), postID, payment)
+	newsroomName, err := r.getPostNewsroomName(post)
+	if err != nil {
+		return nil, err
+	}
+	boostTitle, err := r.getPostTitle(post)
+	if err != nil {
+		return nil, err
+	}
+	paymentIntent, err := r.paymentService.CreateStripePaymentIntent(channelID, "posts", post.GetType(), postID, newsroomName, boostTitle, payment)
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +200,26 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 		}), nil
 	}
 	return nil, ErrNotImplemented
+}
+
+func (r *mutationResolver) getPostNewsroomName(post posts.Post) (string, error) {
+	channel, err := r.channelService.GetChannel(post.GetChannelID())
+	if err != nil {
+		return "", errors.New("could not find channel")
+	}
+	newsroom, err := r.newsroomService.GetNewsroomByAddress(channel.Reference)
+	if err != nil {
+		return "", errors.New("could not find newsroom")
+	}
+	return newsroom.Name, nil
+}
+
+func (r *mutationResolver) getPostTitle(post posts.Post) (string, error) {
+	if post.GetType() == posts.TypeBoost {
+		boost := post.(*posts.Boost)
+		return boost.Title, nil
+	}
+	return "", nil
 }
 
 func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, payment payments.StripePayment) (email.TemplateData, error) {

@@ -238,6 +238,7 @@ github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0 h1:5B0uxl2lzNRVkJVg+u
 github.com/jmoiron/sqlx v0.0.0-20180614180643-0dae4fefe7c0/go.mod h1:IiEW3SEiiErVyFdH8NTuWjSifiEQKUoyK3LNqr2kCHU=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
+github.com/joincivil/civil v0.0.0-20200213075210-b23a4651274b h1:qaQzw48HZpyhy7VxmuMUNxQpJ2mBMQUqyhKdfvde1Sc=
 github.com/joincivil/civil-events-crawler v0.0.0-20191115212544-903a36715546 h1:2n5q/P48KW9fpXGIJQLlt4hHw1r/Glp/XCQcmX/YnCI=
 github.com/joincivil/civil-events-crawler v0.0.0-20191115212544-903a36715546/go.mod h1:azq97zs+ihe41AWvjY3qyC7421K5yFLmcwc5yen6Ybk=
 github.com/joincivil/civil-events-crawler v0.0.0-20200102204429-5e951e46939f h1:mfpn4oNfPbKJBLYkXe8h1c35yo+MMvUQ6W2LgjR2cMA=
