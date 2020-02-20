@@ -60,15 +60,15 @@ type AddCustomerCardRequest struct {
 	PaymentMethodID string
 }
 
-// CloneCustomerPaymentMethodRequest contains the data needed to clone a customer's payment method to a new account
-type CloneCustomerPaymentMethodRequest struct {
+// ClonePaymentMethodRequest contains the data needed to clone a payment method to a connected account
+type ClonePaymentMethodRequest struct {
 	CustomerID      string
 	PaymentMethodID string
 	StripeAccountID string
 }
 
-// CloneCustomerPaymentMethodResponse contains the result of cloning a payment method
-type CloneCustomerPaymentMethodResponse struct {
+// ClonePaymentMethodResponse contains the result of cloning a payment method
+type ClonePaymentMethodResponse struct {
 	CustomerID      string
 	PaymentMethodID string
 }
@@ -104,7 +104,7 @@ func NewStripeServiceFromConfig(config *utils.GraphQLConfig) *StripeService {
 	}
 }
 
-// GetCustomerInfo returns customer info such as payment sources for display on client
+// GetCustomerInfo returns customer info such as payment methods for display on client
 func (s *StripeService) GetCustomerInfo(customerID string) (StripeCustomerInfo, error) {
 	stripe.Key = s.apiKey
 
@@ -112,20 +112,23 @@ func (s *StripeService) GetCustomerInfo(customerID string) (StripeCustomerInfo, 
 		Customer: stripe.String(customerID),
 		Type:     stripe.String("card"),
 	}
-	sources := make([]StripeSource, 0)
+
+	paymentMethods := make([]StripeSavedPaymentMethod, 0)
 	i := paymentmethod.List(params)
 	for i.Next() {
-		paymentMethod := i.PaymentMethod()
-		source := StripeSource{
-			ID:          paymentMethod.ID,
-			Last4Digits: paymentMethod.Card.Last4,
-			ExpMonth:    string(paymentMethod.Card.ExpMonth),
-			ExpYear:     string(paymentMethod.Card.ExpYear),
+		p := i.PaymentMethod()
+		log.Infof("Brand: %v", p.Card.Brand)
+		paymentMethod := StripeSavedPaymentMethod{
+			PaymentMethodID: p.ID,
+			Brand:           string(p.Card.Brand),
+			Last4Digits:     p.Card.Last4,
+			ExpMonth:        int64(p.Card.ExpMonth),
+			ExpYear:         int64(p.Card.ExpYear),
 		}
-		sources = append(sources, source)
+		paymentMethods = append(paymentMethods, paymentMethod)
 	}
 
-	return StripeCustomerInfo{Sources: sources}, nil
+	return StripeCustomerInfo{PaymentMethods: paymentMethods}, nil
 }
 
 // AddCustomerCard adds a card to a stripe customer
@@ -221,22 +224,28 @@ func (s *StripeService) CreateCharge(request CreateChargeRequest) (CreateChargeR
 
 }
 
-// CloneCustomerPaymentMethod clones a payment method to a connected account
-func (s *StripeService) CloneCustomerPaymentMethod(request CloneCustomerPaymentMethodRequest) (CloneCustomerPaymentMethodResponse, error) {
+// ClonePaymentMethod clones a payment method to a connected account
+// can be called without a customer for payment methods that aren't saved
+func (s *StripeService) ClonePaymentMethod(request ClonePaymentMethodRequest) (ClonePaymentMethodResponse, error) {
 	stripe.Key = s.apiKey
 
 	params := &stripe.PaymentMethodParams{
 		Customer:      stripe.String(request.CustomerID),
 		PaymentMethod: stripe.String(request.PaymentMethodID),
 	}
+	if request.CustomerID == "" {
+		params = &stripe.PaymentMethodParams{
+			PaymentMethod: stripe.String(request.PaymentMethodID),
+		}
+	}
 	params.SetStripeAccount(request.StripeAccountID)
 	pm, err := paymentmethod.New(params)
 	if err != nil {
 		log.Errorf("error cloning payment method: %v", err)
-		return CloneCustomerPaymentMethodResponse{}, err
+		return ClonePaymentMethodResponse{}, err
 	}
 
-	return CloneCustomerPaymentMethodResponse{
+	return ClonePaymentMethodResponse{
 		CustomerID:      request.CustomerID,
 		PaymentMethodID: pm.ID,
 	}, nil

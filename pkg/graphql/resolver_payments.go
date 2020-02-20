@@ -94,20 +94,22 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 }
 
 // nolint: dupl
-func (r *mutationResolver) PaymentsCloneCustomerPaymentMethod(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePayment, error) {
+func (r *mutationResolver) PaymentsClonePaymentMethod(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePayment, error) {
 
 	post, err := r.postService.GetPost(postID)
 	if err != nil {
 		return &payments.StripePayment{}, errors.New("could not find post")
 	}
 
-	err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
-	if err != nil {
-		return &payments.StripePayment{}, err
+	if payment.PayerChannelID != "" {
+		err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
+		if err != nil {
+			return &payments.StripePayment{}, err
+		}
 	}
 
 	postChannelID := post.GetChannelID()
-	p, err := r.paymentService.CloneCustomerPaymentMethod(payment.PayerChannelID, postChannelID, payment)
+	p, err := r.paymentService.ClonePaymentMethod(payment.PayerChannelID, postChannelID, payment)
 	return &p, err
 }
 

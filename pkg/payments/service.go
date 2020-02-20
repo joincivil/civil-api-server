@@ -45,7 +45,7 @@ type StripeCharger interface {
 	CreateCharge(request CreateChargeRequest) (CreateChargeResponse, error)
 	GetCustomerInfo(customerID string) (StripeCustomerInfo, error)
 	CreateStripePaymentIntent(request CreatePaymentIntentRequest) (StripePaymentIntent, error)
-	CloneCustomerPaymentMethod(request CloneCustomerPaymentMethodRequest) (CloneCustomerPaymentMethodResponse, error)
+	ClonePaymentMethod(request ClonePaymentMethodRequest) (ClonePaymentMethodResponse, error)
 }
 
 // EthereumValidator defines the functions needed to create an Ethereum payment
@@ -100,7 +100,7 @@ func (s *Service) GetChannelTotalProceeds(channelID string) *ProceedsQueryResult
 	SELECT 
 	posts.post_type, 
 	sum(amount * exchange_rate) as total_amount, 
-	sum(amount * exchange_rate ) FILTER (WHERE p.currency_code = 'USD')  as usd, 
+	sum(amount * exchange_rate ) FILTER (WHERE LOWER(p.currency_code) = 'usd') as usd, 
 	sum(amount * exchange_rate) FILTER (WHERE p.currency_code = 'ETH') as eth_usd_amount, 
 	sum(amount) FILTER (WHERE p.currency_code = 'ETH')  as ether 
 	from payments p 
@@ -119,7 +119,7 @@ func (s *Service) GetChannelTotalProceedsByBoostType(channelID string, boostType
 	SELECT 
 	posts.post_type, 
 	sum(amount * exchange_rate) as total_amount, 
-	sum(amount * exchange_rate ) FILTER (WHERE p.currency_code = 'USD')  as usd, 
+	sum(amount * exchange_rate ) FILTER (WHERE LOWER(p.currency_code) = 'usd') as usd, 
 	sum(amount * exchange_rate) FILTER (WHERE p.currency_code = 'ETH') as eth_usd_amount, 
 	sum(amount) FILTER (WHERE p.currency_code = 'ETH')  as ether 
 	from payments p 
@@ -431,20 +431,23 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	return payment, nil
 }
 
-// CloneCustomerPaymentMethod will clone a customer payment method to the connected account
-func (s *Service) CloneCustomerPaymentMethod(payerChannelID string, postChannelID string, payment StripePayment) (StripePayment, error) {
+// ClonePaymentMethod will clone a payment method to the connected account
+func (s *Service) ClonePaymentMethod(payerChannelID string, postChannelID string, payment StripePayment) (StripePayment, error) {
 
 	stripeAccount, err := s.channel.GetStripePaymentAccount(postChannelID)
 	if err != nil {
 		return StripePayment{}, err
 	}
 
-	customerID, err := s.channel.GetStripeCustomerID(payerChannelID)
-	if err != nil {
-		return StripePayment{}, err
+	var customerID = ""
+	if payerChannelID != "" {
+		customerID, err = s.channel.GetStripeCustomerID(payerChannelID)
+		if err != nil {
+			return StripePayment{}, err
+		}
 	}
 
-	res, err := s.stripe.CloneCustomerPaymentMethod(CloneCustomerPaymentMethodRequest{
+	res, err := s.stripe.ClonePaymentMethod(ClonePaymentMethodRequest{
 		PaymentMethodID: payment.PaymentMethodID,
 		CustomerID:      customerID,
 		StripeAccountID: stripeAccount,

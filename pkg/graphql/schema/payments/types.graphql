@@ -72,14 +72,15 @@ type PaymentToken implements Payment {
 }
 
 type StripeCustomerInfo {
-    sources: [StripeSource!]
+    paymentMethods: [StripeSavedPaymentMethod!]
 }
 
-type StripeSource {
-    id: String
-    last4Digits: String
-    expMonth: String
-    expYear: String
+type StripeSavedPaymentMethod {
+  paymentMethodID: String
+  brand: String
+  last4Digits: String
+  expMonth: Int
+  expYear: Int
 }
 
 type PaymentsStripePaymentIntent {

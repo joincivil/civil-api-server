@@ -143,17 +143,18 @@ type SanitizedPayment struct {
 	PayerChannelID   string
 }
 
-// StripeCustomerInfo contains a list of stripe payment sources
+// StripeCustomerInfo contains a list of stripe payment methods
 type StripeCustomerInfo struct {
-	Sources []StripeSource
+	PaymentMethods []StripeSavedPaymentMethod
 }
 
-// StripeSource contains info about a stripe payment source
-type StripeSource struct {
-	ID          string
-	Last4Digits string
-	ExpMonth    string
-	ExpYear     string
+// StripeSavedPaymentMethod contains info about a stripe payment method
+type StripeSavedPaymentMethod struct {
+	PaymentMethodID string
+	Brand           string
+	Last4Digits     string
+	ExpMonth        int64
+	ExpYear         int64
 }
 
 // StripePaymentIntent contains info about a stripe payment intent
