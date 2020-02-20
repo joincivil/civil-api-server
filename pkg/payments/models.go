@@ -155,6 +155,7 @@ type StripeSavedPaymentMethod struct {
 	Last4Digits     string
 	ExpMonth        int64
 	ExpYear         int64
+	Name            string
 }
 
 // StripePaymentIntent contains info about a stripe payment intent
