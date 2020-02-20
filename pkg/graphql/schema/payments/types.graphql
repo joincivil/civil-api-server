@@ -81,6 +81,7 @@ type StripeSavedPaymentMethod {
   last4Digits: String
   expMonth: Int
   expYear: Int
+  name: String
 }
 
 type PaymentsStripePaymentIntent {

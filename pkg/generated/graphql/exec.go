@@ -671,6 +671,7 @@ type ComplexityRoot struct {
 		ExpMonth        func(childComplexity int) int
 		ExpYear         func(childComplexity int) int
 		Last4Digits     func(childComplexity int) int
+		Name            func(childComplexity int) int
 		PaymentMethodID func(childComplexity int) int
 	}
 
@@ -4465,6 +4466,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.StripeSavedPaymentMethod.Last4Digits(childComplexity), true
 
+	case "StripeSavedPaymentMethod.name":
+		if e.complexity.StripeSavedPaymentMethod.Name == nil {
+			break
+		}
+
+		return e.complexity.StripeSavedPaymentMethod.Name(childComplexity), true
+
 	case "StripeSavedPaymentMethod.paymentMethodID":
 		if e.complexity.StripeSavedPaymentMethod.PaymentMethodID == nil {
 			break
@@ -5209,6 +5217,7 @@ type StripeSavedPaymentMethod {
   last4Digits: String
   expMonth: Int
   expYear: Int
+  name: String
 }
 
 type PaymentsStripePaymentIntent {
@@ -23744,6 +23753,40 @@ func (ec *executionContext) _StripeSavedPaymentMethod_expYear(ctx context.Contex
 	return ec.marshalOInt2int64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _StripeSavedPaymentMethod_name(ctx context.Context, field graphql.CollectedField, obj *payments.StripeSavedPaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeSavedPaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Subscription_fastPass(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Field: field,
@@ -30971,6 +31014,8 @@ func (ec *executionContext) _StripeSavedPaymentMethod(ctx context.Context, sel a
 			out.Values[i] = ec._StripeSavedPaymentMethod_expMonth(ctx, field, obj)
 		case "expYear":
 			out.Values[i] = ec._StripeSavedPaymentMethod_expYear(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._StripeSavedPaymentMethod_name(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

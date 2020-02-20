@@ -117,13 +117,13 @@ func (s *StripeService) GetCustomerInfo(customerID string) (StripeCustomerInfo, 
 	i := paymentmethod.List(params)
 	for i.Next() {
 		p := i.PaymentMethod()
-		log.Infof("Brand: %v", p.Card.Brand)
 		paymentMethod := StripeSavedPaymentMethod{
 			PaymentMethodID: p.ID,
 			Brand:           string(p.Card.Brand),
 			Last4Digits:     p.Card.Last4,
 			ExpMonth:        int64(p.Card.ExpMonth),
 			ExpYear:         int64(p.Card.ExpYear),
+			Name:            p.BillingDetails.Name,
 		}
 		paymentMethods = append(paymentMethods, paymentMethod)
 	}
