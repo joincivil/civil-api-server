@@ -25,27 +25,28 @@ type Payment interface {
 
 // PaymentModel defines the GORM model for a payment
 type PaymentModel struct {
-	ID                string    `gorm:"type:uuid;primary_key"`
-	CreatedAt         time.Time `gorm:"not null"`
-	UpdatedAt         time.Time `gorm:"not null"`
-	DeletedAt         *time.Time
-	PaymentType       string  `gorm:"not null;unique_index:payments_idx_type_reference"`
-	Reference         string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
-	Status            string  `gorm:"not null"`
-	CurrencyCode      string  `gorm:"not null"`
-	Amount            float64 `gorm:"not null"`
-	ExchangeRate      float64 `gorm:"not null"`
-	Comment           string
-	Reaction          string
-	Data              postgres.Jsonb
-	OwnerID           string `gorm:"not null"`
-	OwnerType         string `gorm:"not null"`
-	OwnerPostType     string
-	EmailAddress      string
-	PayerChannelID    string
-	ShouldPublicize   bool
-	ShouldSaveCard    bool   `gorm:"-"`
-	SavedCardSourceID string `gorm:"-"`
+	ID              string    `gorm:"type:uuid;primary_key"`
+	CreatedAt       time.Time `gorm:"not null"`
+	UpdatedAt       time.Time `gorm:"not null"`
+	DeletedAt       *time.Time
+	PaymentType     string  `gorm:"not null;unique_index:payments_idx_type_reference"`
+	Reference       string  `gorm:"not_null;unique_index:payments_idx_type_reference"` // user_id, newsroom smart contract address, group DID
+	Status          string  `gorm:"not null"`
+	CurrencyCode    string  `gorm:"not null"`
+	Amount          float64 `gorm:"not null"`
+	ExchangeRate    float64 `gorm:"not null"`
+	Comment         string
+	Reaction        string
+	Data            postgres.Jsonb
+	OwnerID         string `gorm:"not null"`
+	OwnerType       string `gorm:"not null"`
+	OwnerPostType   string
+	EmailAddress    string
+	PayerChannelID  string
+	ShouldPublicize bool
+	PaymentMethodID string
+	CustomerID      string
+	PaymentIntentID string `gorm:"index:idx_payment_intent_id"`
 }
 
 // TableName returns the gorm table name for Base
@@ -142,15 +143,31 @@ type SanitizedPayment struct {
 	PayerChannelID   string
 }
 
-// StripeCustomerInfo contains a list of stripe payment sources
+// StripeCustomerInfo contains a list of stripe payment methods
 type StripeCustomerInfo struct {
-	Sources []StripeSource
+	PaymentMethods []StripeSavedPaymentMethod
 }
 
-// StripeSource contains info about a stripe payment source
-type StripeSource struct {
-	ID          string
-	Last4Digits string
-	ExpMonth    string
-	ExpYear     string
+// StripeSavedPaymentMethod contains info about a stripe payment method
+type StripeSavedPaymentMethod struct {
+	PaymentMethodID string
+	Brand           string
+	Last4Digits     string
+	ExpMonth        int64
+	ExpYear         int64
+}
+
+// StripePaymentIntent contains info about a stripe payment intent
+type StripePaymentIntent struct {
+	Status       string
+	ClientSecret string
+	ID           string
+}
+
+// StripePaymentMethod something
+type StripePaymentMethod struct {
+	PayerChannelID  string
+	PaymentMethodID string
+	CustomerID      string
+	EmailAddress    string
 }

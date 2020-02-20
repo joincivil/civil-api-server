@@ -2,12 +2,11 @@ package graphqlmain
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth_chi"
 	"github.com/go-chi/chi"
 	"github.com/joincivil/civil-api-server/pkg/nrsignup"
+	"net/http"
 )
 
 func healthCheckRouting(router chi.Router) error {

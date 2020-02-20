@@ -110,7 +110,7 @@ type Comment struct {
 	CommentType string `json:"comment_type"`
 }
 
-// GetType returns the post type "Boost"
+// GetType returns the post type "Comment"
 func (b Comment) GetType() string {
 	return TypeComment
 }
@@ -124,7 +124,7 @@ type ExternalLink struct {
 	PublishedTime *time.Time `json:"published_time"`
 }
 
-// GetType returns the post type "Boost"
+// GetType returns the post type "ExternalLink"
 func (b ExternalLink) GetType() string {
 	return TypeExternalLink
 }
