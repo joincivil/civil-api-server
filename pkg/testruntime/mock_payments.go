@@ -41,9 +41,9 @@ func (p *MockPaymentHelper) CreateStripePaymentIntent(request payments.CreatePay
 	return payments.StripePaymentIntent{}, nil
 }
 
-// CloneCustomerPaymentMethod is a mock to clone payment methods
-func (p *MockPaymentHelper) CloneCustomerPaymentMethod(request payments.CloneCustomerPaymentMethodRequest) (payments.CloneCustomerPaymentMethodResponse, error) {
-	return payments.CloneCustomerPaymentMethodResponse{}, nil
+// ClonePaymentMethod is a mock to clone payment methods
+func (p *MockPaymentHelper) ClonePaymentMethod(request payments.ClonePaymentMethodRequest) (payments.ClonePaymentMethodResponse, error) {
+	return payments.ClonePaymentMethodResponse{}, nil
 }
 
 // GetEthereumPaymentAddress returns a mock eth account for the channel address

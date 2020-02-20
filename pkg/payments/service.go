@@ -37,6 +37,8 @@ const (
 
 	postTypeBoost        = "boost"
 	postTypeExternalLink = "externallink"
+
+	paymentComplete = "complete"
 )
 
 // StripeCharger defines the functions needed to create a charge with Stripe
@@ -285,7 +287,7 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 		}
 
 		if res.Amount != 0 {
-			update.Status = "complete"
+			update.Status = paymentComplete
 			update.Data = postgres.Jsonb{RawMessage: data}
 			update.ExchangeRate = res.ExchangeRate
 			update.Amount = res.Amount
@@ -407,7 +409,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	payment.OwnerType = ownerType
 	payment.OwnerPostType = postType
 	payment.Reference = res.ID
-	payment.Status = "complete"
+	payment.Status = paymentComplete
 
 	// TODO(dankins): this should be set when we support currencies other than USD
 	payment.ExchangeRate = 1
@@ -480,7 +482,7 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent,
 
 	// create a payment model to hold the updated fields
 	update := &PaymentModel{}
-	update.Status = "complete"
+	update.Status = paymentComplete
 	update.Amount = (float64(paymentIntent.Amount) / 100.0)
 	update.Data = postgres.Jsonb{RawMessage: json.RawMessage(data)}
 	if err := s.db.Model(&payment).Update(update).Error; err != nil {
