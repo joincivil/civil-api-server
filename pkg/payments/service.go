@@ -14,6 +14,7 @@ import (
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joincivil/go-common/pkg/email"
 	uuid "github.com/satori/go.uuid"
+	"github.com/stripe/stripe-go"
 	"time"
 )
 
@@ -406,6 +407,7 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	payment.OwnerType = ownerType
 	payment.OwnerPostType = postType
 	payment.Reference = res.ID
+	payment.Status = "complete"
 
 	// TODO(dankins): this should be set when we support currencies other than USD
 	payment.ExchangeRate = 1
@@ -463,18 +465,24 @@ func (s *Service) ClonePaymentMethod(payerChannelID string, postChannelID string
 }
 
 // ConfirmStripePaymentIntent sets the status of a stripe payment after payment_intent.succeeded webhook event received
-func (s *Service) ConfirmStripePaymentIntent(paymentIntentID string, paymentMethodID string, amount float64, postType string, tmplData email.TemplateData) error {
+func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent, amount float64, postType string, tmplData email.TemplateData) error {
 	var payment PaymentModel
-	if err := s.db.Where("reference = ?", paymentIntentID).First(&payment).Error; err != nil {
+	if err := s.db.Where("reference = ?", paymentIntent.ID).First(&payment).Error; err != nil {
 		log.Errorf("Error getting payment: %v\n", err)
+		return err
+	}
+
+	data, err := json.Marshal(paymentIntent)
+	if err != nil {
+		log.Errorf("Error unmarshalling payment intent data: %v\n", err)
 		return err
 	}
 
 	// create a payment model to hold the updated fields
 	update := &PaymentModel{}
 	update.Status = "complete"
-	update.Amount = amount
-
+	update.Amount = (float64(paymentIntent.Amount) / 100.0)
+	update.Data = postgres.Jsonb{RawMessage: json.RawMessage(data)}
 	if err := s.db.Model(&payment).Update(update).Error; err != nil {
 		log.Errorf("Error updating payment: %v\n", err)
 		return err
@@ -539,6 +547,12 @@ func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, 
 		return StripePaymentIntent{}, nil
 	}
 
+	data, err := json.Marshal(paymentIntent)
+	if err != nil {
+		log.Errorf("Error unmarshalling payment intent data: %v\n", err)
+		return StripePaymentIntent{}, nil
+	}
+
 	// generate a new ID for the payment model
 	id := uuid.NewV4()
 	payment.ID = id.String()
@@ -551,6 +565,7 @@ func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, 
 	payment.OwnerPostType = postType
 	payment.Reference = paymentIntent.ID
 	payment.Amount = 0
+	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(data)}
 
 	// TODO(dankins): this should be set when we support currencies other than USD
 	payment.ExchangeRate = 1

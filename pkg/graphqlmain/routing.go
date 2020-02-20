@@ -62,7 +62,7 @@ func webhookRouting(deps ServerDeps) error {
 				return
 			}
 
-			err = deps.PaymentService.ConfirmStripePaymentIntent(paymentIntent.ID, paymentIntent.PaymentMethod.ID, amount, post.GetType(), tmplData)
+			err = deps.PaymentService.ConfirmStripePaymentIntent(paymentIntent, amount, post.GetType(), tmplData)
 			if err != nil {
 				log.Errorf("Error updating successful payment: %v\n", err)
 				w.WriteHeader(http.StatusBadRequest)
