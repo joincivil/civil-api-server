@@ -46,6 +46,11 @@ func (p *MockPaymentHelper) ClonePaymentMethod(request payments.ClonePaymentMeth
 	return payments.ClonePaymentMethodResponse{}, nil
 }
 
+// RemovePaymentMethod is a mock to remove a payment method
+func (p *MockPaymentHelper) RemovePaymentMethod(paymentMethodID string) error {
+	return nil
+}
+
 // GetEthereumPaymentAddress returns a mock eth account for the channel address
 func (p *MockPaymentHelper) GetEthereumPaymentAddress(channelID string) (common.Address, error) {
 

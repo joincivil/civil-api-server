@@ -248,6 +248,19 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 	return nil, ErrNotImplemented
 }
 
+func (r *mutationResolver) PaymentsRemoveSavedPaymentMethod(ctx context.Context, paymentMethodID string, channelID string) (bool, error) {
+	err := r.validateUserIsChannelAdmin(ctx, channelID)
+	if err != nil {
+		return false, err
+	}
+
+	err = r.paymentService.RemovePaymentMethod(paymentMethodID, channelID)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (r *queryResolver) GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error) {
 	err := r.validateUserIsChannelAdmin(ctx, channelID)
 	if err != nil {

@@ -49,6 +49,7 @@ type StripeCharger interface {
 	GetCustomerInfo(customerID string) (StripeCustomerInfo, error)
 	CreateStripePaymentIntent(request CreatePaymentIntentRequest) (StripePaymentIntent, error)
 	ClonePaymentMethod(request ClonePaymentMethodRequest) (ClonePaymentMethodResponse, error)
+	RemovePaymentMethod(paymentMethodID string) error
 }
 
 // EthereumValidator defines the functions needed to create an Ethereum payment
@@ -376,6 +377,27 @@ func (s *Service) SavePaymentMethod(channelID string, paymentMethodID string, em
 		PaymentMethodID: paymentMethodID,
 		CustomerID:      stripeCustomerID,
 	}, nil
+}
+
+// RemovePaymentMethod removes a payment method owned by the specified channel, if it exists
+func (s *Service) RemovePaymentMethod(paymentMethodID string, channelID string) error {
+	stripeCustomerInfo, err := s.GetStripeCustomerInfo(channelID)
+	if err != nil {
+		return err
+	}
+
+	doesChannelHaveThisPaymentMethod := false
+	for _, p := range stripeCustomerInfo.PaymentMethods {
+		if p.PaymentMethodID == paymentMethodID {
+			doesChannelHaveThisPaymentMethod = true
+			break
+		}
+	}
+	if !doesChannelHaveThisPaymentMethod {
+		return errors.New("channel does not own specified payment method")
+	}
+
+	return s.stripe.RemovePaymentMethod(paymentMethodID)
 }
 
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
