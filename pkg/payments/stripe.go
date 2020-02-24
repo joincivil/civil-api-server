@@ -147,6 +147,13 @@ func (s *StripeService) AddCustomerCard(request AddCustomerCardRequest) (AddCust
 	return AddCustomerCardResponse{ID: request.CustomerID}, nil
 }
 
+// RemovePaymentMethod detaches a payment method from whatever customer it is attached to
+func (s *StripeService) RemovePaymentMethod(paymentMethodID string) error {
+	stripe.Key = s.apiKey
+	_, err := paymentmethod.Detach(paymentMethodID, nil)
+	return err
+}
+
 // CreateCustomer creates a stripe customer
 func (s *StripeService) CreateCustomer(request CreateCustomerRequest) (CreateCustomerResponse, error) {
 	stripe.Key = s.apiKey

@@ -71,6 +71,7 @@ type Mutation {
         postID: String!
         input: PaymentsCreateStripePaymentInput!
     ): PaymentStripe!
+    paymentsRemoveSavedPaymentMethod(paymentMethodID: String!, channelID: String!): Boolean!
 
     # Post Mutations
     postsCreateBoost(input: PostCreateBoostInput!): PostBoost

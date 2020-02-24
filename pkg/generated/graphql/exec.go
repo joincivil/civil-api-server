@@ -318,6 +318,7 @@ type ComplexityRoot struct {
 		PaymentsCreateStripePaymentIntent func(childComplexity int, postID string, input payments.StripePayment) int
 		PaymentsCreateStripePaymentMethod func(childComplexity int, input payments.StripePaymentMethod) int
 		PaymentsCreateTokenPayment        func(childComplexity int, postID string, input payments.TokenPayment) int
+		PaymentsRemoveSavedPaymentMethod  func(childComplexity int, paymentMethodID string, channelID string) int
 		PostsCreateBoost                  func(childComplexity int, input posts.Boost) int
 		PostsCreateComment                func(childComplexity int, input posts.Comment) int
 		PostsCreateExternalLink           func(childComplexity int, input posts.ExternalLink) int
@@ -842,6 +843,7 @@ type MutationResolver interface {
 	PaymentsCreateStripePaymentIntent(ctx context.Context, postID string, input payments.StripePayment) (*payments.StripePaymentIntent, error)
 	PaymentsCreateStripePaymentMethod(ctx context.Context, input payments.StripePaymentMethod) (*payments.StripePaymentMethod, error)
 	PaymentsClonePaymentMethod(ctx context.Context, postID string, input payments.StripePayment) (*payments.StripePayment, error)
+	PaymentsRemoveSavedPaymentMethod(ctx context.Context, paymentMethodID string, channelID string) (bool, error)
 	PostsCreateBoost(ctx context.Context, input posts.Boost) (*posts.Boost, error)
 	PostsUpdateBoost(ctx context.Context, postID string, input posts.Boost) (*posts.Boost, error)
 	PostsCreateExternalLink(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error)
@@ -2375,6 +2377,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PaymentsCreateTokenPayment(childComplexity, args["postID"].(string), args["input"].(payments.TokenPayment)), true
+
+	case "Mutation.paymentsRemoveSavedPaymentMethod":
+		if e.complexity.Mutation.PaymentsRemoveSavedPaymentMethod == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_paymentsRemoveSavedPaymentMethod_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsRemoveSavedPaymentMethod(childComplexity, args["paymentMethodID"].(string), args["channelID"].(string)), true
 
 	case "Mutation.postsCreateBoost":
 		if e.complexity.Mutation.PostsCreateBoost == nil {
@@ -4948,6 +4962,7 @@ type Jsonb {
         postID: String!
         input: PaymentsCreateStripePaymentInput!
     ): PaymentStripe!
+    paymentsRemoveSavedPaymentMethod(paymentMethodID: String!, channelID: String!): Boolean!
 
     # Post Mutations
     postsCreateBoost(input: PostCreateBoostInput!): PostBoost
@@ -6431,6 +6446,28 @@ func (ec *executionContext) field_Mutation_paymentsCreateTokenPayment_args(ctx c
 		}
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_paymentsRemoveSavedPaymentMethod_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["paymentMethodID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["paymentMethodID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg1
 	return args, nil
 }
 
@@ -14209,6 +14246,50 @@ func (ec *executionContext) _Mutation_paymentsClonePaymentMethod(ctx context.Con
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNPaymentStripe2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePayment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_paymentsRemoveSavedPaymentMethod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_paymentsRemoveSavedPaymentMethod_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsRemoveSavedPaymentMethod(rctx, args["paymentMethodID"].(string), args["channelID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_postsCreateBoost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -28813,6 +28894,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "paymentsClonePaymentMethod":
 			out.Values[i] = ec._Mutation_paymentsClonePaymentMethod(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "paymentsRemoveSavedPaymentMethod":
+			out.Values[i] = ec._Mutation_paymentsRemoveSavedPaymentMethod(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
