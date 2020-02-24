@@ -93,6 +93,74 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	return &p, err
 }
 
+// nolint: dupl
+func (r *mutationResolver) PaymentsClonePaymentMethod(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePayment, error) {
+
+	post, err := r.postService.GetPost(postID)
+	if err != nil {
+		return &payments.StripePayment{}, errors.New("could not find post")
+	}
+
+	if payment.PayerChannelID != "" {
+		err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
+		if err != nil {
+			return &payments.StripePayment{}, err
+		}
+	}
+
+	postChannelID := post.GetChannelID()
+	p, err := r.paymentService.ClonePaymentMethod(payment.PayerChannelID, postChannelID, payment)
+	return &p, err
+}
+
+func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context, postID string, payment payments.StripePayment) (*payments.StripePaymentIntent, error) {
+	post, err := r.postService.GetPost(postID)
+	if err != nil {
+		return nil, errors.New("could not find post")
+	}
+
+	if payment.PayerChannelID != "" {
+		err = r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if payment.PayerChannelID == "" {
+		payment.ShouldPublicize = false
+	}
+
+	channelID := post.GetChannelID()
+	newsroomName, err := r.getPostNewsroomName(post)
+	if err != nil {
+		return nil, err
+	}
+	boostTitle, err := r.getPostTitle(post)
+	if err != nil {
+		return nil, err
+	}
+	paymentIntent, err := r.paymentService.CreateStripePaymentIntent(channelID, "posts", post.GetType(), postID, newsroomName, boostTitle, payment)
+	if err != nil {
+		return nil, err
+	}
+	return &paymentIntent, nil
+}
+
+func (r *mutationResolver) PaymentsCreateStripePaymentMethod(ctx context.Context, payment payments.StripePaymentMethod) (*payments.StripePaymentMethod, error) {
+
+	if payment.PayerChannelID != "" {
+		err := r.validateUserIsChannelAdmin(ctx, payment.PayerChannelID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	paymentMethod, err := r.paymentService.SavePaymentMethod(payment.PayerChannelID, payment.PaymentMethodID, payment.EmailAddress)
+	if err != nil {
+		return nil, err
+	}
+	return paymentMethod, nil
+}
+
 func (r *mutationResolver) PaymentsCreateTokenPayment(ctx context.Context, postID string, payment payments.TokenPayment) (*payments.TokenPayment, error) {
 	token := auth.ForContext(ctx)
 	if token == nil {
@@ -134,6 +202,26 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 	return nil, ErrNotImplemented
 }
 
+func (r *mutationResolver) getPostNewsroomName(post posts.Post) (string, error) {
+	channel, err := r.channelService.GetChannel(post.GetChannelID())
+	if err != nil {
+		return "", errors.New("could not find channel")
+	}
+	newsroom, err := r.newsroomService.GetNewsroomByAddress(channel.Reference)
+	if err != nil {
+		return "", errors.New("could not find newsroom")
+	}
+	return newsroom.Name, nil
+}
+
+func (r *mutationResolver) getPostTitle(post posts.Post) (string, error) {
+	if post.GetType() == posts.TypeBoost {
+		boost := post.(*posts.Boost)
+		return boost.Title, nil
+	}
+	return "", nil
+}
+
 func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, payment payments.StripePayment) (email.TemplateData, error) {
 	channel, err := r.channelService.GetChannel(post.GetChannelID())
 	if err != nil {
@@ -158,6 +246,19 @@ func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, pa
 		}), nil
 	}
 	return nil, ErrNotImplemented
+}
+
+func (r *mutationResolver) PaymentsRemoveSavedPaymentMethod(ctx context.Context, paymentMethodID string, channelID string) (bool, error) {
+	err := r.validateUserIsChannelAdmin(ctx, channelID)
+	if err != nil {
+		return false, err
+	}
+
+	err = r.paymentService.RemovePaymentMethod(paymentMethodID, channelID)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *queryResolver) GetChannelTotalProceeds(ctx context.Context, channelID string) (*payments.ProceedsQueryResult, error) {

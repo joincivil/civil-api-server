@@ -139,6 +139,7 @@ type ComplexityRoot struct {
 		StripeAccountID            func(childComplexity int) int
 		StripeApplePayEnabled      func(childComplexity int) int
 		StripeCustomerIDRestricted func(childComplexity int) int
+		StripeCustomerInfo         func(childComplexity int) int
 		Tiny100AvatarDataURL       func(childComplexity int) int
 		Tiny72AvatarDataURL        func(childComplexity int) int
 	}
@@ -299,7 +300,6 @@ type ComplexityRoot struct {
 		ChannelsSetEmail                  func(childComplexity int, input channels.SetEmailInput) int
 		ChannelsSetEmailConfirm           func(childComplexity int, jwt string) int
 		ChannelsSetHandle                 func(childComplexity int, input channels.SetHandleInput) int
-		ChannelsSetStripeCustomerID       func(childComplexity int, input channels.SetStripeCustomerIDInput) int
 		JsonbSave                         func(childComplexity int, input JsonbInput) int
 		NrsignupApproveGrant              func(childComplexity int, approved bool, newsroomOwnerUID string) int
 		NrsignupDelete                    func(childComplexity int) int
@@ -312,9 +312,13 @@ type ComplexityRoot struct {
 		NrsignupSaveTxHash                func(childComplexity int, txHash string) int
 		NrsignupSendWelcomeEmail          func(childComplexity int) int
 		NrsignupUpdateSteps               func(childComplexity int, input NrsignupStepsInput) int
+		PaymentsClonePaymentMethod        func(childComplexity int, postID string, input payments.StripePayment) int
 		PaymentsCreateEtherPayment        func(childComplexity int, postID string, input payments.EtherPayment) int
 		PaymentsCreateStripePayment       func(childComplexity int, postID string, input payments.StripePayment) int
+		PaymentsCreateStripePaymentIntent func(childComplexity int, postID string, input payments.StripePayment) int
+		PaymentsCreateStripePaymentMethod func(childComplexity int, input payments.StripePaymentMethod) int
 		PaymentsCreateTokenPayment        func(childComplexity int, postID string, input payments.TokenPayment) int
+		PaymentsRemoveSavedPaymentMethod  func(childComplexity int, paymentMethodID string, channelID string) int
 		PostsCreateBoost                  func(childComplexity int, input posts.Boost) int
 		PostsCreateComment                func(childComplexity int, input posts.Comment) int
 		PostsCreateExternalLink           func(childComplexity int, input posts.ExternalLink) int
@@ -459,18 +463,20 @@ type ComplexityRoot struct {
 	}
 
 	PaymentStripe struct {
-		Amount         func(childComplexity int) int
-		Comment        func(childComplexity int) int
-		CreatedAt      func(childComplexity int) int
-		CurrencyCode   func(childComplexity int) int
-		ExchangeRate   func(childComplexity int) int
-		PayerChannel   func(childComplexity int) int
-		PayerChannelID func(childComplexity int) int
-		Post           func(childComplexity int) int
-		Reaction       func(childComplexity int) int
-		Status         func(childComplexity int) int
-		USDEquivalent  func(childComplexity int) int
-		UpdatedAt      func(childComplexity int) int
+		Amount          func(childComplexity int) int
+		Comment         func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		CurrencyCode    func(childComplexity int) int
+		CustomerID      func(childComplexity int) int
+		ExchangeRate    func(childComplexity int) int
+		PayerChannel    func(childComplexity int) int
+		PayerChannelID  func(childComplexity int) int
+		PaymentMethodID func(childComplexity int) int
+		Post            func(childComplexity int) int
+		Reaction        func(childComplexity int) int
+		Status          func(childComplexity int) int
+		USDEquivalent   func(childComplexity int) int
+		UpdatedAt       func(childComplexity int) int
 	}
 
 	PaymentToken struct {
@@ -487,6 +493,17 @@ type ComplexityRoot struct {
 		TransactionID  func(childComplexity int) int
 		USDEquivalent  func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
+	}
+
+	PaymentsStripePaymentIntent struct {
+		ClientSecret func(childComplexity int) int
+		ID           func(childComplexity int) int
+		Status       func(childComplexity int) int
+	}
+
+	PaymentsStripePaymentMethod struct {
+		CustomerID      func(childComplexity int) int
+		PaymentMethodID func(childComplexity int) int
 	}
 
 	Poll struct {
@@ -646,6 +663,19 @@ type ComplexityRoot struct {
 		UsdEquivalent    func(childComplexity int) int
 	}
 
+	StripeCustomerInfo struct {
+		PaymentMethods func(childComplexity int) int
+	}
+
+	StripeSavedPaymentMethod struct {
+		Brand           func(childComplexity int) int
+		ExpMonth        func(childComplexity int) int
+		ExpYear         func(childComplexity int) int
+		Last4Digits     func(childComplexity int) int
+		Name            func(childComplexity int) int
+		PaymentMethodID func(childComplexity int) int
+	}
+
 	Subscription struct {
 		FastPass func(childComplexity int, newsroomOwnerUID string) int
 	}
@@ -725,6 +755,7 @@ type ChannelResolver interface {
 	StripeCustomerIDRestricted(ctx context.Context, obj *channels.Channel) (*string, error)
 	StripeApplePayEnabled(ctx context.Context, obj *channels.Channel) (bool, error)
 	PaymentsMadeByChannel(ctx context.Context, obj *channels.Channel) ([]payments.Payment, error)
+	StripeCustomerInfo(ctx context.Context, obj *channels.Channel) (*payments.StripeCustomerInfo, error)
 }
 type CharterResolver interface {
 	ContentID(ctx context.Context, obj *model.Charter) (int, error)
@@ -793,7 +824,6 @@ type MutationResolver interface {
 	UserChannelSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
 	ChannelsSetEmail(ctx context.Context, input channels.SetEmailInput) (*channels.Channel, error)
 	ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error)
-	ChannelsSetStripeCustomerID(ctx context.Context, input channels.SetStripeCustomerIDInput) (*channels.Channel, error)
 	ChannelsClearStripeCustomerID(ctx context.Context, channelID string) (*channels.Channel, error)
 	ChannelsEnableApplePay(ctx context.Context, channelID string) ([]string, error)
 	NrsignupSendWelcomeEmail(ctx context.Context) (string, error)
@@ -810,6 +840,10 @@ type MutationResolver interface {
 	PaymentsCreateStripePayment(ctx context.Context, postID string, input payments.StripePayment) (*payments.StripePayment, error)
 	PaymentsCreateEtherPayment(ctx context.Context, postID string, input payments.EtherPayment) (*payments.EtherPayment, error)
 	PaymentsCreateTokenPayment(ctx context.Context, postID string, input payments.TokenPayment) (*payments.TokenPayment, error)
+	PaymentsCreateStripePaymentIntent(ctx context.Context, postID string, input payments.StripePayment) (*payments.StripePaymentIntent, error)
+	PaymentsCreateStripePaymentMethod(ctx context.Context, input payments.StripePaymentMethod) (*payments.StripePaymentMethod, error)
+	PaymentsClonePaymentMethod(ctx context.Context, postID string, input payments.StripePayment) (*payments.StripePayment, error)
+	PaymentsRemoveSavedPaymentMethod(ctx context.Context, paymentMethodID string, channelID string) (bool, error)
 	PostsCreateBoost(ctx context.Context, input posts.Boost) (*posts.Boost, error)
 	PostsUpdateBoost(ctx context.Context, postID string, input posts.Boost) (*posts.Boost, error)
 	PostsCreateExternalLink(ctx context.Context, input posts.ExternalLink) (*posts.ExternalLink, error)
@@ -843,6 +877,7 @@ type PaymentEtherResolver interface {
 }
 type PaymentStripeResolver interface {
 	PayerChannel(ctx context.Context, obj *payments.StripePayment) (*channels.Channel, error)
+
 	Post(ctx context.Context, obj *payments.StripePayment) (posts.Post, error)
 }
 type PaymentTokenResolver interface {
@@ -1302,6 +1337,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.StripeCustomerIDRestricted(childComplexity), true
+
+	case "Channel.stripeCustomerInfo":
+		if e.complexity.Channel.StripeCustomerInfo == nil {
+			break
+		}
+
+		return e.complexity.Channel.StripeCustomerInfo(childComplexity), true
 
 	case "Channel.tiny100AvatarDataUrl":
 		if e.complexity.Channel.Tiny100AvatarDataURL == nil {
@@ -2130,18 +2172,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ChannelsSetHandle(childComplexity, args["input"].(channels.SetHandleInput)), true
 
-	case "Mutation.channelsSetStripeCustomerID":
-		if e.complexity.Mutation.ChannelsSetStripeCustomerID == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_channelsSetStripeCustomerID_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.ChannelsSetStripeCustomerID(childComplexity, args["input"].(channels.SetStripeCustomerIDInput)), true
-
 	case "Mutation.jsonbSave":
 		if e.complexity.Mutation.JsonbSave == nil {
 			break
@@ -2276,6 +2306,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.NrsignupUpdateSteps(childComplexity, args["input"].(NrsignupStepsInput)), true
 
+	case "Mutation.paymentsClonePaymentMethod":
+		if e.complexity.Mutation.PaymentsClonePaymentMethod == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_paymentsClonePaymentMethod_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsClonePaymentMethod(childComplexity, args["postID"].(string), args["input"].(payments.StripePayment)), true
+
 	case "Mutation.paymentsCreateEtherPayment":
 		if e.complexity.Mutation.PaymentsCreateEtherPayment == nil {
 			break
@@ -2300,6 +2342,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.PaymentsCreateStripePayment(childComplexity, args["postID"].(string), args["input"].(payments.StripePayment)), true
 
+	case "Mutation.paymentsCreateStripePaymentIntent":
+		if e.complexity.Mutation.PaymentsCreateStripePaymentIntent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_paymentsCreateStripePaymentIntent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsCreateStripePaymentIntent(childComplexity, args["postID"].(string), args["input"].(payments.StripePayment)), true
+
+	case "Mutation.paymentsCreateStripePaymentMethod":
+		if e.complexity.Mutation.PaymentsCreateStripePaymentMethod == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_paymentsCreateStripePaymentMethod_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsCreateStripePaymentMethod(childComplexity, args["input"].(payments.StripePaymentMethod)), true
+
 	case "Mutation.paymentsCreateTokenPayment":
 		if e.complexity.Mutation.PaymentsCreateTokenPayment == nil {
 			break
@@ -2311,6 +2377,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.PaymentsCreateTokenPayment(childComplexity, args["postID"].(string), args["input"].(payments.TokenPayment)), true
+
+	case "Mutation.paymentsRemoveSavedPaymentMethod":
+		if e.complexity.Mutation.PaymentsRemoveSavedPaymentMethod == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_paymentsRemoveSavedPaymentMethod_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.PaymentsRemoveSavedPaymentMethod(childComplexity, args["paymentMethodID"].(string), args["channelID"].(string)), true
 
 	case "Mutation.postsCreateBoost":
 		if e.complexity.Mutation.PostsCreateBoost == nil {
@@ -3129,6 +3207,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PaymentStripe.CurrencyCode(childComplexity), true
 
+	case "PaymentStripe.customerID":
+		if e.complexity.PaymentStripe.CustomerID == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.CustomerID(childComplexity), true
+
 	case "PaymentStripe.exchangeRate":
 		if e.complexity.PaymentStripe.ExchangeRate == nil {
 			break
@@ -3149,6 +3234,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaymentStripe.PayerChannelID(childComplexity), true
+
+	case "PaymentStripe.paymentMethodID":
+		if e.complexity.PaymentStripe.PaymentMethodID == nil {
+			break
+		}
+
+		return e.complexity.PaymentStripe.PaymentMethodID(childComplexity), true
 
 	case "PaymentStripe.post":
 		if e.complexity.PaymentStripe.Post == nil {
@@ -3275,6 +3367,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PaymentToken.UpdatedAt(childComplexity), true
+
+	case "PaymentsStripePaymentIntent.clientSecret":
+		if e.complexity.PaymentsStripePaymentIntent.ClientSecret == nil {
+			break
+		}
+
+		return e.complexity.PaymentsStripePaymentIntent.ClientSecret(childComplexity), true
+
+	case "PaymentsStripePaymentIntent.id":
+		if e.complexity.PaymentsStripePaymentIntent.ID == nil {
+			break
+		}
+
+		return e.complexity.PaymentsStripePaymentIntent.ID(childComplexity), true
+
+	case "PaymentsStripePaymentIntent.status":
+		if e.complexity.PaymentsStripePaymentIntent.Status == nil {
+			break
+		}
+
+		return e.complexity.PaymentsStripePaymentIntent.Status(childComplexity), true
+
+	case "PaymentsStripePaymentMethod.customerID":
+		if e.complexity.PaymentsStripePaymentMethod.CustomerID == nil {
+			break
+		}
+
+		return e.complexity.PaymentsStripePaymentMethod.CustomerID(childComplexity), true
+
+	case "PaymentsStripePaymentMethod.paymentMethodID":
+		if e.complexity.PaymentsStripePaymentMethod.PaymentMethodID == nil {
+			break
+		}
+
+		return e.complexity.PaymentsStripePaymentMethod.PaymentMethodID(childComplexity), true
 
 	case "Poll.commitEndDate":
 		if e.complexity.Poll.CommitEndDate == nil {
@@ -4318,6 +4445,55 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SanitizedPayment.UsdEquivalent(childComplexity), true
 
+	case "StripeCustomerInfo.paymentMethods":
+		if e.complexity.StripeCustomerInfo.PaymentMethods == nil {
+			break
+		}
+
+		return e.complexity.StripeCustomerInfo.PaymentMethods(childComplexity), true
+
+	case "StripeSavedPaymentMethod.brand":
+		if e.complexity.StripeSavedPaymentMethod.Brand == nil {
+			break
+		}
+
+		return e.complexity.StripeSavedPaymentMethod.Brand(childComplexity), true
+
+	case "StripeSavedPaymentMethod.expMonth":
+		if e.complexity.StripeSavedPaymentMethod.ExpMonth == nil {
+			break
+		}
+
+		return e.complexity.StripeSavedPaymentMethod.ExpMonth(childComplexity), true
+
+	case "StripeSavedPaymentMethod.expYear":
+		if e.complexity.StripeSavedPaymentMethod.ExpYear == nil {
+			break
+		}
+
+		return e.complexity.StripeSavedPaymentMethod.ExpYear(childComplexity), true
+
+	case "StripeSavedPaymentMethod.last4Digits":
+		if e.complexity.StripeSavedPaymentMethod.Last4Digits == nil {
+			break
+		}
+
+		return e.complexity.StripeSavedPaymentMethod.Last4Digits(childComplexity), true
+
+	case "StripeSavedPaymentMethod.name":
+		if e.complexity.StripeSavedPaymentMethod.Name == nil {
+			break
+		}
+
+		return e.complexity.StripeSavedPaymentMethod.Name(childComplexity), true
+
+	case "StripeSavedPaymentMethod.paymentMethodID":
+		if e.complexity.StripeSavedPaymentMethod.PaymentMethodID == nil {
+			break
+		}
+
+		return e.complexity.StripeSavedPaymentMethod.PaymentMethodID(childComplexity), true
+
 	case "Subscription.fastPass":
 		if e.complexity.Subscription.FastPass == nil {
 			break
@@ -4680,6 +4856,7 @@ type Channel {
     StripeCustomerIDRestricted: String
     stripeApplePayEnabled: Boolean!
     paymentsMadeByChannel: [Payment!]
+    stripeCustomerInfo: StripeCustomerInfo
 }
 
 type ChannelMember {
@@ -4750,7 +4927,6 @@ type Jsonb {
     userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
     channelsSetEmail(input: ChannelsSetEmailInput!): Channel
     channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
-    channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
     channelsClearStripeCustomerID(channelID: String!): Channel
     channelsEnableApplePay(channelID: String!): [String!]
 
@@ -4780,6 +4956,13 @@ type Jsonb {
         postID: String!
         input: PaymentsCreateTokenPaymentInput!
     ): PaymentToken!
+    paymentsCreateStripePaymentIntent(postID: String!, input: PaymentsCreateStripePaymentInput!): PaymentsStripePaymentIntent!
+    paymentsCreateStripePaymentMethod(input: PaymentsCreateStripePaymentMethodInput!): PaymentsStripePaymentMethod!
+    paymentsClonePaymentMethod(        
+        postID: String!
+        input: PaymentsCreateStripePaymentInput!
+    ): PaymentStripe!
+    paymentsRemoveSavedPaymentMethod(paymentMethodID: String!, channelID: String!): Boolean!
 
     # Post Mutations
     postsCreateBoost(input: PostCreateBoostInput!): PostBoost
@@ -4953,10 +5136,17 @@ input PaymentsCreateStripePaymentInput {
     comment: String
     currencyCode: String!
     amount: Float!
-    paymentToken: String!
+    paymentToken: String
     emailAddress: String
     payerChannelID: String
     shouldPublicize: Boolean
+    paymentMethodID: String
+}
+
+input PaymentsCreateStripePaymentMethodInput {
+  paymentMethodID: String!
+  emailAddress: String!
+  payerChannelID: String!
 }
 `},
 	&ast.Source{Name: "schema/payments/types.graphql", Input: `# Payment types
@@ -4994,6 +5184,8 @@ type PaymentStripe implements Payment {
     usdEquivalent: Float!
     payerChannelID: String
     payerChannel: Channel
+    paymentMethodID: String
+    customerID: String
     post: Post
 }
 
@@ -5028,7 +5220,32 @@ type PaymentToken implements Payment {
     payerChannelID: String
     payerChannel: Channel
     post: Post
-}`},
+}
+
+type StripeCustomerInfo {
+    paymentMethods: [StripeSavedPaymentMethod!]
+}
+
+type StripeSavedPaymentMethod {
+  paymentMethodID: String
+  brand: String
+  last4Digits: String
+  expMonth: Int
+  expYear: Int
+  name: String
+}
+
+type PaymentsStripePaymentIntent {
+  status: String!
+  clientSecret: String!
+  id: String!
+}
+
+type PaymentsStripePaymentMethod {
+  paymentMethodID: String!
+  customerID: String!
+}
+`},
 	&ast.Source{Name: "schema/posts/inputs.graphql", Input: `# input objects
 input PostSearchInput {
     postType: String
@@ -5960,20 +6177,6 @@ func (ec *executionContext) field_Mutation_channelsSetHandle_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_channelsSetStripeCustomerID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 channels.SetStripeCustomerIDInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNChannelsSetStripeCustomerIDInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetStripeCustomerIDInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_jsonbSave_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -6122,6 +6325,28 @@ func (ec *executionContext) field_Mutation_nrsignupUpdateSteps_args(ctx context.
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_paymentsClonePaymentMethod_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 payments.StripePayment
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNPaymentsCreateStripePaymentInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePayment(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_paymentsCreateEtherPayment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -6141,6 +6366,42 @@ func (ec *executionContext) field_Mutation_paymentsCreateEtherPayment_args(ctx c
 		}
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_paymentsCreateStripePaymentIntent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postID"] = arg0
+	var arg1 payments.StripePayment
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNPaymentsCreateStripePaymentInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePayment(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_paymentsCreateStripePaymentMethod_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 payments.StripePaymentMethod
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNPaymentsCreateStripePaymentMethodInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentMethod(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -6185,6 +6446,28 @@ func (ec *executionContext) field_Mutation_paymentsCreateTokenPayment_args(ctx c
 		}
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_paymentsRemoveSavedPaymentMethod_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["paymentMethodID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["paymentMethodID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["channelID"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["channelID"] = arg1
 	return args, nil
 }
 
@@ -9252,6 +9535,40 @@ func (ec *executionContext) _Channel_paymentsMadeByChannel(ctx context.Context, 
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOPayment2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐPayment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_stripeCustomerInfo(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Channel().StripeCustomerInfo(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*payments.StripeCustomerInfo)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOStripeCustomerInfo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripeCustomerInfo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ChannelMember_channel(ctx context.Context, field graphql.CollectedField, obj *channels.ChannelMember) (ret graphql.Marshaler) {
@@ -13115,47 +13432,6 @@ func (ec *executionContext) _Mutation_channelsSetEmailConfirm(ctx context.Contex
 	return ec.marshalOChannelSetEmailResponse2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetEmailResponse(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_channelsSetStripeCustomerID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_channelsSetStripeCustomerID_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ChannelsSetStripeCustomerID(rctx, args["input"].(channels.SetStripeCustomerIDInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*channels.Channel)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Mutation_channelsClearStripeCustomerID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -13838,6 +14114,182 @@ func (ec *executionContext) _Mutation_paymentsCreateTokenPayment(ctx context.Con
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNPaymentToken2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐTokenPayment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_paymentsCreateStripePaymentIntent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_paymentsCreateStripePaymentIntent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsCreateStripePaymentIntent(rctx, args["postID"].(string), args["input"].(payments.StripePayment))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*payments.StripePaymentIntent)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPaymentsStripePaymentIntent2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentIntent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_paymentsCreateStripePaymentMethod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_paymentsCreateStripePaymentMethod_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsCreateStripePaymentMethod(rctx, args["input"].(payments.StripePaymentMethod))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*payments.StripePaymentMethod)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPaymentsStripePaymentMethod2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentMethod(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_paymentsClonePaymentMethod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_paymentsClonePaymentMethod_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsClonePaymentMethod(rctx, args["postID"].(string), args["input"].(payments.StripePayment))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*payments.StripePayment)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNPaymentStripe2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePayment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_paymentsRemoveSavedPaymentMethod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_paymentsRemoveSavedPaymentMethod_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().PaymentsRemoveSavedPaymentMethod(rctx, args["paymentMethodID"].(string), args["channelID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_postsCreateBoost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -17813,6 +18265,74 @@ func (ec *executionContext) _PaymentStripe_payerChannel(ctx context.Context, fie
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _PaymentStripe_paymentMethodID(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentStripe",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PaymentMethodID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentStripe_customerID(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentStripe",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _PaymentStripe_post(ctx context.Context, field graphql.CollectedField, obj *payments.StripePayment) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -18305,6 +18825,191 @@ func (ec *executionContext) _PaymentToken_post(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentsStripePaymentIntent_status(ctx context.Context, field graphql.CollectedField, obj *payments.StripePaymentIntent) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentsStripePaymentIntent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentsStripePaymentIntent_clientSecret(ctx context.Context, field graphql.CollectedField, obj *payments.StripePaymentIntent) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentsStripePaymentIntent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientSecret, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentsStripePaymentIntent_id(ctx context.Context, field graphql.CollectedField, obj *payments.StripePaymentIntent) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentsStripePaymentIntent",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentsStripePaymentMethod_paymentMethodID(ctx context.Context, field graphql.CollectedField, obj *payments.StripePaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentsStripePaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PaymentMethodID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _PaymentsStripePaymentMethod_customerID(ctx context.Context, field graphql.CollectedField, obj *payments.StripePaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "PaymentsStripePaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomerID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Poll_commitEndDate(ctx context.Context, field graphql.CollectedField, obj *model.Poll) (ret graphql.Marshaler) {
@@ -22925,6 +23630,244 @@ func (ec *executionContext) _SanitizedPayment_payerChannel(ctx context.Context, 
 	return ec.marshalOChannel2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐChannel(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _StripeCustomerInfo_paymentMethods(ctx context.Context, field graphql.CollectedField, obj *payments.StripeCustomerInfo) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeCustomerInfo",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PaymentMethods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]payments.StripeSavedPaymentMethod)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOStripeSavedPaymentMethod2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripeSavedPaymentMethod(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StripeSavedPaymentMethod_paymentMethodID(ctx context.Context, field graphql.CollectedField, obj *payments.StripeSavedPaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeSavedPaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PaymentMethodID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StripeSavedPaymentMethod_brand(ctx context.Context, field graphql.CollectedField, obj *payments.StripeSavedPaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeSavedPaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Brand, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StripeSavedPaymentMethod_last4Digits(ctx context.Context, field graphql.CollectedField, obj *payments.StripeSavedPaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeSavedPaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Last4Digits, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StripeSavedPaymentMethod_expMonth(ctx context.Context, field graphql.CollectedField, obj *payments.StripeSavedPaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeSavedPaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpMonth, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StripeSavedPaymentMethod_expYear(ctx context.Context, field graphql.CollectedField, obj *payments.StripeSavedPaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeSavedPaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ExpYear, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _StripeSavedPaymentMethod_name(ctx context.Context, field graphql.CollectedField, obj *payments.StripeSavedPaymentMethod) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "StripeSavedPaymentMethod",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Subscription_fastPass(ctx context.Context, field graphql.CollectedField) func() graphql.Marshaler {
 	ctx = graphql.WithResolverContext(ctx, &graphql.ResolverContext{
 		Field: field,
@@ -25666,7 +26609,7 @@ func (ec *executionContext) unmarshalInputPaymentsCreateStripePaymentInput(ctx c
 			}
 		case "paymentToken":
 			var err error
-			it.PaymentToken, err = ec.unmarshalNString2string(ctx, v)
+			it.PaymentToken, err = ec.unmarshalOString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -25685,6 +26628,42 @@ func (ec *executionContext) unmarshalInputPaymentsCreateStripePaymentInput(ctx c
 		case "shouldPublicize":
 			var err error
 			it.ShouldPublicize, err = ec.unmarshalOBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "paymentMethodID":
+			var err error
+			it.PaymentMethodID, err = ec.unmarshalOString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPaymentsCreateStripePaymentMethodInput(ctx context.Context, obj interface{}) (payments.StripePaymentMethod, error) {
+	var it payments.StripePaymentMethod
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "paymentMethodID":
+			var err error
+			it.PaymentMethodID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "emailAddress":
+			var err error
+			it.EmailAddress, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "payerChannelID":
+			var err error
+			it.PayerChannelID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -26735,6 +27714,17 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Channel_paymentsMadeByChannel(ctx, field, obj)
+				return res
+			})
+		case "stripeCustomerInfo":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Channel_stripeCustomerInfo(ctx, field, obj)
 				return res
 			})
 		default:
@@ -27818,8 +28808,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_channelsSetEmail(ctx, field)
 		case "channelsSetEmailConfirm":
 			out.Values[i] = ec._Mutation_channelsSetEmailConfirm(ctx, field)
-		case "channelsSetStripeCustomerID":
-			out.Values[i] = ec._Mutation_channelsSetStripeCustomerID(ctx, field)
 		case "channelsClearStripeCustomerID":
 			out.Values[i] = ec._Mutation_channelsClearStripeCustomerID(ctx, field)
 		case "channelsEnableApplePay":
@@ -27891,6 +28879,26 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "paymentsCreateTokenPayment":
 			out.Values[i] = ec._Mutation_paymentsCreateTokenPayment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "paymentsCreateStripePaymentIntent":
+			out.Values[i] = ec._Mutation_paymentsCreateStripePaymentIntent(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "paymentsCreateStripePaymentMethod":
+			out.Values[i] = ec._Mutation_paymentsCreateStripePaymentMethod(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "paymentsClonePaymentMethod":
+			out.Values[i] = ec._Mutation_paymentsClonePaymentMethod(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "paymentsRemoveSavedPaymentMethod":
+			out.Values[i] = ec._Mutation_paymentsRemoveSavedPaymentMethod(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -28622,6 +29630,10 @@ func (ec *executionContext) _PaymentStripe(ctx context.Context, sel ast.Selectio
 				res = ec._PaymentStripe_payerChannel(ctx, field, obj)
 				return res
 			})
+		case "paymentMethodID":
+			out.Values[i] = ec._PaymentStripe_paymentMethodID(ctx, field, obj)
+		case "customerID":
+			out.Values[i] = ec._PaymentStripe_customerID(ctx, field, obj)
 		case "post":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -28717,6 +29729,75 @@ func (ec *executionContext) _PaymentToken(ctx context.Context, sel ast.Selection
 				res = ec._PaymentToken_post(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var paymentsStripePaymentIntentImplementors = []string{"PaymentsStripePaymentIntent"}
+
+func (ec *executionContext) _PaymentsStripePaymentIntent(ctx context.Context, sel ast.SelectionSet, obj *payments.StripePaymentIntent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, paymentsStripePaymentIntentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaymentsStripePaymentIntent")
+		case "status":
+			out.Values[i] = ec._PaymentsStripePaymentIntent_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "clientSecret":
+			out.Values[i] = ec._PaymentsStripePaymentIntent_clientSecret(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "id":
+			out.Values[i] = ec._PaymentsStripePaymentIntent_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var paymentsStripePaymentMethodImplementors = []string{"PaymentsStripePaymentMethod"}
+
+func (ec *executionContext) _PaymentsStripePaymentMethod(ctx context.Context, sel ast.SelectionSet, obj *payments.StripePaymentMethod) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, paymentsStripePaymentMethodImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PaymentsStripePaymentMethod")
+		case "paymentMethodID":
+			out.Values[i] = ec._PaymentsStripePaymentMethod_paymentMethodID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "customerID":
+			out.Values[i] = ec._PaymentsStripePaymentMethod_customerID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -29974,6 +31055,64 @@ func (ec *executionContext) _SanitizedPayment(ctx context.Context, sel ast.Selec
 	return out
 }
 
+var stripeCustomerInfoImplementors = []string{"StripeCustomerInfo"}
+
+func (ec *executionContext) _StripeCustomerInfo(ctx context.Context, sel ast.SelectionSet, obj *payments.StripeCustomerInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, stripeCustomerInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StripeCustomerInfo")
+		case "paymentMethods":
+			out.Values[i] = ec._StripeCustomerInfo_paymentMethods(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var stripeSavedPaymentMethodImplementors = []string{"StripeSavedPaymentMethod"}
+
+func (ec *executionContext) _StripeSavedPaymentMethod(ctx context.Context, sel ast.SelectionSet, obj *payments.StripeSavedPaymentMethod) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, stripeSavedPaymentMethodImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("StripeSavedPaymentMethod")
+		case "paymentMethodID":
+			out.Values[i] = ec._StripeSavedPaymentMethod_paymentMethodID(ctx, field, obj)
+		case "brand":
+			out.Values[i] = ec._StripeSavedPaymentMethod_brand(ctx, field, obj)
+		case "last4Digits":
+			out.Values[i] = ec._StripeSavedPaymentMethod_last4Digits(ctx, field, obj)
+		case "expMonth":
+			out.Values[i] = ec._StripeSavedPaymentMethod_expMonth(ctx, field, obj)
+		case "expYear":
+			out.Values[i] = ec._StripeSavedPaymentMethod_expYear(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._StripeSavedPaymentMethod_name(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var subscriptionImplementors = []string{"Subscription"}
 
 func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
@@ -30639,10 +31778,6 @@ func (ec *executionContext) unmarshalNChannelsSetHandleInput2githubᚗcomᚋjoin
 	return ec.unmarshalInputChannelsSetHandleInput(ctx, v)
 }
 
-func (ec *executionContext) unmarshalNChannelsSetStripeCustomerIDInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋchannelsᚐSetStripeCustomerIDInput(ctx context.Context, v interface{}) (channels.SetStripeCustomerIDInput, error) {
-	return ec.unmarshalInputChannelsSetStripeCustomerIDInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNCharterInput2githubᚗcomᚋjoincivilᚋgoᚑcommonᚋpkgᚋnewsroomᚐCharter(ctx context.Context, v interface{}) (newsroom.Charter, error) {
 	return ec.unmarshalInputCharterInput(ctx, v)
 }
@@ -31205,8 +32340,40 @@ func (ec *executionContext) unmarshalNPaymentsCreateStripePaymentInput2githubᚗ
 	return ec.unmarshalInputPaymentsCreateStripePaymentInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNPaymentsCreateStripePaymentMethodInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentMethod(ctx context.Context, v interface{}) (payments.StripePaymentMethod, error) {
+	return ec.unmarshalInputPaymentsCreateStripePaymentMethodInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNPaymentsCreateTokenPaymentInput2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐTokenPayment(ctx context.Context, v interface{}) (payments.TokenPayment, error) {
 	return ec.unmarshalInputPaymentsCreateTokenPaymentInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNPaymentsStripePaymentIntent2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentIntent(ctx context.Context, sel ast.SelectionSet, v payments.StripePaymentIntent) graphql.Marshaler {
+	return ec._PaymentsStripePaymentIntent(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPaymentsStripePaymentIntent2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentIntent(ctx context.Context, sel ast.SelectionSet, v *payments.StripePaymentIntent) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PaymentsStripePaymentIntent(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNPaymentsStripePaymentMethod2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentMethod(ctx context.Context, sel ast.SelectionSet, v payments.StripePaymentMethod) graphql.Marshaler {
+	return ec._PaymentsStripePaymentMethod(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPaymentsStripePaymentMethod2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripePaymentMethod(ctx context.Context, sel ast.SelectionSet, v *payments.StripePaymentMethod) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._PaymentsStripePaymentMethod(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPost2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpostsᚐPost(ctx context.Context, sel ast.SelectionSet, v posts.Post) graphql.Marshaler {
@@ -31347,6 +32514,10 @@ func (ec *executionContext) marshalNString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalNString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalNStripeSavedPaymentMethod2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripeSavedPaymentMethod(ctx context.Context, sel ast.SelectionSet, v payments.StripeSavedPaymentMethod) graphql.Marshaler {
+	return ec._StripeSavedPaymentMethod(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
@@ -32031,6 +33202,14 @@ func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	return graphql.UnmarshalInt64(v)
+}
+
+func (ec *executionContext) marshalOInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	return graphql.MarshalInt64(v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
@@ -32861,6 +34040,57 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOStripeCustomerInfo2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripeCustomerInfo(ctx context.Context, sel ast.SelectionSet, v payments.StripeCustomerInfo) graphql.Marshaler {
+	return ec._StripeCustomerInfo(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOStripeCustomerInfo2ᚖgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripeCustomerInfo(ctx context.Context, sel ast.SelectionSet, v *payments.StripeCustomerInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._StripeCustomerInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOStripeSavedPaymentMethod2ᚕgithubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripeSavedPaymentMethod(ctx context.Context, sel ast.SelectionSet, v []payments.StripeSavedPaymentMethod) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNStripeSavedPaymentMethod2githubᚗcomᚋjoincivilᚋcivilᚑapiᚑserverᚋpkgᚋpaymentsᚐStripeSavedPaymentMethod(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {

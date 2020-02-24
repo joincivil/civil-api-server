@@ -29,8 +29,15 @@ input PaymentsCreateStripePaymentInput {
     comment: String
     currencyCode: String!
     amount: Float!
-    paymentToken: String!
+    paymentToken: String
     emailAddress: String
     payerChannelID: String
     shouldPublicize: Boolean
+    paymentMethodID: String
+}
+
+input PaymentsCreateStripePaymentMethodInput {
+  paymentMethodID: String!
+  emailAddress: String!
+  payerChannelID: String!
 }

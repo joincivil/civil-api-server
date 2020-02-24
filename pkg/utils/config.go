@@ -25,7 +25,8 @@ type GraphQLConfig struct {
 	GqlPort int  `required:"true" desc:"Sets the GraphQL service port"`
 	Debug   bool `default:"false" desc:"If true, enables the GraphQL playground"`
 
-	JwtSecret string `split_words:"true" desc:"Secret used to encode JWT tokens"`
+	JwtSecret   string   `split_words:"true" desc:"Secret used to encode JWT tokens"`
+	AuthDomains []string `split_works:"true" required:"true" desc:"Domains that are allowed to authenticate"`
 
 	AuthEmailSignupTemplates map[string]string `split_words:"true" required:"false" desc:"<appname>:<template id>,..."`
 	AuthEmailLoginTemplates  map[string]string `split_words:"true" required:"false" desc:"<appname>:<template id>,..."`
@@ -58,8 +59,9 @@ type GraphQLConfig struct {
 
 	VersionNumber string `split_words:"true" desc:"Sets the version to use for crawler related Postgres tables"`
 
-	StripeAPIKey          string   `envconfig:"stripe_api_key" split_words:"true" desc:"API key for stripe"`
-	StripeApplePayDomains []string `split_words:"true" desc:"Domains to enable Apple Pay on" default:"" `
+	StripeAPIKey               string   `envconfig:"stripe_api_key" split_words:"true" desc:"API key for stripe"`
+	StripeApplePayDomains      []string `split_words:"true" desc:"Domains to enable Apple Pay on" default:"" `
+	StripeWebhookSigningSecret string   `envconfig:"stripe_webhook_signing_secret" split_words:"true" desc:"Signing Secret for Stripe Webhook Events"`
 
 	TokenFoundryUser     string `split_words:"true" desc:"TokenFoundry User"`
 	TokenFoundryPassword string `split_words:"true" desc:"TokenFoundry Password"`

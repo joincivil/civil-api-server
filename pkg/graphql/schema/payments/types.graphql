@@ -33,6 +33,8 @@ type PaymentStripe implements Payment {
     usdEquivalent: Float!
     payerChannelID: String
     payerChannel: Channel
+    paymentMethodID: String
+    customerID: String
     post: Post
 }
 
@@ -67,4 +69,28 @@ type PaymentToken implements Payment {
     payerChannelID: String
     payerChannel: Channel
     post: Post
+}
+
+type StripeCustomerInfo {
+    paymentMethods: [StripeSavedPaymentMethod!]
+}
+
+type StripeSavedPaymentMethod {
+  paymentMethodID: String
+  brand: String
+  last4Digits: String
+  expMonth: Int
+  expYear: Int
+  name: String
+}
+
+type PaymentsStripePaymentIntent {
+  status: String!
+  clientSecret: String!
+  id: String!
+}
+
+type PaymentsStripePaymentMethod {
+  paymentMethodID: String!
+  customerID: String!
 }

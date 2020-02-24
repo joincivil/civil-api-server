@@ -44,6 +44,9 @@ type PaymentModel struct {
 	EmailAddress    string
 	PayerChannelID  string
 	ShouldPublicize bool
+	PaymentMethodID string
+	CustomerID      string
+	PaymentIntentID string `gorm:"index:idx_payment_intent_id"`
 }
 
 // TableName returns the gorm table name for Base
@@ -138,4 +141,34 @@ type SanitizedPayment struct {
 	UsdEquivalent    float64
 	MostRecentUpdate time.Time
 	PayerChannelID   string
+}
+
+// StripeCustomerInfo contains a list of stripe payment methods
+type StripeCustomerInfo struct {
+	PaymentMethods []StripeSavedPaymentMethod
+}
+
+// StripeSavedPaymentMethod contains info about a stripe payment method
+type StripeSavedPaymentMethod struct {
+	PaymentMethodID string
+	Brand           string
+	Last4Digits     string
+	ExpMonth        int64
+	ExpYear         int64
+	Name            string
+}
+
+// StripePaymentIntent contains info about a stripe payment intent
+type StripePaymentIntent struct {
+	Status       string
+	ClientSecret string
+	ID           string
+}
+
+// StripePaymentMethod something
+type StripePaymentMethod struct {
+	PayerChannelID  string
+	PaymentMethodID string
+	CustomerID      string
+	EmailAddress    string
 }

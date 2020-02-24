@@ -51,7 +51,7 @@ const (
 	foundationEmailName    = "Civil Foundation"
 	foundationEmailAddress = "foundation@civilfound.org"
 	supportEmailAddress    = "support@civil.co"
-	civilPipedriveEmail    = "civil@pipedrivemail.com"
+	civilPipedriveEmail    = "grants@joincivil.com"
 
 	defaultFromEmailName    = foundationEmailName
 	defaultFromEmailAddress = foundationEmailAddress

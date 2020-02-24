@@ -36,7 +36,6 @@ type Mutation {
     userChannelSetEmail(input: ChannelsSetEmailInput!): Channel
     channelsSetEmail(input: ChannelsSetEmailInput!): Channel
     channelsSetEmailConfirm(jwt: String!): ChannelSetEmailResponse
-    channelsSetStripeCustomerID(input: ChannelsSetStripeCustomerIDInput!): Channel
     channelsClearStripeCustomerID(channelID: String!): Channel
     channelsEnableApplePay(channelID: String!): [String!]
 
@@ -66,6 +65,13 @@ type Mutation {
         postID: String!
         input: PaymentsCreateTokenPaymentInput!
     ): PaymentToken!
+    paymentsCreateStripePaymentIntent(postID: String!, input: PaymentsCreateStripePaymentInput!): PaymentsStripePaymentIntent!
+    paymentsCreateStripePaymentMethod(input: PaymentsCreateStripePaymentMethodInput!): PaymentsStripePaymentMethod!
+    paymentsClonePaymentMethod(        
+        postID: String!
+        input: PaymentsCreateStripePaymentInput!
+    ): PaymentStripe!
+    paymentsRemoveSavedPaymentMethod(paymentMethodID: String!, channelID: String!): Boolean!
 
     # Post Mutations
     postsCreateBoost(input: PostCreateBoostInput!): PostBoost

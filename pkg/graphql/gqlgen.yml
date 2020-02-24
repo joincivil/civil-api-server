@@ -94,7 +94,11 @@ models:
   Payment:
     model: github.com/joincivil/civil-api-server/pkg/payments.Payment
   SanitizedPayment:
-    model: github.com/joincivil/civil-api-server/pkg/payments.SanitizedPayment
+    model: github.com/joincivil/civil-api-server/pkg/payments.SanitizedPayment  
+  StripeCustomerInfo:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripeCustomerInfo  
+  StripeSavedPaymentMethod:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripeSavedPaymentMethod
   PaymentStripe:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
   PaymentEther:
@@ -103,10 +107,16 @@ models:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
   PaymentsCreateStripePaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.StripePayment
+  PaymentsCreateStripePaymentMethodInput:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePaymentMethod
+  PaymentsStripePaymentMethod:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePaymentMethod
   PaymentsCreateEtherPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.EtherPayment
   PaymentsCreateTokenPaymentInput:
     model: github.com/joincivil/civil-api-server/pkg/payments.TokenPayment
+  PaymentsStripePaymentIntent:
+    model: github.com/joincivil/civil-api-server/pkg/payments.StripePaymentIntent
   ProceedsQueryResult:
     model: github.com/joincivil/civil-api-server/pkg/payments.ProceedsQueryResult
   Post:
