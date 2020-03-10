@@ -25,6 +25,7 @@ const (
 	externalLinkEthPaymentStartedEmailTemplateID    = "d-a6b6a640436b40cf921811a80f4709b9"
 	externalLinkEthPaymentFinishedEmailTemplateID   = "d-7b7a6f1d0d144bcd995dd92a27429976"
 	externalLinkStripePaymentReceiptEmailTemplateID = "d-e6cc3a3a827e418b81f4af65bc802dcc"
+	boostPaymentReceivedEmailTemplateID             = "d-897d6f1bdb6d4f44a0507bed3f5b3cf5"
 
 	civilEmailName      = "Civil"
 	supportEmailAddress = "support@civil.co"
@@ -147,6 +148,11 @@ func (s *Service) sendBoostEthPaymentFinishedEmail(emailAddress string, tmplData
 
 func (s *Service) sendBoostStripePaymentReceiptEmail(emailAddress string, tmplData email.TemplateData) error {
 	req := getTemplateRequest(boostStripePaymentReceiptEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendBoostPaymentReceivedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(boostPaymentReceivedEmailTemplateID, emailAddress, tmplData)
 	return s.emailer.SendTemplateEmail(req)
 }
 
@@ -536,10 +542,23 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 		}
 	}
 
+	channelEmailAddresses := []string{"nick+test5@joincivil.com"}
+
 	return nil
 }
 
 func (s *Service) getStripePaymentEmailTemplateData(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
+	if postType == postTypeBoost || postType == postTypeExternalLink {
+		return (email.TemplateData{
+			"title":              metadata["title"],
+			"payment_amount_usd": amount,
+			"boost_id":           metadata["posts"],
+		}), nil
+	}
+	return nil, errors.New("NOT IMPLEMENTED")
+}
+
+func (s *Service) getPaymentReceivedEmailTemplateDate(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
 	if postType == postTypeBoost {
 		return (email.TemplateData{
 			"newsroom_name":      metadata["newsroomName"],
