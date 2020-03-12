@@ -64,6 +64,7 @@ type ChannelHelper interface {
 	GetStripePaymentAccount(channelID string) (string, error)
 	GetStripeCustomerID(channelID string) (string, error)
 	SetStripeCustomerID(channelID string, stripeCustomerID string) (*channels.Channel, error)
+	GetChannelAdminChannels(channelID string) ([]*channels.Channel, error)
 }
 
 // Service provides methods to interact with Posts
@@ -542,12 +543,29 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 		}
 	}
 
-	channelEmailAddresses := []string{"nick+test5@joincivil.com"}
+	channelAdminChannels, err := s.channel.GetChannelAdminChannels(paymentIntent.Metadata["postChannelID"])
+	if err != nil {
+		return err
+	}
+	receivedTmplData, err := s.getPaymentReceivedEmailTemplateData(paymentIntent.Metadata, amount, payment.OwnerPostType)
+	if err != nil {
+		log.Errorf("Error getting email template data for payment received: %v\n", err)
+	}
+
+	for _, c := range channelAdminChannels {
+		email := c.EmailAddress
+		if email != "" {
+			err = s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	return nil
 }
 
-func (s *Service) getStripePaymentEmailTemplateData(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
+func (s *Service) getPaymentReceivedEmailTemplateData(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
 	if postType == postTypeBoost || postType == postTypeExternalLink {
 		return (email.TemplateData{
 			"title":              metadata["title"],
@@ -558,7 +576,7 @@ func (s *Service) getStripePaymentEmailTemplateData(metadata map[string]string, 
 	return nil, errors.New("NOT IMPLEMENTED")
 }
 
-func (s *Service) getPaymentReceivedEmailTemplateDate(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
+func (s *Service) getStripePaymentEmailTemplateData(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
 	if postType == postTypeBoost {
 		return (email.TemplateData{
 			"newsroom_name":      metadata["newsroomName"],
@@ -605,7 +623,7 @@ func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, 
 		CreatePaymentIntentRequest{
 			Amount:          int64(math.Floor(payment.Amount * 100)),
 			StripeAccount:   stripeAccount,
-			Metadata:        map[string]string{ownerType: ownerID, "newsroomName": newsroomName, "title": boostTitle},
+			Metadata:        map[string]string{ownerType: ownerID, "newsroomName": newsroomName, "title": boostTitle, "postChannelID": channelID},
 			PaymentMethodID: &(payment.PaymentMethodID),
 			CustomerID:      &(payment.CustomerID),
 		})

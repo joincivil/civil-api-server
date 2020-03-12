@@ -193,6 +193,11 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+// GetChannelAdminChannels retrieves the channels of all channel admins
+func (s *Service) GetChannelAdminChannels(channelID string) ([]*Channel, error) {
+	return s.persister.GetChannelAdminChannels(channelID)
+}
+
 func getImageAndDecodedDataURLFromDataURL(dataURL string) (*image.Image, *dataurl.DataURL, error) {
 	decodedDataURL, err := dataurl.DecodeString(dataURL)
 	if err != nil {
