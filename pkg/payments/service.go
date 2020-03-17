@@ -19,13 +19,14 @@ import (
 )
 
 const (
-	boostEthPaymentStartedEmailTemplateID           = "d-a4595d0eb8c941ab897b9414ac846aff"
-	boostEthPaymentFinishedEmailTemplateID          = "d-1e8763f27ef843cd8850ca297a426f3d"
-	boostStripePaymentReceiptEmailTemplateID        = "d-b5d79746c540439fac8791b192135aa6"
-	externalLinkEthPaymentStartedEmailTemplateID    = "d-a6b6a640436b40cf921811a80f4709b9"
-	externalLinkEthPaymentFinishedEmailTemplateID   = "d-7b7a6f1d0d144bcd995dd92a27429976"
-	externalLinkStripePaymentReceiptEmailTemplateID = "d-e6cc3a3a827e418b81f4af65bc802dcc"
-	boostPaymentReceivedEmailTemplateID             = "d-897d6f1bdb6d4f44a0507bed3f5b3cf5"
+	boostEthPaymentStartedEmailTemplateID              = "d-a4595d0eb8c941ab897b9414ac846aff"
+	boostEthPaymentFinishedEmailTemplateID             = "d-1e8763f27ef843cd8850ca297a426f3d"
+	boostStripePaymentReceiptEmailTemplateID           = "d-b5d79746c540439fac8791b192135aa6"
+	externalLinkEthPaymentStartedEmailTemplateID       = "d-a6b6a640436b40cf921811a80f4709b9"
+	externalLinkEthPaymentFinishedEmailTemplateID      = "d-7b7a6f1d0d144bcd995dd92a27429976"
+	externalLinkStripePaymentReceiptEmailTemplateID    = "d-e6cc3a3a827e418b81f4af65bc802dcc"
+	boostPaymentReceivedEmailTemplateID                = "d-897d6f1bdb6d4f44a0507bed3f5b3cf5"
+	boostPaymentReceivedNoEmailProvidedEmailTemplateID = "d-e1d786920ebf45b89eda1f74b9d73687"
 
 	civilEmailName      = "Civil"
 	supportEmailAddress = "support@civil.co"
@@ -154,6 +155,11 @@ func (s *Service) sendBoostStripePaymentReceiptEmail(emailAddress string, tmplDa
 
 func (s *Service) sendBoostPaymentReceivedEmail(emailAddress string, tmplData email.TemplateData) error {
 	req := getTemplateRequest(boostPaymentReceivedEmailTemplateID, emailAddress, tmplData)
+	return s.emailer.SendTemplateEmail(req)
+}
+
+func (s *Service) sendBoostPaymentReceivedNoEmailProvidedEmail(emailAddress string, tmplData email.TemplateData) error {
+	req := getTemplateRequest(boostPaymentReceivedNoEmailProvidedEmailTemplateID, emailAddress, tmplData)
 	return s.emailer.SendTemplateEmail(req)
 }
 
@@ -333,9 +339,16 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 			for _, c := range channelAdminChannels {
 				email := c.EmailAddress
 				if email != "" {
-					err = s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
-					if err != nil {
-						return err
+					if payment.EmailAddress != "" {
+						err = s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
+						if err != nil {
+							log.Errorf("Error sending boost payment received email: %v\n", err)
+						}
+					} else {
+						err = s.sendBoostPaymentReceivedNoEmailProvidedEmail(email, receivedTmplData)
+						if err != nil {
+							log.Errorf("Error sending boost payment received with no email provided email: %v\n", err)
+						}
 					}
 				}
 			}
@@ -561,7 +574,7 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 			return errors.New("error when sending Stripe payment successful email")
 		}
 	}
-	channelAdminChannels, err := s.channel.GetChannelAdminUserChannels(paymentIntent.Metadata["postChannelID"])
+	channelAdminChannels, err := s.channel.GetChannelAdminUserChannels(payment.OwnerChannelID)
 	if err != nil {
 		return err
 	}
@@ -572,9 +585,16 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 	for _, c := range channelAdminChannels {
 		email := c.EmailAddress
 		if email != "" {
-			err = s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
-			if err != nil {
-				return err
+			if payment.EmailAddress != "" {
+				err = s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
+				if err != nil {
+					log.Errorf("Error sending boost payment received email: %v\n", err)
+				}
+			} else {
+				err = s.sendBoostPaymentReceivedNoEmailProvidedEmail(email, receivedTmplData)
+				if err != nil {
+					log.Errorf("Error sending boost payment received with no email provided email: %v\n", err)
+				}
 			}
 		}
 	}
