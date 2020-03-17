@@ -64,7 +64,7 @@ type ChannelHelper interface {
 	GetStripePaymentAccount(channelID string) (string, error)
 	GetStripeCustomerID(channelID string) (string, error)
 	SetStripeCustomerID(channelID string, stripeCustomerID string) (*channels.Channel, error)
-	GetChannelAdminChannels(channelID string) ([]*channels.Channel, error)
+	GetChannelAdminUserChannels(channelID string) ([]*channels.Channel, error)
 }
 
 // Service provides methods to interact with Posts
@@ -173,14 +173,14 @@ func (s *Service) sendExternalLinkStripePaymentReceiptEmail(emailAddress string,
 }
 
 // CreateEtherPayment confirm that an Ether transaction is valid and store the result as a Payment in the database
-func (s *Service) CreateEtherPayment(channelID string, ownerType string, postType string, ownerID string, etherPayment EtherPayment, tmplData email.TemplateData) (EtherPayment, error) {
+func (s *Service) CreateEtherPayment(ownerChannelID string, ownerType string, ownerPostType string, ownerID string, ownerTitle string, etherPayment EtherPayment, tmplData email.TemplateData) (EtherPayment, error) {
 	hash := common.HexToHash(etherPayment.TransactionID)
 	if (hash == common.Hash{}) {
 		return EtherPayment{}, errors.New("invalid tx id")
 	}
 
 	payment := PaymentModel{}
-	expectedAddress, err := s.channel.GetEthereumPaymentAddress(channelID)
+	expectedAddress, err := s.channel.GetEthereumPaymentAddress(ownerChannelID)
 	if err != nil {
 		return EtherPayment{}, err
 	}
@@ -194,7 +194,9 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, postTyp
 	payment.Status = "pending"
 	payment.OwnerID = ownerID
 	payment.OwnerType = ownerType
-	payment.OwnerPostType = postType
+	payment.OwnerPostType = ownerPostType
+	payment.OwnerChannelID = ownerChannelID
+	payment.OwnerTitle = ownerTitle
 	payment.CurrencyCode = "ETH"
 	payment.ExchangeRate = 0
 	payment.Amount = 0
@@ -212,9 +214,9 @@ func (s *Service) CreateEtherPayment(channelID string, ownerType string, postTyp
 
 	// only send payment receipt if email is given
 	if etherPayment.EmailAddress != "" {
-		if postType == postTypeBoost {
+		if ownerPostType == postTypeBoost {
 			err = s.sendBoostEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
-		} else if postType == postTypeExternalLink {
+		} else if ownerPostType == postTypeExternalLink {
 			err = s.sendExternalLinkEthPaymentStartedEmail(etherPayment.EmailAddress, tmplData)
 		} else {
 			log.Errorf("Error when sending ETH payment started email. OwnerPostType unknown.")
@@ -320,6 +322,23 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 					log.Errorf("Error when sending ETH payment complete email. OwnerPostType unknown.")
 				}
 			}
+			channelAdminChannels, err := s.channel.GetChannelAdminUserChannels(payment.OwnerChannelID)
+			if err != nil {
+				return err
+			}
+			receivedTmplData, err := s.getPaymentReceivedEmailTemplateData(res.Amount*res.ExchangeRate, *payment, "Stripe")
+			if err != nil {
+				log.Errorf("Error getting email template data for payment received: %v\n", err)
+			}
+			for _, c := range channelAdminChannels {
+				email := c.EmailAddress
+				if email != "" {
+					err = s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
 	}
 
@@ -408,9 +427,9 @@ func (s *Service) RemovePaymentMethod(paymentMethodID string, channelID string) 
 }
 
 // CreateStripePayment will create a Stripe charge and then store the result as a Payment in the database
-func (s *Service) CreateStripePayment(channelID string, ownerType string, postType string, ownerID string, payment StripePayment, tmplData email.TemplateData) (StripePayment, error) {
+func (s *Service) CreateStripePayment(ownerChannelID string, ownerType string, ownerPostType string, ownerID string, ownerTitle string, payment StripePayment, tmplData email.TemplateData) (StripePayment, error) {
 
-	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
+	stripeAccount, err := s.channel.GetStripePaymentAccount(ownerChannelID)
 	if err != nil {
 		return StripePayment{}, err
 	}
@@ -436,7 +455,9 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(res.StripeResponseJSON)}
 	payment.OwnerID = ownerID
 	payment.OwnerType = ownerType
-	payment.OwnerPostType = postType
+	payment.OwnerPostType = ownerPostType
+	payment.OwnerChannelID = ownerChannelID
+	payment.OwnerTitle = ownerTitle
 	payment.Reference = res.ID
 	payment.Status = paymentComplete
 
@@ -449,9 +470,9 @@ func (s *Service) CreateStripePayment(channelID string, ownerType string, postTy
 	}
 	// only send payment receipt if email is given
 	if payment.EmailAddress != "" {
-		if postType == postTypeBoost {
+		if ownerPostType == postTypeBoost {
 			err = s.sendBoostStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
-		} else if postType == postTypeExternalLink {
+		} else if ownerPostType == postTypeExternalLink {
 			err = s.sendExternalLinkStripePaymentReceiptEmail(payment.EmailAddress, tmplData)
 		} else {
 			log.Errorf("Error when sending Stripe payment complete email. OwnerPostType unknown.")
@@ -519,12 +540,10 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 		log.Errorf("Error updating payment: %v\n", err)
 		return err
 	}
-
 	tmplData, err := s.getStripePaymentEmailTemplateData(paymentIntent.Metadata, amount, payment.OwnerPostType)
 	if err != nil {
 		log.Errorf("Error getting email template data for payment intent: %v\n", err)
 	}
-
 	// only send payment receipt if email is given
 	if payment.EmailAddress != "" {
 		if payment.OwnerPostType == postTypeBoost {
@@ -542,16 +561,14 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 			return errors.New("error when sending Stripe payment successful email")
 		}
 	}
-
-	channelAdminChannels, err := s.channel.GetChannelAdminChannels(paymentIntent.Metadata["postChannelID"])
+	channelAdminChannels, err := s.channel.GetChannelAdminUserChannels(paymentIntent.Metadata["postChannelID"])
 	if err != nil {
 		return err
 	}
-	receivedTmplData, err := s.getPaymentReceivedEmailTemplateData(paymentIntent.Metadata, amount, payment.OwnerPostType)
+	receivedTmplData, err := s.getPaymentReceivedEmailTemplateData(amount, payment, "Stripe")
 	if err != nil {
 		log.Errorf("Error getting email template data for payment received: %v\n", err)
 	}
-
 	for _, c := range channelAdminChannels {
 		email := c.EmailAddress
 		if email != "" {
@@ -565,12 +582,14 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 	return nil
 }
 
-func (s *Service) getPaymentReceivedEmailTemplateData(metadata map[string]string, amount float64, postType string) (email.TemplateData, error) {
-	if postType == postTypeBoost || postType == postTypeExternalLink {
+func (s *Service) getPaymentReceivedEmailTemplateData(amount float64, payment PaymentModel, paymentType string) (email.TemplateData, error) {
+	if payment.OwnerPostType == postTypeBoost || payment.OwnerPostType == postTypeExternalLink {
 		return (email.TemplateData{
-			"title":              metadata["title"],
-			"payment_amount_usd": amount,
-			"boost_id":           metadata["posts"],
+			"boost_title":         payment.OwnerTitle,
+			"boost_id":            payment.OwnerID,
+			"payer_email_address": payment.EmailAddress,
+			"payment_amount_usd":  amount,
+			"payment_type":        paymentType,
 		}), nil
 	}
 	return nil, errors.New("NOT IMPLEMENTED")
@@ -614,8 +633,8 @@ func (s *Service) FailStripePaymentIntent(paymentIntentID string) (bool, error) 
 }
 
 // CreateStripePaymentIntent creates a stripe payment intent and "unconfirmed" payment in DB and returns payment intent
-func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, postType string, ownerID string, newsroomName string, boostTitle string, payment StripePayment) (StripePaymentIntent, error) {
-	stripeAccount, err := s.channel.GetStripePaymentAccount(channelID)
+func (s *Service) CreateStripePaymentIntent(ownerChannelID string, ownerType string, postType string, ownerID string, newsroomName string, boostTitle string, payment StripePayment) (StripePaymentIntent, error) {
+	stripeAccount, err := s.channel.GetStripePaymentAccount(ownerChannelID)
 	if err != nil {
 		return StripePaymentIntent{}, err
 	}
@@ -623,7 +642,7 @@ func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, 
 		CreatePaymentIntentRequest{
 			Amount:          int64(math.Floor(payment.Amount * 100)),
 			StripeAccount:   stripeAccount,
-			Metadata:        map[string]string{ownerType: ownerID, "newsroomName": newsroomName, "title": boostTitle, "postChannelID": channelID},
+			Metadata:        map[string]string{ownerType: ownerID, "newsroomName": newsroomName, "title": boostTitle, "postChannelID": ownerChannelID},
 			PaymentMethodID: &(payment.PaymentMethodID),
 			CustomerID:      &(payment.CustomerID),
 		})
@@ -648,6 +667,8 @@ func (s *Service) CreateStripePaymentIntent(channelID string, ownerType string, 
 	payment.OwnerType = ownerType
 	payment.OwnerPostType = postType
 	payment.Reference = paymentIntent.ID
+	payment.OwnerChannelID = ownerChannelID
+	payment.OwnerTitle = boostTitle
 	payment.Amount = 0
 	payment.Data = postgres.Jsonb{RawMessage: json.RawMessage(data)}
 

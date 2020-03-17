@@ -195,8 +195,8 @@ func (p *DBPersister) GetChannelAdmins(channelID string) ([]*ChannelMember, erro
 	return c, nil
 }
 
-// GetChannelAdminChannels retrieves the channels of all channel admins
-func (p *DBPersister) GetChannelAdminChannels(channelID string) ([]*Channel, error) {
+// GetChannelAdminUserChannels retrieves the user channels of all channel admins
+func (p *DBPersister) GetChannelAdminUserChannels(channelID string) ([]*Channel, error) {
 	admins, err := p.GetChannelAdmins(channelID)
 	if err != nil {
 		return nil, err
@@ -204,12 +204,12 @@ func (p *DBPersister) GetChannelAdminChannels(channelID string) ([]*Channel, err
 
 	c := make([]*Channel, len(admins))
 
-	for _, a := range admins {
-		channel, err := p.GetChannel(a.ChannelID)
+	for i, a := range admins {
+		channel, err := p.GetChannelByReference("user", a.UserID)
 		if err != nil {
 			return nil, err
 		}
-		c = append(c, channel)
+		c[i] = channel
 	}
 
 	return c, nil

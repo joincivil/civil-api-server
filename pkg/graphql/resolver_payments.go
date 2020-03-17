@@ -61,8 +61,11 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 	if err2 != nil {
 		return &payments.EtherPayment{}, errors.New("error creating email template data")
 	}
-
-	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", post.GetType(), postID, payment, tmplData)
+	postTitle, err := r.GetPostTitle(post)
+	if err != nil {
+		return &payments.EtherPayment{}, errors.New("error getting post title")
+	}
+	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", post.GetType(), postID, postTitle, payment, tmplData)
 	return &p, err
 }
 
@@ -89,7 +92,11 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	if err2 != nil {
 		return &payments.StripePayment{}, errors.New("error creating email template data")
 	}
-	p, err := r.paymentService.CreateStripePayment(channelID, "posts", post.GetType(), postID, payment, tmplData)
+	postTitle, err := r.GetPostTitle(post)
+	if err != nil {
+		return &payments.StripePayment{}, errors.New("error getting post title")
+	}
+	p, err := r.paymentService.CreateStripePayment(channelID, "posts", post.GetType(), postID, postTitle, payment, tmplData)
 	return &p, err
 }
 
@@ -200,6 +207,24 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 		}), nil
 	}
 	return nil, ErrNotImplemented
+}
+
+func (r *mutationResolver) GetPostTitle(post posts.Post) (string, error) {
+	channel, err := r.channelService.GetChannel(post.GetChannelID())
+	if err != nil {
+		return "", errors.New("could not find channel")
+	}
+	newsroom, err := r.newsroomService.GetNewsroomByAddress(channel.Reference)
+	if err != nil {
+		return "", errors.New("could not find newsroom")
+	}
+	if post.GetType() == posts.TypeBoost {
+		boost := post.(*posts.Boost)
+		return boost.Title, nil
+	} else if post.GetType() == posts.TypeExternalLink {
+		return newsroom.Name, nil
+	}
+	return "", ErrNotImplemented
 }
 
 func (r *mutationResolver) getPostNewsroomName(post posts.Post) (string, error) {
