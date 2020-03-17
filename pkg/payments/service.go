@@ -328,29 +328,10 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 					log.Errorf("Error when sending ETH payment complete email. OwnerPostType unknown.")
 				}
 			}
-			channelAdminChannels, err := s.channel.GetChannelAdminUserChannels(payment.OwnerChannelID)
+
+			err := s.sendETHPaymentReceivedEmails(payment, res.Amount*res.ExchangeRate)
 			if err != nil {
-				return err
-			}
-			receivedTmplData, err := s.getPaymentReceivedEmailTemplateData(res.Amount*res.ExchangeRate, *payment, "Stripe")
-			if err != nil {
-				log.Errorf("Error getting email template data for payment received: %v\n", err)
-			}
-			for _, c := range channelAdminChannels {
-				email := c.EmailAddress
-				if email != "" {
-					if payment.EmailAddress != "" {
-						err = s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
-						if err != nil {
-							log.Errorf("Error sending boost payment received email: %v\n", err)
-						}
-					} else {
-						err = s.sendBoostPaymentReceivedNoEmailProvidedEmail(email, receivedTmplData)
-						if err != nil {
-							log.Errorf("Error sending boost payment received with no email provided email: %v\n", err)
-						}
-					}
-				}
+				log.Errorf("Error sending boost payment received email: %v\n", err)
 			}
 		}
 	}
@@ -364,6 +345,34 @@ func (s *Service) UpdateEtherPayment(payment *PaymentModel) error {
 
 	if err2 != nil {
 		return err2
+	}
+	return nil
+}
+
+func (s *Service) sendETHPaymentReceivedEmails(payment *PaymentModel, amount float64) error {
+	channelAdminChannels, err := s.channel.GetChannelAdminUserChannels(payment.OwnerChannelID)
+	if err != nil {
+		return err
+	}
+	receivedTmplData, err := s.getPaymentReceivedEmailTemplateData(amount, *payment, "ETH")
+	if err != nil {
+		log.Errorf("Error getting email template data for payment received: %v\n", err)
+	}
+	for _, c := range channelAdminChannels {
+		email := c.EmailAddress
+		if email != "" {
+			if payment.EmailAddress != "" {
+				err := s.sendBoostPaymentReceivedEmail(email, receivedTmplData)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := s.sendBoostPaymentReceivedNoEmailProvidedEmail(email, receivedTmplData)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
 }
