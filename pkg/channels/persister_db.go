@@ -181,6 +181,40 @@ func (p *DBPersister) GetChannelMembers(channelID string) ([]*ChannelMember, err
 	return c, nil
 }
 
+// GetChannelAdmins retrieves all the admins of a channel given an id
+func (p *DBPersister) GetChannelAdmins(channelID string) ([]*ChannelMember, error) {
+	var c []*ChannelMember
+
+	if err := p.db.Where(&ChannelMember{
+		ChannelID: channelID,
+		Role:      RoleAdmin,
+	}).Preload("Channel").Find(&c).Error; err != nil {
+		return nil, ErrorNotFound
+	}
+
+	return c, nil
+}
+
+// GetChannelAdminUserChannels retrieves the user channels of all channel admins
+func (p *DBPersister) GetChannelAdminUserChannels(channelID string) ([]*Channel, error) {
+	admins, err := p.GetChannelAdmins(channelID)
+	if err != nil {
+		return nil, err
+	}
+
+	c := make([]*Channel, len(admins))
+
+	for i, a := range admins {
+		channel, err := p.GetChannelByReference("user", a.UserID)
+		if err != nil {
+			return nil, err
+		}
+		c[i] = channel
+	}
+
+	return c, nil
+}
+
 // GetChannelMember retrieves the channel member for a channel id and user id
 func (p *DBPersister) GetChannelMember(channelID string, userID string) (*ChannelMember, error) {
 	c := &ChannelMember{}
