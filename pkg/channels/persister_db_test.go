@@ -12,6 +12,7 @@ import (
 var (
 	user3ID = randomUUID()
 	user4ID = randomUUID()
+	user5ID = randomUUID()
 )
 
 // This test uses a USER channel instead of a newsroom channel, to avoid having to set up a listing. The `SetNewsroomHandleOnAccepted` and
@@ -121,7 +122,7 @@ func TestSetIsAwaitingEmailConfirmation(t *testing.T) {
 	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
 	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{}, generator, emailer, testSignupLoginProtoHost)
 
-	channel, err := svc.CreateUserChannel(user4ID)
+	channel, err := svc.CreateUserChannel(user5ID)
 	if err != nil {
 		t.Fatalf("not expecting error: %v", err)
 	}
