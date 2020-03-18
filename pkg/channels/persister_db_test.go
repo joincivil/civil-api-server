@@ -103,3 +103,50 @@ func TestGetChannelEmptyID(t *testing.T) {
 		t.Fatalf("should have failed to get channel on empty channelID.")
 	}
 }
+
+func TestSetIsAwaitingEmailConfirmation(t *testing.T) {
+	db, err := testutils.GetTestDBConnection()
+	if err != nil {
+		t.Fatalf("error getting DB: %v", err)
+	}
+	err = testruntime.RunMigrations(db)
+	if err != nil {
+		t.Fatalf("error cleaning DB: %v", err)
+	}
+
+	persister := channels.NewDBPersister(db)
+	generator := utils.NewJwtTokenGenerator([]byte("secret"))
+
+	sendGridKey := getSendGridKeyFromEnvVar()
+	emailer := email.NewEmailerWithSandbox(sendGridKey, useSandbox)
+	svc := channels.NewService(persister, MockGetNewsroomHelper{}, MockStripeConnector{}, generator, emailer, testSignupLoginProtoHost)
+
+	channel, err := svc.CreateUserChannel(user4ID)
+	if err != nil {
+		t.Fatalf("not expecting error: %v", err)
+	}
+
+	if channel.IsAwaitingEmailConfirmation {
+		t.Fatalf("IsAwaitingEmailConfirmation should not be true here")
+	}
+
+	// set to true, check if true
+	_, err = persister.SetIsAwaitingEmailConfirmation(channel.ID, true)
+	if err != nil {
+		t.Fatalf("not expecting error: %v", err)
+	}
+	channelUpdated1, _ := svc.GetChannel(channel.ID)
+	if !channelUpdated1.IsAwaitingEmailConfirmation {
+		t.Fatalf("IsAwaitingEmailConfirmation should not be false here")
+	}
+
+	// set to false, check if false
+	_, err = persister.SetIsAwaitingEmailConfirmation(channel.ID, false)
+	if err != nil {
+		t.Fatalf("not expecting error: %v", err)
+	}
+	channelUpdated2, _ := svc.GetChannel(channel.ID)
+	if channelUpdated2.IsAwaitingEmailConfirmation {
+		t.Fatalf("IsAwaitingEmailConfirmation should not be true here")
+	}
+}
