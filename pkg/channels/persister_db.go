@@ -1,7 +1,6 @@
 package channels
 
 import (
-	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
