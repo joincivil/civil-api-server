@@ -334,24 +334,30 @@ func (s *Service) ClearNewsroomHandleOnRemoved(channelID string) (*Channel, erro
 
 // don't export since should only be called through email confirm flow
 func (s *Service) setEmailAddress(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
+	log.Infof("setEmailAddress 1")
 	channel, err := s.persister.GetChannel(channelID)
 	if err != nil {
 		return &SetEmailResponse{}, err
 	}
+	log.Infof("setEmailAddress 2")
 	if channel.EmailAddress != emailAddress {
 		return &SetEmailResponse{}, ErrorUnauthorized
 	}
+	log.Infof("setEmailAddress 3")
 	isAdmin, err := s.IsChannelAdmin(userID, channelID)
 	if err != nil {
 		return &SetEmailResponse{}, err
 	}
+	log.Infof("setEmailAddress 4")
 	if !isAdmin {
 		return &SetEmailResponse{}, ErrorUnauthorized
 	}
+	log.Infof("setEmailAddress 5")
 	_, err = s.persister.SetIsAwaitingEmailConfirmation(channelID, false)
 	if err != nil {
 		return &SetEmailResponse{}, err
 	}
+	log.Infof("setEmailAddress 6")
 	return &SetEmailResponse{UserID: userID, ChannelID: channelID}, nil
 }
 
@@ -439,16 +445,19 @@ func (s *Service) buildSub(emailAddress string, ref string, userID string, chann
 
 // SetEmailConfirm validates the JWT token emailed to the user and creates the User account
 func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
+	log.Infof("SetEmailConfirm 1")
 	claims, err := s.tokenGenerator.ValidateToken(signupJWT)
 	if err != nil {
 		return &SetEmailResponse{}, err
 	}
+	log.Infof("SetEmailConfirm 2")
 
 	sub := claims["sub"].(string)
 	email, _, userID, channelID := s.subData2(sub)
 	if !IsValidEmail(email) {
 		return &SetEmailResponse{}, ErrorInvalidEmail
 	}
+	log.Infof("SetEmailConfirm 3")
 
 	// Don't allow refresh token use here
 	_, ok := claims["aud"].(string)
@@ -456,6 +465,7 @@ func (s *Service) SetEmailConfirm(signupJWT string) (*SetEmailResponse, error) {
 		return &SetEmailResponse{}, fmt.Errorf("invalid token")
 	}
 
+	log.Infof("SetEmailConfirm 4")
 	return s.setEmailAddress(userID, channelID, email)
 }
 
