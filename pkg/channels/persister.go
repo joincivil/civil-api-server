@@ -15,6 +15,7 @@ type Persister interface {
 	SetNewsroomHandleOnAccepted(channelID string, handle string) (*Channel, error)
 	ClearNewsroomHandleOnRemoved(channelID string) (*Channel, error)
 	SetEmailAddress(userID string, channelID string, emailAddress string) (*Channel, error)
+	SetIsAwaitingEmailConfirmation(channelID string, isAwaiting bool) (*Channel, error)
 	SetStripeAccountID(userID string, channelID string, stripeAccountID string) (*Channel, error)
 	SetAvatarDataURL(userID string, channelID string, avatarDataURL string) (*Channel, error)
 	SetTiny72AvatarDataURL(userID string, channelID string, tiny72AvatarDataURL string) error

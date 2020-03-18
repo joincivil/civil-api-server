@@ -457,6 +457,23 @@ func (p *DBPersister) SetStripeAccountID(userID string, channelID string, stripe
 	return ch, nil
 }
 
+// SetIsAwaitingEmailConfirmation updates the isAwaitingEmailConfirmation flag for the channel
+func (p *DBPersister) SetIsAwaitingEmailConfirmation(channelID string, isAwaiting bool) (*Channel, error) {
+	// get channel
+	ch, err := p.GetChannel(channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting stripe id")
+	}
+
+	// update the isAwaitingEmailConfirmation flag
+	err = p.db.Model(ch).Update(Channel{IsAwaitingEmailConfirmation: isAwaiting}).Error
+	if err != nil {
+		return nil, errors.Wrap(err, "error setting isAwaitingEmailConfirmation")
+	}
+
+	return ch, nil
+}
+
 // IsChannelAdmin returns whether the userID
 func (p *DBPersister) IsChannelAdmin(userID string, channelID string) (bool, error) {
 
