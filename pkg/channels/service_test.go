@@ -394,7 +394,10 @@ func TestCreateChannel(t *testing.T) {
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
-
+		_, err = svc.SendEmailConfirmation(u1, channel1.ID, validEmail, channels.SetEmailEnumUser)
+		if err != nil {
+			t.Fatalf("not expecting error: %v\n", err)
+		}
 		parts := []string{validEmail, string(channels.SetEmailEnumUser), u1, channel1.ID}
 		sub := strings.Join(parts, "||")
 		token, err := generator.GenerateToken(sub, 360)
