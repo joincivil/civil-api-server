@@ -15,7 +15,7 @@ require (
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/dyatlov/go-htmlinfo v0.0.0-20180517114536-d9417c75de65
 	github.com/dyatlov/go-oembed v0.0.0-20180429203341-4bc5ab7a42e9 // indirect
-	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8 // indirect
+	github.com/dyatlov/go-opengraph v0.0.0-20180429202543-816b6608b3c8
 	github.com/dyatlov/go-readability v0.0.0-20150926130635-e7b2080f87f8 // indirect
 	github.com/ethereum/go-ethereum v1.9.6
 	github.com/go-chi/chi v4.0.2+incompatible
