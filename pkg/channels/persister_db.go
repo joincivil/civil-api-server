@@ -1,7 +1,6 @@
 package channels
 
 import (
-	log "github.com/golang/glog"
 	"github.com/jinzhu/gorm"
 	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
@@ -460,19 +459,15 @@ func (p *DBPersister) SetStripeAccountID(userID string, channelID string, stripe
 
 // SetIsAwaitingEmailConfirmation updates the isAwaitingEmailConfirmation flag for the channel
 func (p *DBPersister) SetIsAwaitingEmailConfirmation(channelID string, isAwaiting bool) (*Channel, error) {
-	log.Infof("SetIsAwaitingEmailConfirmation. isAwaiting: %t", isAwaiting)
-	log.Infof("SetIsAwaitingEmailConfirmation. channelID: %s", channelID)
 	// get channel
 	ch, err := p.GetChannel(channelID)
 	if err != nil {
-		log.Infof("error setting isAwaitingEmailConfirmation 1")
 		return nil, errors.Wrap(err, "error setting isAwaitingEmailConfirmation")
 	}
 
 	// update the isAwaitingEmailConfirmation flag
-	err = p.db.Model(ch).Update(Channel{IsAwaitingEmailConfirmation: isAwaiting}).Error
+	err = p.db.Model(ch).Update("isAwaitingEmailConfirmation", isAwaiting).Error
 	if err != nil {
-		log.Infof("error setting isAwaitingEmailConfirmation 2")
 		return nil, errors.Wrap(err, "error setting isAwaitingEmailConfirmation")
 	}
 
