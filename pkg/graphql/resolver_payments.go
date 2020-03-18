@@ -4,6 +4,8 @@ import (
 	context "context"
 	"errors"
 
+	"encoding/json"
+	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -141,7 +143,7 @@ func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-	boostTitle, err := r.getPostTitle(post)
+	boostTitle, err := r.GetPostTitle(post)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +222,14 @@ func (r *mutationResolver) GetPostTitle(post posts.Post) (string, error) {
 	}
 	if post.GetType() == posts.TypeBoost {
 		boost := post.(*posts.Boost)
-		return boost.Title, nil
+		return newsroom.Name + ": " + boost.Title, nil
 	} else if post.GetType() == posts.TypeExternalLink {
+		externalLink := post.(*posts.ExternalLink)
+		var OGInfo opengraph.OpenGraph
+		err = json.Unmarshal(externalLink.OpenGraphData, &OGInfo)
+		if err == nil && OGInfo.Title != "" {
+			return newsroom.Name + ": " + OGInfo.Title, nil
+		}
 		return newsroom.Name, nil
 	}
 	return "", ErrNotImplemented
@@ -237,14 +245,6 @@ func (r *mutationResolver) getPostNewsroomName(post posts.Post) (string, error) 
 		return "", errors.New("could not find newsroom")
 	}
 	return newsroom.Name, nil
-}
-
-func (r *mutationResolver) getPostTitle(post posts.Post) (string, error) {
-	if post.GetType() == posts.TypeBoost {
-		boost := post.(*posts.Boost)
-		return boost.Title, nil
-	}
-	return "", nil
 }
 
 func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, payment payments.StripePayment) (email.TemplateData, error) {
