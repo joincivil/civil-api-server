@@ -76,3 +76,8 @@ func (p *MockPaymentHelper) GetCustomerInfo(channelID string) (payments.StripeCu
 func (p *MockPaymentHelper) GetStripeApplyPayDomains(channelID string) ([]string, error) {
 	return []string{}, nil
 }
+
+// GetChannelAdminUserChannels returns a mock list of a channel's admins' user channels
+func (p *MockPaymentHelper) GetChannelAdminUserChannels(channelID string) ([]*channels.Channel, error) {
+	return []*channels.Channel{}, nil
+}

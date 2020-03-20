@@ -394,7 +394,20 @@ func TestCreateChannel(t *testing.T) {
 		if err != nil {
 			t.Fatalf("not expecting error: %v", err)
 		}
-
+		if channel1.IsAwaitingEmailConfirmation {
+			t.Fatalf("channel isAwaitingEmailConfirmation should have been false at beginning")
+		}
+		_, err = svc.SendEmailConfirmation(u1, channel1.ID, validEmail, channels.SetEmailEnumUser)
+		if err != nil {
+			t.Fatalf("not expecting error: %v\n", err)
+		}
+		c1, err := svc.GetChannel(channel1.ID)
+		if err != nil {
+			t.Fatalf("not expecting error: %v\n", err)
+		}
+		if !c1.IsAwaitingEmailConfirmation {
+			t.Fatalf("channel isAwaitingEmailConfirmation was not set to true after sending confirmation")
+		}
 		parts := []string{validEmail, string(channels.SetEmailEnumUser), u1, channel1.ID}
 		sub := strings.Join(parts, "||")
 		token, err := generator.GenerateToken(sub, 360)
@@ -415,6 +428,9 @@ func TestCreateChannel(t *testing.T) {
 		channelEmail := updatedChannel1.EmailAddress
 		if channelEmail != validEmail {
 			t.Fatalf("channel email not set to correct email. channelEmail: %v", channelEmail)
+		}
+		if updatedChannel1.IsAwaitingEmailConfirmation {
+			t.Fatalf("channel isAwaitingEmailConfirmation was not set to false after confirming")
 		}
 
 		parts = []string{validEmail, string(channels.SetEmailEnumUser), u1, channel2.ID}

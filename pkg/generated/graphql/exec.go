@@ -125,23 +125,24 @@ type ComplexityRoot struct {
 	}
 
 	Channel struct {
-		AvatarDataURL              func(childComplexity int) int
-		ChannelType                func(childComplexity int) int
-		CurrentUserIsAdmin         func(childComplexity int) int
-		EmailAddressRestricted     func(childComplexity int) int
-		Handle                     func(childComplexity int) int
-		ID                         func(childComplexity int) int
-		IsStripeConnected          func(childComplexity int) int
-		Listing                    func(childComplexity int) int
-		Newsroom                   func(childComplexity int) int
-		PaymentsMadeByChannel      func(childComplexity int) int
-		PostsSearch                func(childComplexity int, search posts.SearchInput) int
-		StripeAccountID            func(childComplexity int) int
-		StripeApplePayEnabled      func(childComplexity int) int
-		StripeCustomerIDRestricted func(childComplexity int) int
-		StripeCustomerInfo         func(childComplexity int) int
-		Tiny100AvatarDataURL       func(childComplexity int) int
-		Tiny72AvatarDataURL        func(childComplexity int) int
+		AvatarDataURL               func(childComplexity int) int
+		ChannelType                 func(childComplexity int) int
+		CurrentUserIsAdmin          func(childComplexity int) int
+		EmailAddressRestricted      func(childComplexity int) int
+		Handle                      func(childComplexity int) int
+		ID                          func(childComplexity int) int
+		IsAwaitingEmailConfirmation func(childComplexity int) int
+		IsStripeConnected           func(childComplexity int) int
+		Listing                     func(childComplexity int) int
+		Newsroom                    func(childComplexity int) int
+		PaymentsMadeByChannel       func(childComplexity int) int
+		PostsSearch                 func(childComplexity int, search posts.SearchInput) int
+		StripeAccountID             func(childComplexity int) int
+		StripeApplePayEnabled       func(childComplexity int) int
+		StripeCustomerIDRestricted  func(childComplexity int) int
+		StripeCustomerInfo          func(childComplexity int) int
+		Tiny100AvatarDataURL        func(childComplexity int) int
+		Tiny72AvatarDataURL         func(childComplexity int) int
 	}
 
 	ChannelMember struct {
@@ -1276,6 +1277,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Channel.ID(childComplexity), true
+
+	case "Channel.isAwaitingEmailConfirmation":
+		if e.complexity.Channel.IsAwaitingEmailConfirmation == nil {
+			break
+		}
+
+		return e.complexity.Channel.IsAwaitingEmailConfirmation(childComplexity), true
 
 	case "Channel.isStripeConnected":
 		if e.complexity.Channel.IsStripeConnected == nil {
@@ -4838,35 +4846,35 @@ input ChannelsSetEmailInput {
     emailAddress: String!
     addToMailing: Boolean!
 }`},
-	&ast.Source{Name: "schema/channels/types.graphql", Input: `
-type Channel {
-    id: String!
-    channelType: String!
-    newsroom: Newsroom
-    listing: Listing
-    postsSearch(search: PostSearchInput!): PostSearchResult
-    isStripeConnected: Boolean!
-    stripeAccountID: String
-    currentUserIsAdmin: Boolean!
-    handle: String
-    EmailAddressRestricted: String
-    avatarDataUrl: String
-    tiny100AvatarDataUrl: String
-    tiny72AvatarDataUrl: String
-    StripeCustomerIDRestricted: String
-    stripeApplePayEnabled: Boolean!
-    paymentsMadeByChannel: [Payment!]
-    stripeCustomerInfo: StripeCustomerInfo
+	&ast.Source{Name: "schema/channels/types.graphql", Input: `type Channel {
+  id: String!
+  channelType: String!
+  newsroom: Newsroom
+  listing: Listing
+  postsSearch(search: PostSearchInput!): PostSearchResult
+  isStripeConnected: Boolean!
+  stripeAccountID: String
+  currentUserIsAdmin: Boolean!
+  handle: String
+  EmailAddressRestricted: String
+  isAwaitingEmailConfirmation: Boolean!
+  avatarDataUrl: String
+  tiny100AvatarDataUrl: String
+  tiny72AvatarDataUrl: String
+  StripeCustomerIDRestricted: String
+  stripeApplePayEnabled: Boolean!
+  paymentsMadeByChannel: [Payment!]
+  stripeCustomerInfo: StripeCustomerInfo
 }
 
 type ChannelMember {
-    channel: Channel
-    role: String
+  channel: Channel
+  role: String
 }
 
 type ChannelSetEmailResponse {
-    ChannelID: String
-    UserID: String
+  ChannelID: String
+  UserID: String
 }
 `},
 	&ast.Source{Name: "schema/jsonb/inputs.graphql", Input: `
@@ -9328,6 +9336,43 @@ func (ec *executionContext) _Channel_EmailAddressRestricted(ctx context.Context,
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Channel_isAwaitingEmailConfirmation(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Channel",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsAwaitingEmailConfirmation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Channel_avatarDataUrl(ctx context.Context, field graphql.CollectedField, obj *channels.Channel) (ret graphql.Marshaler) {
@@ -27674,6 +27719,11 @@ func (ec *executionContext) _Channel(ctx context.Context, sel ast.SelectionSet, 
 				res = ec._Channel_EmailAddressRestricted(ctx, field, obj)
 				return res
 			})
+		case "isAwaitingEmailConfirmation":
+			out.Values[i] = ec._Channel_isAwaitingEmailConfirmation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "avatarDataUrl":
 			out.Values[i] = ec._Channel_avatarDataUrl(ctx, field, obj)
 		case "tiny100AvatarDataUrl":

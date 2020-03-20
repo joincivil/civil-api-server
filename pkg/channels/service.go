@@ -193,6 +193,11 @@ func (s *Service) CreateGroupChannel(userID string, handle string) (*Channel, er
 	})
 }
 
+// GetChannelAdminUserChannels retrieves the channels of all channel admins
+func (s *Service) GetChannelAdminUserChannels(channelID string) ([]*Channel, error) {
+	return s.persister.GetChannelAdminUserChannels(channelID)
+}
+
 func getImageAndDecodedDataURLFromDataURL(dataURL string) (*image.Image, *dataurl.DataURL, error) {
 	decodedDataURL, err := dataurl.DecodeString(dataURL)
 	if err != nil {
@@ -329,11 +334,13 @@ func (s *Service) ClearNewsroomHandleOnRemoved(channelID string) (*Channel, erro
 
 // don't export since should only be called through email confirm flow
 func (s *Service) setEmailAddress(userID string, channelID string, emailAddress string) (*SetEmailResponse, error) {
-	_, err := s.persister.GetChannel(channelID)
+	channel, err := s.persister.GetChannel(channelID)
 	if err != nil {
 		return &SetEmailResponse{}, err
 	}
-
+	if channel.EmailAddress != emailAddress {
+		return &SetEmailResponse{}, ErrorUnauthorized
+	}
 	isAdmin, err := s.IsChannelAdmin(userID, channelID)
 	if err != nil {
 		return &SetEmailResponse{}, err
@@ -341,8 +348,7 @@ func (s *Service) setEmailAddress(userID string, channelID string, emailAddress 
 	if !isAdmin {
 		return &SetEmailResponse{}, ErrorUnauthorized
 	}
-
-	_, err = s.persister.SetEmailAddress(userID, channelID, emailAddress)
+	_, err = s.persister.SetIsAwaitingEmailConfirmation(channelID, false)
 	if err != nil {
 		return &SetEmailResponse{}, err
 	}
@@ -360,7 +366,15 @@ func (s *Service) SendEmailConfirmation(userID string, channelID string, emailAd
 	}
 
 	referral := string(channelType)
+	_, err = s.persister.SetEmailAddress(userID, channelID, emailAddress)
+	if err != nil {
+		return nil, err
+	}
 	_, err = s.sendEmailToken(emailAddress, userID, channelID, confirmEmailTemplate, defaultSetEmailVerifyURI, referral)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.persister.SetIsAwaitingEmailConfirmation(channelID, true)
 	if err != nil {
 		return nil, err
 	}

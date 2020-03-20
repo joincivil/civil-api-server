@@ -41,6 +41,8 @@ type PaymentModel struct {
 	OwnerID         string `gorm:"not null"`
 	OwnerType       string `gorm:"not null"`
 	OwnerPostType   string
+	OwnerChannelID  string
+	OwnerTitle      string
 	EmailAddress    string
 	PayerChannelID  string
 	ShouldPublicize bool

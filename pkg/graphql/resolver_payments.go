@@ -4,6 +4,8 @@ import (
 	context "context"
 	"errors"
 
+	"encoding/json"
+	"github.com/dyatlov/go-opengraph/opengraph"
 	"github.com/joincivil/civil-api-server/pkg/auth"
 	"github.com/joincivil/civil-api-server/pkg/channels"
 	"github.com/joincivil/civil-api-server/pkg/generated/graphql"
@@ -61,8 +63,11 @@ func (r *mutationResolver) PaymentsCreateEtherPayment(ctx context.Context, postI
 	if err2 != nil {
 		return &payments.EtherPayment{}, errors.New("error creating email template data")
 	}
-
-	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", post.GetType(), postID, payment, tmplData)
+	postTitle, err := r.GetPostTitle(post)
+	if err != nil {
+		return &payments.EtherPayment{}, errors.New("error getting post title")
+	}
+	p, err := r.paymentService.CreateEtherPayment(channelID, "posts", post.GetType(), postID, postTitle, payment, tmplData)
 	return &p, err
 }
 
@@ -89,7 +94,11 @@ func (r *mutationResolver) PaymentsCreateStripePayment(ctx context.Context, post
 	if err2 != nil {
 		return &payments.StripePayment{}, errors.New("error creating email template data")
 	}
-	p, err := r.paymentService.CreateStripePayment(channelID, "posts", post.GetType(), postID, payment, tmplData)
+	postTitle, err := r.GetPostTitle(post)
+	if err != nil {
+		return &payments.StripePayment{}, errors.New("error getting post title")
+	}
+	p, err := r.paymentService.CreateStripePayment(channelID, "posts", post.GetType(), postID, postTitle, payment, tmplData)
 	return &p, err
 }
 
@@ -134,7 +143,7 @@ func (r *mutationResolver) PaymentsCreateStripePaymentIntent(ctx context.Context
 	if err != nil {
 		return nil, err
 	}
-	boostTitle, err := r.getPostTitle(post)
+	boostTitle, err := r.GetPostTitle(post)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +211,30 @@ func (r *mutationResolver) GetEthPaymentEmailTemplateData(post posts.Post, payme
 	return nil, ErrNotImplemented
 }
 
+func (r *mutationResolver) GetPostTitle(post posts.Post) (string, error) {
+	channel, err := r.channelService.GetChannel(post.GetChannelID())
+	if err != nil {
+		return "", errors.New("could not find channel")
+	}
+	newsroom, err := r.newsroomService.GetNewsroomByAddress(channel.Reference)
+	if err != nil {
+		return "", errors.New("could not find newsroom")
+	}
+	if post.GetType() == posts.TypeBoost {
+		boost := post.(*posts.Boost)
+		return newsroom.Name + ": " + boost.Title, nil
+	} else if post.GetType() == posts.TypeExternalLink {
+		externalLink := post.(*posts.ExternalLink)
+		var OGInfo opengraph.OpenGraph
+		err = json.Unmarshal(externalLink.OpenGraphData, &OGInfo)
+		if err == nil && OGInfo.Title != "" {
+			return newsroom.Name + ": " + OGInfo.Title, nil
+		}
+		return newsroom.Name, nil
+	}
+	return "", ErrNotImplemented
+}
+
 func (r *mutationResolver) getPostNewsroomName(post posts.Post) (string, error) {
 	channel, err := r.channelService.GetChannel(post.GetChannelID())
 	if err != nil {
@@ -212,14 +245,6 @@ func (r *mutationResolver) getPostNewsroomName(post posts.Post) (string, error) 
 		return "", errors.New("could not find newsroom")
 	}
 	return newsroom.Name, nil
-}
-
-func (r *mutationResolver) getPostTitle(post posts.Post) (string, error) {
-	if post.GetType() == posts.TypeBoost {
-		boost := post.(*posts.Boost)
-		return boost.Title, nil
-	}
-	return "", nil
 }
 
 func (r *mutationResolver) GetStripePaymentEmailTemplateData(post posts.Post, payment payments.StripePayment) (email.TemplateData, error) {

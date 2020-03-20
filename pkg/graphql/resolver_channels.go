@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 
+	log "github.com/golang/glog"
 	"github.com/joincivil/civil-api-server/pkg/posts"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -140,6 +141,7 @@ func (r *mutationResolver) UserChannelSetEmail(ctx context.Context, input channe
 }
 
 func (r *mutationResolver) ChannelsSetEmailConfirm(ctx context.Context, jwt string) (*channels.SetEmailResponse, error) {
+	log.Infof("ChannelsSetEmailConfirm 1")
 	return r.channelService.SetEmailConfirm(jwt)
 }
 
