@@ -43,6 +43,11 @@ const (
 	paymentComplete = "complete"
 )
 
+var (
+	// ErrNoPaymentWithGivenPaymentIntentIDFound returned when payment not found in DB for given payment intent ID
+	ErrNoPaymentWithGivenPaymentIntentIDFound = errors.New("no payment found for given payment intent ID")
+)
+
 // StripeCharger defines the functions needed to create a charge with Stripe
 type StripeCharger interface {
 	CreateCustomer(request CreateCustomerRequest) (CreateCustomerResponse, error)
@@ -543,7 +548,7 @@ func (s *Service) ConfirmStripePaymentIntent(paymentIntent stripe.PaymentIntent)
 	var payment PaymentModel
 	if err := s.db.Where("reference = ?", paymentIntent.ID).First(&payment).Error; err != nil {
 		log.Errorf("Error getting payment: %v\n", err)
-		return err
+		return ErrNoPaymentWithGivenPaymentIntentIDFound
 	}
 
 	data, err := json.Marshal(paymentIntent)

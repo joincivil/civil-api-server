@@ -45,7 +45,11 @@ func (s *Service) WebhookRouting(router chi.Router, stripeWebhookSigningSecret s
 			}
 
 			err = s.ConfirmStripePaymentIntent(paymentIntent)
-			if err != nil {
+			if err == ErrNoPaymentWithGivenPaymentIntentIDFound {
+				log.Errorf("Payment not found for given payment intent ID: %s\n", paymentIntent.ID)
+				w.WriteHeader(http.StatusOK)
+				return
+			} else if err != nil {
 				log.Errorf("Error updating successful payment: %v\n", err)
 				w.WriteHeader(http.StatusBadRequest)
 				return
